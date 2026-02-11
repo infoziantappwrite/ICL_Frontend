@@ -8,6 +8,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ProfileDashboard from './pages/ProfileDashboard';
 import ProfileEdit from './pages/ProfileEdit';
 import MyProfile from './pages/MyProfile';
+import VerifyOtp from './pages/VerifyOtp';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
 
             {/* Protected routes - Dashboard */}
             <Route

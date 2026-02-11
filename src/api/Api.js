@@ -60,6 +60,20 @@ export const authAPI = {
     });
   },
 
+  verifyOtp: async (email, otp) => {
+    return apiCall('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+  },
+
+  resendOtp: async (email) => {
+    return apiCall('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
   getMe: async () => {
     return apiCall('/auth/me');
   },
@@ -78,13 +92,6 @@ export const authAPI = {
     });
   },
 
-  verifyEmail: async (token) => {
-    return apiCall('/auth/verify-email', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
-    });
-  },
-
   updatePassword: async (currentPassword, newPassword) => {
     return apiCall('/auth/update-password', {
       method: 'PUT',
@@ -97,6 +104,7 @@ export const authAPI = {
     localStorage.removeItem('userData');
   },
 };
+
 
 // ==========================================
 // CANDIDATE PROFILE API - FIXED FOR BACKEND

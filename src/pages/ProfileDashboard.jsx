@@ -150,49 +150,59 @@ const ProfileDashboard = () => {
  
       {/* Header */}
       <header className="relative bg-white/80 backdrop-blur-xl border-b border-white/50 shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex justify-between items-center">
             {/* Logo & Sidebar Toggle */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Mobile Menu Toggle - Show on small screens */}
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="lg:hidden p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >
+                {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+              
+              {/* Desktop Sidebar Toggle - Show on large screens */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="hidden lg:block p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
               >
                 {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/40">
-                <span className="text-white font-bold text-xl">I</span>
+              
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/40">
+                <span className="text-white font-bold text-lg sm:text-xl">I</span>
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
                   ICL
                 </h1>
                 <p className="text-xs text-gray-600">Candidate Portal</p>
               </div>
             </div>
  
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-4">
+            {/* Actions */}
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* User Avatar with Popup Menu */}
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                  className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
                 >
-                  <span className="text-white font-bold text-sm">{getUserInitials()}</span>
+                  <span className="text-white font-bold text-xs sm:text-sm">{getUserInitials()}</span>
                 </button>
  
                 {/* User Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fadeIn">
+                  <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fadeIn">
                     {/* User Info Header */}
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
+                    <div className="p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
-                          <span className="text-white font-bold text-lg">{getUserInitials()}</span>
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full flex items-center justify-center shadow-lg">
+                          <span className="text-white font-bold text-base sm:text-lg">{getUserInitials()}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">{getUserName()}</p>
+                          <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">{getUserName()}</p>
                           <p className="text-xs text-gray-600 truncate">{profile?.email || user?.email}</p>
                         </div>
                       </div>
@@ -287,6 +297,16 @@ const ProfileDashboard = () => {
               </button>
               <button
                 onClick={() => {
+                  navigate('/dashboard/student/jobs');
+                  setShowMobileMenu(false);
+                }}
+                className="w-full px-4 py-2 text-left text-gray-700 hover:bg-blue-50 rounded-lg flex items-center gap-2"
+              >
+                <Briefcase className="w-4 h-4" />
+                Job Opportunities
+              </button>
+              <button
+                onClick={() => {
                   navigate('/profile/my-info');
                   setShowMobileMenu(false);
                 }}
@@ -373,6 +393,7 @@ const ProfileDashboard = () => {
             {/* Navigation Menu */}
             <nav className="space-y-1">
               <NavItem icon={LayoutDashboard} label="Dashboard" active onClick={() => navigate('/profile')} />
+              <NavItem icon={Briefcase} label="Job Opportunities" onClick={() => navigate('/dashboard/student/jobs')} />
               <NavItem icon={Edit} label="Edit Profile" onClick={() => navigate('/profile/edit')} />
               <NavItem icon={BookOpen} label="Courses" onClick={() => navigate('/courses')} />
               <NavItem icon={Award} label="Assessments" onClick={() => navigate('/assessments')} />
@@ -395,32 +416,33 @@ const ProfileDashboard = () => {
  
         {/* Main Content */}
         <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="relative max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-2xl p-6 md:p-8 mb-8 text-white shadow-2xl shadow-blue-500/30 relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white shadow-2xl shadow-blue-500/30 relative overflow-hidden">
               <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
               <div className="relative z-10">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-                      <span className="text-white font-bold text-2xl">{getUserInitials()}</span>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
+                      <span className="text-white font-bold text-lg sm:text-2xl">{getUserInitials()}</span>
                     </div>
                     <div>
-                      <h2 className="text-2xl md:text-3xl font-bold mb-1">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
                         Welcome back, {getFirstName()}! 👋
                       </h2>
-                      <p className="text-blue-100 text-sm md:text-base">
+                      <p className="text-blue-100 text-xs sm:text-sm md:text-base">
                         {profile?.currentRole || profile?.candidateType || 'Complete your profile to unlock more opportunities'}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 md:mt-0">
+                  <div className="mt-3 sm:mt-4 md:mt-0">
                     <button
                       onClick={() => navigate('/profile/edit')}
-                      className="px-6 py-3 bg-white text-blue-600 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2"
+                      className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-white text-blue-600 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <Edit className="w-4 h-4" />
-                      Edit Profile
+                      <span className="hidden sm:inline">Edit Profile</span>
+                      <span className="sm:hidden">Edit</span>
                     </button>
                   </div>
                 </div>
@@ -428,29 +450,29 @@ const ProfileDashboard = () => {
             </div>
  
             {/* Profile Completeness Card */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-xl shadow-blue-500/10 border border-white/50 mb-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                <div className="flex items-center gap-4 mb-4 md:mb-0">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${getCompletenessColor()} rounded-2xl flex items-center justify-center shadow-lg`}>
-                    <span className="text-3xl">{status.icon}</span>
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-4 sm:p-6 md:p-8 shadow-xl shadow-blue-500/10 border border-white/50 mb-6 sm:mb-8">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-3 sm:gap-4 mb-4 md:mb-0">
+                  <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br ${getCompletenessColor()} rounded-2xl flex items-center justify-center shadow-lg`}>
+                    <span className="text-2xl sm:text-3xl">{status.icon}</span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900">Profile Strength</h3>
-                    <p className="text-sm text-gray-600">{status.text}</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Profile Strength</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">{status.text}</p>
                   </div>
                 </div>
                 <div className="text-center md:text-right">
-                  <div className={`text-5xl font-bold bg-gradient-to-r ${getCompletenessColor()} bg-clip-text text-transparent`}>
+                  <div className={`text-4xl sm:text-5xl font-bold bg-gradient-to-r ${getCompletenessColor()} bg-clip-text text-transparent`}>
                     {profileCompleteness}%
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">Complete</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">Complete</p>
                 </div>
               </div>
  
               {/* Progress Bar */}
-              <div className="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div className="relative w-full bg-gray-200 rounded-full h-3 sm:h-4 overflow-hidden">
                 <div
-                  className={`h-4 bg-gradient-to-r ${getCompletenessColor()} rounded-full transition-all duration-1000 ease-out relative overflow-hidden`}
+                  className={`h-3 sm:h-4 bg-gradient-to-r ${getCompletenessColor()} rounded-full transition-all duration-1000 ease-out relative overflow-hidden`}
                   style={{ width: `${profileCompleteness}%` }}
                 >
                   <div className="absolute inset-0 bg-white/20 animate-shimmer"></div>
@@ -458,11 +480,11 @@ const ProfileDashboard = () => {
               </div>
  
               {profileCompleteness < 100 && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                  <div className="flex items-start gap-3">
-                    <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Boost your profile visibility</p>
+                      <p className="text-xs sm:text-sm font-medium text-gray-900">Boost your profile visibility</p>
                       <p className="text-xs text-gray-600 mt-1">
                         Complete your profile to increase your chances of being discovered by top employers and access all courses
                       </p>
@@ -473,7 +495,7 @@ const ProfileDashboard = () => {
             </div>
  
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
               <StatCard
                 title="Skills"
                 count={profile?.primarySkills?.length || 0}
@@ -505,8 +527,40 @@ const ProfileDashboard = () => {
               />
             </div>
  
+            {/* Job Opportunities Banner */}
+            <div 
+              onClick={() => navigate('/dashboard/student/jobs')}
+              className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-6 sm:p-8 cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Briefcase className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-xl sm:text-2xl">Job Opportunities</h3>
+                      <p className="text-blue-100 text-sm">Browse campus placements & apply now</p>
+                    </div>
+                  </div>
+                  <p className="text-white/90 text-sm sm:text-base mb-4">
+                    Explore exciting career opportunities from top companies recruiting on campus
+                  </p>
+                  <div className="flex items-center gap-2 text-white font-medium">
+                    <span>View All Jobs</span>
+                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+                <div className="hidden md:block">
+                  <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Profile Sections Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {/* Personal Information */}
               <ProfileCard
                 title="Personal Information"

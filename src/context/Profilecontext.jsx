@@ -1,4 +1,4 @@
-// src/context/Profilecontext.jsx - FIXED VERSION
+// src/context/Profilecontext.jsx - SIMPLIFIED VERSION (No forced redirects)
 import { createContext, useContext, useState, useEffect } from 'react';
 import { profileAPI } from '../api/Api';
 import { useAuth } from './AuthContext';
@@ -20,9 +20,10 @@ export const ProfileProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
  
-  // Fetch profile when user is authenticated
+  // ⚠️ CRITICAL FIX: Check for BOTH 'student' AND 'candidate' roles
   useEffect(() => {
-    if (isAuthenticated && user?.role === 'candidate') {
+    if (isAuthenticated && (user?.role === 'student' || user?.role === 'candidate')) {
+      console.log('🔍 User authenticated with role:', user?.role);
       fetchProfile();
     } else {
       setProfile(null);
@@ -34,27 +35,29 @@ export const ProfileProvider = ({ children }) => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('📡 Fetching profile...');
       const response = await profileAPI.getProfile();
       
       // Backend returns: { success: true, profile: {...}, canAccessCourses: ... }
       if (response.success && response.profile) {
+        console.log('✅ Profile found:', response.profile);
         setProfile(response.profile);
         setProfileCompleteness(response.profile?.profileCompletionPercentage || 0);
       }
       
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      console.error('⚠️ Error fetching profile:', err);
      
-      // If profile doesn't exist (404), DON'T create a minimal one automatically
-      // Let the user create it properly through ProfileEdit.jsx
+      // If profile doesn't exist (404), set a minimal placeholder
+      // This allows the dashboard to load and show "Complete your profile" message
       if (err.message?.includes('not found') || 
           err.message?.includes('404') || 
           err.response?.status === 404) {
         
-        console.log('Profile not found - user needs to complete profile');
+        console.log('ℹ️ Profile not found - showing placeholder (user can create later)');
         
-        // Set a minimal placeholder state (NO backend call)
-        // This prevents app crashes while still showing profile is incomplete
+        // Set a minimal placeholder state to prevent app crashes
+        // Dashboard will show profile completion prompt
         setProfile({
           fullName: user?.fullName || user?.name || '',
           email: user?.email || '',
@@ -76,12 +79,11 @@ export const ProfileProvider = ({ children }) => {
           profileCompleted: false
         });
         setProfileCompleteness(0);
-        setError('Profile not found. Please complete your profile.');
+        setError(null); // Don't show error, just placeholder
       } else {
-        // Other errors
+        // Other errors - still set placeholder to prevent crashes
         setError(err.message);
         
-        // Set minimal state even on other errors to prevent crashes
         setProfile({
           fullName: user?.fullName || user?.name || '',
           email: user?.email || '',
@@ -168,6 +170,7 @@ export const ProfileProvider = ({ children }) => {
       }
     } catch (err) {
       console.error('Error refreshing completeness:', err);
+      // Don't throw error, just log it
     }
   };
  

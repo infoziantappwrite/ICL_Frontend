@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { collegeAdminAPI } from '../../api/Api';
 
 const CollegeAdminDashboard = () => {
   const navigate = useNavigate();
@@ -37,12 +38,7 @@ const CollegeAdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/college-admin/dashboard', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
-      const data = await response.json();
+      const data = await collegeAdminAPI.getDashboard();
 
       if (data.success) {
         setStats(data.stats || stats);

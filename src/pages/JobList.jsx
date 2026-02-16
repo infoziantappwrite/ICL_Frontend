@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Clock,
   Building2,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 
 const JobList = () => {
@@ -111,31 +112,18 @@ const JobList = () => {
     setSearchParams({});
   };
 
-  const formatDeadline = (deadline) => {
-    const date = new Date(deadline);
-    const now = new Date();
-    const daysLeft = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
-
-    if (daysLeft < 0) return 'Expired';
-    if (daysLeft === 0) return 'Today';
-    if (daysLeft === 1) return '1 day left';
-    return `${daysLeft} days left`;
-  };
-
-  const getDeadlineColor = (deadline) => {
-    const date = new Date(deadline);
-    const now = new Date();
-    const daysLeft = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
-
-    if (daysLeft < 0) return 'text-red-600 bg-red-50';
-    if (daysLeft <= 3) return 'text-orange-600 bg-orange-50';
-    if (daysLeft <= 7) return 'text-yellow-600 bg-yellow-50';
-    return 'text-green-600 bg-green-50';
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
+        {/* Back to Dashboard Button */}
+        <button
+          onClick={() => navigate('/dashboard/student')}
+          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to Dashboard
+        </button>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
@@ -412,6 +400,18 @@ const JobCard = ({ job, onClick }) => {
       </div>
     </div>
   );
+};
+
+// Helper function for formatting deadline
+const formatDeadline = (deadline) => {
+  const date = new Date(deadline);
+  const now = new Date();
+  const daysLeft = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) return 'Expired';
+  if (daysLeft === 0) return 'Today';
+  if (daysLeft === 1) return '1 day left';
+  return `${daysLeft} days left`;
 };
 
 const getDeadlineColor = (deadline) => {

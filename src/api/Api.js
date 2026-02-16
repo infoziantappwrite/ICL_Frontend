@@ -756,6 +756,85 @@ export const applicationAPI = {
 // Make applicationAPI globally available
 window.applicationAPI = applicationAPI;
 
+// ==========================================
+// COLLEGE ADMIN API
+// ==========================================
+export const collegeAdminAPI = {
+  // Dashboard
+  getDashboard: async () => {
+    console.log('📊 Fetching college admin dashboard data...');
+    return apiCall('/college-admin/dashboard');
+  },
+
+  // Companies (College Admin specific endpoints)
+  getCompanies: async (params = {}) => {
+    console.log('🏢 Fetching college admin companies with params:', params);
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/college-admin/companies${queryString ? `?${queryString}` : ''}`);
+  },
+
+  createCompany: async (companyData) => {
+    console.log('➕ Creating company via college admin:', companyData);
+    return apiCall('/college-admin/companies', {
+      method: 'POST',
+      body: JSON.stringify(companyData),
+    });
+  },
+
+  updateCompany: async (companyId, companyData) => {
+    console.log(`✏️  Updating company via college admin: ${companyId}`, companyData);
+    return apiCall(`/college-admin/companies/${companyId}`, {
+      method: 'PUT',
+      body: JSON.stringify(companyData),
+    });
+  },
+
+  deleteCompany: async (companyId) => {
+    console.log(`🗑️  Deleting company via college admin: ${companyId}`);
+    return apiCall(`/college-admin/companies/${companyId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Jobs
+  getJobs: async (params = {}) => {
+    console.log('📋 Fetching college admin jobs with params:', params);
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/college-admin/jobs${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Students
+  getStudents: async (params = {}) => {
+    console.log('👥 Fetching students with params:', params);
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/college-admin/students${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Applications
+  getApplications: async (params = {}) => {
+    console.log('📋 Fetching college admin applications with params:', params);
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/college-admin/applications${queryString ? `?${queryString}` : ''}`);
+  },
+
+  updateApplicationStatus: async (applicationId, statusData) => {
+    console.log(`📊 Updating application status: ${applicationId}`, statusData);
+    return apiCall(`/college-admin/applications/${applicationId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(statusData),
+    });
+  },
+
+  // Analytics
+  getAnalytics: async () => {
+    console.log('📊 Fetching college admin analytics...');
+    return apiCall('/college-admin/analytics');
+  },
+};
+
+// Make collegeAdminAPI globally available
+window.collegeAdminAPI = collegeAdminAPI;
+
 // Export verifyAuth for external use
 export { verifyAuth };
 

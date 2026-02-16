@@ -79,6 +79,7 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
     if (role === 'super_admin') {
       return [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard/super-admin' },
+        { icon: Building2, label: 'Colleges', path: '/dashboard/super-admin/colleges' },
         { icon: Building2, label: 'Companies', path: '/dashboard/super-admin/companies' },
         { icon: Users, label: 'Admins', path: '/dashboard/super-admin/admins' },
         { icon: FileText, label: 'Applications', path: '/dashboard/super-admin/applications' },

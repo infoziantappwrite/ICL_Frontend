@@ -19,7 +19,8 @@ import {
   AlertCircle,
   TrendingUp,
   Target,
-  GraduationCap
+  GraduationCap,
+  Home
 } from 'lucide-react';
 
 const JobDetail = () => {
@@ -101,13 +102,24 @@ const JobDetail = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <button
-            onClick={() => navigate('/dashboard/student/jobs')}
-            className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Jobs
-          </button>
+          {/* Navigation */}
+          <div className="mb-6 flex items-center gap-4">
+            <button
+              onClick={() => navigate('/dashboard/student/jobs')}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Jobs
+            </button>
+            <span className="text-gray-400">|</span>
+            <button
+              onClick={() => navigate('/dashboard/student')}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <Home className="w-5 h-5" />
+              Dashboard
+            </button>
+          </div>
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <p className="text-red-800 text-lg">{error || 'Job not found'}</p>
           </div>
@@ -123,14 +135,24 @@ const JobDetail = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/dashboard/student/jobs')}
-          className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Jobs
-        </button>
+        {/* Navigation Bar */}
+        <div className="mb-6 flex items-center gap-4">
+          <button
+            onClick={() => navigate('/dashboard/student/jobs')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back to Jobs
+          </button>
+          <span className="text-gray-400">|</span>
+          <button
+            onClick={() => navigate('/dashboard/student')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
+          >
+            <Home className="w-5 h-5" />
+            Dashboard
+          </button>
+        </div>
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">

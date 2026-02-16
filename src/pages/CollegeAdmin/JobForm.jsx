@@ -1,4 +1,4 @@
-// src/pages/CollegeAdmin/JobForm.jsx
+// src/pages/CollegeAdmin/JobForm.jsx - FIXED TO MATCH BACKEND SCHEMA
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -31,28 +31,35 @@ const JobForm = () => {
   const [success, setSuccess] = useState(false);
   const [companies, setCompanies] = useState([]);
 
-  const [formData, setFormData] = useState({
-    // Basic Info
+  // FIXED: Match backend schema exactly
+  const defaultFormData = {
+    // Basic Info - MATCHES BACKEND
     jobCode: '',
     jobTitle: '',
     jobType: 'Full-Time',
-    jobRole: '',
+    jobRole: 'Software Engineer',
     companyId: '',
     
     // Description
     description: '',
     responsibilities: [''],
     requirements: [''],
+    preferredSkills: [],
     
-    // Package
+    // Package - MATCHES BACKEND
     package: {
-      ctc: { min: '', max: '' },
-      stipend: { amount: '', duration: '' },
-      incentives: '',
-      bondDetails: ''
+      ctc: { 
+        min: '', 
+        max: '' 
+      },
+      fixedPay: '',
+      variablePay: '',
+      joiningBonus: '',
+      relocationAllowance: '',
+      otherBenefits: ''
     },
     
-    // Locations
+    // Locations - MATCHES BACKEND
     locations: [{
       city: '',
       state: '',
@@ -60,27 +67,52 @@ const JobForm = () => {
       workMode: 'On-site'
     }],
     
-    // Eligibility
-    eligibilityCriteria: {
+    // FIXED: Use 'eligibility' not 'eligibilityCriteria'
+    eligibility: {
+      branches: [],
+      batches: [],  // FIXED: Use batches array not batchYear
       minCGPA: '',
       maxBacklogs: '',
-      branches: [],
-      batchYear: new Date().getFullYear(),
-      degreeTypes: []
+      maxGapYears: '',
+      activeBacklogsAllowed: false,
+      tenthPercentage: '',
+      twelfthPercentage: ''
     },
     
-    // Dates
+    // Dates - MATCHES BACKEND
     dates: {
       applicationDeadline: '',
       interviewDate: '',
-      joiningDate: ''
+      resultDate: ''
     },
     
-    // Additional
-    documentsRequired: [],
-    selectionProcess: [''],
-    status: 'Draft'
-  });
+    // FIXED: selectionProcess is object with rounds array
+    selectionProcess: {
+      rounds: [{
+        name: 'Online Test',
+        description: '',
+        duration: ''
+      }],
+      totalRounds: 1
+    },
+    
+    // Documents - MATCHES BACKEND (object not array)
+    documentsRequired: {
+      resume: true,
+      coverLetter: false,
+      marksheets: true,
+      certificates: false,
+      other: ''
+    },
+    
+    // Status
+    status: 'Draft',
+    isPinned: false,
+    tags: [],
+    notes: ''
+  };
+
+  const [formData, setFormData] = useState(defaultFormData);
 
   useEffect(() => {
     fetchCompanies();
@@ -100,14 +132,59 @@ const JobForm = () => {
     }
   };
 
+  // FIXED: Properly merge API data with defaults
   const fetchJobDetails = async () => {
     try {
       setLoading(true);
       const response = await jobAPI.getJobById(jobId);
-      if (response.success) {
-        setFormData(response.job);
+      
+      if (response.success && response.job) {
+        const job = response.job;
+        console.log('Fetched job:', job);
+        
+        setFormData({
+          ...defaultFormData,
+          ...job,
+          // Ensure nested objects are properly merged
+          package: {
+            ...defaultFormData.package,
+            ...(job.package || {}),
+            ctc: {
+              min: job.package?.ctc?.min || '',
+              max: job.package?.ctc?.max || ''
+            }
+          },
+          eligibility: {
+            ...defaultFormData.eligibility,
+            ...(job.eligibility || {}),
+            branches: job.eligibility?.branches || [],
+            batches: job.eligibility?.batches || []
+          },
+          dates: {
+            ...defaultFormData.dates,
+            ...(job.dates || {}),
+            applicationDeadline: job.dates?.applicationDeadline?.split('T')[0] || '',
+            interviewDate: job.dates?.interviewDate?.split('T')[0] || '',
+            resultDate: job.dates?.resultDate?.split('T')[0] || ''
+          },
+          locations: job.locations?.length > 0 ? job.locations : defaultFormData.locations,
+          responsibilities: job.responsibilities?.length > 0 ? job.responsibilities : [''],
+          requirements: job.requirements?.length > 0 ? job.requirements : [''],
+          preferredSkills: job.preferredSkills || [],
+          selectionProcess: {
+            rounds: job.selectionProcess?.rounds?.length > 0 
+              ? job.selectionProcess.rounds 
+              : defaultFormData.selectionProcess.rounds,
+            totalRounds: job.selectionProcess?.totalRounds || 1
+          },
+          documentsRequired: {
+            ...defaultFormData.documentsRequired,
+            ...(job.documentsRequired || {})
+          }
+        });
       }
     } catch (err) {
+      console.error('Error fetching job details:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -121,10 +198,18 @@ const JobForm = () => {
     setSuccess(false);
 
     try {
+      // Prepare data for backend
       const submitData = {
         ...formData,
-        status: saveAs || formData.status
+        status: saveAs || formData.status,
+        // Update totalRounds
+        selectionProcess: {
+          ...formData.selectionProcess,
+          totalRounds: formData.selectionProcess.rounds.length
+        }
       };
+
+      console.log('Submitting job data:', submitData);
 
       let response;
       if (isEditMode) {
@@ -140,6 +225,7 @@ const JobForm = () => {
         }, 1500);
       }
     } catch (err) {
+      console.error('Submit error:', err);
       setError(err.message);
     } finally {
       setSaving(false);
@@ -154,6 +240,19 @@ const JobForm = () => {
     setFormData({
       ...formData,
       [parent]: { ...formData[parent], [field]: value }
+    });
+  };
+
+  const updateDoubleNestedField = (parent, child, field, value) => {
+    setFormData({
+      ...formData,
+      [parent]: {
+        ...formData[parent],
+        [child]: {
+          ...formData[parent][child],
+          [field]: value
+        }
+      }
     });
   };
 
@@ -177,6 +276,41 @@ const JobForm = () => {
     });
   };
 
+  const addSelectionRound = () => {
+    setFormData({
+      ...formData,
+      selectionProcess: {
+        ...formData.selectionProcess,
+        rounds: [
+          ...formData.selectionProcess.rounds,
+          { name: 'Online Test', description: '', duration: '' }
+        ]
+      }
+    });
+  };
+
+  const updateSelectionRound = (index, field, value) => {
+    const newRounds = [...formData.selectionProcess.rounds];
+    newRounds[index] = { ...newRounds[index], [field]: value };
+    setFormData({
+      ...formData,
+      selectionProcess: {
+        ...formData.selectionProcess,
+        rounds: newRounds
+      }
+    });
+  };
+
+  const removeSelectionRound = (index) => {
+    setFormData({
+      ...formData,
+      selectionProcess: {
+        ...formData.selectionProcess,
+        rounds: formData.selectionProcess.rounds.filter((_, i) => i !== index)
+      }
+    });
+  };
+
   const addLocation = () => {
     addArrayItem('locations', {
       city: '',
@@ -192,6 +326,34 @@ const JobForm = () => {
     setFormData({ ...formData, locations: newLocations });
   };
 
+  const toggleBranch = (branch) => {
+    const branches = formData.eligibility.branches.includes(branch)
+      ? formData.eligibility.branches.filter(b => b !== branch)
+      : [...formData.eligibility.branches, branch];
+    
+    setFormData({
+      ...formData,
+      eligibility: {
+        ...formData.eligibility,
+        branches
+      }
+    });
+  };
+
+  const toggleBatch = (batch) => {
+    const batches = formData.eligibility.batches.includes(batch)
+      ? formData.eligibility.batches.filter(b => b !== batch)
+      : [...formData.eligibility.batches, batch];
+    
+    setFormData({
+      ...formData,
+      eligibility: {
+        ...formData.eligibility,
+        batches
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
@@ -199,6 +361,10 @@ const JobForm = () => {
       </div>
     );
   }
+
+  const branches = ['CSE', 'IT', 'ECE', 'EEE', 'MECH', 'CIVIL', 'Other'];
+  const batches = ['2024', '2025', '2026', '2027', '2028'];
+  const roundTypes = ['Online Test', 'Technical Interview', 'HR Interview', 'Group Discussion', 'Case Study', 'Other'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
@@ -230,7 +396,7 @@ const JobForm = () => {
           <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
             <CheckCircle className="w-6 h-6 text-green-600" />
             <p className="text-green-800 font-medium">
-              Job description {isEditMode ? 'updated' : 'created'} successfully! Redirecting...
+              Job {isEditMode ? 'updated' : 'created'} successfully! Redirecting...
             </p>
           </div>
         )}
@@ -249,10 +415,9 @@ const JobForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormInput
                 label="Job Code"
-                placeholder="JD-2024-001"
+                placeholder="Auto-generated if left empty"
                 value={formData.jobCode}
                 onChange={(e) => updateField('jobCode', e.target.value)}
-                required
               />
               <FormInput
                 label="Job Title"
@@ -269,7 +434,7 @@ const JobForm = () => {
                   { value: '', label: 'Select Company' },
                   ...companies.map(company => ({
                     value: company._id,
-                    label: company.displayName || company.name
+                    label: company.name
                   }))
                 ]}
                 required
@@ -290,13 +455,16 @@ const JobForm = () => {
                 value={formData.jobRole}
                 onChange={(e) => updateField('jobRole', e.target.value)}
                 options={[
-                  { value: '', label: 'Select Role' },
                   { value: 'Software Engineer', label: 'Software Engineer' },
                   { value: 'Data Analyst', label: 'Data Analyst' },
+                  { value: 'Business Analyst', label: 'Business Analyst' },
+                  { value: 'Product Manager', label: 'Product Manager' },
+                  { value: 'DevOps Engineer', label: 'DevOps Engineer' },
+                  { value: 'Quality Assurance', label: 'Quality Assurance' },
                   { value: 'Frontend Developer', label: 'Frontend Developer' },
                   { value: 'Backend Developer', label: 'Backend Developer' },
                   { value: 'Full Stack Developer', label: 'Full Stack Developer' },
-                  { value: 'Product Manager', label: 'Product Manager' },
+                  { value: 'UI/UX Designer', label: 'UI/UX Designer' },
                   { value: 'Other', label: 'Other' }
                 ]}
                 required
@@ -324,15 +492,17 @@ const JobForm = () => {
                     value={resp}
                     onChange={(e) => updateArrayItem('responsibilities', index, e.target.value)}
                     placeholder="Enter responsibility"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeArrayItem('responsibilities', index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  {formData.responsibilities.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem('responsibilities', index)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               ))}
               <button
@@ -357,15 +527,17 @@ const JobForm = () => {
                     value={req}
                     onChange={(e) => updateArrayItem('requirements', index, e.target.value)}
                     placeholder="Enter requirement"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeArrayItem('requirements', index)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  {formData.requirements.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem('requirements', index)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               ))}
               <button
@@ -388,10 +560,7 @@ const JobForm = () => {
                 step="0.1"
                 placeholder="5.0"
                 value={formData.package.ctc.min}
-                onChange={(e) => updateNestedField('package', 'ctc', {
-                  ...formData.package.ctc,
-                  min: e.target.value
-                })}
+                onChange={(e) => updateDoubleNestedField('package', 'ctc', 'min', e.target.value)}
                 required
               />
               <FormInput
@@ -400,50 +569,45 @@ const JobForm = () => {
                 step="0.1"
                 placeholder="8.0"
                 value={formData.package.ctc.max}
-                onChange={(e) => updateNestedField('package', 'ctc', {
-                  ...formData.package.ctc,
-                  max: e.target.value
-                })}
+                onChange={(e) => updateDoubleNestedField('package', 'ctc', 'max', e.target.value)}
+              />
+              <FormInput
+                label="Fixed Pay (LPA)"
+                type="number"
+                step="0.1"
+                placeholder="6.0"
+                value={formData.package.fixedPay}
+                onChange={(e) => updateNestedField('package', 'fixedPay', e.target.value)}
+              />
+              <FormInput
+                label="Variable Pay (LPA)"
+                type="number"
+                step="0.1"
+                placeholder="2.0"
+                value={formData.package.variablePay}
+                onChange={(e) => updateNestedField('package', 'variablePay', e.target.value)}
+              />
+              <FormInput
+                label="Joining Bonus"
+                type="number"
+                placeholder="50000"
+                value={formData.package.joiningBonus}
+                onChange={(e) => updateNestedField('package', 'joiningBonus', e.target.value)}
+              />
+              <FormInput
+                label="Relocation Allowance"
+                type="number"
+                placeholder="25000"
+                value={formData.package.relocationAllowance}
+                onChange={(e) => updateNestedField('package', 'relocationAllowance', e.target.value)}
               />
             </div>
 
-            {formData.jobType.includes('Internship') && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormInput
-                  label="Stipend Amount (₹)"
-                  type="number"
-                  placeholder="15000"
-                  value={formData.package.stipend.amount}
-                  onChange={(e) => updateNestedField('package', 'stipend', {
-                    ...formData.package.stipend,
-                    amount: e.target.value
-                  })}
-                />
-                <FormInput
-                  label="Stipend Duration"
-                  placeholder="per month"
-                  value={formData.package.stipend.duration}
-                  onChange={(e) => updateNestedField('package', 'stipend', {
-                    ...formData.package.stipend,
-                    duration: e.target.value
-                  })}
-                />
-              </div>
-            )}
-
             <FormTextArea
-              label="Incentives & Bonuses"
-              placeholder="Performance bonuses, joining bonus, etc."
-              value={formData.package.incentives}
-              onChange={(e) => updateNestedField('package', 'incentives', e.target.value)}
-              rows={2}
-            />
-
-            <FormTextArea
-              label="Bond Details"
-              placeholder="Service agreement details, if any"
-              value={formData.package.bondDetails}
-              onChange={(e) => updateNestedField('package', 'bondDetails', e.target.value)}
+              label="Other Benefits"
+              placeholder="Health insurance, meal vouchers, etc."
+              value={formData.package.otherBenefits}
+              onChange={(e) => updateNestedField('package', 'otherBenefits', e.target.value)}
               rows={2}
             />
           </Section>
@@ -512,51 +676,107 @@ const JobForm = () => {
 
           {/* Eligibility Criteria */}
           <Section title="Eligibility Criteria" icon={<GraduationCap className="w-6 h-6" />}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormInput
                 label="Minimum CGPA"
                 type="number"
                 step="0.01"
+                min="0"
+                max="10"
                 placeholder="7.5"
-                value={formData.eligibilityCriteria.minCGPA}
-                onChange={(e) => updateNestedField('eligibilityCriteria', 'minCGPA', e.target.value)}
+                value={formData.eligibility.minCGPA}
+                onChange={(e) => updateNestedField('eligibility', 'minCGPA', e.target.value)}
               />
               <FormInput
                 label="Maximum Backlogs"
                 type="number"
+                min="0"
                 placeholder="0"
-                value={formData.eligibilityCriteria.maxBacklogs}
-                onChange={(e) => updateNestedField('eligibilityCriteria', 'maxBacklogs', e.target.value)}
+                value={formData.eligibility.maxBacklogs}
+                onChange={(e) => updateNestedField('eligibility', 'maxBacklogs', e.target.value)}
               />
               <FormInput
-                label="Batch Year"
+                label="Maximum Gap Years"
                 type="number"
-                placeholder="2024"
-                value={formData.eligibilityCriteria.batchYear}
-                onChange={(e) => updateNestedField('eligibilityCriteria', 'batchYear', e.target.value)}
+                min="0"
+                placeholder="0"
+                value={formData.eligibility.maxGapYears}
+                onChange={(e) => updateNestedField('eligibility', 'maxGapYears', e.target.value)}
+              />
+              <FormInput
+                label="10th Percentage"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="60"
+                value={formData.eligibility.tenthPercentage}
+                onChange={(e) => updateNestedField('eligibility', 'tenthPercentage', e.target.value)}
+              />
+              <FormInput
+                label="12th Percentage"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder="60"
+                value={formData.eligibility.twelfthPercentage}
+                onChange={(e) => updateNestedField('eligibility', 'twelfthPercentage', e.target.value)}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Eligible Branches
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <input
+                  type="checkbox"
+                  checked={formData.eligibility.activeBacklogsAllowed}
+                  onChange={(e) => updateNestedField('eligibility', 'activeBacklogsAllowed', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                Allow Active Backlogs
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {['CSE', 'ECE', 'EEE', 'MECH', 'IT', 'CIVIL'].map(branch => (
-                  <label key={branch} className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.eligibilityCriteria.branches.includes(branch)}
-                      onChange={(e) => {
-                        const branches = e.target.checked
-                          ? [...formData.eligibilityCriteria.branches, branch]
-                          : formData.eligibilityCriteria.branches.filter(b => b !== branch);
-                        updateNestedField('eligibilityCriteria', 'branches', branches);
-                      }}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-gray-700">{branch}</span>
-                  </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Eligible Branches *
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {branches.map(branch => (
+                  <button
+                    key={branch}
+                    type="button"
+                    onClick={() => toggleBranch(branch)}
+                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                      formData.eligibility.branches.includes(branch)
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-gray-300 text-gray-700 hover:border-blue-400'
+                    }`}
+                  >
+                    {branch}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Eligible Batches *
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {batches.map(batch => (
+                  <button
+                    key={batch}
+                    type="button"
+                    onClick={() => toggleBatch(batch)}
+                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                      formData.eligibility.batches.includes(batch)
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'border-gray-300 text-gray-700 hover:border-blue-400'
+                    }`}
+                  >
+                    {batch}
+                  </button>
                 ))}
               </div>
             </div>
@@ -568,53 +788,122 @@ const JobForm = () => {
               <FormInput
                 label="Application Deadline"
                 type="date"
-                value={formData.dates.applicationDeadline?.split('T')[0]}
+                value={formData.dates.applicationDeadline}
                 onChange={(e) => updateNestedField('dates', 'applicationDeadline', e.target.value)}
                 required
               />
               <FormInput
                 label="Interview Date"
                 type="date"
-                value={formData.dates.interviewDate?.split('T')[0]}
+                value={formData.dates.interviewDate}
                 onChange={(e) => updateNestedField('dates', 'interviewDate', e.target.value)}
               />
               <FormInput
-                label="Joining Date"
+                label="Result Date"
                 type="date"
-                value={formData.dates.joiningDate?.split('T')[0]}
-                onChange={(e) => updateNestedField('dates', 'joiningDate', e.target.value)}
+                value={formData.dates.resultDate}
+                onChange={(e) => updateNestedField('dates', 'resultDate', e.target.value)}
               />
             </div>
           </Section>
 
           {/* Selection Process */}
           <Section title="Selection Process" icon={<Users className="w-6 h-6" />}>
-            {formData.selectionProcess.map((step, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  value={step}
-                  onChange={(e) => updateArrayItem('selectionProcess', index, e.target.value)}
-                  placeholder="e.g., Online Assessment, Technical Interview"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeArrayItem('selectionProcess', index)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+            {formData.selectionProcess.rounds.map((round, index) => (
+              <div key={index} className="border-2 border-gray-200 rounded-xl p-4 mb-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-semibold text-gray-900">Round {index + 1}</h4>
+                  {formData.selectionProcess.rounds.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeSelectionRound(index)}
+                      className="text-red-600 hover:bg-red-50 p-2 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <FormSelect
+                    label="Round Type"
+                    value={round.name}
+                    onChange={(e) => updateSelectionRound(index, 'name', e.target.value)}
+                    options={roundTypes.map(type => ({ value: type, label: type }))}
+                  />
+                  <FormInput
+                    label="Duration"
+                    placeholder="60 minutes"
+                    value={round.duration}
+                    onChange={(e) => updateSelectionRound(index, 'duration', e.target.value)}
+                  />
+                  <div className="md:col-span-3">
+                    <FormTextArea
+                      label="Description"
+                      placeholder="Describe this round..."
+                      value={round.description}
+                      onChange={(e) => updateSelectionRound(index, 'description', e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                </div>
               </div>
             ))}
             <button
               type="button"
-              onClick={() => addArrayItem('selectionProcess', '')}
+              onClick={addSelectionRound}
               className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
             >
               <Plus className="w-4 h-4" />
-              Add Step
+              Add Selection Round
             </button>
+          </Section>
+
+          {/* Documents Required */}
+          <Section title="Documents Required" icon={<FileText className="w-6 h-6" />}>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.documentsRequired.resume}
+                  onChange={(e) => updateNestedField('documentsRequired', 'resume', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Resume</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.documentsRequired.coverLetter}
+                  onChange={(e) => updateNestedField('documentsRequired', 'coverLetter', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Cover Letter</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.documentsRequired.marksheets}
+                  onChange={(e) => updateNestedField('documentsRequired', 'marksheets', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Marksheets</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={formData.documentsRequired.certificates}
+                  onChange={(e) => updateNestedField('documentsRequired', 'certificates', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Certificates</span>
+              </label>
+              <FormInput
+                label="Other Documents"
+                placeholder="Any other documents needed..."
+                value={formData.documentsRequired.other}
+                onChange={(e) => updateNestedField('documentsRequired', 'other', e.target.value)}
+              />
+            </div>
           </Section>
 
           {/* Action Buttons */}
@@ -623,7 +912,7 @@ const JobForm = () => {
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/college-admin/jobs')}
-                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium"
               >
                 <X className="w-5 h-5" />
                 Cancel
@@ -632,7 +921,7 @@ const JobForm = () => {
                 type="button"
                 onClick={(e) => handleSubmit(e, 'Draft')}
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-colors font-medium disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 font-medium disabled:opacity-50"
               >
                 <FileText className="w-5 h-5" />
                 Save as Draft
@@ -640,7 +929,7 @@ const JobForm = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl font-medium disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg font-medium disabled:opacity-50"
               >
                 <Save className="w-5 h-5" />
                 {saving ? 'Saving...' : (isEditMode ? 'Update Job' : 'Publish Job')}

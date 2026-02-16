@@ -29,9 +29,13 @@ import CollegeAdminCompanyList from './pages/CollegeAdmin/CompanyList';
 import CollegeAdminCompanyForm from './pages/CollegeAdmin/CompanyForm';
 import CollegeAdminCompanyDetail from './pages/CollegeAdmin/CompanyDetail';
 import CollegeAdminApplicationManagement from './pages/CollegeAdmin/ApplicationManagement';
+import CollegeAdminAnalytics from './pages/CollegeAdmin/Analytics';
 
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
+import SuperAdminCollegeManagement from './pages/SuperAdmin/CollegeManagement';
+import SuperAdminCollegeForm from './pages/SuperAdmin/CollegeForm';
+import SuperAdminCollegeDetail from './pages/SuperAdmin/CollegeDetail';
 import SuperAdminCompanyManagement from './pages/SuperAdmin/CompanyManagement';
 import SuperAdminCompanyForm from './pages/SuperAdmin/CompanyForm';
 import SuperAdminCompanyDetail from './pages/SuperAdmin/CompanyDetail';
@@ -193,12 +197,58 @@ function App() {
               }
             />
 
+            <Route
+              path="/dashboard/college-admin/analytics"
+              element={
+                <ProtectedRoute>
+                  <CollegeAdminAnalytics />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ==================== SUPER ADMIN ROUTES ==================== */}
             <Route
               path="/dashboard/super-admin"
               element={
                 <ProtectedRoute>
                   <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* College Management Routes */}
+            <Route
+              path="/dashboard/super-admin/colleges"
+              element={
+                <ProtectedRoute>
+                  <SuperAdminCollegeManagement />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/super-admin/colleges/new"
+              element={
+                <ProtectedRoute>
+                  <SuperAdminCollegeForm />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/super-admin/colleges/:collegeId"
+              element={
+                <ProtectedRoute>
+                  <SuperAdminCollegeDetail />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/super-admin/colleges/:collegeId/edit"
+              element={
+                <ProtectedRoute>
+                  <SuperAdminCollegeForm />
                 </ProtectedRoute>
               }
             />

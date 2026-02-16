@@ -14,6 +14,7 @@ import {
   TrendingUp,
   UserCheck,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
@@ -24,23 +25,41 @@ const SuperAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [recentColleges, setRecentColleges] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
     try {
+      setLoading(true);
       const response = await fetch('http://localhost:5000/api/super-admin/dashboard', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
         },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
 
       if (data.success) {
         setStats(data.data?.stats || {});
         setRecentColleges(data.data?.recentColleges || []);
+        setLastUpdated(new Date());
+      } else {
+        console.error('Failed to fetch dashboard data:', data.message);
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -73,8 +92,21 @@ const SuperAdminDashboard = () => {
             <div className="text-white">
               <h1 className="text-3xl font-bold mb-2">Welcome, Super Admin! 👋</h1>
               <p className="text-blue-100 text-lg">Platform-wide overview and management</p>
+              <p className="text-blue-200 text-sm mt-2 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-4">
+              <button
+                onClick={fetchDashboardData}
+                disabled={loading}
+                className="flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-medium hover:bg-white/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh data"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
               <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                 <Award className="w-12 h-12 text-white" />
               </div>

@@ -1,9 +1,12 @@
-// src/App.jsx - COMPLETE FIXED VERSION
+// src/App.jsx - COMPLETE FIXED VERSION WITH SEPARATE NOTIFICATIONS & SETTINGS
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/Profilecontext';
 import ProtectedRoute from './components/ProtectedRoutes';
 import RoleBasedRedirect from './components/RoleBasedRedirect';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { useEffect } from 'react';
 
 // ==================== AUTH PAGES ====================
 import Login from './pages/Login';
@@ -30,6 +33,8 @@ import CollegeAdminCompanyForm from './pages/CollegeAdmin/CompanyForm';
 import CollegeAdminCompanyDetail from './pages/CollegeAdmin/CompanyDetail';
 import CollegeAdminApplicationManagement from './pages/CollegeAdmin/ApplicationManagement';
 import CollegeAdminAnalytics from './pages/CollegeAdmin/Analytics';
+import CollegeAdminNotifications from './pages/CollegeAdmin/Notification';
+import CollegeAdminSettings from './pages/CollegeAdmin/Settings';
 
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
@@ -45,6 +50,45 @@ import SuperAdminAdminDetail from './pages/SuperAdmin/AdminDetail';
 import SuperAdminApplicationManagement from './pages/SuperAdmin/ApplicationManagement';
 import SuperAdminApplicationDetail from './pages/SuperAdmin/ApplicationDetail';
 import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
+import SuperAdminNotifications from './pages/SuperAdmin/Notification';
+import SuperAdminSettings from './pages/SuperAdmin/Settings';
+
+// Role-based redirect components for generic routes
+const RoleBasedNotifications = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.role === 'super_admin') {
+      navigate('/dashboard/super-admin/notifications', { replace: true });
+    } else if (user?.role === 'college_admin') {
+      navigate('/dashboard/college-admin/notifications', { replace: true });
+    } else {
+      // For students, redirect to college-admin as fallback
+      navigate('/dashboard/college-admin/notifications', { replace: true });
+    }
+  }, [user, navigate]);
+
+  return null;
+};
+
+const RoleBasedSettings = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.role === 'super_admin') {
+      navigate('/dashboard/super-admin/settings', { replace: true });
+    } else if (user?.role === 'college_admin') {
+      navigate('/dashboard/college-admin/settings', { replace: true });
+    } else {
+      // For students, redirect to college-admin as fallback
+      navigate('/dashboard/college-admin/settings', { replace: true });
+    }
+  }, [user, navigate]);
+
+  return null;
+};
 
 function App() {
   return (
@@ -206,6 +250,25 @@ function App() {
               }
             />
 
+            {/* College Admin Notifications & Settings */}
+            <Route
+              path="/dashboard/college-admin/notifications"
+              element={
+                <ProtectedRoute>
+                  <CollegeAdminNotifications />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/college-admin/settings"
+              element={
+                <ProtectedRoute>
+                  <CollegeAdminSettings />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ==================== SUPER ADMIN ROUTES ==================== */}
             <Route
               path="/dashboard/super-admin"
@@ -352,6 +415,25 @@ function App() {
               }
             />
 
+            {/* Super Admin Notifications & Settings */}
+            <Route
+              path="/dashboard/super-admin/notifications"
+              element={
+                <ProtectedRoute>
+                  <SuperAdminNotifications />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/super-admin/settings"
+              element={
+                <ProtectedRoute>
+                  <SuperAdminSettings />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ==================== PROFILE ROUTES (All Roles) ==================== */}
             <Route
               path="/profile/edit"
@@ -367,6 +449,27 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyProfile />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ==================== SHARED FALLBACK ROUTES ==================== */}
+            {/* Generic notifications route - redirects based on role */}
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedNotifications />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Generic settings route - redirects based on role */}
+            <Route
+              path="/profile/settings"
+              element={
+                <ProtectedRoute>
+                  <RoleBasedSettings />
                 </ProtectedRoute>
               }
             />

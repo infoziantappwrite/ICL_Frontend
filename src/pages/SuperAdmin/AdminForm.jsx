@@ -1,4 +1,4 @@
-// pages/SuperAdmin/AdminForm.jsx
+// pages/SuperAdmin/AdminForm.jsx - FINAL WORKING VERSION
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -15,18 +15,18 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-
+ 
 const AdminForm = () => {
   const navigate = useNavigate();
   const { adminId } = useParams();
   const isEditMode = !!adminId;
-
+ 
   const [loading, setLoading] = useState(isEditMode);
   const [saving, setSaving] = useState(false);
   const [colleges, setColleges] = useState([]);
   const [loadingColleges, setLoadingColleges] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  
+ 
   const [formData, setFormData] = useState({
     collegeId: '',
     fullName: '',
@@ -36,9 +36,9 @@ const AdminForm = () => {
     confirmPassword: '',
     isActive: true,
   });
-
+ 
   const [errors, setErrors] = useState({});
-
+ 
   useEffect(() => {
     fetchColleges();
     if (isEditMode) {
@@ -47,7 +47,7 @@ const AdminForm = () => {
       setLoading(false);
     }
   }, [adminId]);
-
+ 
   const fetchColleges = async () => {
     try {
       setLoadingColleges(true);
@@ -57,7 +57,7 @@ const AdminForm = () => {
         }
       });
       const data = await response.json();
-      
+     
       if (data.success) {
         setColleges(data.colleges || []);
       }
@@ -67,7 +67,7 @@ const AdminForm = () => {
       setLoadingColleges(false);
     }
   };
-
+ 
   const fetchAdminData = async () => {
     try {
       setLoading(true);
@@ -77,7 +77,7 @@ const AdminForm = () => {
         }
       });
       const data = await response.json();
-      
+     
       if (data.success) {
         setFormData({
           collegeId: data.admin.collegeId?._id || data.admin.collegeId || '',
@@ -96,51 +96,54 @@ const AdminForm = () => {
       setLoading(false);
     }
   };
-
+ 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+   
+    console.log('Input changed:', name, '=', value); // DEBUG LOG
+   
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    // Clear error for this field
+   
     if (errors[name]) {
       setErrors(prev => ({...prev, [name]: ''}));
     }
   };
-
+ 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+ 
+    const trimmedFullName = (formData.fullName || '').trim();
+    if (!trimmedFullName || trimmedFullName.length < 2) {
+      newErrors.fullName = 'Full name is required (at least 2 characters)';
     }
-
-    if (!formData.email.trim()) {
+ 
+    const trimmedEmail = (formData.email || '').trim();
+    if (!trimmedEmail) {
       newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
       newErrors.email = 'Email is invalid';
     }
-
+ 
     if (!formData.collegeId) {
       newErrors.collegeId = 'College is required';
     }
-
-    // Password validation only for create mode or if password is being changed
+ 
     if (!isEditMode) {
       if (!formData.password) {
         newErrors.password = 'Password is required';
       } else if (formData.password.length < 8) {
         newErrors.password = 'Password must be at least 8 characters';
       }
-
+ 
       if (!formData.confirmPassword) {
         newErrors.confirmPassword = 'Please confirm password';
       } else if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
     } else if (formData.password) {
-      // In edit mode, only validate if password is being changed
       if (formData.password.length < 8) {
         newErrors.password = 'Password must be at least 8 characters';
       }
@@ -148,69 +151,83 @@ const AdminForm = () => {
         newErrors.confirmPassword = 'Passwords do not match';
       }
     }
-
+ 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+ 
+    console.log('=== FORM SUBMIT ===');
+    console.log('formData:', formData);
+    console.log('fullName:', `"${formData.fullName}"`);
+    console.log('==================');
+ 
     if (!validateForm()) {
       alert('Please fix the errors in the form');
       return;
     }
-
+ 
     try {
       setSaving(true);
-
+ 
       if (isEditMode) {
-        // Update admin - Note: Backend doesn't have update endpoint yet
-        // This would need to be implemented in the backend
         alert('Admin update functionality needs to be implemented in the backend');
         navigate('/dashboard/super-admin/admins');
       } else {
-        // Create new admin
+        // FORCE trim and ensure not empty
+        const trimmedFullName = (formData.fullName || '').trim();
+       
+        if (!trimmedFullName || trimmedFullName.length < 2) {
+          alert('ERROR: Full name is empty! Please type your name.');
+          setSaving(false);
+          return;
+        }
+ 
+        const requestBody = {
+          fullName: trimmedFullName,
+          email: (formData.email || '').trim(),
+          phone: (formData.phone || '').trim(),
+          password: formData.password,
+          isActive: formData.isActive,
+        };
+ 
+        console.log('Sending:', requestBody);
+ 
         const response = await fetch(`http://localhost:5000/api/super-admin/colleges/${formData.collegeId}/admins`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           },
-          body: JSON.stringify({
-            fullName: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            password: formData.password,
-            role: 'college_admin',
-            isActive: formData.isActive,
-          })
+          body: JSON.stringify(requestBody)
         });
-
+ 
         const data = await response.json();
-
+        console.log('Response:', data);
+ 
         if (!response.ok) {
           throw new Error(data.message || 'Failed to create admin');
         }
-
+ 
         alert('Admin created successfully!');
         navigate('/dashboard/super-admin/admins');
       }
     } catch (error) {
-      console.error('Error saving admin:', error);
+      console.error('Error:', error);
       alert('Failed to save admin: ' + error.message);
     } finally {
       setSaving(false);
     }
   };
-
+ 
   if (loading || loadingColleges) {
     return <LoadingSpinner message={isEditMode ? "Loading Admin..." : "Loading Form..."} />;
   }
-
+ 
   return (
     <DashboardLayout title={isEditMode ? "Edit Admin" : "Create Admin"}>
-      {/* Header */}
       <div className="mb-8">
         <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
           <div className="flex items-center justify-between">
@@ -226,8 +243,7 @@ const AdminForm = () => {
           </div>
         </div>
       </div>
-
-      {/* Form */}
+ 
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -240,12 +256,15 @@ const AdminForm = () => {
               <input
                 type="text"
                 name="fullName"
+                id="fullName"
                 value={formData.fullName}
                 onChange={handleInputChange}
+                autoComplete="off"
                 className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                   errors.fullName ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Enter full name"
+                required
               />
               {errors.fullName && (
                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -254,7 +273,7 @@ const AdminForm = () => {
                 </p>
               )}
             </div>
-
+ 
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -264,13 +283,16 @@ const AdminForm = () => {
               <input
                 type="email"
                 name="email"
+                id="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isEditMode}
+                autoComplete="off"
                 className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 } ${isEditMode ? 'bg-gray-100' : ''}`}
                 placeholder="Enter email address"
+                required
               />
               {errors.email && (
                 <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -279,7 +301,7 @@ const AdminForm = () => {
                 </p>
               )}
             </div>
-
+ 
             {/* Phone */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -289,13 +311,15 @@ const AdminForm = () => {
               <input
                 type="tel"
                 name="phone"
+                id="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
+                autoComplete="off"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Enter phone number"
               />
             </div>
-
+ 
             {/* College */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -304,15 +328,17 @@ const AdminForm = () => {
               </label>
               <select
                 name="collegeId"
+                id="collegeId"
                 value={formData.collegeId}
                 onChange={handleInputChange}
                 disabled={isEditMode}
                 className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                   errors.collegeId ? 'border-red-500' : 'border-gray-300'
                 } ${isEditMode ? 'bg-gray-100' : ''}`}
+                required
               >
                 <option value="">Select a college</option>
-                {colleges.map(college => (
+                {colleges.filter(c => c.isActive).map(college => (
                   <option key={college._id} value={college._id}>
                     {college.name} ({college.code})
                   </option>
@@ -325,7 +351,7 @@ const AdminForm = () => {
                 </p>
               )}
             </div>
-
+ 
             {/* Password */}
             {(!isEditMode || formData.password) && (
               <div>
@@ -337,12 +363,15 @@ const AdminForm = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
+                    id="password"
                     value={formData.password}
                     onChange={handleInputChange}
+                    autoComplete="new-password"
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12 ${
                       errors.password ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder={isEditMode ? 'Leave blank to keep current' : 'Enter password'}
+                    required={!isEditMode}
                   />
                   <button
                     type="button"
@@ -360,7 +389,7 @@ const AdminForm = () => {
                 )}
               </div>
             )}
-
+ 
             {/* Confirm Password */}
             {(!isEditMode || formData.password) && (
               <div>
@@ -371,12 +400,15 @@ const AdminForm = () => {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="confirmPassword"
+                  id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
+                  autoComplete="new-password"
                   className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
                     errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="Confirm password"
+                  required={!isEditMode}
                 />
                 {errors.confirmPassword && (
                   <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
@@ -387,7 +419,7 @@ const AdminForm = () => {
               </div>
             )}
           </div>
-
+ 
           {/* Active Status */}
           <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
             <input
@@ -402,7 +434,7 @@ const AdminForm = () => {
               Active (Admin can log in and access the system)
             </label>
           </div>
-
+ 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">
             <button
@@ -427,5 +459,6 @@ const AdminForm = () => {
     </DashboardLayout>
   );
 };
-
+ 
 export default AdminForm;
+ 

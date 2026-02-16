@@ -294,7 +294,7 @@ const JobManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-semibold text-gray-900">
-                        ₹{job.package?.min || 0} - ₹{job.package?.max || 0} LPA
+                        ₹{job.package?.ctc?.min || 0} - ₹{job.package?.ctc?.max || 0} LPA
                       </div>
                     </td>
                     <td className="px-6 py-4">

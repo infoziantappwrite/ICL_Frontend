@@ -84,7 +84,7 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
         { icon: Users, label: 'Admins', path: '/dashboard/super-admin/admins' },
         { icon: FileText, label: 'Applications', path: '/dashboard/super-admin/applications' },
         { icon: BarChart3, label: 'Analytics', path: '/dashboard/super-admin/analytics' },
-        { icon: Settings, label: 'Settings', path: '/dashboard/super-admin/settings' },
+        { icon: Settings, label: 'Settings', path: '/profile/settings' },
       ];
     }
 
@@ -96,7 +96,7 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
         { icon: FileText, label: 'Jobs', path: '/dashboard/college-admin/jobs' },
         { icon: Briefcase, label: 'Applications', path: '/dashboard/college-admin/applications' },
         { icon: Activity, label: 'Analytics', path: '/dashboard/college-admin/analytics' },
-        { icon: Settings, label: 'Settings', path: '/dashboard/college-admin/settings' },
+        { icon: Settings, label: 'Settings', path: '/profile/settings' },
       ];
     }
 
@@ -125,7 +125,7 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 overflow-x-hidden">
       {/* Enhanced Background Pattern - Matching Login Page */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 -left-20 w-96 h-96 bg-gradient-to-br from-cyan-200 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
@@ -135,7 +135,7 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
 
       {/* Header */}
       <header className="relative bg-white/90 backdrop-blur-xl border-b border-white/50 shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             {/* Logo & Sidebar Toggle */}
             <div className="flex items-center space-x-3">
@@ -301,7 +301,7 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
         </div>
       </header>
 
-      <div className="flex max-w-7xl mx-auto relative">
+      <div className="flex relative">
         {/* Sidebar */}
         {showSidebar && (
           <aside
@@ -346,7 +346,9 @@ const DashboardLayout = ({ children, title = "Dashboard", showSidebar = true }) 
 
         {/* Main Content */}
         <main className="flex-1 p-6 lg:p-8 relative min-w-0">
-          {children}
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
 

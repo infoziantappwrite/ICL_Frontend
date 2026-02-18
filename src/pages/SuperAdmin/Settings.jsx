@@ -1,4 +1,5 @@
 // pages/Settings.jsx - Comprehensive Settings & Preferences
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -34,6 +35,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 
 const Settings = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
@@ -113,9 +115,11 @@ const Settings = () => {
       // await userAPI.updateProfile(profileData);
       
       setSuccess('Profile updated successfully!');
+      toast.success('Success', 'Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Failed to update profile. Please try again.');
+      toast.error('Error', 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -129,12 +133,14 @@ const Settings = () => {
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setError('New passwords do not match!');
+      toast.error('Error', 'New passwords do not match!');
       setLoading(false);
       return;
     }
 
     if (passwordData.newPassword.length < 8) {
       setError('Password must be at least 8 characters long!');
+      toast.error('Error', 'Password must be at least 8 characters long!');
       setLoading(false);
       return;
     }
@@ -154,6 +160,7 @@ const Settings = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Failed to change password. Please check your current password.');
+      toast.error('Error', 'Failed to change password. Please check your current password.');
     } finally {
       setLoading(false);
     }
@@ -171,9 +178,11 @@ const Settings = () => {
       // await userAPI.updateNotificationSettings(notificationSettings);
       
       setSuccess('Notification preferences updated!');
+      toast.success('Success', 'Notification preferences updated!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Failed to update notification settings.');
+      toast.error('Error', 'Failed to update notification settings.');
     } finally {
       setLoading(false);
     }
@@ -191,9 +200,11 @@ const Settings = () => {
       // await userAPI.updatePrivacySettings(privacySettings);
       
       setSuccess('Privacy settings updated!');
+      toast.success('Success', 'Privacy settings updated!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Failed to update privacy settings.');
+      toast.error('Error', 'Failed to update privacy settings.');
     } finally {
       setLoading(false);
     }
@@ -223,9 +234,11 @@ const Settings = () => {
       a.click();
       
       setSuccess('Data exported successfully!');
+      toast.success('Success', 'Data exported successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError('Failed to export data.');
+      toast.error('Error', 'Failed to export data.');
     } finally {
       setLoading(false);
     }
@@ -247,11 +260,12 @@ const Settings = () => {
       // TODO: Replace with actual API call
       // await userAPI.deleteAccount();
       
-      alert('Account deleted successfully. You will be logged out.');
+      toast.success('Account Deleted', 'You have been logged out.');
       logout();
       navigate('/login');
     } catch (err) {
       setError('Failed to delete account. Please contact support.');
+      toast.error('Error', 'Failed to delete account. Please contact support.');
       setLoading(false);
     }
   };
@@ -847,7 +861,8 @@ const Settings = () => {
                   <button
                     onClick={() => {
                       setSuccess('Appearance settings saved!');
-                      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Success', 'Appearance settings saved!');
+      setTimeout(() => setSuccess(''), 3000);
                     }}
                     className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg"
                   >
@@ -912,7 +927,8 @@ const Settings = () => {
                               )
                             ) {
                               setSuccess('Logged out from all other devices!');
-                              setTimeout(() => setSuccess(''), 3000);
+      toast.success('Success', 'Logged out from all other devices!');
+      setTimeout(() => setSuccess(''), 3000);
                             }
                           }}
                           className="px-6 py-2.5 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium"

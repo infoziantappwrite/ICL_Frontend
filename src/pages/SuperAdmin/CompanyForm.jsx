@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CompanyForm.jsx - FIXED VERSION
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -19,6 +20,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI } from '../../api/Api';
 
 const CompanyForm = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { companyId } = useParams();
   const isEditMode = !!companyId;
@@ -107,7 +109,7 @@ const CompanyForm = () => {
       }
     } catch (error) {
       console.error('Error fetching company:', error);
-      alert('Failed to fetch company details: ' + error.message);
+      toast.error('Error', 'Failed to fetch company details: ' + error.message);
       navigate('/dashboard/super-admin/companies');
     } finally {
       setLoading(false);
@@ -159,7 +161,7 @@ const CompanyForm = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      alert('Please fix the errors in the form');
+      toast.error('Error', 'Please fix the errors in the form');
       return;
     }
 
@@ -185,16 +187,16 @@ const CompanyForm = () => {
       let response;
       if (isEditMode) {
         response = await companyAPI.updateCompany(companyId, companyData);
-        alert('Company updated successfully!');
+        toast.success('Success', 'Company updated successfully!');
       } else {
         response = await companyAPI.createCompany(companyData);
-        alert('Company created successfully!');
+        toast.success('Success', 'Company created successfully!');
       }
 
       navigate('/dashboard/super-admin/companies');
     } catch (error) {
       console.error('Error saving company:', error);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} company: ` + error.message);
+      toast.error('Error', `Failed to ${isEditMode ? 'update' : 'create'} company: ` + error.message);
     } finally {
       setSaving(false);
     }

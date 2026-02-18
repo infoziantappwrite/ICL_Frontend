@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeForm.jsx - Add/Edit College Form
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -19,6 +20,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const CollegeForm = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { collegeId } = useParams();
   const isEditMode = Boolean(collegeId);
@@ -93,7 +95,7 @@ const CollegeForm = () => {
       }
     } catch (error) {
       console.error('Error fetching college:', error);
-      alert('Error loading college data');
+      toast.error('Error', 'Error loading college data');
     } finally {
       setLoading(false);
     }
@@ -191,16 +193,14 @@ const CollegeForm = () => {
       console.log('📥 Backend response:', data);
 
       if (data.success) {
-        alert(
-          isEditMode ? 'College updated successfully!' : 'College created successfully!'
-        );
+        toast.success('Success', isEditMode ? 'College updated successfully!' : 'College created successfully!');
         navigate('/dashboard/super-admin/colleges');
       } else {
-        alert(data.message || 'Failed to save college');
+        toast.error('Error', data.message || 'Failed to save college');
       }
     } catch (error) {
       console.error('❌ Error saving college:', error);
-      alert('Error saving college');
+      toast.error('Error', 'Error saving college');
     } finally {
       setSubmitting(false);
     }

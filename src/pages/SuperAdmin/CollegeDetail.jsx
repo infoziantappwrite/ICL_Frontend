@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeDetail.jsx - View College Details
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -24,6 +25,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const CollegeDetail = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { collegeId } = useParams();
   const [college, setCollege] = useState(null);
@@ -53,7 +55,7 @@ const CollegeDetail = () => {
       }
     } catch (error) {
       console.error('Error fetching college:', error);
-      alert('Error loading college details');
+      toast.error('Error', 'Error loading college details');
     } finally {
       setLoading(false);
     }
@@ -81,14 +83,14 @@ const CollegeDetail = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('College deleted successfully');
+        toast.success('Success', 'College deleted successfully');
         navigate('/dashboard/super-admin/colleges');
       } else {
-        alert(data.message || 'Failed to delete college');
+        toast.error('Error', data.message || 'Failed to delete college');
       }
     } catch (error) {
       console.error('Error deleting college:', error);
-      alert('Error deleting college');
+      toast.error('Error', 'Error deleting college');
     }
   };
 

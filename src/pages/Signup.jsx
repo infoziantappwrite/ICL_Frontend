@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api/Api';
+import { useToast } from '../context/ToastContext';
 import {
   Mail,
   User,
@@ -18,6 +19,7 @@ import AuthFooter from '../components/auth/AuthFooter';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -90,16 +92,19 @@ const Signup = () => {
       });
 
       if (response.success) {
+        toast.success('Account Created!', 'Please verify your email to continue.');
         // Redirect to OTP verification page
         navigate('/verify-otp', {
           state: { email: formData.email.trim() }
         });
       } else {
         setErrors({ submit: response.message || 'Signup failed' });
+        toast.error('Signup Failed', response.message || 'Could not create account. Please try again.');
       }
 
     } catch (error) {
       setErrors({ submit: error.message || 'Signup failed' });
+      toast.error('Signup Failed', error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }

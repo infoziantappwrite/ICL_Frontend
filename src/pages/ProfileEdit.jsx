@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import {
   User,
   ArrowLeft,
@@ -33,6 +34,7 @@ const ProfileEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const toast = useToast();
   const { profile, updateProfile, fetchProfile, isLoading } = useProfile();
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -375,12 +377,14 @@ const ProfileEdit = () => {
       if (response.success) {
         if (redirectToDashboard) {
           setSuccessMessage('Profile saved successfully! Redirecting to dashboard...');
+          toast.success('Profile Saved!', 'Redirecting to your dashboard...');
           await fetchProfile();
           setTimeout(() => {
             navigate('/dashboard/student', { replace: true });
           }, 1500);
         } else {
           setSuccessMessage('Profile saved successfully! You can continue editing or go back to dashboard.');
+          toast.success('Profile Saved!', 'Your changes have been saved successfully.');
           await fetchProfile();
           // Clear the success message after 5 seconds
           setTimeout(() => {
@@ -389,9 +393,11 @@ const ProfileEdit = () => {
         }
       } else {
         setErrorMessage(response.message || 'Failed to save profile');
+        toast.error('Save Failed', response.message || 'Could not save your profile. Please try again.');
       }
     } catch (error) {
       setErrorMessage(error.message || 'Failed to save profile');
+      toast.error('Save Failed', error.message || 'Something went wrong. Please try again.');
       console.error('Error saving profile:', error);
     } finally {
       setSaving(false);

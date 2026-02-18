@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CompanyDetail.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -22,6 +23,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI } from '../../api/Api';
 
 const CompanyDetail = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { companyId } = useParams();
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const CompanyDetail = () => {
       }
     } catch (error) {
       console.error('Error fetching company details:', error);
-      alert('Failed to fetch company details: ' + error.message);
+      toast.error('Error', 'Failed to fetch company details: ' + error.message);
       navigate('/dashboard/super-admin/companies');
     } finally {
       setLoading(false);
@@ -55,22 +57,22 @@ const CompanyDetail = () => {
 
     try {
       await companyAPI.deleteCompany(companyId);
-      alert('Company deleted successfully');
+      toast.success('Success', 'Company deleted successfully');
       navigate('/dashboard/super-admin/companies');
     } catch (error) {
       console.error('Error deleting company:', error);
-      alert('Failed to delete company: ' + error.message);
+      toast.error('Error', 'Failed to delete company: ' + error.message);
     }
   };
 
   const handleToggleStatus = async () => {
     try {
       await companyAPI.toggleActiveStatus(companyId);
-      alert(`Company ${company.isActive ? 'deactivated' : 'activated'} successfully`);
+      toast.success('Success', `Company ${company.isActive ? 'deactivated' : 'activated'} successfully`);
       fetchCompanyDetails();
     } catch (error) {
       console.error('Error toggling status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
     }
   };
 

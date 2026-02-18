@@ -1,4 +1,5 @@
 // pages/CollegeAdmin/CompanyManagement.jsx - Redesigned with SuperAdmin UI
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,6 +18,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { collegeAdminAPI } from '../../api/Api';
 
 const CompanyManagement = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [companies, setCompanies] = useState([]);
@@ -43,7 +45,7 @@ const CompanyManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
-      alert('Failed to fetch companies: ' + error.message);
+      toast.error('Error', 'Failed to fetch companies: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -63,11 +65,11 @@ const CompanyManagement = () => {
 
     try {
       await collegeAdminAPI.deleteCompany(companyId);
-      alert('Company deleted successfully');
+      toast.success('Success', 'Company deleted successfully');
       fetchCompanies();
     } catch (error) {
       console.error('Error deleting company:', error);
-      alert('Failed to delete company: ' + error.message);
+      toast.error('Error', 'Failed to delete company: ' + error.message);
     }
   };
 
@@ -83,10 +85,10 @@ const CompanyManagement = () => {
       
       // Then make API call
       await collegeAdminAPI.updateCompany(companyId, { isActive: !currentStatus });
-      alert(`Company ${currentStatus ? 'deactivated' : 'activated'} successfully`);
+      toast.success('Success', `Company ${currentStatus ? 'deactivated' : 'activated'} successfully`);
     } catch (error) {
       console.error('Error toggling status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
       // Revert on error
       fetchCompanies();
     }

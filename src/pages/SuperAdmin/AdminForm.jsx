@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/AdminForm.jsx - FINAL WORKING VERSION
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -17,6 +18,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
  
 const AdminForm = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { adminId } = useParams();
   const isEditMode = !!adminId;
@@ -91,7 +93,7 @@ const AdminForm = () => {
       }
     } catch (error) {
       console.error('Error fetching admin:', error);
-      alert('Failed to fetch admin: ' + error.message);
+      toast.error('Error', 'Failed to fetch admin: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -165,7 +167,7 @@ const AdminForm = () => {
     console.log('==================');
  
     if (!validateForm()) {
-      alert('Please fix the errors in the form');
+      toast.error('Error', 'Please fix the errors in the form');
       return;
     }
  
@@ -173,14 +175,14 @@ const AdminForm = () => {
       setSaving(true);
  
       if (isEditMode) {
-        alert('Admin update functionality needs to be implemented in the backend');
+        toast.info('Notice', 'Admin update functionality needs to be implemented in the backend');
         navigate('/dashboard/super-admin/admins');
       } else {
         // FORCE trim and ensure not empty
         const trimmedFullName = (formData.fullName || '').trim();
        
         if (!trimmedFullName || trimmedFullName.length < 2) {
-          alert('ERROR: Full name is empty! Please type your name.');
+          toast.error('Error', 'ERROR: Full name is empty! Please type your name.');
           setSaving(false);
           return;
         }
@@ -211,12 +213,12 @@ const AdminForm = () => {
           throw new Error(data.message || 'Failed to create admin');
         }
  
-        alert('Admin created successfully!');
+        toast.success('Success', 'Admin created successfully!');
         navigate('/dashboard/super-admin/admins');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to save admin: ' + error.message);
+      toast.error('Error', 'Failed to save admin: ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -461,4 +463,3 @@ const AdminForm = () => {
 };
  
 export default AdminForm;
- 

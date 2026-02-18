@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeManagement.jsx - College Management Page
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +23,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const CollegeManagement = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [colleges, setColleges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,14 +110,14 @@ const CollegeManagement = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('College deleted successfully');
+        toast.success('Success', 'College deleted successfully');
         fetchColleges();
       } else {
-        alert(data.message || 'Failed to delete college');
+        toast.error('Error', data.message || 'Failed to delete college');
       }
     } catch (error) {
       console.error('Error deleting college:', error);
-      alert('Error deleting college');
+      toast.error('Error', 'Error deleting college');
     }
   };
 
@@ -144,14 +146,14 @@ const CollegeManagement = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert(`College ${action}d successfully`);
+        toast.success('Success', `College ${action}d successfully`);
         fetchColleges();
       } else {
-        alert(data.message || `Failed to ${action} college`);
+        toast.error('Error', data.message || `Failed to ${action} college`);
       }
     } catch (error) {
       console.error(`Error ${action}ing college:`, error);
-      alert(`Error ${action}ing college`);
+      toast.error('Error', `Error ${action}ing college`);
     }
   };
 

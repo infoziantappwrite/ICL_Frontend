@@ -16,7 +16,7 @@ const DocumentsForm = ({ formData, handleChange, files, handleFileChange }) => {
       <SectionHeader 
         icon={FileText} 
         title="Document Uploads & Communication"
-        iconBgColor="from-yellow-100 to-amber-100"
+        iconBgColor="from-blue-50 to-cyan-50"
         iconColor="text-yellow-600"
       />
       <p className="text-sm text-gray-600 mb-6 -mt-2">All fields are optional. Add documents when you're ready.</p>

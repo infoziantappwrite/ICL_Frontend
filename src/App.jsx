@@ -39,7 +39,7 @@ import CollegeAdminNotifications from './pages/CollegeAdmin/Notification';
 import CollegeAdminSettings from './pages/CollegeAdmin/Settings';
 // ⭐ Group Management → "Students" in sidebar for College Admin
 import GroupManagement from './pages/CollegeAdmin/GroupManagement';
-import StudentManagement from './pages/CollegeAdmin/StudentManagement';
+
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
 import SuperAdminCollegeManagement from './pages/SuperAdmin/CollegeManagement';

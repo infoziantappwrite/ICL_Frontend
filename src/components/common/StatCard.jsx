@@ -9,10 +9,10 @@ const StatsCard = ({
 }) => {
   const colorClasses = {
     blue:   'from-blue-600 to-cyan-600',
-    green:  'from-green-600 to-emerald-600',
-    purple: 'from-purple-600 to-pink-600',
-    orange: 'from-orange-500 to-red-500',
-    indigo: 'from-indigo-600 to-blue-600',
+    green:  'from-blue-500 to-cyan-600',
+    purple: 'from-blue-600 to-blue-800',
+    orange: 'from-slate-500 to-slate-600',
+    indigo: 'from-blue-600 to-cyan-500',
   };
 
   const trendColors = {

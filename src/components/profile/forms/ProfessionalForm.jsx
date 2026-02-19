@@ -22,7 +22,7 @@ const ProfessionalForm = ({ formData, handleChange }) => {
       <SectionHeader 
         icon={Briefcase} 
         title="Professional Details"
-        iconBgColor="from-green-100 to-teal-100"
+        iconBgColor="from-blue-50 to-cyan-50"
         iconColor="text-green-600"
       />
       <p className="text-sm text-gray-600 mb-6 -mt-2">All fields are optional. Share your professional background if applicable.</p>

@@ -44,13 +44,15 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
   };
 
   const getUserRole = () => {
+    const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
     const labels = { student: 'Student', college_admin: 'College Admin', super_admin: 'Super Admin' };
-    return labels[user?.role] || 'User';
+    return labels[role] || 'Student';
   };
 
   const getDashboardPath = () => {
+    const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
     const routes = { student: '/dashboard/student', college_admin: '/dashboard/college-admin', super_admin: '/dashboard/super-admin' };
-    return routes[user?.role] || '/dashboard';
+    return routes[role] || '/dashboard';
   };
 
   const getSidebarMenuItems = () => {
@@ -90,8 +92,8 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
       { icon: Briefcase,       label: 'Job Opportunities', path: '/dashboard/student/jobs' },
       { icon: User,            label: 'My Profile',        path: '/profile/my-info' },
       { icon: Edit,            label: 'Edit Profile',      path: '/profile/edit' },
-      { icon: Bell,            label: 'Notifications',     path: '/notifications' },
-      { icon: Settings,        label: 'Settings',          path: '/profile/settings' },
+      { icon: Bell,            label: 'Notifications',     path: '/dashboard/student/notifications' },
+      { icon: Settings,        label: 'Settings',          path: '/dashboard/student/settings' },
     ];
   };
 
@@ -105,9 +107,9 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
   };
 
   const roleGradient = {
-    super_admin: 'from-purple-600 via-purple-500 to-indigo-500',
+    super_admin: 'from-blue-700 via-blue-600 to-blue-700',
     college_admin: 'from-blue-600 via-blue-500 to-cyan-400',
-    student: 'from-green-600 via-emerald-500 to-teal-400',
+    student: 'from-blue-500 via-cyan-500 to-cyan-600',
   };
   const gradient = roleGradient[user?.role] || roleGradient.college_admin;
 

@@ -129,17 +129,17 @@ const Notifications = () => {
       green: {
         bg: 'bg-green-100',
         text: 'text-green-600',
-        gradient: 'from-green-500 to-green-600',
+        gradient: 'from-blue-500 to-cyan-600',
       },
       purple: {
         bg: 'bg-purple-100',
         text: 'text-purple-600',
-        gradient: 'from-purple-500 to-purple-600',
+        gradient: 'from-blue-600 to-blue-700',
       },
       orange: {
         bg: 'bg-orange-100',
         text: 'text-orange-600',
-        gradient: 'from-orange-500 to-orange-600',
+        gradient: 'from-slate-500 to-slate-600',
       },
       cyan: {
         bg: 'bg-cyan-100',
@@ -149,7 +149,7 @@ const Notifications = () => {
       indigo: {
         bg: 'bg-indigo-100',
         text: 'text-indigo-600',
-        gradient: 'from-indigo-500 to-indigo-600',
+        gradient: 'from-blue-500 to-cyan-500',
       },
     };
     return colors[color] || colors.blue;
@@ -280,7 +280,7 @@ const Notifications = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Unread</p>
               <p className="text-3xl font-bold text-orange-600">{unreadCount}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center shadow-lg">
               <BellOff className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -292,7 +292,7 @@ const Notifications = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Starred</p>
               <p className="text-3xl font-bold text-yellow-600">{starredCount}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <Star className="w-7 h-7 text-white" />
             </div>
           </div>

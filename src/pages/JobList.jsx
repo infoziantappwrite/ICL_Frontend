@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import {
   Briefcase,
   MapPin,
@@ -12,8 +13,7 @@ import {
   TrendingUp,
   Clock,
   Building2,
-  X,
-  ArrowLeft
+  X
 } from 'lucide-react';
 
 const JobList = () => {
@@ -113,17 +113,8 @@ const JobList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 py-8 px-4">
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto">
-        {/* Back to Dashboard Button */}
-        <button
-          onClick={() => navigate('/dashboard/student')}
-          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Dashboard
-        </button>
-
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
@@ -297,7 +288,7 @@ const JobList = () => {
           </>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -150,7 +150,7 @@ const CompanyManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Active</p>
               <p className="text-3xl font-bold text-green-600">{stats.active}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
               <ToggleRight className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -162,7 +162,7 @@ const CompanyManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Inactive</p>
               <p className="text-3xl font-bold text-red-600">{stats.inactive}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center shadow-lg">
               <ToggleLeft className="w-7 h-7 text-white" />
             </div>
           </div>

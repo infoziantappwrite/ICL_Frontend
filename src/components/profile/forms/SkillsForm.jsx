@@ -21,7 +21,7 @@ const SkillsForm = ({
       <SectionHeader 
         icon={Code} 
         title="Skills & Technical Background"
-        iconBgColor="from-orange-100 to-red-100"
+        iconBgColor="from-blue-50 to-cyan-50"
         iconColor="text-orange-600"
       />
       <p className="text-sm text-gray-600 mb-6 -mt-2">All skills are optional. Add the skills you have when ready.</p>

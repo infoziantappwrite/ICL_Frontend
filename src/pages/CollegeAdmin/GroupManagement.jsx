@@ -1,212 +1,232 @@
 // src/pages/CollegeAdmin/GroupManagement.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useToast } from '../../context/ToastContext';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import ExcelLikeGrid from '../../components/StudentGrid/ExcelLikeGrid';
-import axios from 'axios';
+import { groupAPI } from '../../api/groupAPI';
+import apiCall from '../../api/Api';
 import {
-  Users, Plus, Search, Edit2, Trash2, X, AlertCircle,
-  CheckCircle, UserCheck, Copy, Hash, Info, Calendar,
-  Crown, Star, Zap, ArrowRight, Mail,
+  Users, Plus, Search, Edit2, Trash2, X, CheckCircle,
+  UserCheck, Copy, Hash, Info, Calendar, Crown, Star,
+  Zap, Mail, GraduationCap, BookOpen, Layers, ChevronRight,
+  AlertTriangle, RefreshCw, Building2,
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const getToken = () => localStorage.getItem('token');
-const getUser = () => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } };
-
+// ─── Plan config ──────────────────────────────────────────────────────────────
 const PLAN_LIMITS = {
-  free:       { totalStudents: 100,     perGroup: 100,     label: 'Free',       color: 'gray' },
-  basic:      { totalStudents: 500,     perGroup: 150,     label: 'Basic',      color: 'blue' },
-  pro:        { totalStudents: 999999,  perGroup: 999999,  label: 'Pro',        color: 'purple' },
-  enterprise: { totalStudents: 999999,  perGroup: 999999,  label: 'Enterprise', color: 'amber' },
+  free:       { totalStudents: 100,    perGroup: 100,    maxGroups: 5,      label: 'Free',       color: 'gray'   },
+  basic:      { totalStudents: 500,    perGroup: 150,    maxGroups: 20,     label: 'Basic',      color: 'blue'   },
+  pro:        { totalStudents: 999999, perGroup: 999999, maxGroups: 999999, label: 'Pro',        color: 'purple' },
+  enterprise: { totalStudents: 999999, perGroup: 999999, maxGroups: 999999, label: 'Enterprise', color: 'amber'  },
 };
 
-const planBadge = {
-  free:       'bg-gray-100 text-gray-600',
-  basic:      'bg-blue-100 text-blue-700',
-  pro:        'bg-purple-100 text-purple-700',
-  enterprise: 'bg-amber-100 text-amber-700',
+const PLAN_STYLES = {
+  gray:   { badge: 'bg-gray-100 text-gray-600 border-gray-200',       dot: 'bg-gray-400',   ring: 'bg-gray-100' },
+  blue:   { badge: 'bg-blue-50 text-blue-700 border-blue-200',        dot: 'bg-blue-500',   ring: 'bg-blue-100' },
+  purple: { badge: 'bg-purple-50 text-purple-700 border-purple-200',  dot: 'bg-purple-500', ring: 'bg-purple-100' },
+  amber:  { badge: 'bg-amber-50 text-amber-700 border-amber-200',     dot: 'bg-amber-500',  ring: 'bg-amber-100' },
 };
 
+// ─── Micro components ─────────────────────────────────────────────────────────
+const Spinner = ({ size = 5, color = 'blue' }) => (
+  <div className={`w-${size} h-${size} border-2 border-${color}-400 border-t-transparent rounded-full animate-spin`} />
+);
+
+const EmptyState = ({ icon: Icon, title, subtitle, action }) => (
+  <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6 py-12">
+    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+      <Icon size={28} className="text-gray-300" />
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-gray-500">{title}</p>
+      {subtitle && <p className="text-xs text-gray-400 mt-0.5 max-w-xs">{subtitle}</p>}
+    </div>
+    {action}
+  </div>
+);
+
+const StatCard = ({ icon: Icon, label, value, sub, colorClass }) => (
+  <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100 shadow-sm min-w-0">
+    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+      <Icon size={17} />
+    </div>
+    <div className="min-w-0">
+      <div className="text-xs text-gray-500 leading-none">{label}</div>
+      <div className="text-lg font-bold text-gray-900 leading-tight mt-0.5">{value}</div>
+      {sub && <div className="text-xs text-gray-400">{sub}</div>}
+    </div>
+  </div>
+);
+
+const ModalOverlay = ({ children, onClose }) => (
+  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div onClick={e => e.stopPropagation()}>{children}</div>
+  </div>
+);
+
+const FInput = ({ label, value, onChange, placeholder, type = 'text', required, rows }) => (
+  <div>
+    <label className="block text-xs font-semibold text-gray-700 mb-1">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    {rows ? (
+      <textarea rows={rows} placeholder={placeholder} value={value || ''}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition resize-none" />
+    ) : (
+      <input type={type} placeholder={placeholder} value={value || ''}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition" />
+    )}
+  </div>
+);
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getUser = () => { try { return JSON.parse(localStorage.getItem('userData')); } catch { return null; } };
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 const GroupManagement = () => {
   const navigate = useNavigate();
-  const toast = useToast();
-  const [groups, setGroups] = useState([]);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [staffMembers, setStaffMembers] = useState([]);
-  const [subscription, setSubscription] = useState({ plan: 'free' });
-  const [loading, setLoading] = useState(false);
-  const [studentsLoading, setStudentsLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [copiedId, setCopiedId] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const toast    = useToast();
 
-  const [newGroup, setNewGroup] = useState({
+  const [groups,         setGroups]         = useState([]);
+  const [selectedGroup,  setSelectedGroup]  = useState(null);
+  const [students,       setStudents]       = useState([]);
+  const [staffMembers,   setStaffMembers]   = useState([]);
+  const [subscription,   setSubscription]   = useState({ plan: 'free' });
+  const [loading,        setLoading]        = useState(false);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [saving,         setSaving]         = useState(false);
+  const [showCreateModal,  setShowCreateModal]  = useState(false);
+  const [showEditModal,    setShowEditModal]    = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [confirmDelete,    setConfirmDelete]    = useState(null);
+  const [editingGroup,     setEditingGroup]     = useState(null);
+  const [searchTerm,       setSearchTerm]       = useState('');
+  const [copiedId,         setCopiedId]         = useState('');
+
+  const defaultNewGroup = () => ({
     name: '', description: '', assignedStaff: '',
     batch: '', branch: '', semester: '',
     academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
   });
+  const [newGroup, setNewGroup] = useState(defaultNewGroup());
 
-  const user = getUser();
+  const user      = getUser();
   const collegeId = user?.collegeId;
-  const planKey = subscription?.plan || 'free';
-  const limits = PLAN_LIMITS[planKey] || PLAN_LIMITS.free;
-  const isPro = planKey === 'pro' || planKey === 'enterprise';
+  const planKey   = subscription?.plan || 'free';
+  const limits    = PLAN_LIMITS[planKey] || PLAN_LIMITS.free;
+  const isPro     = planKey === 'pro' || planKey === 'enterprise';
+  const pStyle    = PLAN_STYLES[limits.color] || PLAN_STYLES.gray;
 
+  const totalStudentsAll = groups.reduce((sum, g) => sum + (g.studentCount || 0), 0);
+  const usedPct = isPro ? 0 : Math.min(100, (totalStudentsAll / limits.totalStudents) * 100);
+
+  // Lifecycle
   useEffect(() => { fetchGroups(); fetchSubscription(); fetchStaff(); }, []);
   useEffect(() => { if (selectedGroup) fetchGroupStudents(selectedGroup._id); }, [selectedGroup]);
 
-  const showMsg = (msg, type = 'success') => {
-    if (type === 'success') {
-      setSuccess(msg);
-      toast.success('Success', msg);
-      setTimeout(() => setSuccess(''), 4000);
-    } else {
-      setError(msg);
-      toast.error('Error', msg);
-      setTimeout(() => setError(''), 5000);
-    }
-  };
-
+  // Fetchers
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/groups`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      setGroups(res.data?.data || []);
-    } catch (err) {
-      // API not connected — use local state only
-      setGroups([]);
-    } finally { setLoading(false); }
+      const res = await groupAPI.getGroups();
+      setGroups(res?.data || res?.groups || []);
+    } catch { setGroups([]); } finally { setLoading(false); }
   };
 
   const fetchSubscription = async () => {
     if (!collegeId) return;
     try {
-      const res = await axios.get(`${API_URL}/subscriptions/college/${collegeId}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      setSubscription(res.data?.data || { plan: 'free' });
-    } catch {
-      // API not connected — default to free plan
-      setSubscription({ plan: 'free' });
-    }
+      const res = await apiCall(`/subscriptions/college/${collegeId}`);
+      setSubscription(res?.data || { plan: 'free' });
+    } catch { setSubscription({ plan: 'free' }); }
   };
 
   const fetchStaff = async () => {
     try {
-      const res = await axios.get(`${API_URL}/college-admin/admins`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      setStaffMembers(res.data?.data || []);
+      const res = await apiCall('/college-admin/admins');
+      setStaffMembers(res?.data || []);
     } catch { setStaffMembers([]); }
   };
 
   const fetchGroupStudents = async (groupId) => {
     try {
       setStudentsLoading(true);
-      const res = await axios.get(`${API_URL}/groups/${groupId}/students`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      setStudents(res.data?.data?.students || []);
-    } catch { setStudents([]); }
-    finally { setStudentsLoading(false); }
+      const res = await groupAPI.getGroupStudents(groupId);
+      setStudents(res?.data?.students || res?.students || res?.data || []);
+    } catch { setStudents([]); } finally { setStudentsLoading(false); }
   };
 
+  // Mutations
   const handleCreateGroup = async () => {
-    if (!newGroup.name.trim()) { showMsg('Group name is required', 'error'); return; }
-
-    const totalStudents = groups.reduce((s, g) => s + (g.studentCount || 0), 0);
-    if (!isPro && groups.length >= 20) {
-      showMsg('Group limit reached. Upgrade to Pro for unlimited groups.', 'error');
+    if (!newGroup.name.trim()) { toast.error('Validation', 'Group name is required.'); return; }
+    if (!isPro && groups.length >= limits.maxGroups) {
+      toast.error('Limit Reached', `Max ${limits.maxGroups} groups on ${limits.label} plan. Upgrade to create more.`);
       return;
     }
-
+    setSaving(true);
     try {
-      setLoading(true);
-      const payload = { ...newGroup, collegeId };
-      const res = await axios.post(`${API_URL}/groups`, payload, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      const created = res.data?.data || { _id: `grp_${Date.now()}`, ...payload, studentCount: 0, createdAt: new Date().toISOString() };
+      const res = await groupAPI.createGroup({ ...newGroup, collegeId });
+      const created = res?.data || res?.group || { _id: `grp_${Date.now()}`, ...newGroup, studentCount: 0, createdAt: new Date().toISOString() };
       setGroups(prev => [...prev, created]);
-      showMsg('Group created successfully!');
+      toast.success('Success', 'Group created successfully!');
       setShowCreateModal(false);
-      resetNewGroup();
+      setNewGroup(defaultNewGroup());
     } catch (err) {
-      // Optimistic local create when backend not connected
-      const mock = { _id: `grp_${Date.now()}`, ...newGroup, collegeId, studentCount: 0, createdAt: new Date().toISOString() };
-      setGroups(prev => [...prev, mock]);
-      showMsg('Group created!');
-      setShowCreateModal(false);
-      resetNewGroup();
-    } finally { setLoading(false); }
+      toast.error('Error', err.message || 'Failed to create group');
+    } finally { setSaving(false); }
   };
 
   const handleEditGroup = async () => {
-    if (!editingGroup?.name?.trim()) { showMsg('Group name required', 'error'); return; }
+    if (!editingGroup?.name?.trim()) { toast.error('Validation', 'Group name is required.'); return; }
+    setSaving(true);
     try {
-      const res = await axios.put(`${API_URL}/groups/${editingGroup._id}`, editingGroup, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-      const updated = res.data?.data || editingGroup;
+      const res = await groupAPI.updateGroup(editingGroup._id, editingGroup);
+      const updated = res?.data || res?.group || editingGroup;
       setGroups(prev => prev.map(g => g._id === editingGroup._id ? updated : g));
       if (selectedGroup?._id === editingGroup._id) setSelectedGroup(updated);
+      toast.success('Success', 'Group updated!');
     } catch {
       setGroups(prev => prev.map(g => g._id === editingGroup._id ? editingGroup : g));
       if (selectedGroup?._id === editingGroup._id) setSelectedGroup(editingGroup);
+      toast.success('Success', 'Group updated (offline mode)');
     }
-    showMsg('Group updated!');
     setShowEditModal(false);
+    setSaving(false);
   };
 
   const handleDeleteGroup = async (groupId) => {
-    if (!window.confirm('Delete this group and all its students? This cannot be undone.')) return;
-    try {
-      await axios.delete(`${API_URL}/groups/${groupId}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-    } catch {}
+    setSaving(true);
+    try { await groupAPI.deleteGroup(groupId); } catch {}
     setGroups(prev => prev.filter(g => g._id !== groupId));
     if (selectedGroup?._id === groupId) { setSelectedGroup(null); setStudents([]); }
-    showMsg('Group deleted.');
+    toast.success('Success', 'Group deleted.');
+    setConfirmDelete(null);
+    setSaving(false);
   };
 
   const handleBulkSave = async (dirtyRows) => {
     if (!selectedGroup) return;
-    const groupId = selectedGroup._id;
+    const groupId    = selectedGroup._id;
+    const toCreate   = dirtyRows.filter(r => r.isNew);
+    const toUpdate   = dirtyRows.filter(r => !r.isNew);
+    const newTotal   = students.length + toCreate.length;
 
-    // Check student limit
-    const existingCount = students.filter(s => !dirtyRows.find(r => r._id === s._id && r.isNew)).length;
-    const newCount = dirtyRows.filter(r => r.isNew).length;
-    const totalAfter = existingCount + newCount;
-
-    if (!isPro && totalAfter > limits.perGroup) {
+    if (!isPro && newTotal > limits.perGroup) {
       throw new Error(`Student limit (${limits.perGroup}) exceeded. Upgrade to Pro for unlimited students.`);
     }
 
-    const toCreate = dirtyRows.filter(r => r.isNew);
-    const toUpdate = dirtyRows.filter(r => !r.isNew);
-
     if (toCreate.length) {
       try {
-        const res = await axios.post(`${API_URL}/groups/${groupId}/students/bulk`, {
-          students: toCreate.map(r => ({
-            name: r.name, rollNumber: r.rollNumber,
-            email: r.email, role: r.role, password: r.password,
-          })),
-        }, { headers: { Authorization: `Bearer ${getToken()}` } });
-        if (res.data?.data) {
-          setStudents(prev => [...prev.filter(s => !toCreate.find(r => r._id === s._id)), ...res.data.data]);
+        const res = await groupAPI.bulkAddStudents(groupId,
+          toCreate.map(r => ({ name: r.name, rollNumber: r.rollNumber, email: r.email, role: r.role, password: r.password }))
+        );
+        if (res?.data) {
+          setStudents(prev => [...prev.filter(s => !toCreate.find(r => r._id === s._id)), ...(Array.isArray(res.data) ? res.data : [])]);
         } else {
           setStudents(prev => [...prev, ...toCreate.map(r => ({ ...r, isNew: false }))]);
         }
@@ -216,49 +236,26 @@ const GroupManagement = () => {
     }
 
     for (const row of toUpdate) {
-      try {
-        await axios.put(`${API_URL}/groups/${groupId}/students/${row._id}`, {
-          name: row.name, rollNumber: row.rollNumber,
-          email: row.email, role: row.role, password: row.password,
-        }, { headers: { Authorization: `Bearer ${getToken()}` } });
-      } catch {}
+      try { await groupAPI.updateStudent(groupId, row._id, { name: row.name, rollNumber: row.rollNumber, email: row.email, role: row.role, password: row.password }); }
+      catch {}
     }
 
-    // Update group student count
-    const newTotal = students.length + toCreate.length;
     setGroups(prev => prev.map(g => g._id === groupId ? { ...g, studentCount: newTotal } : g));
     await fetchGroupStudents(groupId);
   };
 
   const handleDeleteStudent = async (studentId) => {
     if (!selectedGroup) return;
-    try {
-      await axios.delete(`${API_URL}/groups/${selectedGroup._id}/students/${studentId}`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      });
-    } catch {}
+    try { await groupAPI.removeStudent(selectedGroup._id, studentId); } catch {}
     setStudents(prev => prev.filter(s => s._id !== studentId));
-    setGroups(prev => prev.map(g => g._id === selectedGroup._id
-      ? { ...g, studentCount: Math.max(0, (g.studentCount || 1) - 1) } : g
-    ));
+    setGroups(prev => prev.map(g => g._id === selectedGroup._id ? { ...g, studentCount: Math.max(0, (g.studentCount || 1) - 1) } : g));
   };
 
-  const resetNewGroup = () => setNewGroup({
-    name: '', description: '', assignedStaff: '',
-    batch: '', branch: '', semester: '',
-    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-  });
-
-  const copyId = (id) => {
-    navigator.clipboard?.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(''), 2000);
-  };
-
-  const getStaffName = (staffId) => {
-    const s = staffMembers.find(m => m._id === staffId);
-    return s?.name || s?.fullName || 'Unassigned';
-  };
+  // Utils
+  const copyId = (id) => { navigator.clipboard?.writeText(id); setCopiedId(id); setTimeout(() => setCopiedId(''), 2000); };
+  const getStaffName = (sid) => { const s = staffMembers.find(m => m._id === sid); return s?.name || s?.fullName || null; };
+  const getCapacityPct = (g) => isPro ? 0 : Math.min(100, ((g.studentCount || 0) / limits.perGroup) * 100);
+  const getCapacityColor = (pct) => pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-400' : 'bg-emerald-500';
 
   const filteredGroups = groups.filter(g =>
     g.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -266,270 +263,262 @@ const GroupManagement = () => {
     g.batch?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalStudents = groups.reduce((sum, g) => sum + (g.studentCount || 0), 0);
+  const CopyBtn = ({ id }) => (
+    <button onClick={e => { e.stopPropagation(); copyId(id); }} className="text-gray-400 hover:text-blue-500 transition-colors" title="Copy ID">
+      {copiedId === id ? <CheckCircle size={10} className="text-emerald-500" /> : <Copy size={10} />}
+    </button>
+  );
 
+  const SemesterSelect = ({ value, onChange }) => (
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 mb-1">Semester</label>
+      <select value={value || ''} onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+        <option value="">Select…</option>
+        {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
+      </select>
+    </div>
+  );
+
+  const StaffSelect = ({ value, onChange }) => (
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 mb-1">Assign Staff Handler <span className="font-normal text-gray-400">(optional)</span></label>
+      <select value={value || ''} onChange={e => onChange(e.target.value)}
+        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+        <option value="">No staff assigned</option>
+        {staffMembers.map(s => <option key={s._id} value={s._id}>{s.name || s.fullName} ({s.email})</option>)}
+      </select>
+    </div>
+  );
+
+  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <DashboardLayout title="Group Management">
       <div className="flex flex-col gap-4" style={{ height: 'calc(100vh - 110px)' }}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Group Management</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Create groups, assign staff, and manage students</p>
+        {/* ── Top bar ─── */}
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-200">
+              <Layers size={20} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 leading-tight">Group Management</h1>
+              <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                <Users size={10} /> Groups <ChevronRight size={10} /> <GraduationCap size={10} /> Students
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${planBadge[planKey]}`}>
-              {limits.label} Plan
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${pStyle.badge}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${pStyle.dot}`} /> {limits.label} Plan
             </span>
-            <button
-              onClick={() => { setShowCreateModal(true); resetNewGroup(); }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm"
-            >
-              <Plus size={16} /> New Group
+            <button onClick={fetchGroups} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh
+            </button>
+            {!isPro && (
+              <button onClick={() => setShowUpgradeModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm">
+                <Crown size={13} /> Upgrade
+              </button>
+            )}
+            <button onClick={() => { setShowCreateModal(true); setNewGroup(defaultNewGroup()); }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm shadow-blue-200">
+              <Plus size={15} /> New Group
             </button>
           </div>
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-            <AlertCircle size={15} className="flex-shrink-0" /> {error}
-            <button className="ml-auto flex-shrink-0" onClick={() => setError('')}><X size={14} /></button>
-          </div>
-        )}
-        {success && (
-          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm">
-            <CheckCircle size={15} className="flex-shrink-0" /> {success}
-            <button className="ml-auto flex-shrink-0" onClick={() => setSuccess('')}><X size={14} /></button>
-          </div>
-        )}
+        {/* ── Stats ─── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard icon={Users}         label="Total Groups"    value={groups.length}                                   colorClass="bg-blue-50 text-blue-600"    />
+          <StatCard icon={GraduationCap} label="Total Students"  value={totalStudentsAll}                                colorClass="bg-indigo-50 text-indigo-600" />
+          <StatCard icon={BookOpen}      label="Capacity Used"
+            value={isPro ? '∞' : `${totalStudentsAll}/${limits.totalStudents}`}
+            sub={!isPro && `${Math.round(usedPct)}% used`}                                                              colorClass="bg-blue-50 text-blue-600" />
+          <StatCard icon={Crown}         label="Plan"            value={limits.label}                                   colorClass={`${pStyle.ring} text-gray-700`} />
+        </div>
 
-        {/* Plan info bar */}
+        {/* ── Plan bar (free/basic only) ─── */}
         {!isPro && (
-          <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
-            <Info size={15} className="text-amber-600 flex-shrink-0" />
-            <span className="text-amber-800">
-              <strong>Free Plan:</strong> Max {limits.totalStudents} students total, {limits.perGroup} per group.{' '}
-              <span className="text-gray-600">{totalStudents}/{limits.totalStudents} used.</span>
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+            <Info size={14} className="text-amber-600 flex-shrink-0" />
+            <span className="text-amber-800 text-xs">
+              <strong>{limits.label} Plan:</strong> max {limits.totalStudents} students total, {limits.perGroup} per group, {limits.maxGroups} groups.
+              <span className="text-gray-600 ml-1">{totalStudentsAll}/{limits.totalStudents} students used.</span>
             </span>
-            <button
-              onClick={() => setShowUpgradeModal(true)}
-              className="ml-auto text-amber-700 font-semibold text-xs hover:underline flex items-center gap-1 flex-shrink-0"
-            >
-              <Crown size={12} /> Upgrade to Pro →
+            {/* Capacity bar */}
+            <div className="flex-1 min-w-16 h-1.5 bg-amber-200 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full ${usedPct > 90 ? 'bg-red-500' : 'bg-amber-500'}`} style={{ width: `${usedPct}%` }} />
+            </div>
+            <button onClick={() => setShowUpgradeModal(true)}
+              className="ml-auto text-amber-700 font-semibold text-xs hover:underline flex items-center gap-1 flex-shrink-0">
+              <Crown size={11} /> Upgrade →
             </button>
           </div>
         )}
 
-        {/* Main 2-panel layout */}
-        <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
+        {/* ── 2-column layout ─── */}
+        <div className="flex flex-1 gap-3 min-h-0 overflow-hidden">
 
-          {/* LEFT: Group list */}
-          <div className="w-80 flex-shrink-0 flex flex-col border border-gray-200 rounded-2xl bg-white/90 backdrop-blur-sm overflow-hidden shadow-sm">
-            <div className="p-3 border-b border-gray-100 bg-gray-50/80">
-              <div className="relative mb-2">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text" placeholder="Search groups..."
-                  value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                />
+          {/* ═══ Column 1: Group list ════════════════════════════════════════ */}
+          <div className="w-80 flex-shrink-0 flex flex-col rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-3 pt-3 pb-2 bg-gradient-to-b from-blue-50/80 to-white border-b border-gray-100">
+              <div className="flex items-center gap-1.5 mb-2">
+                <div className="w-5 h-5 bg-blue-100 rounded flex items-center justify-center">
+                  <Users size={11} className="text-blue-600" />
+                </div>
+                <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Groups</span>
+                <span className="ml-auto text-xs font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{filteredGroups.length}</span>
               </div>
-              <div className="text-xs text-gray-500">{filteredGroups.length} groups · {totalStudents} students total</div>
+              <div className="relative">
+                <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="text" placeholder="Search by name, branch, batch…"
+                  value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                  className="w-full pl-7 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white" />
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                </div>
+                <div className="flex items-center justify-center py-10"><Spinner color="blue" /></div>
               ) : filteredGroups.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3 px-4 text-center">
-                  <Users size={36} className="text-gray-200" />
-                  <p className="text-sm font-medium">No groups yet</p>
-                  <p className="text-xs text-gray-400">Create a group to start adding students with the Excel-like editor</p>
-                  <button
-                    onClick={() => { setShowCreateModal(true); resetNewGroup(); }}
-                    className="text-blue-500 font-medium text-xs hover:underline flex items-center gap-1"
-                  >
+                <EmptyState icon={Users} title="No groups yet"
+                  subtitle="Create a group to start adding students with the Excel-like editor"
+                  action={<button onClick={() => { setShowCreateModal(true); setNewGroup(defaultNewGroup()); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
                     <Plus size={12} /> Create your first group
-                  </button>
-                </div>
-              ) : (
-                filteredGroups.map(group => {
-                  const isSelected = selectedGroup?._id === group._id;
-                  const pct = isPro ? 0 : Math.min(100, ((group.studentCount || 0) / limits.perGroup) * 100);
-                  return (
-                    <div
-                      key={group._id}
-                      onClick={() => setSelectedGroup(group)}
-                      className={`p-3 border-b border-gray-100 cursor-pointer transition-all hover:bg-blue-50 ${
-                        isSelected ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-900 text-sm truncate">{group.name}</div>
-                          {/* Group ID badge */}
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className="font-mono text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded truncate max-w-36">
-                              {group._id}
-                            </span>
-                            <button
-                              onClick={e => { e.stopPropagation(); copyId(group._id); }}
-                              className="text-gray-400 hover:text-blue-500 flex-shrink-0"
-                            >
-                              {copiedId === group._id
-                                ? <CheckCircle size={10} className="text-green-500" />
-                                : <Copy size={10} />}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
-                            {group.branch && <span className="bg-gray-100 px-1.5 py-0.5 rounded">{group.branch}</span>}
-                            {group.batch && <span>Batch {group.batch}</span>}
-                            {group.semester && <span>Sem {group.semester}</span>}
-                          </div>
+                  </button>} />
+              ) : filteredGroups.map(group => {
+                const isActive = selectedGroup?._id === group._id;
+                const pct      = getCapacityPct(group);
+                const capColor = getCapacityColor(pct);
+                return (
+                  <button key={group._id} onClick={() => setSelectedGroup(group)}
+                    className={`w-full text-left px-3 py-2.5 border-b border-gray-50 transition-all ${isActive ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-gray-50 border-l-2 border-l-transparent'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-gray-900 truncate">{group.name}</div>
+                        {/* Group ID */}
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="font-mono text-xs text-blue-600 truncate max-w-[130px]">{group.groupId || group._id}</span>
+                          <CopyBtn id={group.groupId || group._id} />
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-base font-bold text-gray-800">{group.studentCount || 0}</div>
-                          <div className="text-xs text-gray-400">
-                            {isPro ? 'students' : `/${limits.perGroup}`}
-                          </div>
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {group.branch   && <span className="px-1.5 py-0.5 text-xs bg-blue-50 text-blue-600 rounded-md border border-blue-100">{group.branch}</span>}
+                          {group.semester && <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-md">Sem {group.semester}</span>}
+                          {group.batch    && <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-md">{group.batch}</span>}
                         </div>
+                        {/* Staff */}
+                        {group.assignedStaff && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+                            <UserCheck size={9} /> {getStaffName(group.assignedStaff) || 'Assigned'}
+                          </div>
+                        )}
                       </div>
-
-                      {!isPro && (
-                        <div className="mt-2 w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              pct > 90 ? 'bg-red-400' : pct > 70 ? 'bg-amber-400' : 'bg-green-400'
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <UserCheck size={10} className="text-gray-400" />
-                        <span className="text-xs text-gray-500 truncate">{getStaffName(group.assignedStaff)}</span>
-                      </div>
-
-                      {/* Row actions */}
-                      <div className="flex gap-1 mt-2" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => { setEditingGroup({ ...group }); setShowEditModal(true); }}
-                          className="flex-1 flex items-center justify-center gap-1 py-1 text-xs text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                        >
-                          <Edit2 size={10} /> Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteGroup(group._id)}
-                          className="flex-1 flex items-center justify-center gap-1 py-1 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                        >
-                          <Trash2 size={10} /> Delete
-                        </button>
+                      {/* Count */}
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-sm font-bold text-gray-800">{group.studentCount || 0}</div>
+                        <div className="text-xs text-gray-400">{isPro ? 'students' : `/${limits.perGroup}`}</div>
                       </div>
                     </div>
-                  );
-                })
-              )}
+
+                    {/* Capacity bar */}
+                    {!isPro && (
+                      <div className="mt-2 w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${capColor}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex gap-1.5 mt-2" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => { setEditingGroup({ ...group }); setShowEditModal(true); }}
+                        className="flex-1 flex items-center justify-center gap-1 py-1 text-xs text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors border border-blue-100">
+                        <Edit2 size={9} /> Edit
+                      </button>
+                      <button onClick={() => setConfirmDelete({ groupId: group._id, groupName: group.name })}
+                        className="flex-1 flex items-center justify-center gap-1 py-1 text-xs text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors border border-red-100">
+                        <Trash2 size={9} /> Delete
+                      </button>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* RIGHT: Excel Grid */}
-          <div className="flex-1 min-w-0 flex flex-col border border-gray-200 rounded-2xl bg-white/90 backdrop-blur-sm overflow-hidden shadow-sm">
+          {/* ═══ Column 2: Excel Student Editor ═════════════════════════════ */}
+          <div className="flex-1 min-w-0 flex flex-col rounded-2xl bg-white border border-gray-100 shadow-sm overflow-hidden">
             {!selectedGroup ? (
-              <div className="flex flex-col items-center justify-center flex-1 text-gray-400 gap-4 p-8 text-center">
-                <Users size={52} className="text-gray-200" />
-                <div>
-                  <p className="text-lg font-semibold text-gray-500">Select a group</p>
-                  <p className="text-sm mt-1">Click any group on the left to manage its students using the Excel-like editor</p>
-                </div>
-                <div className="grid grid-cols-3 gap-3 mt-2 text-xs text-gray-400 max-w-md">
-                  {[
-                    '📋 Paste from Excel/Sheets',
-                    '📤 Upload CSV file',
-                    '✏️ Type directly in cells',
-                    '⬇️ Download as Excel',
-                    '🔍 Search & filter',
-                    '✅ Full CRUD operations',
-                  ].map(f => (
-                    <div key={f} className="bg-gray-50 rounded-lg p-2 text-center">{f}</div>
-                  ))}
-                </div>
-              </div>
+              <EmptyState icon={GraduationCap}
+                title="Select a group to manage students"
+                subtitle="Click any group on the left to open the Excel-like student editor"
+                action={
+                  <div className="grid grid-cols-3 gap-2 mt-2 text-xs text-gray-400 max-w-sm">
+                    {['📋 Paste from Excel', '📤 Upload CSV', '✏️ Edit inline', '⬇️ Export to Excel', '🔍 Search & filter', '✅ Bulk operations']
+                      .map(f => <div key={f} className="bg-gray-50 rounded-lg px-2 py-1.5 text-center text-xs">{f}</div>)}
+                  </div>
+                } />
             ) : (
               <>
                 {/* Group header */}
-                <div className="p-4 border-b border-gray-100 bg-gray-50/80">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-base font-bold text-gray-900">{selectedGroup.name}</h2>
-                        {selectedGroup.branch && (
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                            {selectedGroup.branch}
-                          </span>
-                        )}
-                        {selectedGroup.semester && (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                            Sem {selectedGroup.semester}
-                          </span>
-                        )}
+                        <h2 className="text-sm font-bold text-gray-900">{selectedGroup.name}</h2>
+                        {selectedGroup.branch   && <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md border border-blue-100">{selectedGroup.branch}</span>}
+                        {selectedGroup.semester && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md">Semester {selectedGroup.semester}</span>}
+                        {selectedGroup.batch    && <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md">{selectedGroup.batch}</span>}
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          <Hash size={11} />
-                          <span className="font-mono text-blue-600 font-medium">{selectedGroup._id}</span>
-                          <button onClick={() => copyId(selectedGroup._id)} className="text-gray-400 hover:text-blue-500">
-                            {copiedId === selectedGroup._id
-                              ? <CheckCircle size={11} className="text-green-500" />
-                              : <Copy size={11} />}
-                          </button>
+                          <Hash size={9} className="text-blue-400" />
+                          <span className="font-mono text-blue-600">{selectedGroup.groupId || selectedGroup._id}</span>
+                          <CopyBtn id={selectedGroup.groupId || selectedGroup._id} />
                         </span>
-                        {selectedGroup.batch && (
-                          <span className="flex items-center gap-1"><Calendar size={11} /> Batch {selectedGroup.batch}</span>
-                        )}
                         {selectedGroup.assignedStaff && (
-                          <span className="flex items-center gap-1">
-                            <UserCheck size={11} /> {getStaffName(selectedGroup.assignedStaff)}
-                          </span>
+                          <span className="flex items-center gap-1"><UserCheck size={9} />{getStaffName(selectedGroup.assignedStaff) || 'Assigned'}</span>
                         )}
-                        {selectedGroup.academicYear && (
-                          <span>{selectedGroup.academicYear}</span>
-                        )}
+                        {selectedGroup.batch && <span className="flex items-center gap-1"><Calendar size={9} />Batch {selectedGroup.batch}</span>}
+                        {selectedGroup.academicYear && <span>{selectedGroup.academicYear}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <div className="font-bold text-gray-900 text-lg">{students.length}</div>
-                        <div className="text-xs text-gray-500">
-                          {isPro ? 'students (unlimited)' : `/ ${limits.perGroup} max`}
-                        </div>
+                        <div className="text-xl font-bold text-gray-900 leading-none">{students.length}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{isPro ? 'unlimited' : `/ ${limits.perGroup} max`}</div>
                       </div>
                       {!isPro && (
-                        <button
-                          onClick={() => setShowUpgradeModal(true)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm"
-                        >
-                          <Crown size={12} /> Upgrade
+                        <button onClick={() => setShowUpgradeModal(true)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm">
+                          <Crown size={11} /> Upgrade
                         </button>
                       )}
                     </div>
                   </div>
+
+                  {/* Near-limit warning */}
+                  {!isPro && students.length >= limits.perGroup * 0.9 && (
+                    <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                      <AlertTriangle size={11} className="flex-shrink-0" />
+                      {students.length >= limits.perGroup
+                        ? 'Group is at capacity. Upgrade to Pro to add more students.'
+                        : `Approaching limit — ${limits.perGroup - students.length} slots remaining.`}
+                    </div>
+                  )}
                 </div>
 
-                {/* Excel grid */}
+                {/* ExcelLikeGrid */}
                 <div className="flex-1 overflow-hidden">
                   {studentsLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
+                    <div className="flex items-center justify-center h-full"><Spinner size={8} color="blue" /></div>
                   ) : (
                     <ExcelLikeGrid
                       students={students}
-                      groupId={selectedGroup._id}
+                      groupId={selectedGroup.groupId || selectedGroup._id}
                       groupName={selectedGroup.name}
                       onBulkSave={handleBulkSave}
                       onDelete={handleDeleteStudent}
@@ -545,34 +534,57 @@ const GroupManagement = () => {
         </div>
       </div>
 
-      {/* ===== UPGRADE MODAL ===== */}
+      {/* ══ MODAL: Confirm Delete ══════════════════════════════════════════════ */}
+      {confirmDelete && (
+        <ModalOverlay onClose={() => setConfirmDelete(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="p-5 text-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <AlertTriangle size={22} className="text-red-500" />
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-1">Delete Group?</h3>
+              <p className="text-sm text-gray-500">
+                Delete <span className="font-semibold text-gray-800">"{confirmDelete.groupName}"</span>?<br />
+                All students in this group will also be removed. This cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 p-4 pt-0">
+              <button onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => handleDeleteGroup(confirmDelete.groupId)} disabled={saving}
+                className="flex-1 py-2 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-60">
+                {saving ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {/* ══ MODAL: Upgrade to Pro ══════════════════════════════════════════════ */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <ModalOverlay onClose={() => setShowUpgradeModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white">
-              <div className="flex items-center justify-between mb-3">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-5 text-white">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Crown size={22} />
-                  <h3 className="text-xl font-bold">Upgrade to Pro</h3>
+                  <Crown size={20} />
+                  <h3 className="text-lg font-bold">Upgrade to Pro</h3>
                 </div>
-                <button onClick={() => setShowUpgradeModal(false)} className="text-white/70 hover:text-white">
-                  <X size={20} />
-                </button>
+                <button onClick={() => setShowUpgradeModal(false)} className="text-white/70 hover:text-white"><X size={18} /></button>
               </div>
               <p className="text-purple-100 text-sm">Unlock unlimited students, groups, and advanced features</p>
             </div>
-
-            {/* Benefits */}
             <div className="p-5">
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {[
-                  { icon: Zap, text: 'Unlimited students per group' },
-                  { icon: Users, text: 'Unlimited total students' },
-                  { icon: Star, text: 'Unlimited groups' },
+                  { icon: Zap,         text: 'Unlimited students/group' },
+                  { icon: Users,       text: 'Unlimited total students'  },
+                  { icon: Star,        text: 'Unlimited groups'           },
                   { icon: CheckCircle, text: 'Bulk upload 1000+ students' },
-                  { icon: Hash, text: 'Advanced analytics' },
-                  { icon: UserCheck, text: 'Priority support' },
+                  { icon: Building2,   text: 'Advanced analytics'         },
+                  { icon: UserCheck,   text: 'Priority support'           },
                 ].map(({ icon: Icon, text }) => (
                   <div key={text} className="flex items-center gap-2 text-sm text-gray-700">
                     <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -583,210 +595,130 @@ const GroupManagement = () => {
                 ))}
               </div>
 
-              {/* Current usage */}
-              <div className="p-3 bg-gray-50 rounded-xl mb-5 text-sm">
-                <div className="font-semibold text-gray-700 mb-2">Your current usage</div>
-                <div className="flex justify-between text-gray-600 mb-1">
-                  <span>Total Students</span>
-                  <span className="font-medium">{totalStudents} / {limits.totalStudents}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Groups</span>
-                  <span className="font-medium">{groups.length}</span>
-                </div>
+              {/* Usage summary */}
+              <div className="p-3 bg-gray-50 rounded-xl mb-4 space-y-2 text-sm">
+                <div className="font-semibold text-gray-700 text-xs uppercase tracking-wide">Your current usage</div>
+                {[
+                  { label: 'Total Students', value: `${totalStudentsAll} / ${limits.totalStudents}` },
+                  { label: 'Groups',         value: `${groups.length} / ${limits.maxGroups}`         },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex justify-between text-gray-600">
+                    <span>{label}</span><span className="font-semibold">{value}</span>
+                  </div>
+                ))}
               </div>
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 mb-5 flex items-start gap-2">
-                <Info size={14} className="flex-shrink-0 mt-0.5" />
-                To upgrade your plan, please contact your Super Admin or reach out to ICL support.
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 mb-4">
+                <Info size={13} className="flex-shrink-0 mt-0.5" />
+                To upgrade, contact your Super Admin or reach out to ICL support.
               </div>
 
               <div className="flex gap-3">
-                <button
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => setShowUpgradeModal(false)}
+                  className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
                   Maybe later
                 </button>
-                <a
-                  href="mailto:support@icl.edu?subject=Pro Plan Upgrade Request"
-                  className="flex-1 py-2.5 text-sm text-center font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2"
-                >
-                  <Mail size={14} /> Contact Admin
+                <a href="mailto:support@icl.edu?subject=Pro Plan Upgrade Request"
+                  className="flex-1 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2">
+                  <Mail size={13} /> Contact Admin
                 </a>
               </div>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
-      {/* ===== CREATE GROUP MODAL ===== */}
+      {/* ══ MODAL: Create Group ════════════════════════════════════════════════ */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <ModalOverlay onClose={() => setShowCreateModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b">
-              <h3 className="text-lg font-bold text-gray-900">Create New Group</h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"><Plus size={15} className="text-blue-600" /></div>
+                <h3 className="text-sm font-bold text-gray-900">Create New Group</h3>
+              </div>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Group Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text" placeholder="e.g. CSE - Section A - 2024"
-                  value={newGroup.name} onChange={e => setNewGroup(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+              <FInput label="Group Name" required value={newGroup.name}
+                onChange={v => setNewGroup(p => ({ ...p, name: v }))}
+                placeholder="e.g. CSE - Section A - 2024" />
+              <div className="grid grid-cols-2 gap-3">
+                <FInput label="Branch / Department" value={newGroup.branch}
+                  onChange={v => setNewGroup(p => ({ ...p, branch: v }))} placeholder="CSE, ECE, MBA" />
+                <FInput label="Batch Year" value={newGroup.batch}
+                  onChange={v => setNewGroup(p => ({ ...p, batch: v }))} placeholder="2021-2025" />
+                <FInput label="Academic Year" value={newGroup.academicYear}
+                  onChange={v => setNewGroup(p => ({ ...p, academicYear: v }))} placeholder="2024-2025" />
+                <SemesterSelect value={newGroup.semester} onChange={v => setNewGroup(p => ({ ...p, semester: v }))} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Branch / Department</label>
-                  <input
-                    type="text" placeholder="e.g. CSE, ECE, MBA"
-                    value={newGroup.branch} onChange={e => setNewGroup(p => ({ ...p, branch: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Batch Year</label>
-                  <input
-                    type="text" placeholder="e.g. 2021-2025"
-                    value={newGroup.batch} onChange={e => setNewGroup(p => ({ ...p, batch: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Semester</label>
-                  <select
-                    value={newGroup.semester} onChange={e => setNewGroup(p => ({ ...p, semester: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select semester...</option>
-                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Academic Year</label>
-                  <input
-                    type="text" placeholder="2024-2025"
-                    value={newGroup.academicYear} onChange={e => setNewGroup(p => ({ ...p, academicYear: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Assign Staff Handler</label>
-                <select
-                  value={newGroup.assignedStaff} onChange={e => setNewGroup(p => ({ ...p, assignedStaff: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">No staff assigned</option>
-                  {staffMembers.map(s => (
-                    <option key={s._id} value={s._id}>{s.name || s.fullName} ({s.email})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Description (optional)</label>
-                <textarea
-                  placeholder="Optional description for this group..."
-                  value={newGroup.description} onChange={e => setNewGroup(p => ({ ...p, description: e.target.value }))}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-              </div>
+              <StaffSelect value={newGroup.assignedStaff} onChange={v => setNewGroup(p => ({ ...p, assignedStaff: v }))} />
+              <FInput label="Description" value={newGroup.description}
+                onChange={v => setNewGroup(p => ({ ...p, description: v }))}
+                placeholder="Optional description for this group…" rows={2} />
               {!isPro && (
                 <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-                  <Info size={13} className="flex-shrink-0" />
-                  Free plan: max {limits.perGroup} students per group, {limits.totalStudents} total.
+                  <Info size={12} className="flex-shrink-0" />
+                  Free plan: max {limits.perGroup} students/group, {limits.totalStudents} total.
                   <button onClick={() => { setShowCreateModal(false); setShowUpgradeModal(true); }}
                     className="ml-1 underline font-semibold">Upgrade →</button>
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-end gap-3 p-5 border-t">
-              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-              <button
-                onClick={handleCreateGroup}
-                disabled={loading}
-                className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
-              >
-                {loading ? 'Creating...' : 'Create Group'}
+            <div className="flex justify-end gap-3 px-5 py-4 border-t bg-gray-50 rounded-b-2xl">
+              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
+              <button onClick={handleCreateGroup} disabled={saving || !newGroup.name?.trim()}
+                className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50">
+                {saving ? 'Creating…' : <><Plus size={13} /> Create Group</>}
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
-      {/* ===== EDIT GROUP MODAL ===== */}
+      {/* ══ MODAL: Edit Group ═════════════════════════════════════════════════ */}
       {showEditModal && editingGroup && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <ModalOverlay onClose={() => setShowEditModal(false)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="flex items-center justify-between p-5 border-b">
-              <h3 className="text-lg font-bold text-gray-900">Edit Group</h3>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
-            </div>
-            <div className="p-5 space-y-4">
-              {/* Group ID display */}
-              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                <Hash size={14} className="text-blue-500" />
-                <span className="text-xs text-gray-500">Group ID:</span>
-                <span className="font-mono text-sm text-blue-600 font-medium flex-1 truncate">{editingGroup._id}</span>
-                <button onClick={() => copyId(editingGroup._id)} className="text-gray-400 hover:text-blue-500 flex-shrink-0">
-                  {copiedId === editingGroup._id ? <CheckCircle size={13} className="text-green-500" /> : <Copy size={13} />}
-                </button>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Group Name *</label>
-                <input type="text" value={editingGroup.name || ''}
-                  onChange={e => setEditingGroup(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { key: 'branch', label: 'Branch', placeholder: 'CSE' },
-                  { key: 'batch', label: 'Batch', placeholder: '2021-2025' },
-                  { key: 'academicYear', label: 'Academic Year', placeholder: '2024-2025' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
-                    <input type="text" placeholder={placeholder} value={editingGroup[key] || ''}
-                      onChange={e => setEditingGroup(p => ({ ...p, [key]: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                ))}
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center"><Edit2 size={14} className="text-indigo-600" /></div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Semester</label>
-                  <select value={editingGroup.semester || ''}
-                    onChange={e => setEditingGroup(p => ({ ...p, semester: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Select...</option>
-                    {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s}>Semester {s}</option>)}
-                  </select>
+                  <h3 className="text-sm font-bold text-gray-900">Edit Group</h3>
+                  <p className="text-xs text-gray-400">{editingGroup.name}</p>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Assign Staff</label>
-                <select value={editingGroup.assignedStaff || ''}
-                  onChange={e => setEditingGroup(p => ({ ...p, assignedStaff: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">No staff assigned</option>
-                  {staffMembers.map(s => (
-                    <option key={s._id} value={s._id}>{s.name || s.fullName} ({s.email})</option>
-                  ))}
-                </select>
-              </div>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
-            <div className="flex items-center justify-end gap-3 p-5 border-t">
-              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-              <button onClick={handleEditGroup}
-                className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors">
-                Save Changes
+            <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+              {/* Group ID badge */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                <Hash size={11} className="text-blue-500 flex-shrink-0" />
+                <span className="text-xs text-gray-500">Group ID:</span>
+                <span className="font-mono text-xs text-blue-600 flex-1 truncate">{editingGroup.groupId || editingGroup._id}</span>
+                <CopyBtn id={editingGroup.groupId || editingGroup._id} />
+              </div>
+              <FInput label="Group Name" required value={editingGroup.name}
+                onChange={v => setEditingGroup(p => ({ ...p, name: v }))} />
+              <div className="grid grid-cols-2 gap-3">
+                <FInput label="Branch" value={editingGroup.branch} onChange={v => setEditingGroup(p => ({ ...p, branch: v }))} />
+                <FInput label="Batch"  value={editingGroup.batch}  onChange={v => setEditingGroup(p => ({ ...p, batch: v }))} />
+                <FInput label="Academic Year" value={editingGroup.academicYear} onChange={v => setEditingGroup(p => ({ ...p, academicYear: v }))} />
+                <SemesterSelect value={editingGroup.semester} onChange={v => setEditingGroup(p => ({ ...p, semester: v }))} />
+              </div>
+              <StaffSelect value={editingGroup.assignedStaff} onChange={v => setEditingGroup(p => ({ ...p, assignedStaff: v }))} />
+              <FInput label="Description" value={editingGroup.description}
+                onChange={v => setEditingGroup(p => ({ ...p, description: v }))} rows={2} />
+            </div>
+            <div className="flex justify-end gap-3 px-5 py-4 border-t bg-gray-50 rounded-b-2xl">
+              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
+              <button onClick={handleEditGroup} disabled={saving}
+                className="px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-60">
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </DashboardLayout>
   );

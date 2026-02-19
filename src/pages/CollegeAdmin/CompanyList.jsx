@@ -148,7 +148,7 @@ const CompanyList = () => {
               <p className="text-3xl font-bold text-green-600">{stats.active}</p>
               <p className="text-sm text-gray-600 mt-1">Ready to hire</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
               <CheckCircle className="w-7 h-7 text-white" />
             </div>
           </div>

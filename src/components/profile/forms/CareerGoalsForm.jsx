@@ -17,7 +17,7 @@ const CareerGoalsForm = ({
       <SectionHeader 
         icon={Target} 
         title="Career Goals"
-        iconBgColor="from-pink-100 to-rose-100"
+        iconBgColor="from-blue-50 to-cyan-50"
         iconColor="text-pink-600"
       />
       <p className="text-sm text-gray-600 mb-6 -mt-2">All fields are optional. Share your career aspirations when ready.</p>

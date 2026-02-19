@@ -1,5 +1,6 @@
 // pages/SuperAdmin/Dashboard.jsx - POLISHED UI VERSION
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   Users,
@@ -8,10 +9,7 @@ import {
   Plus,
   Eye,
   Edit,
-  Activity,
   FileText,
-  BarChart3,
-  TrendingUp,
   UserCheck,
   Clock,
   RefreshCw,
@@ -19,9 +17,9 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import QuickActionCard from '../../components/common/QuickActionCard';
 
 const SuperAdminDashboard = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [recentColleges, setRecentColleges] = useState([]);
@@ -29,8 +27,7 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-    
-    // Auto-refresh every 30 seconds
+
     const interval = setInterval(() => {
       fetchDashboardData();
     }, 30000);
@@ -47,11 +44,11 @@ const SuperAdminDashboard = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
 
       if (data.success) {
@@ -79,15 +76,13 @@ const SuperAdminDashboard = () => {
 
   return (
     <DashboardLayout title="Super Admin Dashboard">
-      {/* Welcome Banner - Matching Login Page Style */}
+      {/* Welcome Banner */}
       <div className="mb-8 animate-fade-in">
         <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30 overflow-hidden">
-          {/* Decorative Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full -ml-32 -mb-32"></div>
           </div>
-          
           <div className="relative flex items-center justify-between">
             <div className="text-white">
               <h1 className="text-3xl font-bold mb-2">Welcome, Super Admin! 👋</h1>
@@ -151,9 +146,8 @@ const SuperAdminDashboard = () => {
         />
       </div>
 
-      {/* Applications Stats Row - Enhanced with Better Colors */}
+      {/* Applications Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Applications */}
         <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -168,7 +162,6 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Pending Review */}
         <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -177,13 +170,12 @@ const SuperAdminDashboard = () => {
                 {stats?.pendingApplications ?? 0}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <Clock className="w-7 h-7 text-white" />
             </div>
           </div>
         </div>
 
-        {/* Shortlisted */}
         <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -192,13 +184,12 @@ const SuperAdminDashboard = () => {
                 {stats?.shortlistedApplications ?? 0}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
               <UserCheck className="w-7 h-7 text-white" />
             </div>
           </div>
         </div>
 
-        {/* Hired */}
         <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -207,18 +198,17 @@ const SuperAdminDashboard = () => {
                 {stats?.hiredStudents ?? 0}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
               <Award className="w-7 h-7 text-white" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions - Enhanced with Better Visibility */}
+      {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        {/* Add New College */}
         <div
-          onClick={() => (window.location.href = '/super-admin/colleges/new')}
+          onClick={() => navigate('/dashboard/super-admin/colleges/new')}
           className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
         >
           <div className="flex flex-col items-center text-center text-white">
@@ -230,10 +220,9 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Manage Companies */}
         <div
-          onClick={() => (window.location.href = '/dashboard/super-admin/companies')}
-          className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
+          onClick={() => navigate('/dashboard/super-admin/companies')}
+          className="bg-gradient-to-br from-blue-700 to-blue-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
         >
           <div className="flex flex-col items-center text-center text-white">
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
@@ -244,10 +233,9 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* Manage Admins */}
         <div
-          onClick={() => (window.location.href = '/dashboard/super-admin/admins')}
-          className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
+          onClick={() => navigate('/dashboard/super-admin/admins')}
+          className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
         >
           <div className="flex flex-col items-center text-center text-white">
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
@@ -258,10 +246,9 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
 
-        {/* View Applications - FIXED WITH VISIBLE COLORS */}
         <div
-          onClick={() => (window.location.href = '/dashboard/super-admin/applications')}
-          className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
+          onClick={() => navigate('/dashboard/super-admin/applications')}
+          className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group hover:scale-105"
         >
           <div className="flex flex-col items-center text-center text-white">
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
@@ -273,7 +260,7 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Colleges Table - Enhanced */}
+      {/* Recent Colleges Table */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -283,7 +270,7 @@ const SuperAdminDashboard = () => {
             <h3 className="text-lg font-bold text-gray-900">Recent Colleges</h3>
           </div>
           <button
-            onClick={() => (window.location.href = '/super-admin/colleges')}
+            onClick={() => navigate('/dashboard/super-admin/colleges')}
             className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1 transition-colors px-4 py-2 rounded-lg hover:bg-blue-50"
           >
             View All
@@ -327,7 +314,9 @@ const SuperAdminDashboard = () => {
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          college.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          college.isActive
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
                         }`}
                       >
                         {college.isActive ? 'Active' : 'Inactive'}
@@ -336,16 +325,14 @@ const SuperAdminDashboard = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => (window.location.href = `/super-admin/colleges/${college._id}`)}
+                          onClick={() => navigate(`/dashboard/super-admin/colleges/${college._id}`)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() =>
-                            (window.location.href = `/super-admin/colleges/${college._id}/edit`)
-                          }
+                          onClick={() => navigate(`/dashboard/super-admin/colleges/${college._id}/edit`)}
                           className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                           title="Edit"
                         >
@@ -361,7 +348,9 @@ const SuperAdminDashboard = () => {
             <div className="text-center py-12">
               <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg font-medium">No colleges registered yet</p>
-              <p className="text-gray-400 text-sm mt-2">Start by adding a new college to the platform</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Start by adding a new college to the platform
+              </p>
             </div>
           )}
         </div>
@@ -369,18 +358,10 @@ const SuperAdminDashboard = () => {
 
       <style>{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
+        .animate-fade-in { animation: fade-in 0.5s ease-out; }
       `}</style>
     </DashboardLayout>
   );

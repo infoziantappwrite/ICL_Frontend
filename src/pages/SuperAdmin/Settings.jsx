@@ -283,7 +283,7 @@ const Settings = () => {
     <DashboardLayout title="Settings">
       {/* Header */}
       <div className="mb-8">
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-500 to-pink-500 rounded-3xl p-8 shadow-2xl shadow-purple-500/30">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
           <div className="text-white">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
               <SettingsIcon className="w-8 h-8" />
@@ -324,7 +324,7 @@ const Settings = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full px-4 py-3 rounded-xl flex items-center gap-3 transition-all ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -458,7 +458,7 @@ const Settings = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                     {loading ? 'Saving...' : 'Save Changes'}
@@ -586,7 +586,7 @@ const Settings = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg disabled:opacity-50"
                   >
                     <Lock className="w-5 h-5" />
                     {loading ? 'Changing...' : 'Change Password'}
@@ -699,7 +699,7 @@ const Settings = () => {
                   <button
                     onClick={handleNotificationUpdate}
                     disabled={loading}
-                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                     {loading ? 'Saving...' : 'Save Preferences'}
@@ -767,7 +767,7 @@ const Settings = () => {
                   <button
                     onClick={handlePrivacyUpdate}
                     disabled={loading}
-                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50"
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                     {loading ? 'Saving...' : 'Save Privacy Settings'}
@@ -864,7 +864,7 @@ const Settings = () => {
       toast.success('Success', 'Appearance settings saved!');
       setTimeout(() => setSuccess(''), 3000);
                     }}
-                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg"
+                    className="w-full md:w-auto px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-blue-700 hover:to-cyan-600 transition-all shadow-lg"
                   >
                     <Save className="w-5 h-5" />
                     Save Appearance

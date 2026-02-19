@@ -11,7 +11,7 @@ const ProgressBar = ({
         green: 'from-green-500 to-emerald-600',
         yellow: 'from-yellow-500 to-orange-500',
         red: 'from-red-500 to-pink-600',
-        purple: 'from-purple-500 to-pink-500',
+        purple: 'from-blue-500 to-blue-700',
       };
       return colorMap[color] || 'from-blue-500 to-cyan-600';
     }

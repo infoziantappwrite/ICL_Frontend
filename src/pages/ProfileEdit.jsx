@@ -4,9 +4,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import {
   User,
-  ArrowLeft,
   Loader2,
   GraduationCap,
   Briefcase,
@@ -447,17 +447,10 @@ const ProfileEdit = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 py-8">
+    <DashboardLayout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard/student')}
-            className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -612,7 +605,7 @@ const ProfileEdit = () => {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

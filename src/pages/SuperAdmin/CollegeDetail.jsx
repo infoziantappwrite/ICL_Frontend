@@ -187,7 +187,7 @@ const CollegeDetail = () => {
                 {college.stats?.totalStudents ?? 0}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center">
               <Users className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -201,7 +201,7 @@ const CollegeDetail = () => {
                 {college.stats?.totalCompanies ?? 0}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center">
               <Briefcase className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -229,7 +229,7 @@ const CollegeDetail = () => {
                 {college.stats?.activeAdmins ?? 0}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
               <Users className="w-7 h-7 text-white" />
             </div>
           </div>

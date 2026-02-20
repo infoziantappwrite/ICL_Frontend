@@ -47,6 +47,17 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  // Helper: update just the college sub-object (used after fetching college profile)
+  const updateCollege = (collegeData) => {
+    const updatedUser = { ...user, college: collegeData };
+    tokenManager.setUserData(updatedUser);
+    setUser(updatedUser);
+  };
+
+  // Convenience getters
+  const college = user?.college || null;
+  const collegeName = college?.name || null;
+
   const value = {
     user,
     isAuthenticated,
@@ -54,6 +65,9 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
+    updateCollege,
+    college,
+    collegeName,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { authAPI } from '../api/Api';
 import {
   Mail,
@@ -19,6 +20,7 @@ import AuthFooter from '../components/auth/AuthFooter';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -82,6 +84,8 @@ const Login = () => {
         // Login user using AuthContext
         login(response.user, response.token);
 
+        toast.success('Welcome back!', `Signed in as ${response.user.email}`);
+
         // ⚠️ SIMPLIFIED FLOW: Role-based routing - ALWAYS go to respective dashboard
         const roleRoutes = {
           student: '/dashboard/student',
@@ -96,10 +100,12 @@ const Login = () => {
         navigate(redirectPath);
       } else {
         setErrors({ submit: response.message || 'Login failed. Please try again.' });
+        toast.error('Login Failed', response.message || 'Invalid credentials. Please try again.');
       }
     } catch (error) {
       console.error('❌ Login error:', error);
       setErrors({ submit: error.message || 'Login failed. Please try again.' });
+      toast.error('Login Failed', error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }

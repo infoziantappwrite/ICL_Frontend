@@ -1,4 +1,5 @@
 // pages/CollegeAdmin/ApplicationManagement.jsx - Redesigned with SuperAdmin UI
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,6 +20,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { collegeAdminAPI } from '../../api/Api';
 
 const ApplicationManagement = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
@@ -46,7 +48,7 @@ const ApplicationManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching applications:', error);
-      alert('Failed to fetch applications: ' + error.message);
+      toast.error('Error', 'Failed to fetch applications: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -69,10 +71,10 @@ const ApplicationManagement = () => {
       calculateStats(applications.map(app =>
         app._id === applicationId ? { ...app, status: newStatus } : app
       ));
-      alert(`Application status updated to ${newStatus}`);
+      toast.success('Success', `Application status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
     }
   };
 

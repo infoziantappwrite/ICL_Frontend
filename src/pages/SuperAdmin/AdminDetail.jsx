@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/AdminDetail.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -20,6 +21,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const AdminDetail = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { adminId } = useParams();
   const [loading, setLoading] = useState(true);
@@ -42,12 +44,12 @@ const AdminDetail = () => {
       if (data.success) {
         setAdmin(data.admin);
       } else {
-        alert('Failed to fetch admin details');
+        toast.error('Error', 'Failed to fetch admin details');
         navigate('/dashboard/super-admin/admins');
       }
     } catch (error) {
       console.error('Error fetching admin:', error);
-      alert('Failed to fetch admin: ' + error.message);
+      toast.error('Error', 'Failed to fetch admin: ' + error.message);
       navigate('/dashboard/super-admin/admins');
     } finally {
       setLoading(false);
@@ -70,12 +72,12 @@ const AdminDetail = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert(`Admin ${admin.isActive ? 'deactivated' : 'activated'} successfully`);
+        toast.success('Success', `Admin ${admin.isActive ? 'deactivated' : 'activated'} successfully`);
         fetchAdminDetails();
       }
     } catch (error) {
       console.error('Error toggling status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
     }
   };
 
@@ -92,11 +94,11 @@ const AdminDetail = () => {
         }
       });
       
-      alert('Admin deleted successfully');
+      toast.success('Success', 'Admin deleted successfully');
       navigate('/dashboard/super-admin/admins');
     } catch (error) {
       console.error('Error deleting admin:', error);
-      alert('Failed to delete admin: ' + error.message);
+      toast.error('Error', 'Failed to delete admin: ' + error.message);
     }
   };
 

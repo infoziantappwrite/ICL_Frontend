@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/AdminManagement.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +22,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const AdminManagement = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [admins, setAdmins] = useState([]);
@@ -52,7 +54,7 @@ const AdminManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching admins:', error);
-      alert('Failed to fetch admins: ' + error.message);
+      toast.error('Error', 'Failed to fetch admins: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -77,11 +79,11 @@ const AdminManagement = () => {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
-      alert('Admin deleted successfully');
+      toast.success('Success', 'Admin deleted successfully');
       fetchAdmins();
     } catch (error) {
       console.error('Error deleting admin:', error);
-      alert('Failed to delete admin: ' + error.message);
+      toast.error('Error', 'Failed to delete admin: ' + error.message);
     }
   };
 
@@ -93,11 +95,11 @@ const AdminManagement = () => {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
       });
-      alert(`Admin ${currentStatus ? 'deactivated' : 'activated'} successfully`);
+      toast.success('Success', `Admin ${currentStatus ? 'deactivated' : 'activated'} successfully`);
       fetchAdmins();
     } catch (error) {
       console.error('Error toggling status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
     }
   };
 

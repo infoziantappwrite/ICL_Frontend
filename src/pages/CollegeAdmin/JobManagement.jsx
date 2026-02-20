@@ -1,4 +1,5 @@
 // pages/CollegeAdmin/JobManagement.jsx - FIXED with working edit, view, delete
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -22,6 +23,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { jobAPI } from '../../api/Api';
 
 const JobManagement = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
@@ -50,7 +52,7 @@ const JobManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching jobs:', error);
-      alert('Failed to fetch jobs: ' + error.message);
+      toast.error('Error', 'Failed to fetch jobs: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -70,10 +72,10 @@ const JobManagement = () => {
       setJobs(jobs.map(job => 
         job._id === jobId ? { ...job, isPinned: !currentPinStatus } : job
       ));
-      alert(`Job ${currentPinStatus ? 'unpinned' : 'pinned'} successfully`);
+      toast.success('Success', `Job ${currentPinStatus ? 'unpinned' : 'pinned'} successfully`);
     } catch (error) {
       console.error('Error toggling pin:', error);
-      alert('Failed to toggle pin: ' + error.message);
+      toast.error('Error', 'Failed to toggle pin: ' + error.message);
       fetchJobs();
     }
   };
@@ -87,10 +89,10 @@ const JobManagement = () => {
       calculateStats(jobs.map(job => 
         job._id === jobId ? { ...job, status: newStatus } : job
       ));
-      alert(`Job status updated to ${newStatus}`);
+      toast.success('Success', `Job status updated to ${newStatus}`);
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
       fetchJobs();
     }
   };
@@ -102,11 +104,11 @@ const JobManagement = () => {
 
     try {
       await jobAPI.deleteJob(jobId);
-      alert('Job deleted successfully');
+      toast.success('Success', 'Job deleted successfully');
       fetchJobs();
     } catch (error) {
       console.error('Error deleting job:', error);
-      alert('Failed to delete job: ' + error.message);
+      toast.error('Error', 'Failed to delete job: ' + error.message);
     }
   };
 
@@ -294,7 +296,7 @@ const JobManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-semibold text-gray-900">
-                        ₹{job.package?.min || 0} - ₹{job.package?.max || 0} LPA
+                        ₹{job.package?.ctc?.min || 0} - ₹{job.package?.ctc?.max || 0} LPA
                       </div>
                     </td>
                     <td className="px-6 py-4">

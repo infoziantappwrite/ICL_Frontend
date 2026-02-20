@@ -1,4 +1,5 @@
 // pages/CollegeAdmin/CompanyForm.jsx - Redesigned with SuperAdmin UI
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -18,6 +19,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI, collegeAdminAPI } from '../../api/Api';
 
 const CompanyForm = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { companyId } = useParams();
   const isEditMode = !!companyId;
@@ -88,7 +90,7 @@ const CompanyForm = () => {
       }
     } catch (error) {
       console.error('Error fetching company:', error);
-      alert('Failed to fetch company details: ' + error.message);
+      toast.error('Error', 'Failed to fetch company details: ' + error.message);
       navigate('/dashboard/college-admin/companies');
     } finally {
       setLoading(false);
@@ -135,7 +137,7 @@ const CompanyForm = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      alert('Please fix the errors in the form');
+      toast.error('Error', 'Please fix the errors in the form');
       return;
     }
 
@@ -144,16 +146,16 @@ const CompanyForm = () => {
       
       if (isEditMode) {
         await collegeAdminAPI.updateCompany(companyId, formData);
-        alert('Company updated successfully!');
+        toast.success('Success', 'Company updated successfully!');
       } else {
         await collegeAdminAPI.createCompany(formData);
-        alert('Company created successfully!');
+        toast.success('Success', 'Company created successfully!');
       }
       
       navigate('/dashboard/college-admin/companies');
     } catch (error) {
       console.error('Error saving company:', error);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} company: ` + error.message);
+      toast.error('Error', `Failed to ${isEditMode ? 'update' : 'create'} company: ` + error.message);
     } finally {
       setSaving(false);
     }

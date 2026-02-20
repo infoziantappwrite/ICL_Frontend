@@ -10,6 +10,7 @@ const RoleBasedRedirect = () => {
 
   const roleRoutes = {
     student: '/dashboard/student',
+    candidate: '/dashboard/student',  // candidate = student
     college_admin: '/dashboard/college-admin',
     super_admin: '/dashboard/super-admin',
   };

@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/ApplicationManagement.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +20,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const ApplicationManagement = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
@@ -148,7 +150,7 @@ const ApplicationManagement = () => {
 
   const exportApplications = () => {
     // Implement CSV export
-    alert('Export functionality coming soon!');
+    toast.info('Info', 'Export functionality coming soon!');
   };
 
   if (loading) {

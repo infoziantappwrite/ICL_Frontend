@@ -1,4 +1,5 @@
 // pages/CollegeAdmin/CompanyList.jsx
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +21,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI } from '../../api/Api';
 
 const CompanyList = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [companies, setCompanies] = useState([]);
@@ -48,7 +50,7 @@ const CompanyList = () => {
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
-      alert('Failed to fetch companies: ' + error.message);
+      toast.error('Error', 'Failed to fetch companies: ' + error.message);
     } finally {
       setLoading(false);
     }

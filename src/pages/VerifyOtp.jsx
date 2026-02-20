@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../api/Api';
+import { useToast } from '../context/ToastContext';
 import {
   Mail,
   AlertCircle,
@@ -21,6 +22,7 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+  const toast = useToast();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -110,6 +112,7 @@ const VerifyOtp = () => {
 
       if (response.success) {
         setSuccess(true);
+        toast.success('Email Verified!', 'Your account is confirmed. Redirecting to login...');
         setTimeout(() => {
           navigate('/login', {
             state: {
@@ -120,9 +123,11 @@ const VerifyOtp = () => {
         }, 1500);
       } else {
         setError(response.message || 'Invalid OTP. Please try again.');
+        toast.error('Verification Failed', response.message || 'Invalid OTP. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'Verification failed. Please try again.');
+      toast.error('Verification Failed', err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -142,11 +147,14 @@ const VerifyOtp = () => {
         setCanResend(false);
         setOtp(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
+        toast.success('Code Resent!', `A new OTP has been sent to ${email}`);
       } else {
         setError(response.message || 'Failed to resend OTP');
+        toast.error('Resend Failed', response.message || 'Could not resend OTP. Please try again.');
       }
     } catch (err) {
       setError(err.message || 'Failed to resend OTP');
+      toast.error('Resend Failed', err.message || 'Could not resend OTP. Please try again.');
     } finally {
       setIsResending(false);
     }

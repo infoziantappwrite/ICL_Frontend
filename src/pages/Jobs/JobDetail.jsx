@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import {
   ArrowLeft,
   Briefcase,
@@ -27,6 +28,7 @@ const JobDetail = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ const JobDetail = () => {
 
   const handleApply = () => {
     if (!isEligible && isEligible !== null) {
-      alert('You do not meet the eligibility criteria for this job.');
+      toast.warning('Not Eligible', 'You do not meet the eligibility criteria for this job.');
       return;
     }
     setShowApplyModal(true);
@@ -505,7 +507,7 @@ const JobDetail = () => {
               <button
                 onClick={() => {
                   // Implement application logic here
-                  alert('Application feature coming soon!');
+                  toast.info('Coming Soon', 'Application feature coming soon!');
                   setShowApplyModal(false);
                 }}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

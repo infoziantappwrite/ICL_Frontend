@@ -1,4 +1,5 @@
 // src/pages/CollegeAdmin/JobForm.jsx - FIXED TO MATCH BACKEND SCHEMA
+import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -21,6 +22,7 @@ import {
 import { jobAPI, companyAPI } from '../../api/Api';
 
 const JobForm = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { jobId } = useParams();
   const isEditMode = !!jobId;
@@ -220,6 +222,7 @@ const JobForm = () => {
 
       if (response.success) {
         setSuccess(true);
+        toast.success(isEditMode ? 'Job Updated!' : 'Job Created!', `Job ${isEditMode ? 'updated' : 'created'} successfully. Redirecting...`);
         setTimeout(() => {
           navigate('/dashboard/college-admin/jobs');
         }, 1500);
@@ -227,6 +230,7 @@ const JobForm = () => {
     } catch (err) {
       console.error('Submit error:', err);
       setError(err.message);
+      toast.error('Save Failed', err.message || 'Could not save the job. Please try again.');
     } finally {
       setSaving(false);
     }

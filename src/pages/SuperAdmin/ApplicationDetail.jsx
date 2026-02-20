@@ -1,3 +1,4 @@
+import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/ApplicationDetail.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -23,6 +24,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const ApplicationDetail = () => {
+  const toast = useToast();
   const navigate = useNavigate();
   const { applicationId } = useParams();
   const [loading, setLoading] = useState(true);
@@ -108,12 +110,12 @@ const ApplicationDetail = () => {
       const data = await response.json();
       
       if (data.success) {
-        alert(`Application ${newStatus} successfully!`);
+        toast.success('Success', `Application ${newStatus} successfully!`);
         setApplication(prev => ({ ...prev, status: newStatus }));
       }
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status: ' + error.message);
+      toast.error('Error', 'Failed to update status: ' + error.message);
     } finally {
       setUpdating(false);
     }

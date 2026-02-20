@@ -277,7 +277,7 @@ const ApplicationDetail = () => {
           {/* Job Information */}
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Briefcase className="w-5 h-5 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900">Job Information</h3>

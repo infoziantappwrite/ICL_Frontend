@@ -21,7 +21,7 @@ const EducationForm = ({ formData, handleChange }) => {
       <SectionHeader 
         icon={GraduationCap} 
         title="Educational Details"
-        iconBgColor="from-purple-100 to-indigo-100"
+        iconBgColor="from-blue-50 to-cyan-50"
         iconColor="text-purple-600"
       />
       <p className="text-sm text-gray-600 mb-6 -mt-2">All fields are optional. Add your education details when ready.</p>

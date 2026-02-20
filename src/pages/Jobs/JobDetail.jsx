@@ -1,6 +1,6 @@
 // src/pages/jobs/JobDetail.jsx - Detailed view of a single job
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -27,8 +27,14 @@ import {
 const JobDetail = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const toast = useToast();
+
+  // Detect context from current URL path to support both student & college admin
+  const isCollegeAdmin = location.pathname.startsWith('/dashboard/college-admin');
+  const backToJobsPath = isCollegeAdmin ? '/dashboard/college-admin/jobs' : '/dashboard/student/jobs';
+  const dashboardPath = isCollegeAdmin ? '/dashboard/college-admin' : '/dashboard/student';
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +113,7 @@ const JobDetail = () => {
           {/* Navigation */}
           <div className="mb-6 flex items-center gap-4">
             <button
-              onClick={() => navigate('/dashboard/student/jobs')}
+              onClick={() => navigate(backToJobsPath)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -115,7 +121,7 @@ const JobDetail = () => {
             </button>
             <span className="text-gray-400">|</span>
             <button
-              onClick={() => navigate('/dashboard/student')}
+              onClick={() => navigate(dashboardPath)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
             >
               <Home className="w-5 h-5" />
@@ -140,7 +146,7 @@ const JobDetail = () => {
         {/* Navigation Bar */}
         <div className="mb-6 flex items-center gap-4">
           <button
-            onClick={() => navigate('/dashboard/student/jobs')}
+            onClick={() => navigate(backToJobsPath)}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -148,7 +154,7 @@ const JobDetail = () => {
           </button>
           <span className="text-gray-400">|</span>
           <button
-            onClick={() => navigate('/dashboard/student')}
+            onClick={() => navigate(dashboardPath)}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
             <Home className="w-5 h-5" />
@@ -255,7 +261,7 @@ const JobDetail = () => {
           <div className="p-8">
             {/* Apply Section */}
             {!hasApplied && !isExpired && !isClosed && (
-              <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+              <div className="mb-8 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">

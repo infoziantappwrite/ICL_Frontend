@@ -352,7 +352,7 @@ const CompanyForm = () => {
           {/* Contact Information */}
           <div className="p-8 border-b border-gray-200">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Mail className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Contact Information</h2>
@@ -443,7 +443,7 @@ const CompanyForm = () => {
           {/* Description */}
           <div className="p-8 border-b border-gray-200">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Company Description</h2>

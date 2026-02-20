@@ -193,7 +193,7 @@ const JobManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Active</p>
               <p className="text-3xl font-bold text-green-600">{stats.active}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
               <CheckCircle className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -217,7 +217,7 @@ const JobManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Draft</p>
               <p className="text-3xl font-bold text-yellow-600">{stats.draft}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <AlertCircle className="w-7 h-7 text-white" />
             </div>
           </div>

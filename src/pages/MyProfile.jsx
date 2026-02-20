@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import {
   User,
   Mail,
@@ -12,7 +13,6 @@ import {
   Briefcase,
   GraduationCap,
   Code,
-  ArrowLeft,
   Edit,
   Shield,
   CheckCircle,
@@ -71,42 +71,13 @@ const MyProfile = () => {
   };
  
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50">
-      {/* Background Pattern */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-20 w-96 h-96 bg-gradient-to-br from-cyan-200 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 -right-20 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      </div>
- 
-      {/* Header */}
-      <div className="relative bg-white/80 backdrop-blur-xl border-b border-white/50 shadow-lg">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back to Dashboard</span>
-            </button>
-            <button
-              onClick={() => navigate('/profile/edit')}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-            >
-              <Edit className="w-4 h-4" />
-              Edit Profile
-            </button>
-          </div>
-        </div>
-      </div>
- 
-      {/* Main Content */}
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Header Card */}
+    <DashboardLayout>
+      {/* Profile Header Card */}
+      <div className="max-w-5xl mx-auto">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-blue-500/10 border border-white/50 overflow-hidden mb-8">
           {/* Cover/Banner */}
           <div className="h-32 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 relative">
-            <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+            <div className="absolute inset-0 opacity-10" style={{backgroundImage:'linear-gradient(to right, rgb(255 255 255 / 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.1) 1px, transparent 1px)', backgroundSize:'20px 20px'}}></div>
           </div>
  
           {/* Profile Info */}
@@ -132,13 +103,22 @@ const MyProfile = () => {
                 </div>
               </div>
  
-              {/* Profile Completeness Badge */}
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
-                <div className="text-center">
-                  <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                    {profileCompleteness}%
+              {/* Edit Profile Button + Completeness */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/profile/edit')}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                >
+                  <Edit className="w-4 h-4" />
+                  Edit Profile
+                </button>
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                      {profileCompleteness}%
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">Profile Complete</p>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">Profile Complete</p>
                 </div>
               </div>
             </div>
@@ -295,27 +275,7 @@ const MyProfile = () => {
           )}
         </div>
       </div>
- 
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .bg-grid-pattern {
-          background-image:
-            linear-gradient(to right, rgb(255 255 255 / 0.1) 1px, transparent 1px),
-            linear-gradient(to bottom, rgb(255 255 255 / 0.1) 1px, transparent 1px);
-          background-size: 20px 20px;
-        }
-      `}</style>
-    </div>
+    </DashboardLayout>
   );
 };
  

@@ -146,7 +146,7 @@ const ApplicationManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Pending</p>
               <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <Clock className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -158,7 +158,7 @@ const ApplicationManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Selected</p>
               <p className="text-3xl font-bold text-green-600">{stats.selected}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
               <CheckCircle className="w-7 h-7 text-white" />
             </div>
           </div>
@@ -170,7 +170,7 @@ const ApplicationManagement = () => {
               <p className="text-gray-600 text-sm font-medium mb-1">Rejected</p>
               <p className="text-3xl font-bold text-red-600">{stats.rejected}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center shadow-lg">
               <XCircle className="w-7 h-7 text-white" />
             </div>
           </div>

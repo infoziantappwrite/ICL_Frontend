@@ -141,21 +141,21 @@ const CollegeAdminDashboard = () => {
           icon={Plus}
           title="Add Company"
           description="Register a new company"
-          gradient="from-cyan-600 via-cyan-500 to-teal-500"
+          gradient="from-blue-500 via-cyan-500 to-cyan-600"
           onClick={() => navigate('/dashboard/college-admin/companies/create')}
         />
         <QuickActionCard
           icon={FileText}
           title="Create JD"
           description="Post new job description"
-          gradient="from-indigo-600 via-indigo-500 to-purple-500"
+          gradient="from-blue-600 via-blue-500 to-cyan-500"
           onClick={() => navigate('/dashboard/college-admin/jobs/create')}
         />
         <QuickActionCard
           icon={TrendingUp}
           title="Manage Jobs"
           description="View and manage job postings"
-          gradient="from-purple-600 via-purple-500 to-pink-500"
+          gradient="from-blue-700 via-blue-600 to-blue-700"
           onClick={() => navigate('/dashboard/college-admin/jobs')}
         />
       </div>
@@ -204,9 +204,9 @@ const CollegeAdminDashboard = () => {
         <div className="space-y-6">
           {/* Activity Summary */}
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-100">
+            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
                   <BarChart3 className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">Activity</h3>
@@ -235,7 +235,7 @@ const CollegeAdminDashboard = () => {
           </div>
 
           {/* Quick Actions Mini */}
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+          <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl shadow-xl p-6 text-white">
             <h3 className="font-bold text-lg mb-4">Need Help?</h3>
             <p className="text-indigo-100 text-sm mb-4">
               Check our guides and documentation for managing placements effectively.
@@ -259,8 +259,8 @@ const StatCard = ({ icon: Icon, label, value, subtext, color, trend }) => {
     blue: 'from-blue-500 to-blue-600',
     cyan: 'from-cyan-500 to-cyan-600',
     indigo: 'from-indigo-500 to-indigo-600',
-    purple: 'from-purple-500 to-purple-600',
-    green: 'from-green-500 to-green-600',
+    purple: 'from-blue-700 to-blue-800',
+    green: 'from-blue-500 to-cyan-600',
   };
 
   return (

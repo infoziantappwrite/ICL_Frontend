@@ -28,10 +28,10 @@ import { collegeAdminAPI, jobAPI, applicationAPI } from '../../api/Api';
 const StatCard = ({ icon: Icon, label, value, subtext, color = 'blue', trend }) => {
   const colorClasses = {
     blue: 'from-blue-500 to-blue-600',
-    green: 'from-green-500 to-emerald-600',
-    purple: 'from-purple-500 to-purple-600',
-    orange: 'from-orange-500 to-orange-600',
-    pink: 'from-pink-500 to-rose-600',
+    green: 'from-blue-500 to-cyan-600',
+    purple: 'from-blue-600 to-blue-800',
+    orange: 'from-slate-500 to-slate-600',
+    pink: 'from-blue-400 to-blue-600',
     cyan: 'from-cyan-500 to-cyan-600',
     indigo: 'from-indigo-500 to-indigo-600',
   };
@@ -321,7 +321,7 @@ const Analytics = () => {
 
         {/* Application Statistics */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-b border-gray-200">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-purple-600" />
               Application Status
@@ -354,7 +354,7 @@ const Analytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Branch-wise Placement */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-b border-gray-200">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <GraduationCap className="w-5 h-5 text-green-600" />
               Branch-wise Placement
@@ -373,7 +373,7 @@ const Analytics = () => {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2.5 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(branch.placementPercentage || 0, 100)}%` }}
                       ></div>
                     </div>
@@ -432,7 +432,7 @@ const Analytics = () => {
       {/* Package Distribution */}
       {packageStats.maxPackage > 0 && (
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden mb-8">
-          <div className="px-6 py-4 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-b border-gray-200">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-orange-600" />
               Package Statistics
@@ -479,7 +479,7 @@ const Analytics = () => {
           className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 hover:shadow-2xl transition-all hover:scale-105 group"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
@@ -494,7 +494,7 @@ const Analytics = () => {
           className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 hover:shadow-2xl transition-all hover:scale-105 group"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">

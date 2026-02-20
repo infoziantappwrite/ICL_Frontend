@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 // Helper function to handle API calls with better error handling
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_URL}${endpoint}`;
-  
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -22,13 +22,13 @@ const apiCall = async (endpoint, options = {}) => {
   try {
     console.log(`📡 API Call: ${options.method || 'GET'} ${endpoint}`);
     const response = await fetch(url, config);
-    
+
     console.log(`📥 Response: ${response.status} ${response.statusText}`);
-    
+
     // Parse response
     const contentType = response.headers.get('content-type');
     let data;
-    
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
@@ -52,7 +52,7 @@ const apiCall = async (endpoint, options = {}) => {
 // Verify authentication token
 const verifyAuth = async () => {
   const token = localStorage.getItem('authToken');
-  
+
   if (!token) {
     console.error('❌ No auth token found in localStorage');
     return { valid: false, error: 'No token' };
@@ -152,13 +152,13 @@ export const profileAPI = {
   // Get profile with auth verification
   getProfile: async () => {
     console.log('📄 Getting user profile...');
-    
+
     // Verify auth first
     const authCheck = await verifyAuth();
     if (!authCheck.valid) {
       throw new Error(`Authentication failed: ${authCheck.error}`);
     }
-    
+
     return apiCall('/candidate/profile');
   },
 
@@ -167,7 +167,7 @@ export const profileAPI = {
     try {
       console.log('🚀 Starting profile save process...');
       console.log('═══════════════════════════════════════');
-      
+
       let profileData;
       let resumeFile = null;
       let idProofFile = null;
@@ -178,11 +178,11 @@ export const profileAPI = {
         // Extract profile data JSON
         const profileDataString = profileDataOrFormData.get('profileData');
         profileData = JSON.parse(profileDataString);
-        
+
         // Extract files
         resumeFile = profileDataOrFormData.get('resumeFile');
         idProofFile = profileDataOrFormData.get('idProofFile');
-        
+
         console.log('📋 Profile data extracted');
         console.log('📄 Resume file:', resumeFile ? resumeFile.name : 'None');
         console.log('🆔 ID proof file:', idProofFile ? idProofFile.name : 'None');
@@ -195,12 +195,12 @@ export const profileAPI = {
       // Verify authentication before proceeding
       console.log('\n🔐 STEP 0: Verifying authentication...');
       const authCheck = await verifyAuth();
-      
+
       if (!authCheck.valid) {
         console.error('❌ Authentication failed:', authCheck.error);
         throw new Error(`Please log in again. ${authCheck.error}`);
       }
-      
+
       console.log('✅ Authentication verified');
       const token = localStorage.getItem('authToken');
 
@@ -292,7 +292,7 @@ export const profileAPI = {
           // Profile exists - use PUT to update
           const existingProfileData = await checkResponse.json();
           console.log('✅ Profile found:', existingProfileData.profile ? 'Yes' : 'No');
-          
+
           if (existingProfileData && existingProfileData.profile) {
             method = 'PUT';
             profileExists = true;
@@ -305,7 +305,7 @@ export const profileAPI = {
           // Some other error (500, etc)
           const errorData = await checkResponse.json();
           console.error('⚠️  Unexpected response:', checkResponse.status, errorData);
-          
+
           // If it's a server error, we can still try to save
           console.log('⚠️  Server error during check, will attempt POST anyway');
           method = 'POST';
@@ -314,10 +314,10 @@ export const profileAPI = {
         console.error('❌ Error during profile check:', checkError);
         console.error('Error type:', checkError.name);
         console.error('Error message:', checkError.message);
-        
+
         // Analyze the error
         const errorMsg = (checkError.message || '').toLowerCase();
-        
+
         if (checkError.message?.includes('log in')) {
           // Authentication error - must re-throw
           throw checkError;
@@ -341,7 +341,7 @@ export const profileAPI = {
       console.log(`   Method: ${method}`);
       console.log(`   Endpoint: ${API_URL}/candidate/profile`);
       console.log(`   Profile data keys:`, Object.keys(profileData));
-      
+
       const saveResponse = await fetch(`${API_URL}/candidate/profile`, {
         method: method,
         headers: {
@@ -361,7 +361,7 @@ export const profileAPI = {
         if (saveResponse.status === 400 && saveData.message?.includes('already exists')) {
           // Profile already exists, retry with PUT
           console.log('🔄 Profile exists (400), retrying with PUT...');
-          
+
           const retryResponse = await fetch(`${API_URL}/candidate/profile`, {
             method: 'PUT',
             headers: {
@@ -372,12 +372,12 @@ export const profileAPI = {
           });
 
           const retryData = await retryResponse.json();
-          
+
           if (!retryResponse.ok) {
             console.error('❌ Retry failed:', retryData);
             throw new Error(retryData.message || 'Failed to update profile');
           }
-          
+
           console.log('✅ Profile updated successfully on retry');
           console.log('═══════════════════════════════════════\n');
           return retryData;
@@ -581,6 +581,11 @@ export const jobAPI = {
   getJobById: async (jobId) => {
     console.log(`📄 Fetching job details: ${jobId}`);
     return apiCall(`/jobs/${jobId}`);
+  },
+
+  getJobList: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/jobs/joblist?${queryString}`);
   },
 
   // Create new job (College Admin only)

@@ -766,6 +766,20 @@ export const collegeAdminAPI = {
     return apiCall('/college-admin/dashboard');
   },
 
+  // My College Profile
+  getMyCollegeProfile: async () => {
+    console.log('🏫 Fetching my college profile...');
+    return apiCall('/college-admin/my-college');
+  },
+
+  updateMyCollegeProfile: async (data) => {
+    console.log('✏️  Updating my college profile...', data);
+    return apiCall('/college-admin/my-college', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
   // Companies (College Admin specific endpoints)
   getCompanies: async (params = {}) => {
     console.log('🏢 Fetching college admin companies with params:', params);

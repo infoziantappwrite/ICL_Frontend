@@ -37,14 +37,17 @@ import CollegeAdminApplicationManagement from './pages/CollegeAdmin/ApplicationM
 import CollegeAdminAnalytics from './pages/CollegeAdmin/Analytics';
 import CollegeAdminNotifications from './pages/CollegeAdmin/Notification';
 import CollegeAdminSettings from './pages/CollegeAdmin/Settings';
-// ⭐ Group Management → "Students" in sidebar for College Admin
+// ⭐ Group Management → Excel-style group editor (still accessible via /groups)
 import GroupManagement from './pages/CollegeAdmin/GroupManagement';
+// ⭐ Student Management → real backend student list + bulk upload + export
+import StudentManagement from './pages/CollegeAdmin/StudentManagement';
 
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
 import SuperAdminCollegeManagement from './pages/SuperAdmin/CollegeManagement';
 import SuperAdminCollegeForm from './pages/SuperAdmin/CollegeForm';
 import SuperAdminCollegeDetail from './pages/SuperAdmin/CollegeDetail';
+import SuperAdminCollegeStudents from './pages/SuperAdmin/CollegeStudents';
 import SuperAdminCompanyManagement from './pages/SuperAdmin/CompanyManagement';
 import SuperAdminCompanyForm from './pages/SuperAdmin/CompanyForm';
 import SuperAdminCompanyDetail from './pages/SuperAdmin/CompanyDetail';
@@ -57,8 +60,10 @@ import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
 import SuperAdminNotifications from './pages/SuperAdmin/Notification';
 import SuperAdminSettings from './pages/SuperAdmin/Settings';
 import SubscriptionManagement from './pages/SuperAdmin/SubscriptionManagement';
-// ⭐ Group Management → "Students" in sidebar for Super Admin
+// ⭐ Group Management → Excel-style group editor (still accessible via /groups)
 import SuperAdminGroupManagement from './pages/SuperAdmin/GroupManagement';
+// ⭐ Student Management → real backend student operations for super admin
+import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 
 // ==================== ROLE-BASED REDIRECTS ====================
 const RoleBasedNotifications = () => {
@@ -113,10 +118,10 @@ function App() {
             {/* ===== COLLEGE ADMIN ===== */}
             <Route path="/dashboard/college-admin" element={<ProtectedRoute><CollegeAdminDashboard /></ProtectedRoute>} />
 
-            {/* ⭐ Students = Groups — sidebar "Students" link goes here */}
+            {/* ⭐ Students — real backend student management (list, bulk upload, export) */}
+            <Route path="/dashboard/college-admin/students" element={<ProtectedRoute><StudentManagement /></ProtectedRoute>} />
+            {/* Groups — Excel-style group editor (still accessible directly) */}
             <Route path="/dashboard/college-admin/groups" element={<ProtectedRoute><GroupManagement /></ProtectedRoute>} />
-            {/* Alias: old /students path → redirect to /groups */}
-            <Route path="/dashboard/college-admin/students" element={<Navigate to="/dashboard/college-admin/groups" replace />} />
 
             {/* Jobs */}
             <Route path="/dashboard/college-admin/jobs" element={<ProtectedRoute><CollegeAdminJobManagement /></ProtectedRoute>} />
@@ -144,14 +149,16 @@ function App() {
             {/* ===== SUPER ADMIN ===== */}
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
 
-            {/* ⭐ Students = Groups for Super Admin */}
+            {/* ⭐ Students — real backend student operations for super admin */}
+            <Route path="/dashboard/super-admin/students" element={<ProtectedRoute><SuperAdminStudentManagement /></ProtectedRoute>} />
+            {/* Groups — Excel-style group editor (still accessible directly) */}
             <Route path="/dashboard/super-admin/groups" element={<ProtectedRoute><SuperAdminGroupManagement /></ProtectedRoute>} />
-            <Route path="/dashboard/super-admin/students" element={<Navigate to="/dashboard/super-admin/groups" replace />} />
 
             {/* Colleges */}
             <Route path="/dashboard/super-admin/colleges" element={<ProtectedRoute><SuperAdminCollegeManagement /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/colleges/new" element={<ProtectedRoute><SuperAdminCollegeForm /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/colleges/:collegeId" element={<ProtectedRoute><SuperAdminCollegeDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/colleges/:collegeId/students" element={<ProtectedRoute><SuperAdminCollegeStudents /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/colleges/:collegeId/edit" element={<ProtectedRoute><SuperAdminCollegeForm /></ProtectedRoute>} />
 
             {/* Companies */}

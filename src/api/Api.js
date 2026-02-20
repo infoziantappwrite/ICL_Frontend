@@ -1,20 +1,72 @@
 // src/api/Api.js - COMPLETE FIX with comprehensive logging and error handling
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// ─── SECURE: In-memory token store (replaces localStorage for access token) ───
+// Stored in JS module memory — invisible to XSS scripts unlike localStorage.
+let _accessToken = null;
+
+export const tokenStore = {
+  get:   ()      => _accessToken,
+  set:   (token) => { _accessToken = token; },
+  clear: ()      => { _accessToken = null; },
+};
+
+// ─── Refresh logic ─────────────────────────────────────────────────────────────
+// Prevents multiple parallel refresh calls when several requests expire at once.
+let _refreshPromise = null;
+
+const refreshAccessToken = async () => {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    try {
+      console.log('🔄 Refreshing access token...');
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include', // sends the httpOnly refresh token cookie
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.accessToken) {
+        tokenStore.set(data.accessToken);
+        console.log('✅ Access token refreshed');
+        return data.accessToken;
+      } else {
+        tokenStore.clear();
+        console.warn('⚠️ Refresh failed — session ended:', data.message);
+        // Notify AuthContext to clear user state and redirect to login
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
+        return null;
+      }
+    } catch (err) {
+      tokenStore.clear();
+      window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
+      return null;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+};
+
 // Helper function to handle API calls with better error handling
-const apiCall = async (endpoint, options = {}) => {
+const apiCall = async (endpoint, options = {}, _isRetry = false) => {
   const url = `${API_URL}${endpoint}`;
-  
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
     ...options,
+    credentials: 'include', // SECURE: always send httpOnly refresh cookie
   };
 
-  // Add auth token if available
-  const token = localStorage.getItem('authToken');
+  // SECURE: read token from memory, not localStorage
+  const token = tokenStore.get();
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
@@ -22,13 +74,27 @@ const apiCall = async (endpoint, options = {}) => {
   try {
     console.log(`📡 API Call: ${options.method || 'GET'} ${endpoint}`);
     const response = await fetch(url, config);
-    
+
     console.log(`📥 Response: ${response.status} ${response.statusText}`);
-    
+
+    // SECURE: Auto-refresh on TOKEN_EXPIRED, then retry once
+    if (response.status === 401 && !_isRetry) {
+      let errorData = {};
+      try { errorData = await response.clone().json(); } catch {}
+
+      if (errorData.code === 'TOKEN_EXPIRED') {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          return apiCall(endpoint, options, true); // retry with new token
+        }
+        throw new Error('Session expired. Please login again.');
+      }
+    }
+
     // Parse response
     const contentType = response.headers.get('content-type');
     let data;
-    
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
@@ -51,10 +117,10 @@ const apiCall = async (endpoint, options = {}) => {
 
 // Verify authentication token
 const verifyAuth = async () => {
-  const token = localStorage.getItem('authToken');
-  
+  const token = tokenStore.get(); // SECURE: read from memory, not localStorage
+
   if (!token) {
-    console.error('❌ No auth token found in localStorage');
+    console.error('❌ No auth token found in memory');
     return { valid: false, error: 'No token' };
   }
 
@@ -138,10 +204,34 @@ export const authAPI = {
     });
   },
 
-  logout: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    console.log('🚪 Logged out - cleared auth data');
+  logout: async () => {
+    try {
+      // Tell server to revoke this device's refresh token
+      await apiCall('/auth/logout', { method: 'POST' });
+    } catch (err) {
+      // Proceed even if server unreachable — clear client state regardless
+      console.error('Logout server error:', err.message);
+    } finally {
+      tokenStore.clear(); // SECURE: clear in-memory access token
+      console.log('🚪 Logged out - cleared auth data');
+    }
+  },
+
+  // SECURE: New — restore session from httpOnly cookie on app boot/browser refresh
+  restoreSession: async () => {
+    return refreshAccessToken();
+  },
+
+  // SECURE: New — logout from all devices
+  logoutAll: async () => {
+    try {
+      await apiCall('/auth/logout-all', { method: 'POST' });
+    } catch (err) {
+      console.error('LogoutAll server error:', err.message);
+    } finally {
+      tokenStore.clear();
+      console.log('🚪 Logged out from all devices');
+    }
   },
 };
 
@@ -152,13 +242,13 @@ export const profileAPI = {
   // Get profile with auth verification
   getProfile: async () => {
     console.log('📄 Getting user profile...');
-    
+
     // Verify auth first
     const authCheck = await verifyAuth();
     if (!authCheck.valid) {
       throw new Error(`Authentication failed: ${authCheck.error}`);
     }
-    
+
     return apiCall('/candidate/profile');
   },
 
@@ -167,7 +257,7 @@ export const profileAPI = {
     try {
       console.log('🚀 Starting profile save process...');
       console.log('═══════════════════════════════════════');
-      
+
       let profileData;
       let resumeFile = null;
       let idProofFile = null;
@@ -178,11 +268,11 @@ export const profileAPI = {
         // Extract profile data JSON
         const profileDataString = profileDataOrFormData.get('profileData');
         profileData = JSON.parse(profileDataString);
-        
+
         // Extract files
         resumeFile = profileDataOrFormData.get('resumeFile');
         idProofFile = profileDataOrFormData.get('idProofFile');
-        
+
         console.log('📋 Profile data extracted');
         console.log('📄 Resume file:', resumeFile ? resumeFile.name : 'None');
         console.log('🆔 ID proof file:', idProofFile ? idProofFile.name : 'None');
@@ -195,14 +285,14 @@ export const profileAPI = {
       // Verify authentication before proceeding
       console.log('\n🔐 STEP 0: Verifying authentication...');
       const authCheck = await verifyAuth();
-      
+
       if (!authCheck.valid) {
         console.error('❌ Authentication failed:', authCheck.error);
         throw new Error(`Please log in again. ${authCheck.error}`);
       }
-      
+
       console.log('✅ Authentication verified');
-      const token = localStorage.getItem('authToken');
+      const token = tokenStore.get(); // SECURE: read from memory
 
       // Step 1: Upload resume file if provided
       if (resumeFile) {
@@ -292,7 +382,7 @@ export const profileAPI = {
           // Profile exists - use PUT to update
           const existingProfileData = await checkResponse.json();
           console.log('✅ Profile found:', existingProfileData.profile ? 'Yes' : 'No');
-          
+
           if (existingProfileData && existingProfileData.profile) {
             method = 'PUT';
             profileExists = true;
@@ -305,7 +395,7 @@ export const profileAPI = {
           // Some other error (500, etc)
           const errorData = await checkResponse.json();
           console.error('⚠️  Unexpected response:', checkResponse.status, errorData);
-          
+
           // If it's a server error, we can still try to save
           console.log('⚠️  Server error during check, will attempt POST anyway');
           method = 'POST';
@@ -314,10 +404,10 @@ export const profileAPI = {
         console.error('❌ Error during profile check:', checkError);
         console.error('Error type:', checkError.name);
         console.error('Error message:', checkError.message);
-        
+
         // Analyze the error
         const errorMsg = (checkError.message || '').toLowerCase();
-        
+
         if (checkError.message?.includes('log in')) {
           // Authentication error - must re-throw
           throw checkError;
@@ -341,7 +431,7 @@ export const profileAPI = {
       console.log(`   Method: ${method}`);
       console.log(`   Endpoint: ${API_URL}/candidate/profile`);
       console.log(`   Profile data keys:`, Object.keys(profileData));
-      
+
       const saveResponse = await fetch(`${API_URL}/candidate/profile`, {
         method: method,
         headers: {
@@ -361,7 +451,7 @@ export const profileAPI = {
         if (saveResponse.status === 400 && saveData.message?.includes('already exists')) {
           // Profile already exists, retry with PUT
           console.log('🔄 Profile exists (400), retrying with PUT...');
-          
+
           const retryResponse = await fetch(`${API_URL}/candidate/profile`, {
             method: 'PUT',
             headers: {
@@ -372,12 +462,12 @@ export const profileAPI = {
           });
 
           const retryData = await retryResponse.json();
-          
+
           if (!retryResponse.ok) {
             console.error('❌ Retry failed:', retryData);
             throw new Error(retryData.message || 'Failed to update profile');
           }
-          
+
           console.log('✅ Profile updated successfully on retry');
           console.log('═══════════════════════════════════════\n');
           return retryData;
@@ -435,12 +525,13 @@ export const uploadAPI = {
     const formData = new FormData();
     formData.append('profilePicture', file);
 
-    const token = localStorage.getItem('authToken');
+    const token = tokenStore.get(); // SECURE: read from memory
     const response = await fetch(`${API_URL}/upload/profile-picture`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
+      credentials: 'include',
       body: formData,
     });
 
@@ -458,12 +549,13 @@ export const uploadAPI = {
     const formData = new FormData();
     formData.append('resume', file);
 
-    const token = localStorage.getItem('authToken');
+    const token = tokenStore.get(); // SECURE: read from memory
     const response = await fetch(`${API_URL}/upload/resume`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
+      credentials: 'include',
       body: formData,
     });
 
@@ -481,12 +573,13 @@ export const uploadAPI = {
     const formData = new FormData();
     formData.append('document', file);
 
-    const token = localStorage.getItem('authToken');
+    const token = tokenStore.get(); // SECURE: read from memory
     const response = await fetch(`${API_URL}/upload/document/${type}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
+      credentials: 'include',
       body: formData,
     });
 
@@ -583,6 +676,11 @@ export const jobAPI = {
     return apiCall(`/jobs/${jobId}`);
   },
 
+  getJobList: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return apiCall(`/jobs/joblist?${queryString}`);
+  },
+
   // Create new job (College Admin only)
   createJob: async (jobData) => {
     console.log('➕ Creating new job:', jobData);
@@ -649,18 +747,20 @@ export const jobAPI = {
 window.jobAPI = jobAPI;
 
 // Helper functions for token management
+// SECURE: tokenManager now uses in-memory tokenStore instead of localStorage.
+// The interface is identical so all existing callers work without changes.
 export const tokenManager = {
   setToken: (token) => {
-    localStorage.setItem('authToken', token);
+    tokenStore.set(token); // SECURE: store in memory, not localStorage
     console.log('🔑 Token saved');
   },
 
   getToken: () => {
-    return localStorage.getItem('authToken');
+    return tokenStore.get(); // SECURE: read from memory
   },
 
   removeToken: () => {
-    localStorage.removeItem('authToken');
+    tokenStore.clear(); // SECURE: clear from memory
     console.log('🔑 Token removed');
   },
 

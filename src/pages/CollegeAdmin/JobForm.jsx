@@ -1,7 +1,7 @@
 // src/pages/CollegeAdmin/JobForm.jsx - FIXED TO MATCH BACKEND SCHEMA
 import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
@@ -25,6 +25,7 @@ const JobForm = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const { jobId } = useParams();
+  const [searchParams] = useSearchParams();
   const isEditMode = !!jobId;
 
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,11 @@ const JobForm = () => {
       const response = await companyAPI.getAllCompanies({ isActive: true });
       if (response.success) {
         setCompanies(response.companies);
+        // Pre-fill companyId from URL query param (e.g. coming from CompanyDetail page)
+        const prefilledCompanyId = searchParams.get('companyId');
+        if (prefilledCompanyId && !isEditMode) {
+          setFormData(prev => ({ ...prev, companyId: prefilledCompanyId }));
+        }
       }
     } catch (err) {
       console.error('Error fetching companies:', err);

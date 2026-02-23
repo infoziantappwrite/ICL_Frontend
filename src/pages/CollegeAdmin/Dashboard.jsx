@@ -281,11 +281,11 @@ const QuickActionCard = ({ icon: Icon, title, description, gradient, onClick }) 
 const JobDescriptionCard = ({ jd }) => {
   const navigate = useNavigate();
   return (
-    <button onClick={() => navigate(`/dashboard/college-admin/jobs/${jd._id}`)}
+    <button onClick={() => navigate(`/dashboard/college-admin/jobs/view/${jd._id}`)}
       className="w-full p-4 bg-gray-50 hover:bg-blue-50 rounded-xl transition-all border border-gray-100 hover:border-blue-200 text-left group">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{jd.jobTitle || 'Untitled Position'}</h4>
+          <h4 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{jd.title || jd.jobTitle || 'Untitled Position'}</h4>
           <p className="text-sm text-gray-600 truncate mt-1">{jd.companyId?.name || jd.company || 'Company Name'}</p>
         </div>
         <span className={`ml-3 px-2 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${

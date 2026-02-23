@@ -643,6 +643,12 @@ export const jobAPI = {
     console.log(`✅ Checking eligibility for job: ${jobId}`);
     return apiCall(`/jobs/${jobId}/check-eligibility`);
   },
+
+  // Get matched students with match % for a JD (College Admin only)
+  getMatchedStudents: async (jobId) => {
+    console.log(`🎯 Fetching matched students for job: ${jobId}`);
+    return apiCall(`/jobs/${jobId}/matched-students`);
+  },
 };
 
 // Make jobAPI globally available for existing code

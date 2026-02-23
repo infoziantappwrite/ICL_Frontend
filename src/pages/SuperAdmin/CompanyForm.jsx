@@ -247,8 +247,10 @@ const CompanyForm = () => {
                   name="collegeId"
                   value={formData.collegeId}
                   onChange={handleInputChange}
-                  disabled={loadingColleges}
+                  disabled={isEditMode || loadingColleges}
                   className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none ${
+                    isEditMode ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+                  } ${
                     errors.collegeId ? 'border-red-500' : 'border-gray-300'
                   }`}
                   required
@@ -262,6 +264,11 @@ const CompanyForm = () => {
                 </select>
               </div>
               {errors.collegeId && <p className="text-red-500 text-sm mt-1">{errors.collegeId}</p>}
+              {isEditMode && (
+                <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                  <span>⚠️</span> College cannot be changed after creation. To assign this company to a different college, create a new company entry.
+                </p>
+              )}
             </div>
           </div>
 

@@ -166,6 +166,7 @@ function App() {
             <Route path="/dashboard/super-admin/companies/create" element={<ProtectedRoute><SuperAdminCompanyForm /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/companies/edit/:companyId" element={<ProtectedRoute><SuperAdminCompanyForm /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/companies/:companyId" element={<ProtectedRoute><SuperAdminCompanyDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/jobs/view/:jobId" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
 
             {/* Admins */}
             <Route path="/dashboard/super-admin/admins" element={<ProtectedRoute><SuperAdminAdminManagement /></ProtectedRoute>} />

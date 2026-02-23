@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../api/Api';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import {
   Mail,
@@ -22,7 +23,16 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+  const { login } = useAuth(); // SECURE: to log user in directly after OTP verify
   const toast = useToast();
+
+  // Role-based redirect map (same as Login.jsx)
+  const roleRoutes = {
+    student:       '/dashboard/student',
+    candidate:     '/dashboard/student',
+    college_admin: '/dashboard/college-admin',
+    super_admin:   '/dashboard/super-admin',
+  };
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
@@ -111,15 +121,14 @@ const VerifyOtp = () => {
       const response = await authAPI.verifyOtp(email, otpString);
 
       if (response.success) {
+        // SECURE: OTP verified → server returned accessToken + set refresh cookie
+        // Log the user in directly, no need to redirect to /login first
+        login(response.user, response.accessToken);
+
         setSuccess(true);
-        toast.success('Email Verified!', 'Your account is confirmed. Redirecting to login...');
+        toast.success('Email Verified!', 'Your account is confirmed. Taking you to your dashboard...');
         setTimeout(() => {
-          navigate('/login', {
-            state: {
-              message: 'Email verified successfully! Please login to continue.',
-              verified: true,
-            },
-          });
+          navigate(roleRoutes[response.user?.role] || '/dashboard');
         }, 1500);
       } else {
         setError(response.message || 'Invalid OTP. Please try again.');
@@ -213,7 +222,7 @@ const VerifyOtp = () => {
                   <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-sm">Email verified successfully!</p>
-                    <p className="text-xs mt-0.5 text-green-600">Redirecting to login...</p>
+                    <p className="text-xs mt-0.5 text-green-600">Redirecting to your dashboard...</p>
                   </div>
                 </div>
               )}

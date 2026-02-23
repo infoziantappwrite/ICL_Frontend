@@ -44,7 +44,7 @@ const JobManagement = () => {
     try {
       setLoading(true);
       // Using jobAPI which already exists in Api.js
-      const response = await jobAPI.getAllJobs();
+      const response = await jobAPI.getJobList();
       
       if (response.success) {
         setJobs(response.jobs);
@@ -134,7 +134,7 @@ const JobManagement = () => {
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = 
       job.jobTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.companyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.jobCode?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = 
@@ -285,7 +285,7 @@ const JobManagement = () => {
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-gray-400" />
                         <span className="text-sm text-gray-700">
-                          {job.companyId?.name || 'N/A'}
+                          {job.companyName || 'N/A'}
                         </span>
                       </div>
                     </td>
@@ -296,7 +296,7 @@ const JobManagement = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-semibold text-gray-900">
-                        ₹{job.package?.ctc?.min || 0} - ₹{job.package?.ctc?.max || 0} LPA
+                        ₹{job.package?.min || 0} - ₹{job.package?.max || 0} LPA
                       </div>
                     </td>
                     <td className="px-6 py-4">

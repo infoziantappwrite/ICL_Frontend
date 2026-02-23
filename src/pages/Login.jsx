@@ -82,8 +82,7 @@ const Login = () => {
         console.log('✅ Login successful for user:', response.user.email, 'with role:', response.user.role);
         
         // Login user using AuthContext
-        // SECURE: backend now returns accessToken (not token)
-        login(response.user, response.accessToken);
+        login(response.user, response.token);
 
         toast.success('Welcome back!', `Signed in as ${response.user.email}`);
 

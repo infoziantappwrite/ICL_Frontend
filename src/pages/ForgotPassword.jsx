@@ -46,8 +46,9 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      // SECURE: real API call (server always returns 200 to prevent user enumeration)
-      await authAPI.forgotPassword(email);
+      // Replace with real API call when available:
+      // await authAPI.forgotPassword(email);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       setIsSubmitted(true);
     } catch (error) {
       setErrors({ submit: error.message || 'Failed to send reset email. Please try again.' });

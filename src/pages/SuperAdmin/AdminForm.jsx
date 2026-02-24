@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/AdminForm.jsx - FINAL WORKING VERSION
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Users,
   Save,
@@ -53,13 +54,7 @@ const AdminForm = () => {
   const fetchColleges = async () => {
     try {
       setLoadingColleges(true);
-      const response = await fetch('http://localhost:5000/api/super-admin/colleges?limit=1000', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-     
+      const data = await apiCall('/super-admin/colleges?limit=1000');
       if (data.success) {
         setColleges(data.colleges || []);
       }
@@ -73,12 +68,7 @@ const AdminForm = () => {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/super-admin/admins/${adminId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
+      const data = await apiCall(`/super-admin/admins/${adminId}`);
      
       if (data.success) {
         setFormData({
@@ -197,22 +187,17 @@ const AdminForm = () => {
  
         console.log('Sending:', requestBody);
  
-        const response = await fetch(`http://localhost:5000/api/super-admin/colleges/${formData.collegeId}/admins`, {
+        const data = await apiCall(`/super-admin/colleges/${formData.collegeId}/admins`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-          },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
         });
- 
-        const data = await response.json();
+
         console.log('Response:', data);
- 
-        if (!response.ok) {
+
+        if (!data.success) {
           throw new Error(data.message || 'Failed to create admin');
         }
- 
+
         toast.success('Success', 'Admin created successfully!');
         navigate('/dashboard/super-admin/admins');
       }

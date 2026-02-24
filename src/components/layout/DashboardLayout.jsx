@@ -14,6 +14,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { collegeName } = useAuth();
   const toast = useToast();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -49,6 +50,28 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     return labels[role] || 'Student';
   };
 
+  // For college_admin: show their college name; otherwise show 'ICL'
+  const getHeaderBrandName = () => {
+    if (user?.role === 'college_admin') {
+      const name = user?.college?.name || collegeName;
+      if (name) {
+        // Shorten long names: show first word or abbreviation
+        const words = name.split(' ');
+        if (words.length === 1) return name.substring(0, 8);
+        return words.map(w => w[0]).join('').substring(0, 4).toUpperCase();
+      }
+    }
+    return 'ICL';
+  };
+
+  const getHeaderSubtitle = () => {
+    if (user?.role === 'college_admin') {
+      const name = user?.college?.name || collegeName;
+      if (name) return name.length > 28 ? name.substring(0, 28) + '…' : name;
+    }
+    return `${getUserRole()} Dashboard`;
+  };
+
   const getDashboardPath = () => {
     const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
     const routes = { student: '/dashboard/student', college_admin: '/dashboard/college-admin', super_admin: '/dashboard/super-admin' };
@@ -64,7 +87,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         { icon: Building2,       label: 'Colleges',      path: '/dashboard/super-admin/colleges' },
         { icon: Building2,       label: 'Companies',     path: '/dashboard/super-admin/companies' },
         { icon: Users,           label: 'Admins',        path: '/dashboard/super-admin/admins' },
-        { icon: GraduationCap,   label: 'Students',      path: '/dashboard/super-admin/groups' },
+        { icon: GraduationCap,   label: 'Students',      path: '/dashboard/super-admin/students' },
         { icon: FileText,        label: 'Applications',  path: '/dashboard/super-admin/applications' },
         { icon: BarChart3,       label: 'Analytics',     path: '/dashboard/super-admin/analytics' },
         { icon: CreditCard,      label: 'Subscriptions', path: '/dashboard/super-admin/subscriptions' },
@@ -76,7 +99,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     if (role === 'college_admin') {
       return [
         { icon: LayoutDashboard, label: 'Dashboard',    path: '/dashboard/college-admin' },
-        { icon: GraduationCap,   label: 'Students',     path: '/dashboard/college-admin/groups' },
+        { icon: GraduationCap,   label: 'Students',     path: '/dashboard/college-admin/students' },
         { icon: Building2,       label: 'Companies',    path: '/dashboard/college-admin/companies' },
         { icon: Briefcase,       label: 'Jobs',         path: '/dashboard/college-admin/jobs' },
         { icon: FileText,        label: 'Applications', path: '/dashboard/college-admin/applications' },
@@ -138,11 +161,13 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
               )}
               <button onClick={() => navigate(getDashboardPath())} className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
                 <div className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <span className="text-white font-bold text-xl">I</span>
+                  <span className="text-white font-bold text-xl">{getHeaderBrandName().charAt(0)}</span>
                 </div>
                 <div className="text-left">
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">ICL</h1>
-                  <p className="text-xs text-gray-600">{getUserRole()} Dashboard</p>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent truncate max-w-[180px]">
+                    {getHeaderBrandName()}
+                  </h1>
+                  <p className="text-xs text-gray-600 truncate max-w-[180px]">{getHeaderSubtitle()}</p>
                 </div>
               </button>
             </div>
@@ -180,6 +205,11 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-900 truncate">{getUserName()}</p>
                           <p className="text-sm text-gray-600 truncate">{getUserRole()}</p>
+                          {user?.role === 'college_admin' && (user?.college?.name || collegeName) && (
+                            <p className="text-xs text-blue-600 font-medium truncate">
+                              {user?.college?.name || collegeName}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                         </div>
                       </div>
@@ -280,6 +310,15 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
                 </button>
               ))}
             </nav>
+
+            {/* College name tag for college_admin */}
+            {user?.role === 'college_admin' && sidebarOpen && (user?.college?.name || collegeName) && (
+              <div className="mx-4 mb-3 px-3 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-xs text-blue-500 font-medium truncate">
+                  {user?.college?.name || collegeName}
+                </p>
+              </div>
+            )}
 
             {/* Logout at bottom of sidebar */}
             <div className="p-4 border-t border-gray-100">

@@ -6,9 +6,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 let _accessToken = null;
 
 export const tokenStore = {
-  get:   ()      => _accessToken,
-  set:   (token) => { _accessToken = token; },
-  clear: ()      => { _accessToken = null; },
+  get: () => _accessToken,
+  set: (token) => { _accessToken = token; },
+  clear: () => { _accessToken = null; },
 };
 
 // ─── Refresh logic ─────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ const apiCall = async (endpoint, options = {}, _isRetry = false) => {
     // SECURE: Auto-refresh on TOKEN_EXPIRED, then retry once
     if (response.status === 401 && !_isRetry) {
       let errorData = {};
-      try { errorData = await response.clone().json(); } catch {}
+      try { errorData = await response.clone().json(); } catch { }
 
       if (errorData.code === 'TOKEN_EXPIRED') {
         const newToken = await refreshAccessToken();
@@ -633,7 +633,7 @@ export const companyAPI = {
   // Update existing company (College Admin only)
   updateCompany: async (companyId, companyData) => {
     console.log(`✏️  Updating company: ${companyId}`, companyData);
-    return apiCall(`/college-admin/companies/${companyId}`, {
+    return apiCall(`/companies/${companyId}`, {
       method: 'PUT',
       body: JSON.stringify(companyData),
     });
@@ -642,7 +642,7 @@ export const companyAPI = {
   // Delete company (College Admin only)
   deleteCompany: async (companyId) => {
     console.log(`🗑️  Deleting company: ${companyId}`);
-    return apiCall(`/college-admin/companies/${companyId}`, {
+    return apiCall(`/companies/${companyId}`, {
       method: 'DELETE',
     });
   },
@@ -650,7 +650,7 @@ export const companyAPI = {
   // Toggle company active status (College Admin only)
   toggleActiveStatus: async (companyId) => {
     console.log(`🔄 Toggling active status: ${companyId}`);
-    return apiCall(`/college-admin/companies/${companyId}/toggle-active`, {
+    return apiCall(`/companies/${companyId}/toggle-active`, {
       method: 'PATCH',
     });
   },
@@ -864,6 +864,10 @@ export const collegeAdminAPI = {
   getDashboard: async () => {
     console.log('📊 Fetching college admin dashboard data...');
     return apiCall('/college-admin/dashboard');
+  },
+
+  getMyCollegeProfile: async () => {
+    return apiCall('/college-admin/my-college');
   },
 
   // Companies (College Admin specific endpoints)

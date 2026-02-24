@@ -1,0 +1,79 @@
+// src/api/studentAPI.js
+// Real backend student API — ONLY uses existing backend routes
+// College Admin: /api/college-admin/students/*
+// Super Admin:   /api/super-admin/students/*
+// NO /groups — those don't exist in backend
+
+import apiCall, { tokenStore } from './Api';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const downloadFileFromEndpoint = async (endpoint, filename) => {
+  const token = tokenStore.get(); // SECURE: read from memory, not localStorage
+  const res   = await fetch(`${API_URL}${endpoint}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Download failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+};
+
+const uploadMultipart = async (endpoint, file, queryParams = {}) => {
+  const token = tokenStore.get(); // SECURE: read from memory, not localStorage
+  const q = new URLSearchParams(Object.fromEntries(Object.entries(queryParams).filter(([,v]) => v))).toString();
+  const url = `${API_URL}${endpoint}${q ? `?${q}` : ''}`;
+  const form = new FormData();
+  form.append('studentsFile', file);
+  const res  = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, credentials: 'include', body: form });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Upload failed (${res.status})`);
+  return data;
+};
+
+const buildQS = (params) =>
+  new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v !== '' && v != null))).toString();
+
+export const collegeAdminStudentAPI = {
+  getStudents: (params = {}) => {
+    const q = buildQS(params);
+    return apiCall(`/college-admin/students${q ? `?${q}` : ''}`);
+  },
+  getExportPreview: (params = {}) => {
+    const q = buildQS(params);
+    return apiCall(`/college-admin/students/export/preview${q ? `?${q}` : ''}`);
+  },
+  exportStudents: (params = {}) => {
+    const q = buildQS(params);
+    const fmt = params.format || 'xlsx';
+    return downloadFileFromEndpoint(`/college-admin/students/export${q ? `?${q}` : ''}`, `students_export_${Date.now()}.${fmt}`);
+  },
+  downloadTemplate: () => downloadFileFromEndpoint('/college-admin/students/bulk/template', 'student_bulk_upload_template.xlsx'),
+  validateBulkUpload: (file) => uploadMultipart('/college-admin/students/bulk/validate', file),
+  bulkUpload: (file) => uploadMultipart('/college-admin/students/bulk/upload', file),
+};
+
+export const superAdminStudentAPI = {
+  getExportPreview: (params = {}) => {
+    const q = buildQS(params);
+    return apiCall(`/super-admin/students/export/preview${q ? `?${q}` : ''}`);
+  },
+  exportStudents: (params = {}) => {
+    const q = buildQS(params);
+    const fmt = params.format || 'xlsx';
+    return downloadFileFromEndpoint(`/super-admin/students/export${q ? `?${q}` : ''}`, `students_export_${Date.now()}.${fmt}`);
+  },
+  downloadTemplate: () => downloadFileFromEndpoint('/super-admin/students/bulk/template', 'student_bulk_upload_template.xlsx'),
+  validateBulkUpload: (file, collegeId = null) => uploadMultipart('/super-admin/students/bulk/validate', file, collegeId ? { collegeId } : {}),
+  bulkUpload: (file, collegeId = null) => uploadMultipart('/super-admin/students/bulk/upload', file, collegeId ? { collegeId } : {}),
+  getColleges: () => apiCall('/super-admin/colleges?limit=100'),
+};
+
+export default collegeAdminStudentAPI;

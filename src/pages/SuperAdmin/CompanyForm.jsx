@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CompanyForm.jsx - FIXED VERSION
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Building2,
   Save,
@@ -71,13 +72,7 @@ const CompanyForm = () => {
   const fetchColleges = async () => {
     try {
       setLoadingColleges(true);
-      const response = await fetch('http://localhost:5000/api/super-admin/colleges?limit=1000', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      
+      const data = await apiCall('/super-admin/colleges?limit=1000');
       if (data.success) {
         setColleges(data.colleges);
       }
@@ -247,8 +242,10 @@ const CompanyForm = () => {
                   name="collegeId"
                   value={formData.collegeId}
                   onChange={handleInputChange}
-                  disabled={loadingColleges}
+                  disabled={isEditMode || loadingColleges}
                   className={`w-full pl-11 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none ${
+                    isEditMode ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+                  } ${
                     errors.collegeId ? 'border-red-500' : 'border-gray-300'
                   }`}
                   required
@@ -262,6 +259,11 @@ const CompanyForm = () => {
                 </select>
               </div>
               {errors.collegeId && <p className="text-red-500 text-sm mt-1">{errors.collegeId}</p>}
+              {isEditMode && (
+                <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                  <span>⚠️</span> College cannot be changed after creation. To assign this company to a different college, create a new company entry.
+                </p>
+              )}
             </div>
           </div>
 

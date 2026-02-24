@@ -382,5 +382,4 @@ const JobManagement = () => {
     </DashboardLayout>
   );
 };
-
 export default JobManagement;

@@ -88,6 +88,19 @@ const RoleBasedSettings = () => {
   return null;
 };
 
+const PublicRoute = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  // If already logged in → never allow login page
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
 // ==================== APP ====================
 function App() {
   return (
@@ -98,10 +111,10 @@ function App() {
 
             {/* ===== PUBLIC ===== */}
             <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="/verify-otp" element={<PublicRoute><VerifyOtp /></PublicRoute>} />
 
             {/* ===== ROLE-BASED REDIRECT ===== */}
             <Route path="/dashboard" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />

@@ -13,10 +13,10 @@ import { useAuth } from '../../context/AuthContext';
 
 const CollegeAdminDashboard = () => {
   const navigate = useNavigate();
-  const { user, college: cachedCollege, updateCollege } = useAuth();
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [college, setCollege] = useState(cachedCollege || null);
+  const [college, setCollege] = useState(null);
   const [stats, setStats] = useState({
     totalStudents: 0, placedStudents: 0, totalCompanies: 0,
     totalJDs: 0, activeJDs: 0, placementPercentage: 0, selectedStudents: 0,
@@ -42,7 +42,6 @@ const CollegeAdminDashboard = () => {
       if (collegeRes.status === 'fulfilled' && collegeRes.value?.success) {
         const collegeData = collegeRes.value.college;
         setCollege(collegeData);
-        updateCollege(collegeData);
       } else {
         setNoCollegeError(true);
       }

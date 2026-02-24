@@ -8,13 +8,7 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-  'Content-Type': 'application/json',
-});
+import apiCall from '../../api/Api'; // ← use apiCall so token comes from memory
 
 const SuperAdminDashboard = () => {
   const navigate = useNavigate();
@@ -27,17 +21,10 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
 
-      // Fetch dashboard stats and recent colleges (with live counts) in parallel
-      const [dashRes, collegesRes] = await Promise.all([
-        fetch(`${API_URL}/super-admin/dashboard`, { headers: authHeaders() }),
-        fetch(`${API_URL}/super-admin/colleges?limit=5&sortBy=-createdAt`, { headers: authHeaders() }),
-      ]);
-
-      if (!dashRes.ok) throw new Error(`Dashboard HTTP ${dashRes.status}`);
-
+      // Use apiCall — reads token from memory automatically
       const [dashData, collegesData] = await Promise.all([
-        dashRes.json(),
-        collegesRes.json(),
+        apiCall('/super-admin/dashboard'),
+        apiCall('/super-admin/colleges?limit=5&sortBy=-createdAt'),
       ]);
 
       if (dashData.success) {
@@ -45,7 +32,6 @@ const SuperAdminDashboard = () => {
       }
 
       if (collegesData.success) {
-        // liveCounts already included from backend — no extra fetches
         setRecentColleges(collegesData.colleges || []);
       }
 

@@ -644,7 +644,13 @@ export const jobAPI = {
     return apiCall(`/jobs/${jobId}/check-eligibility`);
   },
 
+<<<<<<< HEAD
   // Get matched students with match % for a JD (College Admin only)
+=======
+  // ✅ NEW: Get skill-matched students for a JD (College Admin only)
+  // Route: GET /api/jobs/:id/matched-students
+  // Returns students sorted by matchPercentage desc, with breakdown per criterion
+>>>>>>> 6fb3286 (skill matching integrated and small bug has been cleared)
   getMatchedStudents: async (jobId) => {
     console.log(`🎯 Fetching matched students for job: ${jobId}`);
     return apiCall(`/jobs/${jobId}/matched-students`);

@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeForm.jsx - Add/Edit College Form
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Building2,
   Save,
@@ -80,16 +81,7 @@ const CollegeForm = () => {
   const fetchCollegeData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:5000/api/super-admin/colleges/${collegeId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        }
-      );
-      const data = await response.json();
-
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`);
       if (data.success) {
         setFormData(data.college);
       }
@@ -173,23 +165,17 @@ const CollegeForm = () => {
     try {
       console.log('📤 Submitting college data:', formData);
       console.log('📋 Placement Config:', formData.placementConfig);
-      
-      const url = isEditMode
-        ? `http://localhost:5000/api/super-admin/colleges/${collegeId}`
-        : 'http://localhost:5000/api/super-admin/colleges';
-      
+
+      const endpoint = isEditMode
+        ? `/super-admin/colleges/${collegeId}`
+        : '/super-admin/colleges';
+
       const method = isEditMode ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const data = await apiCall(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
         body: JSON.stringify(formData),
       });
-
-      const data = await response.json();
       console.log('📥 Backend response:', data);
 
       if (data.success) {

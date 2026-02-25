@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeManagement.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Building2, Plus, Search, Eye, Edit, Trash2, MapPin,
   Users, Briefcase, CheckCircle, XCircle, RefreshCw, Clock, FileText,
@@ -9,12 +10,6 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-  'Content-Type': 'application/json',
-});
 
 const CollegeManagement = () => {
   const toast = useToast();
@@ -38,13 +33,7 @@ const CollegeManagement = () => {
         ...(filterStatus !== 'all' && { isActive: filterStatus === 'active' }),
       });
 
-      const response = await fetch(`${API_URL}/super-admin/colleges?${params}`, {
-        headers: authHeaders(),
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
+      const data = await apiCall(`/super-admin/colleges?${params}`);
 
       if (data.success) {
         // Backend now returns liveCounts per college — no extra fetches needed
@@ -76,11 +65,7 @@ const CollegeManagement = () => {
     if (!window.confirm(`Are you sure you want to delete "${collegeName}"? This action cannot be undone.`)) return;
 
     try {
-      const response = await fetch(`${API_URL}/super-admin/colleges/${collegeId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-      const data = await response.json();
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`, { method: 'DELETE' });
       if (data.success) {
         toast.success('Success', 'College deleted successfully');
         fetchColleges();
@@ -98,12 +83,10 @@ const CollegeManagement = () => {
     if (!window.confirm(`Are you sure you want to ${action} "${collegeName}"?`)) return;
 
     try {
-      const response = await fetch(`${API_URL}/super-admin/colleges/${collegeId}`, {
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`, {
         method: 'PUT',
-        headers: authHeaders(),
         body: JSON.stringify({ isActive: !currentStatus }),
       });
-      const data = await response.json();
       if (data.success) {
         toast.success('Success', `College ${action}d successfully`);
         fetchColleges();

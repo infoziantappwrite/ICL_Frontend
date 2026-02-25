@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/AdminManagement.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Users,
   Plus,
@@ -41,13 +42,7 @@ const AdminManagement = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/super-admin/admins', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      
+      const data = await apiCall('/super-admin/admins');
       if (data.success) {
         setAdmins(data.admins || []);
         calculateStats(data.admins || []);
@@ -73,12 +68,7 @@ const AdminManagement = () => {
     }
 
     try {
-      await fetch(`http://localhost:5000/api/super-admin/admins/${adminId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      await apiCall(`/super-admin/admins/${adminId}`, { method: 'DELETE' });
       toast.success('Success', 'Admin deleted successfully');
       fetchAdmins();
     } catch (error) {
@@ -89,12 +79,7 @@ const AdminManagement = () => {
 
   const handleToggleStatus = async (adminId, currentStatus) => {
     try {
-      await fetch(`http://localhost:5000/api/super-admin/admins/${adminId}/toggle-status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      await apiCall(`/super-admin/admins/${adminId}/toggle-status`, { method: 'PATCH' });
       toast.success('Success', `Admin ${currentStatus ? 'deactivated' : 'activated'} successfully`);
       fetchAdmins();
     } catch (error) {

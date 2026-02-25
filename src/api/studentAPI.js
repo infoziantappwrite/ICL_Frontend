@@ -4,14 +4,15 @@
 // Super Admin:   /api/super-admin/students/*
 // NO /groups — those don't exist in backend
 
-import apiCall from './Api';
+import apiCall, { tokenStore } from './Api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const downloadFileFromEndpoint = async (endpoint, filename) => {
-  const token = localStorage.getItem('authToken');
+  const token = tokenStore.get(); // SECURE: read from memory, not localStorage
   const res   = await fetch(`${API_URL}${endpoint}`, {
     headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -26,12 +27,12 @@ const downloadFileFromEndpoint = async (endpoint, filename) => {
 };
 
 const uploadMultipart = async (endpoint, file, queryParams = {}) => {
-  const token = localStorage.getItem('authToken');
+  const token = tokenStore.get(); // SECURE: read from memory, not localStorage
   const q = new URLSearchParams(Object.fromEntries(Object.entries(queryParams).filter(([,v]) => v))).toString();
   const url = `${API_URL}${endpoint}${q ? `?${q}` : ''}`;
   const form = new FormData();
   form.append('studentsFile', file);
-  const res  = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+  const res  = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, credentials: 'include', body: form });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || `Upload failed (${res.status})`);
   return data;

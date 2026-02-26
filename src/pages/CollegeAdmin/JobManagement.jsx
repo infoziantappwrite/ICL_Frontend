@@ -9,7 +9,7 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { collegeAdminAPI, jobAPI } from '../../api/Api';
-
+ 
 const JobManagement = () => {
   const toast = useToast();
   const navigate = useNavigate();
@@ -18,9 +18,9 @@ const JobManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [stats, setStats] = useState({ total: 0, active: 0, closed: 0, draft: 0 });
-
+ 
   useEffect(() => { fetchJobs(); }, []);
-
+ 
   const fetchJobs = async () => {
     try {
       setLoading(true);
@@ -38,7 +38,7 @@ const JobManagement = () => {
       setLoading(false);
     }
   };
-
+ 
   const calculateStats = (jobsList) => {
     setStats({
       total: jobsList.length,
@@ -47,7 +47,7 @@ const JobManagement = () => {
       draft:  jobsList.filter(j => j.status === 'Draft').length,
     });
   };
-
+ 
   const handleTogglePin = async (jobId, currentPinStatus) => {
     try {
       await jobAPI.togglePinJob(jobId);
@@ -58,7 +58,7 @@ const JobManagement = () => {
       fetchJobs();
     }
   };
-
+ 
   const handleStatusChange = async (jobId, newStatus) => {
     try {
       await jobAPI.updateJobStatus(jobId, newStatus);
@@ -71,7 +71,7 @@ const JobManagement = () => {
       fetchJobs();
     }
   };
-
+ 
   const handleDeleteJob = async (jobId, jobTitle) => {
     if (!confirm(`Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`)) return;
     try {
@@ -82,24 +82,24 @@ const JobManagement = () => {
       toast.error('Error', 'Failed to delete job: ' + error.message);
     }
   };
-
+ 
   const getStatusBadge = (s) => ({
     Active: 'bg-green-100 text-green-700 border border-green-200',
     Closed: 'bg-gray-100 text-gray-700 border border-gray-200',
     Draft: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
     Cancelled: 'bg-red-100 text-red-700 border border-red-200',
   }[s] || 'bg-gray-100 text-gray-700');
-
+ 
   const getJobTypeColor = (t) => ({
     'Full-Time': 'bg-blue-100 text-blue-700',
     'Internship': 'bg-purple-100 text-purple-700',
     'Internship + FTE': 'bg-indigo-100 text-indigo-700',
   }[t] || 'bg-gray-100 text-gray-700');
-
+ 
   // ✅ FIX: backend populates companyId as object with .name
   const getCompanyName = (job) =>
     (typeof job.companyId === 'object' ? job.companyId?.name : null) || job.companyName || 'N/A';
-
+ 
   // ✅ FIX: package stored as package.ctc.min / package.ctc.max
   const getPackageDisplay = (job) => {
     const min = job.package?.ctc?.min;
@@ -107,7 +107,7 @@ const JobManagement = () => {
     if (min == null) return 'N/A';
     return max && max !== min ? `₹${min} - ₹${max} LPA` : `₹${min} LPA`;
   };
-
+ 
   const filteredJobs = jobs.filter(job => {
     const company = getCompanyName(job);
     const matchSearch =
@@ -116,16 +116,16 @@ const JobManagement = () => {
       job.jobCode?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchSearch && (!filterStatus || job.status === filterStatus);
   });
-
+ 
   if (loading) return <LoadingSpinner message="Loading Job Descriptions..." />;
-
+ 
   const statCards = [
     { label: 'Total Jobs',  value: stats.total,  grad: 'from-blue-500 to-cyan-500',      Icon: Briefcase,    tc: 'text-gray-900'   },
     { label: 'Active',      value: stats.active, grad: 'from-green-500 to-emerald-500',   Icon: CheckCircle,  tc: 'text-green-600'  },
     { label: 'Closed',      value: stats.closed, grad: 'from-gray-500 to-gray-600',       Icon: XCircle,      tc: 'text-gray-600'   },
     { label: 'Draft',       value: stats.draft,  grad: 'from-yellow-400 to-amber-500',    Icon: AlertCircle,  tc: 'text-yellow-600' },
   ];
-
+ 
   return (
     <DashboardLayout title="Job Management">
       {/* Header */}
@@ -147,7 +147,7 @@ const JobManagement = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {statCards.map(({ label, value, grad, Icon, tc }) => (
@@ -164,7 +164,7 @@ const JobManagement = () => {
           </div>
         ))}
       </div>
-
+ 
       {/* Search and Filters */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -190,7 +190,7 @@ const JobManagement = () => {
           </select>
         </div>
       </div>
-
+ 
       {/* Jobs Table */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
         <div className="overflow-x-auto">
@@ -306,5 +306,5 @@ const JobManagement = () => {
     </DashboardLayout>
   );
 };
-
+ 
 export default JobManagement;

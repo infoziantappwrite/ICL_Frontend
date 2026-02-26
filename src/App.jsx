@@ -29,6 +29,7 @@ import StudentSettings from './pages/Settings';
 import CollegeAdminDashboard from './pages/CollegeAdmin/Dashboard';
 import CollegeAdminJobManagement from './pages/CollegeAdmin/JobManagement';
 import CollegeAdminJobForm from './pages/CollegeAdmin/JobForm';
+import CollegeAdminMatchedStudents from './pages/CollegeAdmin/MatchedStudents';
 import CollegeAdminCompanyManagement from './pages/CollegeAdmin/CompanyManagement';
 import CollegeAdminCompanyList from './pages/CollegeAdmin/CompanyList';
 import CollegeAdminCompanyForm from './pages/CollegeAdmin/CompanyForm';
@@ -141,6 +142,7 @@ function App() {
             <Route path="/dashboard/college-admin/jobs/create" element={<ProtectedRoute><CollegeAdminJobForm /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/jobs/edit/:jobId" element={<ProtectedRoute><CollegeAdminJobForm /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/jobs/view/:jobId" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/jobs/:jobId/matched-students" element={<ProtectedRoute><CollegeAdminMatchedStudents /></ProtectedRoute>} />
 
             {/* Companies */}
             <Route path="/dashboard/college-admin/companies" element={<ProtectedRoute><CollegeAdminCompanyManagement /></ProtectedRoute>} />

@@ -18,7 +18,7 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI } from '../../api/Api';
-
+ 
 const CompanyManagement = () => {
   const toast = useToast();
   const navigate = useNavigate();
@@ -31,19 +31,38 @@ const CompanyManagement = () => {
     active: 0,
     inactive: 0,
   });
-
+ 
   useEffect(() => {
     fetchCompanies();
   }, []);
-
+ 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       const response = await companyAPI.getAllCompanies();
-      
+ 
       if (response.success) {
-        setCompanies(response.companies);
-        calculateStats(response.companies);
+        // Fetch full details for each company in parallel to get headquarters/location
+        const detailedCompanies = await Promise.all(
+          response.companies.map(async (company) => {
+            try {
+              const detail = await companyAPI.getCompanyById(company._id);
+              if (detail.success && detail.company) {
+                return {
+                  ...company,
+                  headquarters: detail.company.headquarters,
+                  location: detail.company.location,
+                };
+              }
+            } catch {
+              // silently fall back to base data if detail fetch fails
+            }
+            return company;
+          })
+        );
+ 
+        setCompanies(detailedCompanies);
+        calculateStats(detailedCompanies);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -52,19 +71,19 @@ const CompanyManagement = () => {
       setLoading(false);
     }
   };
-
+ 
   const calculateStats = (companiesList) => {
     const total = companiesList.length;
     const active = companiesList.filter(c => c.isActive).length;
     const inactive = total - active;
     setStats({ total, active, inactive });
   };
-
+ 
   const handleDeleteCompany = async (companyId, companyName) => {
     if (!confirm(`Are you sure you want to delete "${companyName}"? This action cannot be undone.`)) {
       return;
     }
-
+ 
     try {
       await companyAPI.deleteCompany(companyId);
       toast.success('Success', 'Company deleted successfully');
@@ -74,7 +93,7 @@ const CompanyManagement = () => {
       toast.error('Error', 'Failed to delete company: ' + error.message);
     }
   };
-
+ 
   const handleToggleStatus = async (companyId, currentStatus) => {
     try {
       await companyAPI.toggleActiveStatus(companyId);
@@ -85,25 +104,25 @@ const CompanyManagement = () => {
       toast.error('Error', 'Failed to update status: ' + error.message);
     }
   };
-
+ 
   const filteredCompanies = companies.filter(company => {
-    const matchesSearch = 
+    const matchesSearch =
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (company.headquarters?.city || company.location)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.industry?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = 
+   
+    const matchesStatus =
       filterStatus === 'all' ||
       (filterStatus === 'active' && company.isActive) ||
       (filterStatus === 'inactive' && !company.isActive);
-    
+   
     return matchesSearch && matchesStatus;
   });
-
+ 
   if (loading) {
     return <LoadingSpinner message="Loading Companies..." />;
   }
-
+ 
   return (
     <DashboardLayout title="Company Management">
       {/* Header */}
@@ -129,7 +148,7 @@ const CompanyManagement = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
@@ -143,7 +162,7 @@ const CompanyManagement = () => {
             </div>
           </div>
         </div>
-
+ 
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
           <div className="flex items-center justify-between">
             <div>
@@ -155,7 +174,7 @@ const CompanyManagement = () => {
             </div>
           </div>
         </div>
-
+ 
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
           <div className="flex items-center justify-between">
             <div>
@@ -168,7 +187,7 @@ const CompanyManagement = () => {
           </div>
         </div>
       </div>
-
+ 
       {/* Search and Filters */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -193,7 +212,7 @@ const CompanyManagement = () => {
           </select>
         </div>
       </div>
-
+ 
       {/* Companies Table */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
         <div className="overflow-x-auto">
@@ -235,7 +254,13 @@ const CompanyManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-gray-700">
                         <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{company.headquarters?.city || company.location || 'N/A'}</span>
+                        <span className="text-sm">
+                          {company.headquarters?.city
+                            ? [company.headquarters.city, company.headquarters.state]
+                                .filter(Boolean)
+                                .join(', ')
+                            : company.location || 'N/A'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -328,5 +353,6 @@ const CompanyManagement = () => {
     </DashboardLayout>
   );
 };
-
+ 
 export default CompanyManagement;
+ 

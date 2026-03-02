@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/ApplicationDetail.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   ArrowLeft,
   FileText,
@@ -38,13 +39,7 @@ const ApplicationDetail = () => {
   const fetchApplicationDetail = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/super-admin/applications/${applicationId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      
+      const data = await apiCall(`/super-admin/applications/${applicationId}`);
       if (data.success) {
         setApplication(data.application);
       } else {
@@ -99,16 +94,10 @@ const ApplicationDetail = () => {
 
     try {
       setUpdating(true);
-      const response = await fetch(`http://localhost:5000/api/super-admin/applications/${applicationId}/status`, {
+      const data = await apiCall(`/super-admin/applications/${applicationId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       });
-      const data = await response.json();
-      
       if (data.success) {
         toast.success('Success', `Application ${newStatus} successfully!`);
         setApplication(prev => ({ ...prev, status: newStatus }));

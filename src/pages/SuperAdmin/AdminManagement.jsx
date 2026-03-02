@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/AdminManagement.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Users,
   Plus,
@@ -12,8 +13,6 @@ import {
   Mail,
   Phone,
   Shield,
-  ToggleLeft,
-  ToggleRight,
   GraduationCap,
   UserCheck,
   UserX,
@@ -41,13 +40,7 @@ const AdminManagement = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/super-admin/admins', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      
+      const data = await apiCall('/super-admin/admins');
       if (data.success) {
         setAdmins(data.admins || []);
         calculateStats(data.admins || []);
@@ -68,19 +61,17 @@ const AdminManagement = () => {
   };
 
   const handleDeleteAdmin = async (adminId, adminName) => {
-    if (!confirm(`Are you sure you want to delete "${adminName}"? This action cannot be undone.`)) {
-      return;
-    }
-
+    // window.confirm removed as requested
     try {
-      await fetch(`http://localhost:5000/api/super-admin/admins/${adminId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      await apiCall(`/super-admin/admins/${adminId}`, { method: 'DELETE' });
       toast.success('Success', 'Admin deleted successfully');
-      fetchAdmins();
+      
+      // Update state locally to remove the admin and refresh stats without reloading the page
+      setAdmins(prev => {
+        const updatedList = prev.filter(admin => admin._id !== adminId);
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error deleting admin:', error);
       toast.error('Error', 'Failed to delete admin: ' + error.message);
@@ -89,14 +80,17 @@ const AdminManagement = () => {
 
   const handleToggleStatus = async (adminId, currentStatus) => {
     try {
-      await fetch(`http://localhost:5000/api/super-admin/admins/${adminId}/toggle-status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
+      await apiCall(`/super-admin/admins/${adminId}/toggle-status`, { method: 'PATCH' });
       toast.success('Success', `Admin ${currentStatus ? 'deactivated' : 'activated'} successfully`);
-      fetchAdmins();
+      
+      // Update state locally instead of fetchAdmins() to prevent page reload
+      setAdmins(prev => {
+        const updatedList = prev.map(admin => 
+          admin._id === adminId ? { ...admin, isActive: !currentStatus } : admin
+        );
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error toggling status:', error);
       toast.error('Error', 'Failed to update status: ' + error.message);
@@ -269,23 +263,14 @@ const AdminManagement = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(admin._id, admin.isActive)}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 transition-all ${
+                        className={`relative inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shadow-sm border cursor-pointer ${
                           admin.isActive
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:shadow-emerald-200 hover:shadow-md'
+                            : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200 hover:shadow-gray-200 hover:shadow-md'
                         }`}
                       >
-                        {admin.isActive ? (
-                          <>
-                            <ToggleRight className="w-3 h-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-3 h-3" />
-                            Inactive
-                          </>
-                        )}
+                        <span className={`inline-block w-2 h-2 rounded-full transition-colors ${admin.isActive ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
+                        {admin.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td className="px-6 py-4">

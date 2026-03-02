@@ -29,6 +29,7 @@ import StudentSettings from './pages/Settings';
 import CollegeAdminDashboard from './pages/CollegeAdmin/Dashboard';
 import CollegeAdminJobManagement from './pages/CollegeAdmin/JobManagement';
 import CollegeAdminJobForm from './pages/CollegeAdmin/JobForm';
+import CollegeAdminMatchedStudents from './pages/CollegeAdmin/MatchedStudents';
 import CollegeAdminCompanyManagement from './pages/CollegeAdmin/CompanyManagement';
 import CollegeAdminCompanyList from './pages/CollegeAdmin/CompanyList';
 import CollegeAdminCompanyForm from './pages/CollegeAdmin/CompanyForm';
@@ -88,12 +89,12 @@ const RoleBasedSettings = () => {
   return null;
 };
 
-// Prevents already-authenticated users from accessing login/signup pages
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) return null;
 
+  // If already logged in → never allow login page
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -141,6 +142,7 @@ function App() {
             <Route path="/dashboard/college-admin/jobs/create" element={<ProtectedRoute><CollegeAdminJobForm /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/jobs/edit/:jobId" element={<ProtectedRoute><CollegeAdminJobForm /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/jobs/view/:jobId" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/jobs/:jobId/matched-students" element={<ProtectedRoute><CollegeAdminMatchedStudents /></ProtectedRoute>} />
 
             {/* Companies */}
             <Route path="/dashboard/college-admin/companies" element={<ProtectedRoute><CollegeAdminCompanyManagement /></ProtectedRoute>} />
@@ -179,6 +181,7 @@ function App() {
             <Route path="/dashboard/super-admin/companies/create" element={<ProtectedRoute><SuperAdminCompanyForm /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/companies/edit/:companyId" element={<ProtectedRoute><SuperAdminCompanyForm /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/companies/:companyId" element={<ProtectedRoute><SuperAdminCompanyDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/jobs/view/:jobId" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
 
             {/* Admins */}
             <Route path="/dashboard/super-admin/admins" element={<ProtectedRoute><SuperAdminAdminManagement /></ProtectedRoute>} />
@@ -233,5 +236,6 @@ function App() {
     </AuthProvider>
   );
 }
+
 
 export default App;

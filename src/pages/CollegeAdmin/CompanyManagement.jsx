@@ -97,7 +97,7 @@ const CompanyManagement = () => {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = 
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (company.headquarters?.city || company.location)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.industry?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = 
@@ -243,7 +243,7 @@ const CompanyManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-gray-700">
                         <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{company.location || 'N/A'}</span>
+                        <span className="text-sm">{company.headquarters?.city || company.location || 'N/A'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">

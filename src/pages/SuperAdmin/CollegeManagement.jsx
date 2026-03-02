@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeManagement.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   Building2, Plus, Search, Eye, Edit, Trash2, MapPin,
   Users, Briefcase, CheckCircle, XCircle, RefreshCw, Clock, FileText,
@@ -9,12 +10,6 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-  'Content-Type': 'application/json',
-});
 
 const CollegeManagement = () => {
   const toast = useToast();
@@ -38,16 +33,9 @@ const CollegeManagement = () => {
         ...(filterStatus !== 'all' && { isActive: filterStatus === 'active' }),
       });
 
-      const response = await fetch(`${API_URL}/super-admin/colleges?${params}`, {
-        headers: authHeaders(),
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
+      const data = await apiCall(`/super-admin/colleges?${params}`);
 
       if (data.success) {
-        // Backend now returns liveCounts per college — no extra fetches needed
         setColleges(data.colleges || []);
         setTotalPages(data.totalPages || 1);
         setTotalColleges(data.total || 0);
@@ -73,17 +61,14 @@ const CollegeManagement = () => {
   }, [fetchColleges]);
 
   const handleDeleteCollege = async (collegeId, collegeName) => {
-    if (!window.confirm(`Are you sure you want to delete "${collegeName}"? This action cannot be undone.`)) return;
-
+    // window.confirm removed as requested
     try {
-      const response = await fetch(`${API_URL}/super-admin/colleges/${collegeId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-      const data = await response.json();
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`, { method: 'DELETE' });
       if (data.success) {
         toast.success('Success', 'College deleted successfully');
-        fetchColleges();
+        // Update state locally instead of fetchColleges() to prevent reload
+        setColleges(prev => prev.filter(c => c._id !== collegeId));
+        setTotalColleges(prev => prev - 1);
       } else {
         toast.error('Error', data.message || 'Failed to delete college');
       }
@@ -95,18 +80,21 @@ const CollegeManagement = () => {
 
   const handleToggleStatus = async (collegeId, currentStatus, collegeName) => {
     const action = currentStatus ? 'deactivate' : 'activate';
-    if (!window.confirm(`Are you sure you want to ${action} "${collegeName}"?`)) return;
+    // window.confirm removed as requested
 
     try {
-      const response = await fetch(`${API_URL}/super-admin/colleges/${collegeId}`, {
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`, {
         method: 'PUT',
-        headers: authHeaders(),
         body: JSON.stringify({ isActive: !currentStatus }),
       });
-      const data = await response.json();
       if (data.success) {
-        toast.success('Success', `College ${action}d successfully`);
-        fetchColleges();
+        toast.success('Success', `College ${collegeName} ${action}d successfully`);
+        // Update state locally instead of fetchColleges() to prevent reload
+        setColleges(prevColleges => 
+          prevColleges.map(college => 
+            college._id === collegeId ? { ...college, isActive: !currentStatus } : college
+          )
+        );
       } else {
         toast.error('Error', data.message || `Failed to ${action} college`);
       }
@@ -278,15 +266,13 @@ const CollegeManagement = () => {
                       <td className="px-5 py-4">
                         <button
                           onClick={() => handleToggleStatus(college._id, college.isActive, college.name)}
-                          className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit cursor-pointer transition-all hover:scale-105 ${
+                          className={`relative inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shadow-sm border cursor-pointer ${
                             college.isActive
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:shadow-emerald-200 hover:shadow-md'
+                              : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200 hover:shadow-gray-200 hover:shadow-md'
                           }`}
                         >
-                          {college.isActive
-                            ? <CheckCircle className="w-3 h-3" />
-                            : <XCircle className="w-3 h-3" />}
+                          <span className={`inline-block w-2 h-2 rounded-full transition-colors ${college.isActive ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
                           {college.isActive ? 'Active' : 'Inactive'}
                         </button>
                       </td>

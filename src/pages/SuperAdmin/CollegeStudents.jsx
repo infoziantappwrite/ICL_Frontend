@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useToast } from '../../context/ToastContext';
+import apiCall, { tokenStore } from '../../api/Api';
 import {
   ArrowLeft, Search, Users, GraduationCap, Mail, Phone,
   CheckCircle, XCircle, ChevronLeft, ChevronRight, X,
@@ -14,15 +15,6 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const LIMIT = 20;
-
-const authFetch = async (url) => {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
-  return data;
-};
 
 /* ─── Badges ────────────────────────────────────────────────── */
 const ActiveBadge = ({ active }) => (
@@ -214,8 +206,8 @@ const CollegeStudents = () => {
       if (isPlaced !== '') params.set('isPlaced', isPlaced);
       if (isActive !== '') params.set('isActive', isActive);
 
-      const data = await authFetch(
-        `${API_URL}/super-admin/colleges/${collegeId}/students?${params}`
+      const data = await apiCall(
+        `/super-admin/colleges/${collegeId}/students?${params}`
       );
 
       if (data.success) {
@@ -242,7 +234,7 @@ const CollegeStudents = () => {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem('authToken');
+      const token = tokenStore.get();
       const params = new URLSearchParams({ collegeId, format: 'xlsx' });
       if (branch)          params.set('branch', branch);
       if (batch)           params.set('batch', batch);

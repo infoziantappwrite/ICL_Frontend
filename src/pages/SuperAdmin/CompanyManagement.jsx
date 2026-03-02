@@ -40,10 +40,29 @@ const CompanyManagement = () => {
     try {
       setLoading(true);
       const response = await companyAPI.getAllCompanies();
-      
+
       if (response.success) {
-        setCompanies(response.companies);
-        calculateStats(response.companies);
+        // Fetch full details for each company in parallel to get headquarters/location
+        const detailedCompanies = await Promise.all(
+          response.companies.map(async (company) => {
+            try {
+              const detail = await companyAPI.getCompanyById(company._id);
+              if (detail.success && detail.company) {
+                return {
+                  ...company,
+                  headquarters: detail.company.headquarters,
+                  location: detail.company.location,
+                };
+              }
+            } catch {
+              // silently fall back to base data if detail fetch fails
+            }
+            return company;
+          })
+        );
+
+        setCompanies(detailedCompanies);
+        calculateStats(detailedCompanies);
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -61,14 +80,17 @@ const CompanyManagement = () => {
   };
 
   const handleDeleteCompany = async (companyId, companyName) => {
-    if (!confirm(`Are you sure you want to delete "${companyName}"? This action cannot be undone.`)) {
-      return;
-    }
-
+    // Browser confirm removed as requested
     try {
       await companyAPI.deleteCompany(companyId);
       toast.success('Success', 'Company deleted successfully');
-      fetchCompanies();
+      
+      // Update state locally to remove the company without a full page reload
+      setCompanies(prev => {
+        const updatedList = prev.filter(c => c._id !== companyId);
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error deleting company:', error);
       toast.error('Error', 'Failed to delete company: ' + error.message);
@@ -79,7 +101,16 @@ const CompanyManagement = () => {
     try {
       await companyAPI.toggleActiveStatus(companyId);
       toast.success('Success', `Company ${currentStatus ? 'deactivated' : 'activated'} successfully`);
-      fetchCompanies();
+      
+      // Update state locally instead of fetchCompanies() 
+      // This prevents the company from "disappearing" due to a re-fetch and prevents page reload
+      setCompanies(prev => {
+        const updatedList = prev.map(company => 
+          company._id === companyId ? { ...company, isActive: !currentStatus } : company
+        );
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error toggling status:', error);
       toast.error('Error', 'Failed to update status: ' + error.message);
@@ -87,12 +118,12 @@ const CompanyManagement = () => {
   };
 
   const filteredCompanies = companies.filter(company => {
-    const matchesSearch = 
+    const matchesSearch =
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (company.headquarters?.city || company.location)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.industry?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = 
+    const matchesStatus =
       filterStatus === 'all' ||
       (filterStatus === 'active' && company.isActive) ||
       (filterStatus === 'inactive' && !company.isActive);
@@ -235,7 +266,13 @@ const CompanyManagement = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-gray-700">
                         <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{company.location || 'N/A'}</span>
+                        <span className="text-sm">
+                          {company.headquarters?.city
+                            ? [company.headquarters.city, company.headquarters.state]
+                                .filter(Boolean)
+                                .join(', ')
+                            : company.location || 'N/A'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -255,23 +292,14 @@ const CompanyManagement = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(company._id, company.isActive)}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 transition-all ${
+                        className={`relative inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shadow-sm border cursor-pointer ${
                           company.isActive
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:shadow-emerald-200 hover:shadow-md'
+                            : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200 hover:shadow-gray-200 hover:shadow-md'
                         }`}
                       >
-                        {company.isActive ? (
-                          <>
-                            <ToggleRight className="w-3 h-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-3 h-3" />
-                            Inactive
-                          </>
-                        )}
+                        <span className={`inline-block w-2 h-2 rounded-full transition-colors ${company.isActive ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
+                        {company.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td className="px-6 py-4">

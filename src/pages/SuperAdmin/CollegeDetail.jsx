@@ -9,8 +9,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import apiCall from '../../api/Api';
 
 const CollegeDetail = () => {
   const toast = useToast();
@@ -30,20 +29,11 @@ const CollegeDetail = () => {
     fetchCollegeDetails();
   }, [collegeId]);
 
-  const authHeaders = {
-    Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-    'Content-Type': 'application/json',
-  };
-
   const fetchCollegeDetails = async (isRefresh = false) => {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
 
-      // Single API call — backend now returns all counts
-      const res = await fetch(`${API_URL}/super-admin/colleges/${collegeId}`, {
-        headers: authHeaders,
-      });
-      const data = await res.json();
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`);
 
       if (data.success) {
         const c = data.college;
@@ -71,11 +61,7 @@ const CollegeDetail = () => {
       return;
     }
     try {
-      const response = await fetch(`${API_URL}/super-admin/colleges/${collegeId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-      });
-      const data = await response.json();
+      const data = await apiCall(`/super-admin/colleges/${collegeId}`, { method: 'DELETE' });
       if (data.success) {
         toast.success('Success', 'College deleted successfully');
         navigate('/dashboard/super-admin/colleges');

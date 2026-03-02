@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/ApplicationManagement.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiCall from '../../api/Api';
 import {
   FileText,
   Search,
@@ -43,12 +44,7 @@ const ApplicationManagement = () => {
 
   const fetchColleges = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/super-admin/colleges?limit=1000', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
+      const data = await apiCall('/super-admin/colleges?limit=1000');
       if (data.success) {
         setColleges(data.colleges || []);
       }
@@ -64,13 +60,7 @@ const ApplicationManagement = () => {
       if (filterStatus !== 'all') params.append('status', filterStatus);
       if (filterCollege !== 'all') params.append('collegeId', filterCollege);
 
-      const response = await fetch(`http://localhost:5000/api/super-admin/applications?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      
+      const data = await apiCall(`/super-admin/applications?${params}`);
       if (data.success) {
         setApplications(data.applications || []);
         calculateStats(data.applications || []);

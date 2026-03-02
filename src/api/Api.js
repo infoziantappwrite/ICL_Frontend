@@ -1,4 +1,4 @@
-// src/api/Api.js - MERGED: All features from both versions
+// src/api/Api.js - COMPLETE FIX with comprehensive logging and error handling
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // ─── SECURE: In-memory token store (replaces localStorage for access token) ───
@@ -6,9 +6,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 let _accessToken = null;
 
 export const tokenStore = {
-  get:   ()      => _accessToken,
-  set:   (token) => { _accessToken = token; },
-  clear: ()      => { _accessToken = null; },
+  get: () => _accessToken,
+  set: (token) => { _accessToken = token; },
+  clear: () => { _accessToken = null; },
 };
 
 // ─── Refresh logic ─────────────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ const apiCall = async (endpoint, options = {}, _isRetry = false) => {
     // SECURE: Auto-refresh on TOKEN_EXPIRED, then retry once
     if (response.status === 401 && !_isRetry) {
       let errorData = {};
-      try { errorData = await response.clone().json(); } catch {}
+      try { errorData = await response.clone().json(); } catch { }
 
       if (errorData.code === 'TOKEN_EXPIRED') {
         const newToken = await refreshAccessToken();
@@ -204,7 +204,6 @@ export const authAPI = {
     });
   },
 
-  // SECURE: async logout — tells server to revoke refresh token, then clears memory
   logout: async () => {
     try {
       // Tell server to revoke this device's refresh token
@@ -214,17 +213,16 @@ export const authAPI = {
       console.error('Logout server error:', err.message);
     } finally {
       tokenStore.clear(); // SECURE: clear in-memory access token
-      localStorage.removeItem('userData');
       console.log('🚪 Logged out - cleared auth data');
     }
   },
 
-  // SECURE: Restore session from httpOnly cookie on app boot / browser refresh
+  // SECURE: New — restore session from httpOnly cookie on app boot/browser refresh
   restoreSession: async () => {
     return refreshAccessToken();
   },
 
-  // SECURE: Logout from all devices
+  // SECURE: New — logout from all devices
   logoutAll: async () => {
     try {
       await apiCall('/auth/logout-all', { method: 'POST' });
@@ -232,7 +230,6 @@ export const authAPI = {
       console.error('LogoutAll server error:', err.message);
     } finally {
       tokenStore.clear();
-      localStorage.removeItem('userData');
       console.log('🚪 Logged out from all devices');
     }
   },
@@ -268,9 +265,11 @@ export const profileAPI = {
       // Check if it's FormData (from ProfileEdit.jsx)
       if (profileDataOrFormData instanceof FormData) {
         console.log('📦 Processing FormData...');
+        // Extract profile data JSON
         const profileDataString = profileDataOrFormData.get('profileData');
         profileData = JSON.parse(profileDataString);
 
+        // Extract files
         resumeFile = profileDataOrFormData.get('resumeFile');
         idProofFile = profileDataOrFormData.get('idProofFile');
 
@@ -278,6 +277,7 @@ export const profileAPI = {
         console.log('📄 Resume file:', resumeFile ? resumeFile.name : 'None');
         console.log('🆔 ID proof file:', idProofFile ? idProofFile.name : 'None');
       } else {
+        // Direct JSON object
         profileData = profileDataOrFormData;
         console.log('📋 Using direct profile data object');
       }
@@ -302,19 +302,21 @@ export const profileAPI = {
 
         const resumeResponse = await fetch(`${API_URL}/upload/resume`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: resumeFormData,
         });
 
         console.log('📥 Resume upload response:', resumeResponse.status);
-        const resumeData = await resumeResponse.json();
 
+        const resumeData = await resumeResponse.json();
         if (!resumeResponse.ok) {
           console.error('❌ Resume upload failed:', resumeData);
           throw new Error(resumeData.message || 'Resume upload failed');
         }
 
+        // Update profile data with resume URL
         profileData.resumeUrl = resumeData.file.url;
         console.log('✅ Resume uploaded:', resumeData.file.url);
       } else {
@@ -329,28 +331,31 @@ export const profileAPI = {
 
         const idProofResponse = await fetch(`${API_URL}/upload/document/id-proof`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: idProofFormData,
         });
 
         console.log('📥 ID proof upload response:', idProofResponse.status);
-        const idProofData = await idProofResponse.json();
 
+        const idProofData = await idProofResponse.json();
         if (!idProofResponse.ok) {
           console.error('❌ ID proof upload failed:', idProofData);
           throw new Error(idProofData.message || 'ID proof upload failed');
         }
 
+        // Update profile data with ID proof URL
         profileData.idProofUrl = idProofData.file.url;
         console.log('✅ ID proof uploaded:', idProofData.file.url);
       } else {
         console.log('\n⏭️  STEP 2: No ID proof to upload');
       }
 
-      // Step 3: Determine POST vs PUT
+      // Step 3: Determine POST vs PUT using direct fetch with detailed error handling
       console.log('\n🔍 STEP 3: Checking if profile exists...');
-      let method = 'POST';
+      let method = 'POST'; // Default to create
+      let profileExists = false;
 
       try {
         const checkResponse = await fetch(`${API_URL}/candidate/profile`, {
@@ -359,55 +364,69 @@ export const profileAPI = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          credentials: 'include',
         });
 
         console.log('📥 Profile check status:', checkResponse.status, checkResponse.statusText);
 
         if (checkResponse.status === 404) {
+          // Profile doesn't exist - this is EXPECTED for new users
           console.log('ℹ️  Profile not found (404) - will CREATE new profile with POST');
           method = 'POST';
+          profileExists = false;
         } else if (checkResponse.status === 401 || checkResponse.status === 403) {
+          // Authentication or authorization issue
           const errorData = await checkResponse.json();
           console.error('🔒 Auth error:', errorData);
           throw new Error(`Authentication error: ${errorData.message}. Please log in again.`);
         } else if (checkResponse.ok) {
+          // Profile exists - use PUT to update
           const existingProfileData = await checkResponse.json();
           console.log('✅ Profile found:', existingProfileData.profile ? 'Yes' : 'No');
 
           if (existingProfileData && existingProfileData.profile) {
             method = 'PUT';
+            profileExists = true;
             console.log('🔄 Profile exists - will UPDATE with PUT');
           } else {
             console.log('⚠️  Unexpected response format, defaulting to POST');
             method = 'POST';
           }
         } else {
+          // Some other error (500, etc)
           const errorData = await checkResponse.json();
           console.error('⚠️  Unexpected response:', checkResponse.status, errorData);
+
+          // If it's a server error, we can still try to save
           console.log('⚠️  Server error during check, will attempt POST anyway');
           method = 'POST';
         }
       } catch (checkError) {
         console.error('❌ Error during profile check:', checkError);
+        console.error('Error type:', checkError.name);
+        console.error('Error message:', checkError.message);
 
+        // Analyze the error
         const errorMsg = (checkError.message || '').toLowerCase();
 
         if (checkError.message?.includes('log in')) {
+          // Authentication error - must re-throw
           throw checkError;
         } else if (errorMsg.includes('not found') || errorMsg.includes('404')) {
+          // Treat as profile not existing
           console.log('ℹ️  Treating as new profile (POST)');
           method = 'POST';
         } else if (checkError.name === 'TypeError' && checkError.message?.includes('fetch')) {
+          // Network error
           console.error('🌐 Network error - cannot reach server');
           throw new Error('Cannot reach server. Please check your connection.');
         } else {
+          // Unknown error - default to POST and let the save attempt reveal the real issue
           console.log('⚠️  Unknown error, will attempt POST');
           method = 'POST';
         }
       }
 
-      // Step 4: Create or update profile
+      // Step 4: Create or update profile with detailed logging
       console.log('\n📤 STEP 4: Saving profile...');
       console.log(`   Method: ${method}`);
       console.log(`   Endpoint: ${API_URL}/candidate/profile`);
@@ -419,16 +438,18 @@ export const profileAPI = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
         body: JSON.stringify(profileData),
       });
 
       console.log('📥 Save response status:', saveResponse.status, saveResponse.statusText);
+
       const saveData = await saveResponse.json();
       console.log('📥 Save response data:', saveData);
 
       if (!saveResponse.ok) {
+        // Handle specific error cases
         if (saveResponse.status === 400 && saveData.message?.includes('already exists')) {
+          // Profile already exists, retry with PUT
           console.log('🔄 Profile exists (400), retrying with PUT...');
 
           const retryResponse = await fetch(`${API_URL}/candidate/profile`, {
@@ -437,7 +458,6 @@ export const profileAPI = {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
-            credentials: 'include',
             body: JSON.stringify(profileData),
           });
 
@@ -498,9 +518,7 @@ export const profileAPI = {
   },
 };
 
-// ==========================================
-// FILE UPLOAD API
-// ==========================================
+// File Upload API calls
 export const uploadAPI = {
   uploadProfilePicture: async (file) => {
     console.log('📸 Uploading profile picture...');
@@ -510,7 +528,9 @@ export const uploadAPI = {
     const token = tokenStore.get(); // SECURE: read from memory
     const response = await fetch(`${API_URL}/upload/profile-picture`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       credentials: 'include',
       body: formData,
     });
@@ -532,7 +552,9 @@ export const uploadAPI = {
     const token = tokenStore.get(); // SECURE: read from memory
     const response = await fetch(`${API_URL}/upload/resume`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       credentials: 'include',
       body: formData,
     });
@@ -554,7 +576,9 @@ export const uploadAPI = {
     const token = tokenStore.get(); // SECURE: read from memory
     const response = await fetch(`${API_URL}/upload/document/${type}`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
       credentials: 'include',
       body: formData,
     });
@@ -584,17 +608,20 @@ export const uploadAPI = {
 // COMPANY API
 // ==========================================
 export const companyAPI = {
+  // Get all companies
   getAllCompanies: async (params = {}) => {
     console.log('🏢 Fetching all companies with params:', params);
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/companies?${queryString}`);
   },
 
+  // Get single company by ID
   getCompanyById: async (companyId) => {
     console.log(`🏢 Fetching company details: ${companyId}`);
     return apiCall(`/companies/${companyId}`);
   },
 
+  // Create new company (College Admin only)
   createCompany: async (companyData) => {
     console.log('➕ Creating new company:', companyData);
     return apiCall('/companies', {
@@ -603,52 +630,58 @@ export const companyAPI = {
     });
   },
 
+  // Update existing company (College Admin only)
   updateCompany: async (companyId, companyData) => {
     console.log(`✏️  Updating company: ${companyId}`, companyData);
-    return apiCall(`/college-admin/companies/${companyId}`, {
+    return apiCall(`/companies/${companyId}`, {
       method: 'PUT',
       body: JSON.stringify(companyData),
     });
   },
 
+  // Delete company (College Admin only)
   deleteCompany: async (companyId) => {
     console.log(`🗑️  Deleting company: ${companyId}`);
-    return apiCall(`/college-admin/companies/${companyId}`, {
+    return apiCall(`/companies/${companyId}`, {
       method: 'DELETE',
     });
   },
 
+  // Toggle company active status (College Admin only)
   toggleActiveStatus: async (companyId) => {
     console.log(`🔄 Toggling active status: ${companyId}`);
-    return apiCall(`/college-admin/companies/${companyId}/toggle-active`, {
+    return apiCall(`/companies/${companyId}/toggle-active`, {
       method: 'PATCH',
     });
   },
 };
 
+// Make companyAPI globally available for existing code
 window.companyAPI = companyAPI;
 
 // ==========================================
 // JOB DESCRIPTION API
 // ==========================================
 export const jobAPI = {
+  // Get all jobs with filters
   getAllJobs: async (params = {}) => {
     console.log('📋 Fetching all jobs with params:', params);
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/jobs?${queryString}`);
   },
 
+  // Get single job by ID
   getJobById: async (jobId) => {
     console.log(`📄 Fetching job details: ${jobId}`);
     return apiCall(`/jobs/${jobId}`);
   },
 
-  // From friend's version
   getJobList: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/jobs/joblist?${queryString}`);
   },
 
+  // Create new job (College Admin only)
   createJob: async (jobData) => {
     console.log('➕ Creating new job:', jobData);
     return apiCall('/jobs', {
@@ -657,6 +690,7 @@ export const jobAPI = {
     });
   },
 
+  // Update existing job (College Admin only)
   updateJob: async (jobId, jobData) => {
     console.log(`✏️  Updating job: ${jobId}`, jobData);
     return apiCall(`/jobs/${jobId}`, {
@@ -665,6 +699,7 @@ export const jobAPI = {
     });
   },
 
+  // Delete job (College Admin only)
   deleteJob: async (jobId) => {
     console.log(`🗑️  Deleting job: ${jobId}`);
     return apiCall(`/jobs/${jobId}`, {
@@ -672,6 +707,7 @@ export const jobAPI = {
     });
   },
 
+  // Update job status (College Admin only)
   updateJobStatus: async (jobId, status) => {
     console.log(`📊 Updating job status: ${jobId} to ${status}`);
     return apiCall(`/jobs/${jobId}/status`, {
@@ -680,6 +716,7 @@ export const jobAPI = {
     });
   },
 
+  // Toggle pin status (College Admin only)
   togglePinJob: async (jobId) => {
     console.log(`📌 Toggling pin status: ${jobId}`);
     return apiCall(`/jobs/${jobId}/pin`, {
@@ -687,29 +724,39 @@ export const jobAPI = {
     });
   },
 
+  // Get job statistics
   getJobStats: async (jobId) => {
     console.log(`📊 Fetching job stats: ${jobId}`);
     return apiCall(`/jobs/${jobId}/stats`);
   },
 
+  // Get jobs by company
   getJobsByCompany: async (companyId) => {
     console.log(`🏢 Fetching jobs for company: ${companyId}`);
     return apiCall(`/jobs/company/${companyId}`);
   },
 
+  // Check eligibility for a job (Student only)
   checkEligibility: async (jobId) => {
     console.log(`✅ Checking eligibility for job: ${jobId}`);
     return apiCall(`/jobs/${jobId}/check-eligibility`);
   },
+
+  // ✅ NEW: Get skill-matched students for a JD (College Admin only)
+  // Route: GET /api/jobs/:id/matched-students
+  // Returns students sorted by matchPercentage desc, with breakdown per criterion
+  getMatchedStudents: async (jobId) => {
+    console.log(`🎯 Fetching matched students for job: ${jobId}`);
+    return apiCall(`/jobs/${jobId}/matched-students`);
+  },
 };
 
+// Make jobAPI globally available for existing code
 window.jobAPI = jobAPI;
 
-// ==========================================
-// TOKEN MANAGER
-// SECURE: Uses in-memory tokenStore instead of localStorage for access token.
-// Interface is identical so all existing callers work without changes.
-// ==========================================
+// Helper functions for token management
+// SECURE: tokenManager now uses in-memory tokenStore instead of localStorage.
+// The interface is identical so all existing callers work without changes.
 export const tokenManager = {
   setToken: (token) => {
     tokenStore.set(token); // SECURE: store in memory, not localStorage
@@ -741,31 +788,38 @@ export const tokenManager = {
   },
 };
 
+// Add this to your existing Api.js file
+
 // ==========================================
 // APPLICATIONS API
 // ==========================================
 export const applicationAPI = {
+  // Get all applications (College Admin)
   getAllApplications: async (params = {}) => {
     console.log('📋 Fetching all applications with params:', params);
     const queryString = new URLSearchParams(params).toString();
     return apiCall(`/applications?${queryString}`);
   },
 
+  // Get single application by ID
   getApplicationById: async (applicationId) => {
     console.log(`📄 Fetching application details: ${applicationId}`);
     return apiCall(`/applications/${applicationId}`);
   },
 
+  // Get applications for a specific job
   getApplicationsByJob: async (jobId) => {
     console.log(`📋 Fetching applications for job: ${jobId}`);
     return apiCall(`/applications/job/${jobId}`);
   },
 
+  // Get applications for a specific student
   getApplicationsByStudent: async (studentId) => {
     console.log(`📋 Fetching applications for student: ${studentId}`);
     return apiCall(`/applications/student/${studentId}`);
   },
 
+  // Create new application (Student)
   createApplication: async (applicationData) => {
     console.log('➕ Creating new application:', applicationData);
     return apiCall('/applications', {
@@ -774,6 +828,7 @@ export const applicationAPI = {
     });
   },
 
+  // Update application status (College Admin)
   updateApplicationStatus: async (applicationId, status) => {
     console.log(`📊 Updating application status: ${applicationId} to ${status}`);
     return apiCall(`/applications/${applicationId}/status`, {
@@ -782,6 +837,7 @@ export const applicationAPI = {
     });
   },
 
+  // Update application (College Admin)
   updateApplication: async (applicationId, applicationData) => {
     console.log(`✏️  Updating application: ${applicationId}`, applicationData);
     return apiCall(`/applications/${applicationId}`, {
@@ -790,6 +846,7 @@ export const applicationAPI = {
     });
   },
 
+  // Delete application
   deleteApplication: async (applicationId) => {
     console.log(`🗑️  Deleting application: ${applicationId}`);
     return apiCall(`/applications/${applicationId}`, {
@@ -797,12 +854,14 @@ export const applicationAPI = {
     });
   },
 
+  // Get application statistics
   getApplicationStats: async () => {
     console.log('📊 Fetching application statistics');
     return apiCall('/applications/stats');
   },
 };
 
+// Make applicationAPI globally available
 window.applicationAPI = applicationAPI;
 
 // ==========================================
@@ -815,21 +874,11 @@ export const collegeAdminAPI = {
     return apiCall('/college-admin/dashboard');
   },
 
-  // My College Profile (from original version)
   getMyCollegeProfile: async () => {
-    console.log('🏫 Fetching my college profile...');
     return apiCall('/college-admin/my-college');
   },
 
-  updateMyCollegeProfile: async (data) => {
-    console.log('✏️  Updating my college profile...', data);
-    return apiCall('/college-admin/my-college', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  // Companies
+  // Companies (College Admin specific endpoints)
   getCompanies: async (params = {}) => {
     console.log('🏢 Fetching college admin companies with params:', params);
     const queryString = new URLSearchParams(params).toString();
@@ -895,9 +944,11 @@ export const collegeAdminAPI = {
   },
 };
 
+// Make collegeAdminAPI globally available
 window.collegeAdminAPI = collegeAdminAPI;
 
 // Export verifyAuth for external use
 export { verifyAuth };
+
 
 export default apiCall;

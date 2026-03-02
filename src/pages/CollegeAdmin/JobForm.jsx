@@ -1,7 +1,7 @@
 // src/pages/CollegeAdmin/JobForm.jsx - FIXED TO MATCH BACKEND SCHEMA
 import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
@@ -17,14 +17,70 @@ import {
   GraduationCap,
   FileText,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Tag       // ✅ NEW
 } from 'lucide-react';
 import { jobAPI, companyAPI } from '../../api/Api';
+
+// ✅ NEW: ChipInput — reusable tag/skill chip input with Enter-to-add
+const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
+  const [inputVal, setInputVal] = useState('');
+
+  const add = () => {
+    const v = inputVal.trim();
+    if (v && !values.includes(v)) onChange([...values, v]);
+    setInputVal('');
+  };
+
+  const remove = (i) => onChange(values.filter((_, idx) => idx !== i));
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      {hint && <p className="text-xs text-gray-400 mb-2">{hint}</p>}
+      <div className="flex gap-2 mb-2">
+        <input
+          type="text"
+          value={inputVal}
+          onChange={e => setInputVal(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          placeholder={placeholder || 'Type and press Enter or click Add'}
+          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <button
+          type="button"
+          onClick={add}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-1"
+        >
+          <Plus className="w-4 h-4" /> Add
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {values.map((v, i) => (
+          <span key={i} className="flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+            {v}
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              className="hover:text-blue-900 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </span>
+        ))}
+        {values.length === 0 && (
+          <span className="text-xs text-gray-400 italic">None added yet</span>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const JobForm = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const { jobId } = useParams();
+  const [searchParams] = useSearchParams();
   const isEditMode = !!jobId;
 
   const [loading, setLoading] = useState(false);
@@ -110,8 +166,8 @@ const JobForm = () => {
     // Status
     status: 'Draft',
     isPinned: false,
-    tags: [],
-    notes: ''
+    tags: [],    // ✅ NEW
+    notes: ''    // ✅ NEW
   };
 
   const [formData, setFormData] = useState(defaultFormData);
@@ -128,6 +184,11 @@ const JobForm = () => {
       const response = await companyAPI.getAllCompanies({ isActive: true });
       if (response.success) {
         setCompanies(response.companies);
+        // Pre-fill companyId from URL query param (e.g. coming from CompanyDetail page)
+        const prefilledCompanyId = searchParams.get('companyId');
+        if (prefilledCompanyId && !isEditMode) {
+          setFormData(prev => ({ ...prev, companyId: prefilledCompanyId }));
+        }
       }
     } catch (err) {
       console.error('Error fetching companies:', err);
@@ -173,6 +234,8 @@ const JobForm = () => {
           responsibilities: job.responsibilities?.length > 0 ? job.responsibilities : [''],
           requirements: job.requirements?.length > 0 ? job.requirements : [''],
           preferredSkills: job.preferredSkills || [],
+          tags: job.tags || [],        // ✅ NEW
+          notes: job.notes || '',      // ✅ NEW
           selectionProcess: {
             rounds: job.selectionProcess?.rounds?.length > 0 
               ? job.selectionProcess.rounds 
@@ -360,18 +423,30 @@ const JobForm = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+      // ✅ THEME FIX: matches login page
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
       </div>
     );
   }
 
-  const branches = ['CSE', 'IT', 'ECE', 'EEE', 'MECH', 'CIVIL', 'Other'];
+  // ✅ FIX: Added AI/ML and DS to match User model enum
+  const branches = ['CSE', 'IT', 'ECE', 'EEE', 'AI/ML', 'DS', 'MECH', 'CIVIL', 'Other'];
   const batches = ['2024', '2025', '2026', '2027', '2028'];
   const roundTypes = ['Online Test', 'Technical Interview', 'HR Interview', 'Group Discussion', 'Case Study', 'Other'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+    // ✅ THEME FIX: matches login page (cyan-50 via blue-50 to indigo-50 + blob orbs)
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 relative">
+
+      {/* Animated blob orbs — same as login AuthBackground */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 -left-20 w-96 h-96 bg-gradient-to-br from-cyan-200 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute top-40 -right-20 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-br from-cyan-300 to-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative z-10 p-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -553,6 +628,15 @@ const JobForm = () => {
                 Add Requirement
               </button>
             </div>
+
+            {/* ✅ NEW: Preferred Skills — CRITICAL for AI skill matching */}
+            <ChipInput
+              label="Preferred Skills"
+              hint="These skills are used for AI-powered student matching. Add each skill and press Enter or click Add."
+              values={formData.preferredSkills}
+              onChange={(v) => updateField('preferredSkills', v)}
+              placeholder="e.g. React, Node.js, Python, SQL..."
+            />
           </Section>
 
           {/* Package Details */}
@@ -741,6 +825,7 @@ const JobForm = () => {
               </label>
             </div>
 
+            {/* ✅ FIX: Added AI/ML and DS branches */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Eligible Branches *
@@ -910,6 +995,24 @@ const JobForm = () => {
             </div>
           </Section>
 
+          {/* ✅ NEW: Tags & Notes section */}
+          <Section title="Tags & Notes" icon={<Tag className="w-6 h-6" />}>
+            <ChipInput
+              label="Tags"
+              hint="Add tags to help categorize and search this job posting."
+              values={formData.tags}
+              onChange={(v) => updateField('tags', v)}
+              placeholder="e.g. urgent, remote-friendly, tier1, mass-hiring..."
+            />
+            <FormTextArea
+              label="Internal Notes (not visible to students)"
+              placeholder="Any internal notes, reminders, or special instructions for this job posting..."
+              value={formData.notes}
+              onChange={(e) => updateField('notes', e.target.value)}
+              rows={3}
+            />
+          </Section>
+
           {/* Action Buttons */}
           <div className="bg-white rounded-2xl shadow-lg p-6 sticky bottom-6">
             <div className="flex flex-col md:flex-row gap-3">
@@ -942,6 +1045,19 @@ const JobForm = () => {
           </div>
         </form>
       </div>
+      </div>
+
+      {/* Blob animation keyframes */}
+      <style>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33%       { transform: translate(30px, -50px) scale(1.1); }
+          66%       { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob             { animation: blob 7s infinite; }
+        .animation-delay-2000    { animation-delay: 2s; }
+        .animation-delay-4000    { animation-delay: 4s; }
+      `}</style>
     </div>
   );
 };

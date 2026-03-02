@@ -1,5 +1,6 @@
 // pages/SuperAdmin/Analytics.jsx
 import { useState, useEffect } from 'react';
+import apiCall from '../../api/Api';
 import {
   TrendingUp,
   Users,
@@ -30,13 +31,7 @@ const Analytics = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/super-admin/analytics?timeRange=${timeRange}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        }
-      });
-      const data = await response.json();
-      
+      const data = await apiCall(`/super-admin/analytics?timeRange=${timeRange}`);
       if (data.success) {
         setAnalytics(data.analytics);
       }

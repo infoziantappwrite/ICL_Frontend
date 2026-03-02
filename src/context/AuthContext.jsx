@@ -50,18 +50,7 @@ export const AuthProvider = ({ children }) => {
           });
 
           if (!refreshRes.ok) {
-            console.log('ℹ️  No active session — checking local token...');
-
-            // Fallback: check legacy token/userData in localStorage (original behaviour)
-            const localToken = tokenManager.getToken();
-            const localUserData = tokenManager.getUserData();
-
-            if (localToken && localUserData) {
-              tokenStore.set(localToken);
-              setUser(localUserData);
-              setIsAuthenticated(true);
-              console.log('✅ Session restored from local token for:', localUserData.email);
-            }
+            console.log('ℹ️  No active session found');
             return;
           }
 
@@ -93,17 +82,6 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (err) {
           console.error('Session restore error:', err.message);
-
-          // Fallback: check legacy token/userData in localStorage
-          const localToken = tokenManager.getToken();
-          const localUserData = tokenManager.getUserData();
-
-          if (localToken && localUserData) {
-            tokenStore.set(localToken);
-            setUser(localUserData);
-            setIsAuthenticated(true);
-            console.log('✅ Session restored from local token for:', localUserData.email);
-          }
         } finally {
           _sessionRestored = true;
           booting.current = false;
@@ -124,7 +102,6 @@ export const AuthProvider = ({ children }) => {
       if (booting.current) return;
       console.warn('🔒 Session expired — logging out');
       tokenStore.clear();
-      tokenManager.removeToken();
       tokenManager.removeUserData();
       setUser(null);
       setIsAuthenticated(false);
@@ -137,7 +114,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData, token) => {
     tokenStore.set(token);
-    tokenManager.setToken(token);       // keep tokenManager in sync
     tokenManager.setUserData(userData);
     setUser(userData);
     setIsAuthenticated(true);
@@ -150,7 +126,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', err.message);
     } finally {
       tokenStore.clear();
-      tokenManager.removeToken();
       tokenManager.removeUserData();
       setUser(null);
       setIsAuthenticated(false);
@@ -165,17 +140,6 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
-  // Helper: update just the college sub-object (used after fetching college profile)
-  const updateCollege = (collegeData) => {
-    const updatedUser = { ...user, college: collegeData };
-    tokenManager.setUserData(updatedUser);
-    setUser(updatedUser);
-  };
-
-  // Convenience getters
-  const college = user?.college || null;
-  const collegeName = college?.name || null;
-
   const value = {
     user,
     isAuthenticated,
@@ -183,9 +147,6 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateUser,
-    updateCollege,
-    college,
-    collegeName,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -74,7 +74,7 @@ const CompanyList = () => {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = 
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (company.headquarters?.city || company.location)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.industry?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesIndustry = 
@@ -214,10 +214,10 @@ const CompanyList = () => {
               {/* Company Info */}
               <div className="p-6">
                 <div className="space-y-3 mb-4">
-                  {company.location && (
+                  {(company.headquarters?.city || company.location) && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-sm">{company.location}</span>
+                      <span className="text-sm">{company.headquarters?.city || company.location}</span>
                     </div>
                   )}
                   

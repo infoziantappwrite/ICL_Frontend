@@ -82,7 +82,7 @@ const CompanyForm = () => {
           phone: response.company.phone || '',
           website: response.company.website || '',
           industry: response.company.industry || '',
-          location: response.company.location || '',
+          location: response.company.location || response.company.headquarters?.city || '',
           description: response.company.description || '',
           companySize: response.company.companySize || response.company.employeeCount || '',
           isActive: response.company.isActive ?? true,
@@ -143,12 +143,27 @@ const CompanyForm = () => {
 
     try {
       setSaving(true);
+
+      // Transform formData to match backend schema (location -> headquarters.city)
+      const companyData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        website: formData.website || undefined,
+        industry: formData.industry,
+        description: formData.description || undefined,
+        companySize: formData.companySize || undefined,
+        isActive: formData.isActive,
+        headquarters: {
+          city: formData.location || undefined,
+        },
+      };
       
       if (isEditMode) {
-        await collegeAdminAPI.updateCompany(companyId, formData);
+        await collegeAdminAPI.updateCompany(companyId, companyData);
         toast.success('Success', 'Company updated successfully!');
       } else {
-        await collegeAdminAPI.createCompany(formData);
+        await collegeAdminAPI.createCompany(companyData);
         toast.success('Success', 'Company created successfully!');
       }
       

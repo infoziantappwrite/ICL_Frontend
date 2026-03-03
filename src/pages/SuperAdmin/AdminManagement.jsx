@@ -13,8 +13,6 @@ import {
   Mail,
   Phone,
   Shield,
-  ToggleLeft,
-  ToggleRight,
   GraduationCap,
   UserCheck,
   UserX,
@@ -63,14 +61,17 @@ const AdminManagement = () => {
   };
 
   const handleDeleteAdmin = async (adminId, adminName) => {
-    if (!confirm(`Are you sure you want to delete "${adminName}"? This action cannot be undone.`)) {
-      return;
-    }
-
+    // window.confirm removed as requested
     try {
       await apiCall(`/super-admin/admins/${adminId}`, { method: 'DELETE' });
       toast.success('Success', 'Admin deleted successfully');
-      fetchAdmins();
+      
+      // Update state locally to remove the admin and refresh stats without reloading the page
+      setAdmins(prev => {
+        const updatedList = prev.filter(admin => admin._id !== adminId);
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error deleting admin:', error);
       toast.error('Error', 'Failed to delete admin: ' + error.message);
@@ -81,7 +82,15 @@ const AdminManagement = () => {
     try {
       await apiCall(`/super-admin/admins/${adminId}/toggle-status`, { method: 'PATCH' });
       toast.success('Success', `Admin ${currentStatus ? 'deactivated' : 'activated'} successfully`);
-      fetchAdmins();
+      
+      // Update state locally instead of fetchAdmins() to prevent page reload
+      setAdmins(prev => {
+        const updatedList = prev.map(admin => 
+          admin._id === adminId ? { ...admin, isActive: !currentStatus } : admin
+        );
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error toggling status:', error);
       toast.error('Error', 'Failed to update status: ' + error.message);
@@ -254,23 +263,25 @@ const AdminManagement = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(admin._id, admin.isActive)}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 transition-all ${
-                          admin.isActive
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
-                        }`}
+                        title={admin.isActive ? 'Click to deactivate' : 'Click to activate'}
+                        className="group flex items-center gap-2.5 cursor-pointer focus:outline-none"
                       >
-                        {admin.isActive ? (
-                          <>
-                            <ToggleRight className="w-3 h-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-3 h-3" />
-                            Inactive
-                          </>
-                        )}
+                        <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                          admin.isActive
+                            ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                            : 'bg-gray-200 group-hover:bg-gray-300'
+                        }`}>
+                          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
+                            admin.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all ${
+                          admin.isActive
+                            ? 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200'
+                            : 'text-gray-400 bg-gray-50 ring-1 ring-gray-200'
+                        }`}>
+                          {admin.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </button>
                     </td>
                     <td className="px-6 py-4">

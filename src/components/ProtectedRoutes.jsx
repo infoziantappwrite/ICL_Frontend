@@ -1,9 +1,13 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
+// Pages that a first-login student is allowed to visit before changing password
+const FIRST_LOGIN_EXEMPT_PATHS = ['/change-password', '/profile-completion'];
+
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -26,6 +30,17 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // ── First Login Flow enforcement ──────────────────────────────────────────
+  // If this student has isFirstLogin = true and is NOT on an exempt page,
+  // force them to the change-password screen.
+  const isStudent = user?.role === 'student' || user?.role === 'candidate';
+  const isFirstLogin = user?.isFirstLogin === true;
+  const onExemptPath = FIRST_LOGIN_EXEMPT_PATHS.includes(location.pathname);
+
+  if (isStudent && isFirstLogin && !onExemptPath) {
+    return <Navigate to="/change-password" replace />;
   }
 
   return children;

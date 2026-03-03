@@ -18,7 +18,7 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI } from '../../api/Api';
- 
+
 const CompanyManagement = () => {
   const toast = useToast();
   const navigate = useNavigate();
@@ -31,16 +31,16 @@ const CompanyManagement = () => {
     active: 0,
     inactive: 0,
   });
- 
+
   useEffect(() => {
     fetchCompanies();
   }, []);
- 
+
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       const response = await companyAPI.getAllCompanies();
- 
+
       if (response.success) {
         // Fetch full details for each company in parallel to get headquarters/location
         const detailedCompanies = await Promise.all(
@@ -60,7 +60,7 @@ const CompanyManagement = () => {
             return company;
           })
         );
- 
+
         setCompanies(detailedCompanies);
         calculateStats(detailedCompanies);
       }
@@ -71,58 +71,70 @@ const CompanyManagement = () => {
       setLoading(false);
     }
   };
- 
+
   const calculateStats = (companiesList) => {
     const total = companiesList.length;
     const active = companiesList.filter(c => c.isActive).length;
     const inactive = total - active;
     setStats({ total, active, inactive });
   };
- 
+
   const handleDeleteCompany = async (companyId, companyName) => {
-    if (!confirm(`Are you sure you want to delete "${companyName}"? This action cannot be undone.`)) {
-      return;
-    }
- 
+    // Browser confirm removed as requested
     try {
       await companyAPI.deleteCompany(companyId);
       toast.success('Success', 'Company deleted successfully');
-      fetchCompanies();
+      
+      // Update state locally to remove the company without a full page reload
+      setCompanies(prev => {
+        const updatedList = prev.filter(c => c._id !== companyId);
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error deleting company:', error);
       toast.error('Error', 'Failed to delete company: ' + error.message);
     }
   };
- 
+
   const handleToggleStatus = async (companyId, currentStatus) => {
     try {
       await companyAPI.toggleActiveStatus(companyId);
       toast.success('Success', `Company ${currentStatus ? 'deactivated' : 'activated'} successfully`);
-      fetchCompanies();
+      
+      // Update state locally instead of fetchCompanies() 
+      // This prevents the company from "disappearing" due to a re-fetch and prevents page reload
+      setCompanies(prev => {
+        const updatedList = prev.map(company => 
+          company._id === companyId ? { ...company, isActive: !currentStatus } : company
+        );
+        calculateStats(updatedList);
+        return updatedList;
+      });
     } catch (error) {
       console.error('Error toggling status:', error);
       toast.error('Error', 'Failed to update status: ' + error.message);
     }
   };
- 
+
   const filteredCompanies = companies.filter(company => {
     const matchesSearch =
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (company.headquarters?.city || company.location)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.industry?.toLowerCase().includes(searchTerm.toLowerCase());
-   
+    
     const matchesStatus =
       filterStatus === 'all' ||
       (filterStatus === 'active' && company.isActive) ||
       (filterStatus === 'inactive' && !company.isActive);
-   
+    
     return matchesSearch && matchesStatus;
   });
- 
+
   if (loading) {
     return <LoadingSpinner message="Loading Companies..." />;
   }
- 
+
   return (
     <DashboardLayout title="Company Management">
       {/* Header */}
@@ -148,7 +160,7 @@ const CompanyManagement = () => {
           </div>
         </div>
       </div>
- 
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
@@ -162,7 +174,7 @@ const CompanyManagement = () => {
             </div>
           </div>
         </div>
- 
+
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
           <div className="flex items-center justify-between">
             <div>
@@ -174,7 +186,7 @@ const CompanyManagement = () => {
             </div>
           </div>
         </div>
- 
+
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
           <div className="flex items-center justify-between">
             <div>
@@ -187,7 +199,7 @@ const CompanyManagement = () => {
           </div>
         </div>
       </div>
- 
+
       {/* Search and Filters */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
@@ -212,7 +224,7 @@ const CompanyManagement = () => {
           </select>
         </div>
       </div>
- 
+
       {/* Companies Table */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
         <div className="overflow-x-auto">
@@ -280,23 +292,25 @@ const CompanyManagement = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(company._id, company.isActive)}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 transition-all ${
-                          company.isActive
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
-                        }`}
+                        title={company.isActive ? 'Click to deactivate' : 'Click to activate'}
+                        className="group flex items-center gap-2.5 cursor-pointer focus:outline-none"
                       >
-                        {company.isActive ? (
-                          <>
-                            <ToggleRight className="w-3 h-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-3 h-3" />
-                            Inactive
-                          </>
-                        )}
+                        <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                          company.isActive
+                            ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                            : 'bg-gray-200 group-hover:bg-gray-300'
+                        }`}>
+                          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
+                            company.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all ${
+                          company.isActive
+                            ? 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200'
+                            : 'text-gray-400 bg-gray-50 ring-1 ring-gray-200'
+                        }`}>
+                          {company.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </button>
                     </td>
                     <td className="px-6 py-4">
@@ -353,6 +367,5 @@ const CompanyManagement = () => {
     </DashboardLayout>
   );
 };
- 
+
 export default CompanyManagement;
- 

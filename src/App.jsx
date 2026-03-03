@@ -13,6 +13,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyOtp from './pages/VerifyOtp';
+import ChangePassword from './pages/ChangePassword';
+import ProfileCompletion from './pages/ProfileCompletion';
 
 // ==================== PROFILE PAGES ====================
 import ProfileDashboard from './pages/ProfileDashboard';
@@ -116,6 +118,10 @@ function App() {
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/verify-otp" element={<PublicRoute><VerifyOtp /></PublicRoute>} />
+
+            {/* ===== FIRST LOGIN FLOW (protected — user must be logged in) ===== */}
+            <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+            <Route path="/profile-completion" element={<ProtectedRoute><ProfileCompletion /></ProtectedRoute>} />
 
             {/* ===== ROLE-BASED REDIRECT ===== */}
             <Route path="/dashboard" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />

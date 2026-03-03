@@ -36,7 +36,6 @@ const CollegeManagement = () => {
       const data = await apiCall(`/super-admin/colleges?${params}`);
 
       if (data.success) {
-        // Backend now returns liveCounts per college — no extra fetches needed
         setColleges(data.colleges || []);
         setTotalPages(data.totalPages || 1);
         setTotalColleges(data.total || 0);
@@ -62,13 +61,14 @@ const CollegeManagement = () => {
   }, [fetchColleges]);
 
   const handleDeleteCollege = async (collegeId, collegeName) => {
-    if (!window.confirm(`Are you sure you want to delete "${collegeName}"? This action cannot be undone.`)) return;
-
+    // window.confirm removed as requested
     try {
       const data = await apiCall(`/super-admin/colleges/${collegeId}`, { method: 'DELETE' });
       if (data.success) {
         toast.success('Success', 'College deleted successfully');
-        fetchColleges();
+        // Update state locally instead of fetchColleges() to prevent reload
+        setColleges(prev => prev.filter(c => c._id !== collegeId));
+        setTotalColleges(prev => prev - 1);
       } else {
         toast.error('Error', data.message || 'Failed to delete college');
       }
@@ -80,7 +80,7 @@ const CollegeManagement = () => {
 
   const handleToggleStatus = async (collegeId, currentStatus, collegeName) => {
     const action = currentStatus ? 'deactivate' : 'activate';
-    if (!window.confirm(`Are you sure you want to ${action} "${collegeName}"?`)) return;
+    // window.confirm removed as requested
 
     try {
       const data = await apiCall(`/super-admin/colleges/${collegeId}`, {
@@ -88,8 +88,13 @@ const CollegeManagement = () => {
         body: JSON.stringify({ isActive: !currentStatus }),
       });
       if (data.success) {
-        toast.success('Success', `College ${action}d successfully`);
-        fetchColleges();
+        toast.success('Success', `College ${collegeName} ${action}d successfully`);
+        // Update state locally instead of fetchColleges() to prevent reload
+        setColleges(prevColleges => 
+          prevColleges.map(college => 
+            college._id === collegeId ? { ...college, isActive: !currentStatus } : college
+          )
+        );
       } else {
         toast.error('Error', data.message || `Failed to ${action} college`);
       }
@@ -261,16 +266,28 @@ const CollegeManagement = () => {
                       <td className="px-5 py-4">
                         <button
                           onClick={() => handleToggleStatus(college._id, college.isActive, college.name)}
-                          className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 w-fit cursor-pointer transition-all hover:scale-105 ${
-                            college.isActive
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
-                          }`}
+                          title={college.isActive ? 'Click to deactivate' : 'Click to activate'}
+                          className="group flex items-center gap-2.5 cursor-pointer focus:outline-none"
                         >
-                          {college.isActive
-                            ? <CheckCircle className="w-3 h-3" />
-                            : <XCircle className="w-3 h-3" />}
-                          {college.isActive ? 'Active' : 'Inactive'}
+                          {/* Toggle Track */}
+                          <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                            college.isActive
+                              ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                              : 'bg-gray-200 group-hover:bg-gray-300'
+                          }`}>
+                            {/* Knob */}
+                            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
+                              college.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                            }`} />
+                          </div>
+                          {/* Label badge */}
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all ${
+                            college.isActive
+                              ? 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200'
+                              : 'text-gray-400 bg-gray-50 ring-1 ring-gray-200'
+                          }`}>
+                            {college.isActive ? 'Active' : 'Inactive'}
+                          </span>
                         </button>
                       </td>
                       <td className="px-5 py-4">

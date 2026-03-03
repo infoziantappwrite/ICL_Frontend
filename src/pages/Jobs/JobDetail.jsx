@@ -2,11 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
 import {
   ArrowLeft, Briefcase, MapPin, DollarSign, Clock,
   Building2, Users, Award, CheckCircle, XCircle,
-  Send, AlertCircle, TrendingUp, Target, GraduationCap,
+  AlertCircle, TrendingUp, Target, GraduationCap,
   Home, Search, ChevronDown, ChevronUp, FileText, Zap,
 } from 'lucide-react';
 
@@ -152,26 +151,6 @@ const MatchedStudentsPanel = ({ jobId, job }) => {
 
   return (
     <div>
-      {/* ── Scoring Legend ── */}
-      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl">
-        <p className="text-sm font-bold text-blue-800 mb-3">Match Score Breakdown (total 100 pts)</p>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-xs">
-          {[
-            { label: 'Skills',   pts: 30, color: 'bg-blue-600',   emoji: '💡' },
-            { label: 'Branch',   pts: 25, color: 'bg-indigo-500', emoji: '🏫' },
-            { label: 'CGPA',     pts: 20, color: 'bg-green-500',  emoji: '📊' },
-            { label: 'Batch',    pts: 15, color: 'bg-cyan-500',   emoji: '📅' },
-            { label: 'Hygiene',  pts: 10, color: 'bg-purple-500', emoji: '✅' },
-          ].map(({ label, pts, color, emoji }) => (
-            <div key={label} className="bg-white rounded-lg p-2 border border-blue-100">
-              <span className={`inline-block w-2 h-2 rounded-full ${color} mr-1`} />
-              <span className="font-semibold text-gray-700">{emoji} {label}</span>
-              <p className="text-blue-700 font-bold mt-0.5">{pts} pts</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* ── Summary Stats ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
@@ -441,7 +420,6 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const toast = useToast();
 
   const isCollegeAdmin = location.pathname.startsWith('/dashboard/college-admin');
   const isSuperAdmin   = location.pathname.startsWith('/dashboard/super-admin');
@@ -457,9 +435,6 @@ const JobDetail = () => {
   const [loading, setLoading]                      = useState(true);
   const [error, setError]                          = useState(null);
   const [hasApplied, setHasApplied]               = useState(false);
-  const [isEligible, setIsEligible]               = useState(null);
-  const [checkingEligibility, setCheckingEligibility] = useState(false);
-  const [showApplyModal, setShowApplyModal]        = useState(false);
   const [activeTab, setActiveTab]                  = useState('details'); // 'details' | 'matched'
 
   useEffect(() => { fetchJobDetails(); }, [jobId]);
@@ -471,23 +446,6 @@ const JobDetail = () => {
       if (response.success) { setJob(response.job); setHasApplied(response.hasApplied); }
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
-  };
-
-  const checkEligibility = async () => {
-    try {
-      setCheckingEligibility(true);
-      const response = await window.jobAPI.checkEligibility(jobId);
-      setIsEligible(response.eligible);
-    } catch (err) { console.error(err); }
-    finally { setCheckingEligibility(false); }
-  };
-
-  const handleApply = () => {
-    if (!isEligible && isEligible !== null) {
-      toast.warning('Not Eligible', 'You do not meet the eligibility criteria for this job.');
-      return;
-    }
-    setShowApplyModal(true);
   };
 
   const formatDeadline = (deadline) => {
@@ -648,33 +606,16 @@ const JobDetail = () => {
 
             /* JOB DETAILS TAB */
             <>
-              {/* Apply banner — students only */}
-              {!isCollegeAdmin && !isSuperAdmin && !hasApplied && !isExpired && !isClosed && (
-                <div className="mb-8 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Ready to Apply?</h3>
-                      <p className="text-gray-600 text-sm mb-3">Make sure you meet all eligibility criteria</p>
-                      {isEligible === null && !checkingEligibility && (
-                        <button onClick={checkEligibility} className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2 text-sm">
-                          <Target className="w-4 h-4" /> Check my eligibility
-                        </button>
-                      )}
-                      {checkingEligibility && <p className="text-gray-500 text-sm italic">Checking eligibility…</p>}
-                      {isEligible === true  && <div className="flex items-center gap-2 text-green-600 font-medium text-sm"><CheckCircle className="w-4 h-4" /> You are eligible!</div>}
-                      {isEligible === false && <div className="flex items-center gap-2 text-red-600 font-medium text-sm"><XCircle className="w-4 h-4" /> You don't meet the criteria</div>}
-                    </div>
-                    <button onClick={handleApply} className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold flex items-center gap-2 shadow-lg shrink-0">
-                      <Send className="w-4 h-4" /> Apply Now
-                    </button>
+              {/* View-only notice — students */}
+              {!isCollegeAdmin && !isSuperAdmin && !isExpired && !isClosed && (
+                <div className="mb-8 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-5 flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+                    <Briefcase className="w-5 h-5 text-blue-600" />
                   </div>
-                </div>
-              )}
-
-              {!isCollegeAdmin && !isSuperAdmin && hasApplied && (
-                <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-5 flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-blue-600" />
-                  <div><p className="font-semibold text-blue-900">Application Submitted</p><p className="text-blue-700 text-sm">You have already applied</p></div>
+                  <div>
+                    <p className="font-semibold text-blue-900">Application via College Portal</p>
+                    <p className="text-blue-700 text-sm">Contact your college placement cell to apply for this position.</p>
+                  </div>
                 </div>
               )}
 
@@ -809,9 +750,8 @@ const JobDetail = () => {
               )}
 
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-xl">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-6 bg-gray-50 rounded-xl">
                 {[
-                  { label: 'Views',        value: job.stats.totalViews,       color: 'text-gray-900' },
                   { label: 'Applications', value: job.stats.totalApplications, color: 'text-blue-600' },
                   { label: 'Shortlisted',  value: job.stats.shortlisted,       color: 'text-green-600' },
                   { label: 'Selected',     value: job.stats.selected,          color: 'text-purple-600' },
@@ -828,22 +768,6 @@ const JobDetail = () => {
         </div>
       </div>
 
-      {/* Apply Modal */}
-      {showApplyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-            <h3 className="text-2xl font-bold mb-3">Apply to {job.jobTitle}</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to apply? Make sure your profile is complete.</p>
-            <div className="flex gap-4">
-              <button onClick={() => setShowApplyModal(false)} className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 font-medium">Cancel</button>
-              <button onClick={() => { toast.info('Coming Soon', 'Application feature coming soon!'); setShowApplyModal(false); }}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold">
-                Confirm Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

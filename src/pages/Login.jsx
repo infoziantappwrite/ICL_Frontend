@@ -87,15 +87,21 @@ const Login = () => {
 
         toast.success('Welcome back!', `Signed in as ${response.user.email}`);
 
-        // ⚠️ SIMPLIFIED FLOW: Role-based routing - ALWAYS go to respective dashboard
+        // ── First Login Flow: student must change password first ──
+        if (response.isFirstLogin && response.nextStep === 'CHANGE_PASSWORD') {
+          console.log('🔑 First login detected — redirecting to change password');
+          navigate('/change-password', { replace: true });
+          return;
+        }
+
+        // ⚠️ Role-based routing — go to respective dashboard
         const roleRoutes = {
           student: '/dashboard/student',
-          candidate: '/dashboard/student', // Both student and candidate go to same dashboard
+          candidate: '/dashboard/student',
           college_admin: '/dashboard/college-admin',
           super_admin: '/dashboard/super-admin',
         };
 
-        // Redirect to role-specific dashboard
         const redirectPath = roleRoutes[response.user.role] || '/dashboard';
         console.log('🎯 Redirecting to:', redirectPath);
         navigate(redirectPath);

@@ -11,6 +11,14 @@ const RoleBasedRedirect = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // First-login students must change password before reaching their dashboard
+  if (
+    user.isFirstLogin &&
+    (user.role === 'student' || user.role === 'candidate')
+  ) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   const roleRoutes = {
     student: '/dashboard/student',
     candidate: '/dashboard/student',  // candidate = student

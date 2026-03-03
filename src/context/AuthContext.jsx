@@ -74,10 +74,12 @@ export const AuthProvider = ({ children }) => {
           if (meRes.ok) {
             const meData = await meRes.json();
             if (meData?.user) {
+              // Preserve isFirstLogin in the restored session so ProtectedRoute
+              // can enforce the first-login flow even after a page refresh.
               tokenManager.setUserData(meData.user);
               setUser(meData.user);
               setIsAuthenticated(true);
-              console.log('✅ Session restored for:', meData.user.email);
+              console.log('✅ Session restored for:', meData.user.email, '| isFirstLogin:', meData.user.isFirstLogin);
             }
           }
         } catch (err) {

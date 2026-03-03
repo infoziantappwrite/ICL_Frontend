@@ -204,6 +204,17 @@ export const authAPI = {
     });
   },
 
+  // First-login password change (POST /api/auth/change-password)
+  // If isFirstLogin, currentPassword is not required; newPassword is mandatory.
+  changePassword: async (newPassword, currentPassword = null) => {
+    const body = { newPassword };
+    if (currentPassword) body.currentPassword = currentPassword;
+    return apiCall('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
   logout: async () => {
     try {
       // Tell server to revoke this device's refresh token

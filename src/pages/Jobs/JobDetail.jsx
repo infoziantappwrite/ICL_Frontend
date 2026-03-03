@@ -750,9 +750,8 @@ const JobDetail = () => {
               )}
 
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-xl">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-6 bg-gray-50 rounded-xl">
                 {[
-                  { label: 'Views',        value: job.stats.totalViews,       color: 'text-gray-900' },
                   { label: 'Applications', value: job.stats.totalApplications, color: 'text-blue-600' },
                   { label: 'Shortlisted',  value: job.stats.shortlisted,       color: 'text-green-600' },
                   { label: 'Selected',     value: job.stats.selected,          color: 'text-purple-600' },

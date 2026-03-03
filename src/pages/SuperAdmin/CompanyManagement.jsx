@@ -292,14 +292,25 @@ const CompanyManagement = () => {
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(company._id, company.isActive)}
-                        className={`relative inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shadow-sm border cursor-pointer ${
-                          company.isActive
-                            ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600 hover:shadow-emerald-200 hover:shadow-md'
-                            : 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200 hover:shadow-gray-200 hover:shadow-md'
-                        }`}
+                        title={company.isActive ? 'Click to deactivate' : 'Click to activate'}
+                        className="group flex items-center gap-2.5 cursor-pointer focus:outline-none"
                       >
-                        <span className={`inline-block w-2 h-2 rounded-full transition-colors ${company.isActive ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
-                        {company.isActive ? 'Active' : 'Inactive'}
+                        <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                          company.isActive
+                            ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                            : 'bg-gray-200 group-hover:bg-gray-300'
+                        }`}>
+                          <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
+                            company.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all ${
+                          company.isActive
+                            ? 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200'
+                            : 'text-gray-400 bg-gray-50 ring-1 ring-gray-200'
+                        }`}>
+                          {company.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </button>
                     </td>
                     <td className="px-6 py-4">

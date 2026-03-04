@@ -7,7 +7,7 @@ import {
   User, Settings, LogOut, Menu, X, LayoutDashboard, Bell,
   ChevronLeft, ChevronRight, Edit, FileText, Briefcase, Target,
   Building2, Users, Activity, BarChart3, Crown, GraduationCap,
-  CreditCard, BookOpen,
+  CreditCard, BookOpen, ClipboardList,
 } from 'lucide-react';
 
 const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) => {
@@ -103,6 +103,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         { icon: Building2,       label: 'Companies',    path: '/dashboard/college-admin/companies' },
         { icon: Briefcase,       label: 'Jobs',         path: '/dashboard/college-admin/jobs' },
         { icon: FileText,        label: 'Applications', path: '/dashboard/college-admin/applications' },
+        { icon: ClipboardList,   label: 'Assessments',  path: '/dashboard/college-admin/assessments' },
         { icon: BarChart3,       label: 'Analytics',    path: '/dashboard/college-admin/analytics' },
         { icon: Bell,            label: 'Notifications',path: '/dashboard/college-admin/notifications' },
         { icon: Settings,        label: 'Settings',     path: '/dashboard/college-admin/settings' },
@@ -113,6 +114,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     return [
       { icon: LayoutDashboard, label: 'Dashboard',         path: '/dashboard/student' },
       { icon: Briefcase,       label: 'Job Opportunities', path: '/dashboard/student/jobs' },
+      { icon: ClipboardList,   label: 'Assessments',       path: '/dashboard/student/assessments' },
       { icon: User,            label: 'My Profile',        path: '/profile/my-info' },
       { icon: Edit,            label: 'Edit Profile',      path: '/profile/edit' },
       { icon: Bell,            label: 'Notifications',     path: '/dashboard/student/notifications' },

@@ -9,7 +9,7 @@ import {
   ShieldCheck, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import AuthBackground from '../components/auth/AuthBackground';
-
+ 
 // ── strength helper ──────────────────────────────────────────────────────────
 const getStrength = (pwd) => {
   let score = 0;
@@ -19,19 +19,19 @@ const getStrength = (pwd) => {
   if (/[^A-Za-z0-9]/.test(pwd))   score++;
   return score; // 0-4
 };
-
+ 
 const strengthLabel = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
 const strengthColor = [
   'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-blue-500', 'bg-green-500',
 ];
-
+ 
 const Rule = ({ met, text }) => (
   <li className={`flex items-center gap-2 text-xs transition-colors ${met ? 'text-green-600' : 'text-gray-400'}`}>
     <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${met ? 'text-green-500' : 'text-gray-300'}`} />
     {text}
   </li>
 );
-
+ 
 const PwdField = ({ label, name, value, onChange, show, onToggle, error, placeholder }) => (
   <div>
     <label className="block text-sm font-semibold text-gray-700 mb-1.5">{label}</label>
@@ -64,26 +64,26 @@ const PwdField = ({ label, name, value, onChange, show, onToggle, error, placeho
     )}
   </div>
 );
-
+ 
 // ── Main component ───────────────────────────────────────────────────────────
 const ChangePassword = () => {
   const navigate  = useNavigate();
   const { user, updateUser } = useAuth();
   const toast     = useToast();
-
+ 
   const [form, setForm]   = useState({ newPassword: '', confirm: '' });
   const [show, setShow]   = useState({ new: false, confirm: false });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
+ 
   const strength = getStrength(form.newPassword);
-
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(p => ({ ...p, [name]: value }));
     if (errors[name]) setErrors(p => ({ ...p, [name]: '' }));
   };
-
+ 
   const validate = () => {
     const e = {};
     if (!form.newPassword)               e.newPassword = 'New password is required';
@@ -92,23 +92,23 @@ const ChangePassword = () => {
     else if (form.confirm !== form.newPassword) e.confirm = 'Passwords do not match';
     return e;
   };
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
-
+ 
     setLoading(true);
     try {
       // For first-login, currentPassword is NOT required by backend
-      const res = await authAPI.changePassword(form.newPassword);
-
+      const res = await authAPI.changePassword(form.newPassword, null, true); // isFirstLogin=true → skip currentPassword check
+ 
       if (res.success) {
         // Clear isFirstLogin flag from local user context
         if (user) updateUser({ ...user, isFirstLogin: false });
-
+ 
         toast.success('Password updated!', 'Please complete your profile to get started.');
-
+ 
         // Backend returns nextStep: 'COMPLETE_PROFILE'
         if (res.nextStep === 'COMPLETE_PROFILE') {
           navigate('/profile-completion', { replace: true });
@@ -124,15 +124,15 @@ const ChangePassword = () => {
       setLoading(false);
     }
   };
-
+ 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 relative overflow-hidden p-4">
       <AuthBackground />
-
+ 
       <div className="relative z-10 w-full max-w-md">
         {/* Card */}
         <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-500/10 border border-white/50 p-8 sm:p-10">
-
+ 
           {/* Icon + Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl shadow-lg shadow-blue-400/40 mb-4">
@@ -144,7 +144,7 @@ const ChangePassword = () => {
               create a new password before continuing.
             </p>
           </div>
-
+ 
           {/* Info banner */}
           <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
             <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
@@ -153,16 +153,16 @@ const ChangePassword = () => {
               password to access the platform.
             </p>
           </div>
-
+ 
           {/* Global error */}
           {errors.submit && (
             <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-sm">
               <AlertCircle className="w-4.5 h-4.5 shrink-0" /> {errors.submit}
             </div>
           )}
-
+ 
           <form onSubmit={handleSubmit} className="space-y-5">
-
+ 
             {/* New password */}
             <PwdField
               label="New Password"
@@ -174,7 +174,7 @@ const ChangePassword = () => {
               error={errors.newPassword}
               placeholder="Create a strong password"
             />
-
+ 
             {/* Strength bar */}
             {form.newPassword && (
               <div className="-mt-2">
@@ -197,7 +197,7 @@ const ChangePassword = () => {
                 </p>
               </div>
             )}
-
+ 
             {/* Rules checklist */}
             <ul className="space-y-1 pl-0.5">
               <Rule met={form.newPassword.length >= 8}   text="At least 8 characters" />
@@ -205,7 +205,7 @@ const ChangePassword = () => {
               <Rule met={/[0-9]/.test(form.newPassword)} text="One number" />
               <Rule met={/[^A-Za-z0-9]/.test(form.newPassword)} text="One special character (optional but recommended)" />
             </ul>
-
+ 
             {/* Confirm password */}
             <PwdField
               label="Confirm Password"
@@ -217,7 +217,7 @@ const ChangePassword = () => {
               error={errors.confirm}
               placeholder="Re-enter your password"
             />
-
+ 
             {/* Submit */}
             <button
               type="submit"
@@ -232,7 +232,7 @@ const ChangePassword = () => {
             </button>
           </form>
         </div>
-
+ 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 mt-6">
           {['Set Password', 'Complete Profile', 'Dashboard'].map((step, i) => (
@@ -255,5 +255,5 @@ const ChangePassword = () => {
     </div>
   );
 };
-
+ 
 export default ChangePassword;

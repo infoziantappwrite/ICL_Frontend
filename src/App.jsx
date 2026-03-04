@@ -1,4 +1,4 @@
-// src/App.jsx - Complete routing - All routes working
+// src/App.jsx - Complete routing — all assessment routes added
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProfileProvider } from './context/Profilecontext';
@@ -27,6 +27,12 @@ import JobDetail from './pages/Jobs/JobDetail';
 import StudentNotifications from './pages/Notifications';
 import StudentSettings from './pages/Settings';
 
+// ==================== STUDENT ASSESSMENT PAGES ====================
+import StudentAssessmentList from './pages/Student/Assessments/AssessmentList';
+import StudentTakeAssessment from './pages/Student/Assessments/TakeAssessment';
+import StudentAssessmentHistory from './pages/Student/Assessments/AssessmentHistory';
+import StudentAttemptResult from './pages/Student/Assessments/AttemptResult';
+
 // ==================== COLLEGE ADMIN PAGES ====================
 import CollegeAdminDashboard from './pages/CollegeAdmin/Dashboard';
 import CollegeAdminJobManagement from './pages/CollegeAdmin/JobManagement';
@@ -40,10 +46,14 @@ import CollegeAdminApplicationManagement from './pages/CollegeAdmin/ApplicationM
 import CollegeAdminAnalytics from './pages/CollegeAdmin/Analytics';
 import CollegeAdminNotifications from './pages/CollegeAdmin/Notification';
 import CollegeAdminSettings from './pages/CollegeAdmin/Settings';
-// ⭐ Group Management → Excel-style group editor (still accessible via /groups)
 import GroupManagement from './pages/CollegeAdmin/GroupManagement';
-// ⭐ Student Management → real backend student list + bulk upload + export
 import StudentManagement from './pages/CollegeAdmin/StudentManagement';
+
+// ==================== COLLEGE ADMIN ASSESSMENT PAGES ====================
+import AssessmentManagement from './pages/CollegeAdmin/Assessments/AssessmentManagement';
+import AssessmentForm from './pages/CollegeAdmin/Assessments/AssessmentForm';
+import QuestionManager from './pages/CollegeAdmin/Assessments/QuestionManager';
+import AssessmentAttempts from './pages/CollegeAdmin/Assessments/AssessmentAttempts';
 
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
@@ -63,9 +73,7 @@ import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
 import SuperAdminNotifications from './pages/SuperAdmin/Notification';
 import SuperAdminSettings from './pages/SuperAdmin/Settings';
 import SubscriptionManagement from './pages/SuperAdmin/SubscriptionManagement';
-// ⭐ Group Management → Excel-style group editor (still accessible via /groups)
 import SuperAdminGroupManagement from './pages/SuperAdmin/GroupManagement';
-// ⭐ Student Management → real backend student operations for super admin
 import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 
 // ==================== ROLE-BASED REDIRECTS ====================
@@ -93,14 +101,8 @@ const RoleBasedSettings = () => {
 
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
-
   if (isLoading) return null;
-
-  // If already logged in → never allow login page
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -119,7 +121,7 @@ function App() {
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/verify-otp" element={<PublicRoute><VerifyOtp /></PublicRoute>} />
 
-            {/* ===== FIRST LOGIN FLOW (protected — user must be logged in) ===== */}
+            {/* ===== FIRST LOGIN FLOW ===== */}
             <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/profile-completion" element={<ProtectedRoute><ProfileCompletion /></ProtectedRoute>} />
 
@@ -127,7 +129,6 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
 
             {/* ===== STUDENT ===== */}
-            {/* /profile alias — fixes "back to dashboard" from older nav references */}
             <Route path="/profile" element={<ProtectedRoute><ProfileDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/student" element={<ProtectedRoute><ProfileDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/student/jobs" element={<ProtectedRoute><JobList /></ProtectedRoute>} />
@@ -135,12 +136,17 @@ function App() {
             <Route path="/dashboard/student/notifications" element={<ProtectedRoute><StudentNotifications /></ProtectedRoute>} />
             <Route path="/dashboard/student/settings" element={<ProtectedRoute><StudentSettings /></ProtectedRoute>} />
 
+            {/* ===== STUDENT ASSESSMENTS ===== */}
+            <Route path="/dashboard/student/assessments" element={<ProtectedRoute><StudentAssessmentList /></ProtectedRoute>} />
+            <Route path="/dashboard/student/assessments/history" element={<ProtectedRoute><StudentAssessmentHistory /></ProtectedRoute>} />
+            <Route path="/dashboard/student/assessments/:assessmentId/take" element={<ProtectedRoute><StudentTakeAssessment /></ProtectedRoute>} />
+            <Route path="/dashboard/student/assessments/attempts/:attemptId" element={<ProtectedRoute><StudentAttemptResult /></ProtectedRoute>} />
+
             {/* ===== COLLEGE ADMIN ===== */}
             <Route path="/dashboard/college-admin" element={<ProtectedRoute><CollegeAdminDashboard /></ProtectedRoute>} />
 
-            {/* ⭐ Students — real backend student management (list, bulk upload, export) */}
+            {/* Students */}
             <Route path="/dashboard/college-admin/students" element={<ProtectedRoute><StudentManagement /></ProtectedRoute>} />
-            {/* Groups — Excel-style group editor (still accessible directly) */}
             <Route path="/dashboard/college-admin/groups" element={<ProtectedRoute><GroupManagement /></ProtectedRoute>} />
 
             {/* Jobs */}
@@ -167,12 +173,16 @@ function App() {
             <Route path="/dashboard/college-admin/notifications" element={<ProtectedRoute><CollegeAdminNotifications /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/settings" element={<ProtectedRoute><CollegeAdminSettings /></ProtectedRoute>} />
 
+            {/* ===== COLLEGE ADMIN ASSESSMENTS ===== */}
+            <Route path="/dashboard/college-admin/assessments" element={<ProtectedRoute><AssessmentManagement /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/create" element={<ProtectedRoute><AssessmentForm /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/:assessmentId/edit" element={<ProtectedRoute><AssessmentForm /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/:assessmentId/questions" element={<ProtectedRoute><QuestionManager /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/:assessmentId/attempts" element={<ProtectedRoute><AssessmentAttempts /></ProtectedRoute>} />
+
             {/* ===== SUPER ADMIN ===== */}
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
-
-            {/* ⭐ Students — real backend student operations for super admin */}
             <Route path="/dashboard/super-admin/students" element={<ProtectedRoute><SuperAdminStudentManagement /></ProtectedRoute>} />
-            {/* Groups — Excel-style group editor (still accessible directly) */}
             <Route path="/dashboard/super-admin/groups" element={<ProtectedRoute><SuperAdminGroupManagement /></ProtectedRoute>} />
 
             {/* Colleges */}
@@ -242,6 +252,5 @@ function App() {
     </AuthProvider>
   );
 }
-
 
 export default App;

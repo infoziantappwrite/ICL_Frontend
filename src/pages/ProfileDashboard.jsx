@@ -11,7 +11,7 @@ import {
   Clock, MapPin, Zap, ChevronRight,
   Plus, Edit, FileText, Building2, Star, ArrowRight,
   Flame, BarChart2, PlayCircle, Medal, RefreshCw,
-  DollarSign, CheckSquare, Sparkles, Eye
+  DollarSign, CheckSquare, Sparkles, Eye, Phone, Globe, Mail
 } from 'lucide-react';
 
 const MOCK_COURSES = [
@@ -409,6 +409,23 @@ const ProfileDashboard = () => {
                 </div>
                 <h2 className="text-2xl lg:text-3xl font-bold">{getFirstName()}! 👋</h2>
                 <p className="text-blue-100 text-sm mt-1">{(profile && (profile.currentRole || profile.candidateType)) || 'Ready to land your dream job?'}</p>
+                {user?.college && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-white">
+                      <Building2 className="w-3 h-3" />{user.college.name}
+                    </span>
+                    {user.college.code && (
+                      <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-xs text-blue-100 font-semibold tracking-wider uppercase">
+                        {user.college.code}
+                      </span>
+                    )}
+                    {user.college.address?.city && (
+                      <span className="flex items-center gap-1.5 bg-white/10 px-2.5 py-1 rounded-full text-xs text-blue-100">
+                        <MapPin className="w-3 h-3" />{[user.college.address.city, user.college.address.state].filter(Boolean).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3 sm:flex-col sm:items-end">

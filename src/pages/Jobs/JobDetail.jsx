@@ -7,7 +7,9 @@ import {
   Building2, Users, Award, CheckCircle, XCircle,
   AlertCircle, TrendingUp, Target, GraduationCap,
   Home, Search, ChevronDown, ChevronUp, FileText, Zap,
+  BarChart3, ClipboardList,
 } from 'lucide-react';
+import { assessmentAPI, assessmentAttemptAPI } from '../../api/Api';
 
 // ─────────────────────────────────────────────────────────────
 // SVG Circular Match Ring
@@ -55,6 +57,198 @@ const BreakdownBar = ({ label, pts, max, emoji }) => {
       <div className="w-full bg-gray-200 rounded-full h-1.5">
         <div className={`h-1.5 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Assessment Results Panel — College Admin only
+// ─────────────────────────────────────────────────────────────
+const AssessmentResultsPanel = ({ jobId }) => {
+  const [assessments, setAssessments] = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [expanded, setExpanded]       = useState(null);
+  const [attemptMap, setAttemptMap]   = useState({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await assessmentAPI.getAllAssessments();
+        if (res.success) {
+          const linked = (res.assessments || []).filter(a => a.jd_id?._id === jobId || a.jd_id === jobId);
+          setAssessments(linked);
+        }
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
+  }, [jobId]);
+
+  const loadAttempts = async (assessmentId) => {
+    if (attemptMap[assessmentId]) { setExpanded(assessmentId); return; }
+    try {
+      const res = await assessmentAttemptAPI.getAssessmentAttempts(assessmentId);
+      setAttemptMap(p => ({ ...p, [assessmentId]: res.attempts || [] }));
+      setExpanded(assessmentId);
+    } catch (e) {}
+  };
+
+  const scoreColor = (pct) => pct >= 70 ? 'text-emerald-600' : pct >= 40 ? 'text-blue-600' : 'text-red-500';
+  const scoreBg    = (pct) => pct >= 70 ? 'bg-emerald-50 border-emerald-100' : pct >= 40 ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100';
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      <p className="text-gray-500 font-medium">Loading assessment results…</p>
+    </div>
+  );
+
+  if (!assessments.length) return (
+    <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
+      <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+      <p className="text-gray-500 font-medium">No assessments linked to this JD</p>
+      <p className="text-gray-400 text-sm mt-1">Create an assessment and link it to this job description to see results here.</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+          <p className="text-2xl font-bold text-blue-700">{assessments.length}</p>
+          <p className="text-xs text-blue-600 mt-1 font-medium">Linked Assessments</p>
+        </div>
+        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 text-center">
+          <p className="text-2xl font-bold text-purple-700">{assessments.reduce((s,a) => s + (a.eligible_students?.length || 0), 0)}</p>
+          <p className="text-xs text-purple-600 mt-1 font-medium">Total Assigned</p>
+        </div>
+        <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-4 text-center col-span-2 md:col-span-1">
+          <p className="text-2xl font-bold text-cyan-700">{assessments.reduce((s,a) => s + (a.questions_id?.length || 0), 0)}</p>
+          <p className="text-xs text-cyan-600 mt-1 font-medium">Total Questions</p>
+        </div>
+      </div>
+
+      {/* Assessment list */}
+      {assessments.map(a => {
+        const attempts = attemptMap[a._id] || [];
+        const isOpen   = expanded === a._id;
+        const avgScore = attempts.length
+          ? Math.round(attempts.reduce((s, at) => s + (at.score_percentage || 0), 0) / attempts.length)
+          : null;
+        const passed   = attempts.filter(at => (at.score_percentage || 0) >= 70).length;
+
+        return (
+          <div key={a._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Assessment header */}
+            <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-slate-50 to-blue-50 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center shrink-0">
+                  <ClipboardList className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">
+                    {a.skill_id?.name || a.tags?.[0] || 'Assessment'}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium
+                      ${a.level === 'Beginner' ? 'bg-green-100 text-green-700'
+                        : a.level === 'Intermediate' ? 'bg-blue-100 text-blue-700'
+                        : 'bg-purple-100 text-purple-700'}`}>{a.level}</span>
+                    <span className="text-xs text-gray-400">{a.questions_id?.length || 0} Qs · {a.duration_minutes}m</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${a.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{a.status}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs text-gray-400">{a.eligible_students?.length || 0} assigned</div>
+                  {avgScore !== null && <div className={`text-sm font-bold ${scoreColor(avgScore)}`}>{avgScore}% avg</div>}
+                </div>
+                <button
+                  onClick={() => isOpen ? setExpanded(null) : loadAttempts(a._id)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-all"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  {isOpen ? 'Hide' : 'View Results'}
+                </button>
+              </div>
+            </div>
+
+            {/* Attempts table */}
+            {isOpen && (
+              <div className="p-4">
+                {/* Quick stats */}
+                {attempts.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-gray-50 rounded-xl p-3 text-center">
+                      <div className="text-xl font-bold text-gray-700">{attempts.length}</div>
+                      <div className="text-xs text-gray-500">Attempts</div>
+                    </div>
+                    <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                      <div className="text-xl font-bold text-emerald-600">{passed}</div>
+                      <div className="text-xs text-gray-500">Passed ≥70%</div>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-3 text-center">
+                      <div className="text-xl font-bold text-blue-600">{avgScore ?? '—'}%</div>
+                      <div className="text-xs text-gray-500">Avg Score</div>
+                    </div>
+                  </div>
+                )}
+
+                {attempts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 text-sm">No students have attempted this assessment yet.</div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-gray-100">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student</th>
+                          <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Score</th>
+                          <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Correct</th>
+                          <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Marks</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Submitted</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {[...attempts].sort((a,b) => (b.score_percentage||0)-(a.score_percentage||0)).map((at, idx) => (
+                          <tr key={at._id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                            <td className="px-4 py-3 text-xs font-bold text-gray-400">
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                  {(at.student_id?.fullName || '?').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-xs">{at.student_id?.fullName || 'Unknown'}</p>
+                                  <p className="text-[11px] text-gray-400">{at.student_id?.email || ''}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${scoreBg(at.score_percentage||0)}`}>
+                                <span className={scoreColor(at.score_percentage||0)}>{at.score_percentage || 0}%</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center text-xs font-semibold text-gray-600">{at.correct_answers||0}/{at.total_questions||0}</td>
+                            <td className="px-4 py-3 text-center text-xs font-semibold text-gray-600">{at.earned_marks||0}/{at.total_marks||0}</td>
+                            <td className="px-4 py-3 text-xs text-gray-400">
+                              {at.submitted_at ? new Date(at.submitted_at).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -435,7 +629,7 @@ const JobDetail = () => {
   const [loading, setLoading]                      = useState(true);
   const [error, setError]                          = useState(null);
   const [hasApplied, setHasApplied]               = useState(false);
-  const [activeTab, setActiveTab]                  = useState('details'); // 'details' | 'matched'
+  const [activeTab, setActiveTab]                  = useState('details'); // 'details' | 'matched' | 'results'
 
   useEffect(() => { fetchJobDetails(); }, [jobId]);
 
@@ -592,6 +786,17 @@ const JobDetail = () => {
                     AI
                   </span>
                 </button>
+                <button
+                  onClick={() => setActiveTab('results')}
+                  className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-all ${
+                    activeTab === 'results'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Assessment Results
+                </button>
               </div>
             </div>
           )}
@@ -600,7 +805,9 @@ const JobDetail = () => {
           <div className="p-8">
 
             {/* MATCHED STUDENTS TAB */}
-            {isCollegeAdmin && activeTab === 'matched' ? (
+            {isCollegeAdmin && activeTab === 'results' ? (
+              <AssessmentResultsPanel jobId={jobId} />
+            ) : isCollegeAdmin && activeTab === 'matched' ? (
               <MatchedStudentsPanel jobId={jobId} job={job} />
             ) : (
 

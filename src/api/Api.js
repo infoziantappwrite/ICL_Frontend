@@ -178,6 +178,14 @@ export const authAPI = {
       body: JSON.stringify({ email }),
     });
   },
+
+  // Google OAuth — sends userInfo object { email, name, sub, picture } from Google
+  googleAuth: async (userInfo) => {
+    return apiCall('/auth/google-token', {
+      method: 'POST',
+      body: JSON.stringify(userInfo),
+    });
+  },
  
   getMe: async () => {
     return apiCall('/auth/me');
@@ -1058,6 +1066,14 @@ export const assessmentAPI = {
   removeEligibleStudent: async (assessmentId, studentId) => {
     return apiCall(`/assessment/${assessmentId}/remove-student/${studentId}`, {
       method: 'DELETE',
+    });
+  },
+
+  // POST /api/assessment/generate-questions (AI)
+  generateQuestionsFromJD: async (data) => {
+    return apiCall('/assessment/generate-questions', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 

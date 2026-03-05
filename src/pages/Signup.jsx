@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../api/Api';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import { useGoogleLogin } from '@react-oauth/google';
 import {
   Mail,
   User,
@@ -20,6 +22,7 @@ import AuthFooter from '../components/auth/AuthFooter';
 const Signup = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -110,10 +113,38 @@ const Signup = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log('Google signup clicked');
-    // TODO: Implement Google OAuth
-  };
+  // Real Google OAuth — fetches user info then sends to backend
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then(r => r.json());
+
+        const response = await authAPI.googleAuth(userInfo);
+
+        if (response.success) {
+          login(response.user, response.accessToken);
+          toast.success('Account Created!', 'Signed up with Google successfully.');
+          const roleRoutes = {
+            student:       '/dashboard/student',
+            candidate:     '/dashboard/student',
+            college_admin: '/dashboard/college-admin',
+            super_admin:   '/dashboard/super-admin',
+          };
+          navigate(roleRoutes[response.user.role] || '/dashboard');
+        } else {
+          toast.error('Google Signup Failed', response.message || 'Could not sign up with Google.');
+        }
+      } catch (err) {
+        toast.error('Google Signup Failed', err.message || 'Something went wrong.');
+      }
+    },
+    onError: () => {
+      toast.error('Google Error', 'Google sign-in was cancelled or failed.');
+    },
+    flow: 'implicit',
+  });
 
   const handleFacebookLogin = () => {
     console.log('Facebook signup clicked');

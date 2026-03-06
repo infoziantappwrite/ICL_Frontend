@@ -55,6 +55,9 @@ const Field = ({ label, required, icon: Icon, children, hint }) => (
 const EMPTY_FORM = {
   fullName:'', email:'', rollNumber:'', branch:'',
   semester:'', cgpa:'', batch:'', phone:'', collegeId:'',
+  tenthPercentage:'', twelfthPercentage:'',
+  activeBacklogs:'', totalBacklogs:'', gapYears:'',
+  isEligibleForPlacements: true,
 };
 
 const SAAddSingleModal = ({ colleges, onClose, onDone }) => {
@@ -92,6 +95,12 @@ const SAAddSingleModal = ({ colleges, onClose, onDone }) => {
         ...(form.cgpa     && { cgpa: parseFloat(form.cgpa) }),
         ...(form.batch    && { batch: form.batch.trim() }),
         ...(form.phone    && { phone: form.phone.trim() }),
+        ...(form.tenthPercentage && { tenthPercentage: parseFloat(form.tenthPercentage) }),
+        ...(form.twelfthPercentage && { twelfthPercentage: parseFloat(form.twelfthPercentage) }),
+        ...(form.activeBacklogs !== '' && { activeBacklogs: parseInt(form.activeBacklogs) || 0 }),
+        ...(form.totalBacklogs !== '' && { totalBacklogs: parseInt(form.totalBacklogs) || 0 }),
+        ...(form.gapYears !== '' && { gapYears: parseInt(form.gapYears) || 0 }),
+        isEligibleForPlacements: form.isEligibleForPlacements,
       };
       const res = await superAdminStudentAPI.addStudent(payload);
       setSuccessData(res.data || { fullName: form.fullName, email: form.email });
@@ -228,12 +237,18 @@ const SAAddSingleModal = ({ colleges, onClose, onDone }) => {
 
             <div className="h-px bg-slate-100"/>
 
+            <div className="h-px bg-slate-100"/>
+
             <div className="grid grid-cols-2 gap-4">
               <Field label="Department" icon={BookOpen}>
                 <select className={selectCls()} value={form.branch} onChange={e=>setF('branch',e.target.value)}>
                   <option value="">Select</option>
                   {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
+                {form.branch === 'Other' && (
+                  <input className={`${inputCls(false)} mt-2`} placeholder="Specify department..."
+                    value={form.branchOther || ''} onChange={e=>setF('branchOther', e.target.value)} />
+                )}
               </Field>
               <Field label="Semester" icon={Layers}>
                 <select className={selectCls()} value={form.semester} onChange={e=>setF('semester',e.target.value)}>
@@ -254,6 +269,41 @@ const SAAddSingleModal = ({ colleges, onClose, onDone }) => {
                 <input type="text" className={inputCls()} placeholder="e.g. 2026"
                   value={form.batch} onChange={e=>setF('batch',e.target.value)}/>
               </Field>
+            </div>
+
+            <div className="h-px bg-slate-100"/>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Academic Records</p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="10th Percentage (%)" icon={BookOpen}>
+                <input type="number" step="0.01" min="0" max="100" className={inputCls()}
+                  placeholder="e.g. 88.5" value={form.tenthPercentage} onChange={e=>setF('tenthPercentage',e.target.value)}/>
+              </Field>
+              <Field label="12th Percentage (%)" icon={BookOpen}>
+                <input type="number" step="0.01" min="0" max="100" className={inputCls()}
+                  placeholder="e.g. 85.0" value={form.twelfthPercentage} onChange={e=>setF('twelfthPercentage',e.target.value)}/>
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Active Backlogs">
+                <input type="number" min="0" className={inputCls(false)}
+                  placeholder="0" value={form.activeBacklogs} onChange={e=>setF('activeBacklogs',e.target.value)}/>
+              </Field>
+              <Field label="Total Backlogs">
+                <input type="number" min="0" className={inputCls(false)}
+                  placeholder="0" value={form.totalBacklogs} onChange={e=>setF('totalBacklogs',e.target.value)}/>
+              </Field>
+              <Field label="Gap Years">
+                <input type="number" min="0" className={inputCls(false)}
+                  placeholder="0" value={form.gapYears} onChange={e=>setF('gapYears',e.target.value)}/>
+              </Field>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <input type="checkbox" id="sa-eligible" checked={form.isEligibleForPlacements}
+                onChange={e=>setF('isEligibleForPlacements',e.target.checked)} className="w-4 h-4 rounded text-indigo-600"/>
+              <label htmlFor="sa-eligible" className="text-sm font-medium text-slate-700 cursor-pointer">Eligible for Placements</label>
             </div>
           </div>
         </div>

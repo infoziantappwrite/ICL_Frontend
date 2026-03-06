@@ -323,6 +323,11 @@ const CompanyForm = () => {
                     ))}
                   </select>
                 </div>
+                {formData.industry === 'Other' && (
+                  <input type="text" name="industryOther" placeholder="Specify industry..."
+                    className="w-full mt-2 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    value={formData.industryOther || ''} onChange={handleInputChange} />
+                )}
                 {errors.industry && <p className="text-red-500 text-sm mt-1">{errors.industry}</p>}
               </div>
 

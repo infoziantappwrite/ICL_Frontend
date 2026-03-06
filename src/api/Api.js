@@ -1136,4 +1136,120 @@ export const assessmentAttemptAPI = {
 window.assessmentAPI = assessmentAPI;
 window.assessmentAttemptAPI = assessmentAttemptAPI;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COURSE API
+// Base: /api/courses
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// COURSE API — STUDENTS (base: /api/courses)
+// Shared route open to all authenticated roles for reading.
+// Write operations (enroll, progress) are student/candidate only.
+// ─────────────────────────────────────────────────────────────────────────────
+export const courseAPI = {
+  // GET /api/courses — browse courses (role-scoped by backend)
+  getAllCourses: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/courses${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET /api/courses/:id — single course with enrollment status for students
+  getCourseById: (id) => apiCall(`/courses/${id}`),
+
+  // POST /api/courses/:id/enroll — student self-enroll
+  enrollInCourse: (id) =>
+    apiCall(`/courses/${id}/enroll`, { method: 'POST' }),
+
+  // GET /api/courses/my-enrollments — student enrolled courses + progress
+  getMyEnrollments: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/courses/my-enrollments${qs ? `?${qs}` : ''}`);
+  },
+
+  // PATCH /api/courses/:id/progress — mark a module complete/incomplete
+  updateModuleProgress: (id, data) =>
+    apiCall(`/courses/${id}/progress`, { method: 'PATCH', body: JSON.stringify(data) }),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COLLEGE ADMIN COURSE API (base: /api/college-admin/courses)
+// All endpoints require college_admin role (enforced by backend middleware).
+// ─────────────────────────────────────────────────────────────────────────────
+export const collegeAdminCourseAPI = {
+  // GET  /api/college-admin/courses
+  getAllCourses: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/college-admin/courses${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET  /api/courses/:id  (shared — works for admins too)
+  getCourseById: (id) => apiCall(`/courses/${id}`),
+
+  // POST /api/college-admin/courses
+  createCourse: (data) =>
+    apiCall('/college-admin/courses', { method: 'POST', body: JSON.stringify(data) }),
+
+  // PUT  /api/college-admin/courses/:id
+  updateCourse: (id, data) =>
+    apiCall(`/college-admin/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // DELETE /api/college-admin/courses/:id
+  deleteCourse: (id) =>
+    apiCall(`/college-admin/courses/${id}`, { method: 'DELETE' }),
+
+  // GET  /api/college-admin/courses/:id/enrollments
+  getCourseEnrollments: (id, params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/college-admin/courses/${id}/enrollments${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET  /api/college-admin/courses/:id/analytics
+  getCourseAnalytics: (id) =>
+    apiCall(`/college-admin/courses/${id}/analytics`),
+
+  // POST /api/college-admin/courses/assign-batch
+  assignCourseToBatch: (data) =>
+    apiCall('/college-admin/courses/assign-batch', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUPER ADMIN COURSE API (base: /api/super-admin/courses)
+// All endpoints require super_admin role (enforced by backend middleware).
+// ─────────────────────────────────────────────────────────────────────────────
+export const superAdminCourseAPI = {
+  // GET  /api/super-admin/courses
+  getAllCourses: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/super-admin/courses${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET  /api/courses/:id  (shared — works for admins too)
+  getCourseById: (id) => apiCall(`/courses/${id}`),
+
+  // POST /api/super-admin/courses
+  createCourse: (data) =>
+    apiCall('/super-admin/courses', { method: 'POST', body: JSON.stringify(data) }),
+
+  // PUT  /api/super-admin/courses/:id
+  updateCourse: (id, data) =>
+    apiCall(`/super-admin/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // DELETE /api/super-admin/courses/:id
+  deleteCourse: (id) =>
+    apiCall(`/super-admin/courses/${id}`, { method: 'DELETE' }),
+
+  // GET  /api/super-admin/courses/:id/enrollments
+  getCourseEnrollments: (id, params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/super-admin/courses/${id}/enrollments${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET  /api/super-admin/courses/:id/analytics
+  getCourseAnalytics: (id) =>
+    apiCall(`/super-admin/courses/${id}/analytics`),
+
+  // POST /api/super-admin/courses/assign-batch
+  assignCourseToBatch: (data) =>
+    apiCall('/super-admin/courses/assign-batch', { method: 'POST', body: JSON.stringify(data) }),
+};
+
 export default apiCall;

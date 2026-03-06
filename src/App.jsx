@@ -54,6 +54,7 @@ import AssessmentManagement from './pages/CollegeAdmin/Assessments/AssessmentMan
 import AssessmentForm from './pages/CollegeAdmin/Assessments/AssessmentForm';
 import QuestionManager from './pages/CollegeAdmin/Assessments/QuestionManager';
 import AssessmentAttempts from './pages/CollegeAdmin/Assessments/AssessmentAttempts';
+import AIAssessmentGenerator from './pages/CollegeAdmin/Assessments/AIAssessmentGenerator';
 
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
@@ -179,6 +180,7 @@ function App() {
             <Route path="/dashboard/college-admin/assessments/:assessmentId/edit" element={<ProtectedRoute><AssessmentForm /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/questions" element={<ProtectedRoute><QuestionManager /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/attempts" element={<ProtectedRoute><AssessmentAttempts /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/generate" element={<ProtectedRoute><AIAssessmentGenerator /></ProtectedRoute>} />
 
             {/* ===== SUPER ADMIN ===== */}
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />

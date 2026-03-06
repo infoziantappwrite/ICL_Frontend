@@ -599,23 +599,60 @@ const AddMultipleModal = ({ onClose, onDone }) => {
   );
 };
 
-// ── Bulk Upload Modal (Excel/CSV) ───────────────────────────────────────────────
+// ── Bulk Upload Modal (Excel/CSV — parsed on frontend) ─────────────────────────
 const BulkUploadModal = ({ onClose, onDone }) => {
   const toast   = useToast();
   const fileRef = useRef(null);
-  const [step, setStep]   = useState(0);
-  const [file, setFile]   = useState(null);
-  const [drag, setDrag]   = useState(false);
-  const [vr,   setVr]     = useState(null);
-  const [ur,   setUr]     = useState(null);
-  const [err,  setErr]    = useState('');
-  const [tmpl, setTmpl]   = useState(false);
+  const [step, setStep]           = useState(0);
+  const [file, setFile]           = useState(null);
+  const [drag, setDrag]           = useState(false);
+  const [parsedRows, setParsedRows] = useState(null); // all rows from Excel
+  const [vr,   setVr]             = useState(null);
+  const [ur,   setUr]             = useState(null);
+  const [err,  setErr]            = useState('');
+  const [tmpl, setTmpl]           = useState(false);
+  const [parseLoading, setParseLoading] = useState(false);
+
+  // Parse Excel/CSV on frontend using xlsx library
+  const parseFile = async (f) => {
+    setParseLoading(true);
+    setErr('');
+    try {
+      const XLSX = await import('xlsx');
+      const buffer = await f.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array', raw: false });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+      if (rawRows.length === 0) {
+        setErr('File is empty or has no data rows.');
+        setParseLoading(false);
+        return;
+      }
+      // Normalize header keys to lowercase with underscores
+      const normalized = rawRows.map((row, idx) => {
+        const newRow = { _rowIndex: idx + 2 };
+        Object.keys(row).forEach(k => {
+          const normKey = k.trim().toLowerCase().replace(/\s+/g, '_');
+          newRow[normKey] = String(row[k] ?? '').trim();
+        });
+        return newRow;
+      });
+      setParsedRows(normalized);
+      setStep(1); // go to preview
+    } catch (e) {
+      setErr('Failed to read file: ' + (e.message || 'Unknown error'));
+    } finally {
+      setParseLoading(false);
+    }
+  };
 
   const accept = f => {
     if (!f) return;
     const ext = f.name.split('.').pop().toLowerCase();
     if (!['xlsx','xls','csv'].includes(ext)) { setErr('Only .xlsx, .xls, or .csv files.'); return; }
-    setFile(f); setErr(''); setVr(null); setStep(0);
+    setFile(f); setErr(''); setVr(null); setParsedRows(null); setStep(0);
+    parseFile(f);
   };
 
   const getTemplate = async () => {
@@ -626,23 +663,36 @@ const BulkUploadModal = ({ onClose, onDone }) => {
   };
 
   const doValidate = async () => {
-    setStep(1); setErr('');
-    try { const r = await collegeAdminStudentAPI.validateBulkUpload(file); setVr(r.data||r); setStep(2); }
-    catch(e) { setErr(e.message||'Validation failed.'); setStep(0); }
+    setStep(2); setErr('');
+    try {
+      const r = await collegeAdminStudentAPI.validateBulkUploadJSON(parsedRows);
+      setVr(r.data || r);
+      setStep(3);
+    } catch(e) { setErr(e.message || 'Validation failed.'); setStep(1); }
   };
 
   const doUpload = async () => {
-    setStep(3); setErr('');
-    try { const r = await collegeAdminStudentAPI.bulkUpload(file); setUr(r.data||r); setStep(4); }
-    catch(e) { setErr(e.message||'Upload failed.'); setStep(2); }
+    setStep(4); setErr('');
+    try {
+      const r = await collegeAdminStudentAPI.bulkUploadJSON(parsedRows);
+      setUr(r.data || r);
+      setStep(5);
+    } catch(e) { setErr(e.message || 'Upload failed.'); setStep(3); }
   };
 
-  const reset = () => { setFile(null); setStep(0); setVr(null); setUr(null); setErr(''); };
-  const STEPS = ['Select File', 'Validate', 'Upload'];
+  const reset = () => { setFile(null); setStep(0); setVr(null); setUr(null); setParsedRows(null); setErr(''); };
+  const STEPS = ['Select File', 'Preview', 'Validate', 'Upload'];
+
+  // Helper: get display value for a row
+  const getRowName  = r => r['name'] || r['full_name'] || r['fullname'] || '—';
+  const getRowEmail = r => r['email'] || '—';
+  const getRowRoll  = r => r['roll_number'] || r['rollnumber'] || r['roll_no'] || '—';
+  const getRowBranch = r => r['branch'] || '—';
+  const getRowBatch  = r => r['batch'] || '—';
 
   return (
-    <Overlay onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
+    <Overlay onClose={onClose} size="xl">
+      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
@@ -650,7 +700,7 @@ const BulkUploadModal = ({ onClose, onDone }) => {
             </div>
             <div>
               <h2 className="text-base font-bold text-white">Bulk Upload via Excel / CSV</h2>
-              <p className="text-xs text-blue-200">Upload up to 500 students at once</p>
+              <p className="text-xs text-blue-200">Upload up to 5,000 students at once · Preview before submit</p>
             </div>
           </div>
           <button onClick={onClose}
@@ -661,17 +711,18 @@ const BulkUploadModal = ({ onClose, onDone }) => {
 
         {/* Step pills */}
         <div className="px-6 pt-5 pb-1 flex items-center gap-1 flex-shrink-0">
-          {STEPS.map((s,i) => {
-            const past   = (step > 1 && i === 0) || (step >= 3 && i === 1) || step === 4;
-            const active = (step <= 1 && i === 0) || (step === 2 && i === 1) || (step >= 3 && i === 2);
+          {STEPS.map((s, i) => {
+            const stepMap = [0, 1, 3, 5]; // which step number each pill goes "active" at
+            const past    = step > stepMap[i];
+            const active  = step >= stepMap[i] && (i === STEPS.length - 1 ? true : step < stepMap[i + 1]);
             return (
               <React.Fragment key={s}>
                 <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full transition-colors
                   ${past ? 'bg-emerald-100 text-emerald-700' : active ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
-                  {past ? <CheckCircle size={11}/> : <span>{i+1}</span>}
+                  {past ? <CheckCircle size={11}/> : <span>{i + 1}</span>}
                   <span className="hidden sm:block">{s}</span>
                 </div>
-                {i < 2 && <div className="flex-1 h-px bg-slate-200 mx-1"/>}
+                {i < STEPS.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-1"/>}
               </React.Fragment>
             );
           })}
@@ -683,7 +734,7 @@ const BulkUploadModal = ({ onClose, onDone }) => {
             <FileText size={14} className="text-slate-400 flex-shrink-0"/>
             <div className="flex-1">
               <p className="text-xs font-semibold text-slate-600">Download the Excel template</p>
-              <p className="text-xs text-slate-400 mt-0.5">Password column is not needed — auto-generated by system</p>
+              <p className="text-xs text-slate-400 mt-0.5">Columns: name, email, roll_number, branch, batch, semester, cgpa, phone</p>
             </div>
             <button onClick={getTemplate} disabled={tmpl}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 flex-shrink-0 transition-colors">
@@ -692,7 +743,8 @@ const BulkUploadModal = ({ onClose, onDone }) => {
             </button>
           </div>
 
-          {step <= 1 && (
+          {/* Step 0: File select */}
+          {step === 0 && (
             <div className="space-y-3">
               <div
                 onDragOver={e=>{e.preventDefault();setDrag(true);}}
@@ -705,18 +757,16 @@ const BulkUploadModal = ({ onClose, onDone }) => {
                     : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50/80'}`}>
                 <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
                        onChange={e=>accept(e.target.files[0])}/>
-                {file ? (
-                  <>
-                    <CheckCircle size={32} className="text-emerald-500"/>
+                {parseLoading ? (
+                  <><Spin size="lg"/><p className="text-sm font-semibold text-slate-500">Reading file…</p></>
+                ) : file ? (
+                  <><CheckCircle size={32} className="text-emerald-500"/>
                     <p className="text-sm font-bold text-emerald-700">{file.name}</p>
-                    <p className="text-xs text-slate-400">{(file.size/1024).toFixed(1)} KB — click to replace</p>
-                  </>
+                    <p className="text-xs text-slate-400">{(file.size/1024).toFixed(1)} KB — click to replace</p></>
                 ) : (
-                  <>
-                    <CloudUpload size={32} className="text-slate-300"/>
+                  <><CloudUpload size={32} className="text-slate-300"/>
                     <p className="text-sm font-semibold text-slate-500">Drop your file here or click to browse</p>
-                    <p className="text-xs text-slate-400">.xlsx · .xls · .csv · max 500 rows</p>
-                  </>
+                    <p className="text-xs text-slate-400">.xlsx · .xls · .csv · up to 5,000 rows</p></>
                 )}
               </div>
               {err && (
@@ -724,16 +774,77 @@ const BulkUploadModal = ({ onClose, onDone }) => {
                   <AlertCircle size={14} className="flex-shrink-0 mt-0.5"/>{err}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Step 1: Full data preview table */}
+          {step === 1 && parsedRows && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-700">{file?.name}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    <span className="font-semibold text-blue-600">{parsedRows.length}</span> rows found — review before uploading
+                  </p>
+                </div>
+                <button onClick={reset} className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2">
+                  Change file
+                </button>
+              </div>
+
+              {/* Full preview table */}
+              <div className="overflow-auto rounded-xl border border-slate-200 max-h-72">
+                <table className="w-full text-xs min-w-[700px]">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2.5 font-semibold text-slate-500 text-left">#</th>
+                      {['Name','Email','Roll No','Branch','Batch','Sem','CGPA','Phone'].map(h=>(
+                        <th key={h} className="px-3 py-2.5 font-semibold text-slate-500 text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {parsedRows.map((r,i) => (
+                      <tr key={i} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-3 py-2 text-slate-400">{i+1}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-800 max-w-[130px] truncate">{getRowName(r)}</td>
+                        <td className="px-3 py-2 text-slate-500 max-w-[160px] truncate">{getRowEmail(r)}</td>
+                        <td className="px-3 py-2 font-mono text-blue-600">{getRowRoll(r)}</td>
+                        <td className="px-3 py-2">{getRowBranch(r)}</td>
+                        <td className="px-3 py-2">{getRowBatch(r)}</td>
+                        <td className="px-3 py-2">{r['semester'] || '—'}</td>
+                        <td className="px-3 py-2">{r['cgpa'] || '—'}</td>
+                        <td className="px-3 py-2">{r['phone'] || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {parsedRows.length > 50 && (
+                <p className="text-xs text-center text-slate-400">Showing all {parsedRows.length} rows · Scroll to review</p>
+              )}
+              {err && <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600"><AlertCircle size={14} className="mt-0.5 flex-shrink-0"/>{err}</div>}
               <div className="flex justify-end">
-                <button onClick={doValidate} disabled={!file || step===1}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-colors">
-                  {step===1 ? <><Spin size="sm" color="white"/>Validating…</> : <><ClipboardCheck size={15}/>Validate File</>}
+                <button onClick={doValidate}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
+                  <ClipboardCheck size={15}/>Validate {parsedRows.length} Rows
                 </button>
               </div>
             </div>
           )}
 
-          {step === 2 && vr && (
+          {/* Step 2: Validating loader */}
+          {step === 2 && (
+            <div className="py-12 flex flex-col items-center gap-4">
+              <Spin size="lg"/>
+              <p className="text-sm font-bold text-slate-700">Validating data…</p>
+              <p className="text-xs text-slate-400">Checking all {parsedRows?.length} rows for errors</p>
+            </div>
+          )}
+
+          {/* Step 3: Validation results */}
+          {step === 3 && vr && (
             <div className="space-y-4">
               <div className={`rounded-xl p-4 border ${vr.canProceed ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
                 <div className="flex items-center gap-2 mb-3">
@@ -750,7 +861,7 @@ const BulkUploadModal = ({ onClose, onDone }) => {
                 </div>
               </div>
               {vr.validationErrors?.length > 0 && (
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+                <div className="space-y-1 max-h-36 overflow-y-auto">
                   <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Errors to fix:</p>
                   {vr.validationErrors.map((e,i) => (
                     <div key={i} className="flex gap-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 border border-red-100">
@@ -764,35 +875,9 @@ const BulkUploadModal = ({ onClose, onDone }) => {
                   <AlertTriangle size={10} className="flex-shrink-0 mt-0.5"/>{w}
                 </div>
               ))}
-              {vr.preview?.length > 0 && (
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Preview — first {vr.preview.length} rows:</p>
-                  <div className="overflow-x-auto rounded-xl border border-slate-100">
-                    <table className="w-full text-xs">
-                      <thead className="bg-slate-50 text-left">
-                        <tr>{['Name','Email','Roll No','Branch','Batch','Sem'].map(h=>(
-                          <th key={h} className="px-3 py-2 font-semibold text-slate-500">{h}</th>
-                        ))}</tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {vr.preview.map((r,i) => (
-                          <tr key={i} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 font-semibold text-slate-800">{r.name}</td>
-                            <td className="px-3 py-2 text-slate-500">{r.email}</td>
-                            <td className="px-3 py-2 font-mono text-blue-600">{r.rollNumber}</td>
-                            <td className="px-3 py-2">{r.branch||'—'}</td>
-                            <td className="px-3 py-2">{r.batch||'—'}</td>
-                            <td className="px-3 py-2">{r.semester ? `Sem ${r.semester}` : '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
               {err && <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600"><AlertCircle size={14} className="mt-0.5 flex-shrink-0"/>{err}</div>}
               <div className="flex items-center justify-between pt-2">
-                <button onClick={reset} className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-2">← Use different file</button>
+                <button onClick={() => setStep(1)} className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-2">← Back to preview</button>
                 <button onClick={doUpload} disabled={!vr.canProceed}
                   className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-colors">
                   <Upload size={14}/> Upload {vr.validRows} Students
@@ -801,34 +886,33 @@ const BulkUploadModal = ({ onClose, onDone }) => {
             </div>
           )}
 
-          {step === 3 && (
+          {/* Step 4: Uploading */}
+          {step === 4 && (
             <div className="py-12 flex flex-col items-center gap-4">
               <Spin size="lg"/>
               <p className="text-sm font-bold text-slate-700">Uploading students…</p>
-              <p className="text-xs text-slate-400">Running inside a database transaction — all rows succeed or none do</p>
+              <p className="text-xs text-slate-400">Processing in batches — existing students will be updated (upsert)</p>
             </div>
           )}
 
-          {step === 4 && ur && (
+          {/* Step 5: Upload complete */}
+          {step === 5 && ur && (
             <div className="space-y-4">
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 flex flex-col items-center text-center gap-2">
                 <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
                   <CheckCircle size={28} className="text-emerald-500"/>
                 </div>
                 <p className="text-lg font-black text-emerald-800">Upload Complete!</p>
-                <p className="text-sm text-emerald-600">{ur.successCount ?? ur.totalUploaded ?? '?'} students added successfully</p>
+                <p className="text-sm text-emerald-600">{ur.inserted ?? 0} new · {ur.updated ?? 0} updated · {ur.successCount ?? 0} total</p>
               </div>
-              {ur.students?.slice(0,5).map((s,i) => (
-                <div key={i} className="flex items-center gap-3 text-xs bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xs">{(s.fullName||'?').charAt(0)}</span>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                {[['New Students', ur.inserted ?? 0, 'text-emerald-600'], ['Updated', ur.updated ?? 0, 'text-blue-600'], ['Batches Run', ur.batchCount ?? 1, 'text-slate-600']].map(([l,v,c]) => (
+                  <div key={l} className="bg-white rounded-xl border border-slate-100 py-3">
+                    <div className={`text-2xl font-black ${c}`}>{v}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{l}</div>
                   </div>
-                  <span className="font-semibold text-slate-800 flex-1 truncate">{s.fullName}</span>
-                  <span className="text-slate-400 truncate">{s.email}</span>
-                  <span className="font-mono text-blue-600">{s.rollNumber}</span>
-                </div>
-              ))}
-              {(ur.students?.length||0) > 5 && <p className="text-xs text-center text-slate-400">…and {ur.students.length-5} more</p>}
+                ))}
+              </div>
               <div className="flex justify-end">
                 <button onClick={() => { onDone?.(); onClose(); }}
                   className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
@@ -842,6 +926,7 @@ const BulkUploadModal = ({ onClose, onDone }) => {
     </Overlay>
   );
 };
+
 
 // ── Export Modal ───────────────────────────────────────────────────────────────
 const ExportModal = ({ onClose }) => {

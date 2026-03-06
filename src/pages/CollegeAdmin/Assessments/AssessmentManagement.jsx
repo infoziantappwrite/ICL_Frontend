@@ -129,12 +129,21 @@ const AssessmentManagement = () => {
             <h1 className="text-2xl font-bold text-gray-900">Assessments</h1>
             <p className="text-gray-500 text-sm mt-0.5">Create and manage skill assessments for students</p>
           </div>
-          <button
-            onClick={() => navigate('/dashboard/college-admin/assessments/create')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-cyan-700 shadow-sm transition-all"
-          >
-            <Plus className="w-4 h-4" /> New Assessment
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/dashboard/college-admin/assessments/generate')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all border"
+              style={{ background: 'linear-gradient(135deg, #1e1b4b, #4c1d95)', color: 'white', borderColor: 'transparent', boxShadow: '0 2px 10px rgba(124,58,237,0.25)' }}
+            >
+              ✨ Generate with AI
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/college-admin/assessments/create')}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-cyan-700 shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4" /> New Assessment
+            </button>
+          </div>
         </div>
 
         {/* Filters */}

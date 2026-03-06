@@ -538,110 +538,158 @@ const SAAddMultipleModal = ({ colleges, onClose, onDone }) => {
 const SABulkModal = ({ colleges, onClose }) => {
   const toast   = useToast();
   const fileRef = useRef(null);
-  const [step, setStep] = useState(0);
-  const [file, setFile] = useState(null);
-  const [cid,  setCid]  = useState('');
-  const [drag, setDrag] = useState(false);
-  const [vr,   setVr]   = useState(null);
-  const [ur,   setUr]   = useState(null);
-  const [err,  setErr]  = useState('');
-  const [tmpl, setTmpl] = useState(false);
+  const [step, setStep]             = useState(0);
+  const [file, setFile]             = useState(null);
+  const [cid,  setCid]              = useState('');
+  const [drag, setDrag]             = useState(false);
+  const [parsedRows, setParsedRows] = useState(null);
+  const [vr,   setVr]               = useState(null);
+  const [ur,   setUr]               = useState(null);
+  const [err,  setErr]              = useState('');
+  const [tmpl, setTmpl]             = useState(false);
+  const [parseLoading, setParseLoading] = useState(false);
+
+  const parseFile = async (f) => {
+    setParseLoading(true);
+    setErr('');
+    try {
+      const XLSX = await import('xlsx');
+      const buffer = await f.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array', raw: false });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
+      if (rawRows.length === 0) { setErr('File is empty or has no data rows.'); setParseLoading(false); return; }
+      const normalized = rawRows.map((row, idx) => {
+        const newRow = { _rowIndex: idx + 2 };
+        Object.keys(row).forEach(k => {
+          const normKey = k.trim().toLowerCase().replace(/\s+/g, '_');
+          newRow[normKey] = String(row[k] ?? '').trim();
+        });
+        return newRow;
+      });
+      setParsedRows(normalized);
+      setStep(1);
+    } catch (e) {
+      setErr('Failed to read file: ' + (e.message || 'Unknown error'));
+    } finally {
+      setParseLoading(false);
+    }
+  };
 
   const accept = f => {
     if (!f) return;
     const ext = f.name.split('.').pop().toLowerCase();
     if (!['xlsx','xls','csv'].includes(ext)) { setErr('Only .xlsx, .xls, .csv allowed.'); return; }
-    setFile(f); setErr(''); setVr(null); setStep(0);
+    setFile(f); setErr(''); setVr(null); setParsedRows(null); setStep(0);
+    parseFile(f);
   };
 
   const getTemplate = async () => {
     setTmpl(true);
-    try { await superAdminStudentAPI.downloadTemplate(); toast.success('Downloaded!','Template saved.'); }
+    try { await superAdminStudentAPI.downloadTemplate(); toast.success('Downloaded!', 'Template saved.'); }
     catch(e) { toast.error('Error', e.message); }
     finally { setTmpl(false); }
   };
 
   const doValidate = async () => {
-    if (!cid) { setErr('Please select a default college first.'); return; }
-    setStep(1); setErr('');
-    try { const r = await superAdminStudentAPI.validateBulkUpload(file, cid||null); setVr(r.data||r); setStep(2); }
-    catch(e) { setErr(e.message||'Validation failed.'); setStep(0); }
+    if (!cid) { setErr('Please select a college before validating.'); return; }
+    setStep(2); setErr('');
+    try {
+      const r = await superAdminStudentAPI.validateBulkUploadJSON(parsedRows, cid);
+      setVr(r.data || r);
+      setStep(3);
+    } catch(e) { setErr(e.message || 'Validation failed.'); setStep(1); }
   };
 
   const doUpload = async () => {
-    setStep(3); setErr('');
-    try { const r = await superAdminStudentAPI.bulkUpload(file, cid||null); setUr(r.data||r); setStep(4); }
-    catch(e) { setErr(e.message||'Upload failed.'); setStep(2); }
+    setStep(4); setErr('');
+    try {
+      const r = await superAdminStudentAPI.bulkUploadJSON(parsedRows, cid);
+      setUr(r.data || r);
+      setStep(5);
+    } catch(e) { setErr(e.message || 'Upload failed.'); setStep(3); }
   };
 
-  const reset = () => { setFile(null); setStep(0); setVr(null); setUr(null); setErr(''); };
-  const STEPS = ['Select File','Validate','Upload'];
+  const reset = () => { setFile(null); setStep(0); setVr(null); setUr(null); setParsedRows(null); setErr(''); };
+  const STEPS = ['Select File', 'Preview', 'Validate', 'Upload'];
+
+  const getRowName   = r => r['name'] || r['full_name'] || r['fullname'] || '—';
+  const getRowEmail  = r => r['email'] || '—';
+  const getRowRoll   = r => r['roll_number'] || r['rollnumber'] || r['roll_no'] || '—';
+  const getRowBranch = r => r['branch'] || '—';
+  const getRowBatch  = r => r['batch'] || '—';
 
   return (
-    <Overlay onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
-        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
+    <Overlay onClose={onClose} size="xl">
+      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
               <CloudUpload size={16} className="text-white"/>
             </div>
             <div>
               <h2 className="text-base font-bold text-white">Bulk Upload via Excel / CSV</h2>
-              <p className="text-xs text-indigo-200">Cross-college upload · max 500/file</p>
+              <p className="text-xs text-blue-200">Upload up to 5,000 students at once · Preview before submit</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white"><X size={14}/></button>
+          <button onClick={onClose}
+            className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white transition-colors">
+            <X size={14}/>
+          </button>
         </div>
 
         {/* Step pills */}
-        <div className="px-6 pt-4 pb-1 flex items-center gap-1 flex-shrink-0">
-          {STEPS.map((s,i) => {
-            const past   = (step>1&&i===0)||(step>=3&&i===1)||step===4;
-            const active = (step<=1&&i===0)||(step===2&&i===1)||(step>=3&&i===2);
+        <div className="px-6 pt-5 pb-1 flex items-center gap-1 flex-shrink-0">
+          {STEPS.map((s, i) => {
+            const stepMap = [0, 1, 3, 5];
+            const past   = step > stepMap[i];
+            const active = step >= stepMap[i] && (i === STEPS.length - 1 ? true : step < stepMap[i + 1]);
             return (
               <React.Fragment key={s}>
-                <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full
-                  ${past?'bg-emerald-100 text-emerald-700':active?'bg-indigo-100 text-indigo-700':'bg-slate-100 text-slate-400'}`}>
-                  {past?<CheckCircle size={11}/>:<span>{i+1}</span>}
+                <div className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full transition-colors
+                  ${past ? 'bg-emerald-100 text-emerald-700' : active ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
+                  {past ? <CheckCircle size={11}/> : <span>{i + 1}</span>}
                   <span className="hidden sm:block">{s}</span>
                 </div>
-                {i<2&&<div className="flex-1 h-px bg-slate-200 mx-1"/>}
+                {i < STEPS.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-1"/>}
               </React.Fragment>
             );
           })}
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 space-y-4">
-          {/* Template */}
-          <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-            <FileText size={13} className="text-slate-400 flex-shrink-0"/>
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-slate-600">Download the Excel template</p>
-              <p className="text-xs text-slate-400 mt-0.5">Set a default college below</p>
-            </div>
-            <button onClick={getTemplate} disabled={tmpl}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 flex-shrink-0">
-              {tmpl?<Spin size="sm" color="white"/>:<Download size={11}/>} Template
-            </button>
-          </div>
-
-          {/* Default college */}
+          {/* College selector */}
           <div>
             <label className="text-xs font-bold text-slate-700 block mb-1.5">
-              Default College <span className="text-red-500">*</span>
+              College <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Building2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"/>
-              <select value={cid} onChange={e=>setCid(e.target.value)}
-                className="w-full text-sm border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 appearance-none">
-                <option value="">Select college for all uploaded rows</option>
+              <select value={cid} onChange={e => { setCid(e.target.value); setErr(''); }}
+                className="w-full text-sm border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none">
+                <option value="">Select college for this upload</option>
                 {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
             </div>
           </div>
 
-          {/* File picker */}
-          {step <= 1 && (
+          {/* Template strip */}
+          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <FileText size={14} className="text-slate-400 flex-shrink-0"/>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-slate-600">Download the Excel template</p>
+              <p className="text-xs text-slate-400 mt-0.5">Columns: name, email, roll_number, branch, batch, semester, cgpa, phone</p>
+            </div>
+            <button onClick={getTemplate} disabled={tmpl}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 flex-shrink-0 transition-colors">
+              {tmpl ? <Spin size="sm" color="white"/> : <Download size={11}/>}
+              Template
+            </button>
+          </div>
+
+          {/* Step 0: File select */}
+          {step === 0 && (
             <div className="space-y-3">
               <div
                 onDragOver={e=>{e.preventDefault();setDrag(true);}}
@@ -649,33 +697,104 @@ const SABulkModal = ({ colleges, onClose }) => {
                 onDrop={e=>{e.preventDefault();setDrag(false);accept(e.dataTransfer.files[0]);}}
                 onClick={()=>fileRef.current?.click()}
                 className={`rounded-xl border-2 border-dashed p-10 flex flex-col items-center gap-2 cursor-pointer transition-all
-                  ${drag?'border-indigo-400 bg-indigo-50':file?'border-emerald-400 bg-emerald-50':'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}>
-                <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e=>accept(e.target.files[0])}/>
-                {file ? (
-                  <><CheckCircle size={32} className="text-emerald-500"/><p className="text-sm font-bold text-emerald-700">{file.name}</p><p className="text-xs text-slate-400">{(file.size/1024).toFixed(1)} KB</p></>
+                  ${drag ? 'border-blue-400 bg-blue-50'
+                    : file ? 'border-emerald-400 bg-emerald-50'
+                    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50/80'}`}>
+                <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
+                  onChange={e=>accept(e.target.files[0])}/>
+                {parseLoading ? (
+                  <><Spin size="lg"/><p className="text-sm font-semibold text-slate-500">Reading file…</p></>
+                ) : file ? (
+                  <><CheckCircle size={32} className="text-emerald-500"/>
+                    <p className="text-sm font-bold text-emerald-700">{file.name}</p>
+                    <p className="text-xs text-slate-400">{(file.size/1024).toFixed(1)} KB — click to replace</p></>
                 ) : (
-                  <><CloudUpload size={32} className="text-slate-300"/><p className="text-sm font-semibold text-slate-500">Drop file or click to browse</p><p className="text-xs text-slate-400">.xlsx · .xls · .csv · max 500 rows</p></>
+                  <><CloudUpload size={32} className="text-slate-300"/>
+                    <p className="text-sm font-semibold text-slate-500">Drop your file here or click to browse</p>
+                    <p className="text-xs text-slate-400">.xlsx · .xls · .csv · up to 5,000 rows</p></>
                 )}
               </div>
+              {err && (
+                <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+                  <AlertCircle size={14} className="flex-shrink-0 mt-0.5"/>{err}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 1: Full data preview table */}
+          {step === 1 && parsedRows && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-slate-700">{file?.name}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    <span className="font-semibold text-blue-600">{parsedRows.length}</span> rows found — review before uploading
+                  </p>
+                </div>
+                <button onClick={reset} className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2">
+                  Change file
+                </button>
+              </div>
+              <div className="overflow-auto rounded-xl border border-slate-200 max-h-72">
+                <table className="w-full text-xs min-w-[700px]">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2.5 font-semibold text-slate-500 text-left">#</th>
+                      {['Name','Email','Roll No','Branch','Batch','Sem','CGPA','Phone'].map(h=>(
+                        <th key={h} className="px-3 py-2.5 font-semibold text-slate-500 text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {parsedRows.map((r,i) => (
+                      <tr key={i} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-3 py-2 text-slate-400">{i+1}</td>
+                        <td className="px-3 py-2 font-semibold text-slate-800 max-w-[130px] truncate">{getRowName(r)}</td>
+                        <td className="px-3 py-2 text-slate-500 max-w-[160px] truncate">{getRowEmail(r)}</td>
+                        <td className="px-3 py-2 font-mono text-blue-600">{getRowRoll(r)}</td>
+                        <td className="px-3 py-2">{getRowBranch(r)}</td>
+                        <td className="px-3 py-2">{getRowBatch(r)}</td>
+                        <td className="px-3 py-2">{r['semester'] || '—'}</td>
+                        <td className="px-3 py-2">{r['cgpa'] || '—'}</td>
+                        <td className="px-3 py-2">{r['phone'] || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {parsedRows.length > 50 && (
+                <p className="text-xs text-center text-slate-400">Showing all {parsedRows.length} rows · Scroll to review</p>
+              )}
               {err && <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600"><AlertCircle size={14} className="mt-0.5 flex-shrink-0"/>{err}</div>}
               <div className="flex justify-end">
-                <button onClick={doValidate} disabled={!file||!cid||step===1}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-colors">
-                  {step===1?<><Spin size="sm" color="white"/>Validating…</>:<><ClipboardCheck size={15}/>Validate File</>}
+                <button onClick={doValidate}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
+                  <ClipboardCheck size={15}/>Validate {parsedRows.length} Rows
                 </button>
               </div>
             </div>
           )}
 
-          {step===2 && vr && (
+          {/* Step 2: Validating loader */}
+          {step === 2 && (
+            <div className="py-12 flex flex-col items-center gap-4">
+              <Spin size="lg"/>
+              <p className="text-sm font-bold text-slate-700">Validating data…</p>
+              <p className="text-xs text-slate-400">Checking all {parsedRows?.length} rows for errors</p>
+            </div>
+          )}
+
+          {/* Step 3: Validation results */}
+          {step === 3 && vr && (
             <div className="space-y-4">
-              <div className={`rounded-xl p-4 border ${vr.canProceed?'bg-emerald-50 border-emerald-200':'bg-red-50 border-red-200'}`}>
+              <div className={`rounded-xl p-4 border ${vr.canProceed ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
                 <div className="flex items-center gap-2 mb-3">
-                  {vr.canProceed?<CheckCircle size={15} className="text-emerald-500"/>:<AlertTriangle size={15} className="text-red-500"/>}
-                  <p className={`text-sm font-bold ${vr.canProceed?'text-emerald-700':'text-red-700'}`}>{vr.message}</p>
+                  {vr.canProceed ? <CheckCircle size={15} className="text-emerald-500"/> : <AlertTriangle size={15} className="text-red-500"/>}
+                  <p className={`text-sm font-bold ${vr.canProceed ? 'text-emerald-700' : 'text-red-700'}`}>{vr.message}</p>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  {[['Total',vr.totalRows??0,'slate'],['Valid',vr.validRows??0,'emerald'],['Errors',vr.errorRows??0,'red']].map(([l,v,c]) => (
+                  {[['Total', vr.totalRows??0, 'slate'], ['Valid', vr.validRows??0, 'emerald'], ['Errors', vr.errorRows??0, 'red']].map(([l,v,c]) => (
                     <div key={l} className="bg-white rounded-lg py-2 border">
                       <div className={`text-xl font-black text-${c}-600`}>{v}</div>
                       <div className="text-xs text-slate-500">{l}</div>
@@ -683,49 +802,64 @@ const SABulkModal = ({ colleges, onClose }) => {
                   ))}
                 </div>
               </div>
-              {vr.validationErrors?.length>0 && (
-                <div className="max-h-32 overflow-y-auto space-y-1">
+              {vr.validationErrors?.length > 0 && (
+                <div className="space-y-1 max-h-36 overflow-y-auto">
+                  <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Errors to fix:</p>
                   {vr.validationErrors.map((e,i) => (
-                    <div key={i} className="flex gap-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 border border-red-100"><X size={10} className="flex-shrink-0 mt-0.5"/>{e}</div>
+                    <div key={i} className="flex gap-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 border border-red-100">
+                      <X size={10} className="flex-shrink-0 mt-0.5"/>{e}
+                    </div>
                   ))}
                 </div>
               )}
-              {vr.preview?.length>0 && (
-                <div className="overflow-x-auto rounded-xl border border-slate-100">
-                  <table className="w-full text-xs">
-                    <thead className="bg-slate-50 text-left"><tr>{['Name','Email','Roll No','Branch','Batch'].map(h=><th key={h} className="px-3 py-2 font-semibold text-slate-500">{h}</th>)}</tr></thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {vr.preview.map((r,i) => (
-                        <tr key={i} className="hover:bg-slate-50"><td className="px-3 py-2 font-semibold">{r.name}</td><td className="px-3 py-2 text-slate-500">{r.email}</td><td className="px-3 py-2 font-mono text-indigo-600">{r.rollNumber}</td><td className="px-3 py-2">{r.branch||'—'}</td><td className="px-3 py-2">{r.batch||'—'}</td></tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {vr.warnings?.map((w,i) => (
+                <div key={i} className="flex gap-2 text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-1.5 border border-amber-100">
+                  <AlertTriangle size={10} className="flex-shrink-0 mt-0.5"/>{w}
                 </div>
-              )}
+              ))}
               {err && <div className="flex gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600"><AlertCircle size={14} className="mt-0.5 flex-shrink-0"/>{err}</div>}
               <div className="flex items-center justify-between pt-2">
-                <button onClick={reset} className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-2">← Different file</button>
+                <button onClick={() => setStep(1)} className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-2">← Back to preview</button>
                 <button onClick={doUpload} disabled={!vr.canProceed}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-colors">
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-colors">
                   <Upload size={14}/> Upload {vr.validRows} Students
                 </button>
               </div>
             </div>
           )}
 
-          {step===3 && <div className="py-12 flex flex-col items-center gap-4"><Spin size="lg" color="indigo"/><p className="text-sm font-bold text-slate-700">Uploading…</p><p className="text-xs text-slate-400">Database transaction — all succeed or all rollback</p></div>}
+          {/* Step 4: Uploading */}
+          {step === 4 && (
+            <div className="py-12 flex flex-col items-center gap-4">
+              <Spin size="lg"/>
+              <p className="text-sm font-bold text-slate-700">Uploading students…</p>
+              <p className="text-xs text-slate-400">Processing in batches — existing students will be updated (upsert)</p>
+            </div>
+          )}
 
-          {step===4 && ur && (
+          {/* Step 5: Upload complete */}
+          {step === 5 && ur && (
             <div className="space-y-4">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 flex flex-col items-center gap-2">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 flex flex-col items-center text-center gap-2">
                 <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
                   <CheckCircle size={28} className="text-emerald-500"/>
                 </div>
                 <p className="text-lg font-black text-emerald-800">Upload Complete!</p>
-                <p className="text-sm text-emerald-600">{ur.successCount??ur.totalUploaded??'?'} students created</p>
+                <p className="text-sm text-emerald-600">{ur.inserted ?? 0} new · {ur.updated ?? 0} updated · {ur.successCount ?? 0} total</p>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                {[['New Students', ur.inserted ?? 0, 'text-emerald-600'], ['Updated', ur.updated ?? 0, 'text-blue-600'], ['Batches Run', ur.batchCount ?? 1, 'text-slate-600']].map(([l,v,c]) => (
+                  <div key={l} className="bg-white rounded-xl border border-slate-100 py-3">
+                    <div className={`text-2xl font-black ${c}`}>{v}</div>
+                    <div className="text-xs text-slate-500 mt-0.5">{l}</div>
+                  </div>
+                ))}
               </div>
               <div className="flex justify-end">
-                <button onClick={onClose} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-colors">Done</button>
+                <button onClick={onClose}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
+                  Done
+                </button>
               </div>
             </div>
           )}

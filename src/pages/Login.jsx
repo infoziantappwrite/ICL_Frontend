@@ -1,9 +1,10 @@
-// src/pages/Login.jsx - SIMPLIFIED VERSION (Always to Dashboard)
+// src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { authAPI } from '../api/Api';
+import { useGoogleLogin } from '@react-oauth/google';
 import {
   Mail,
   AlertCircle,
@@ -118,10 +119,40 @@ const Login = () => {
     }
   };
  
-  const handleGoogleLogin = () => {
-    console.log('Google login clicked');
-    // TODO: Implement Google OAuth
-  };
+  // Real Google OAuth — fetches user info then sends to backend
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        }).then(r => r.json());
+
+        const response = await authAPI.googleAuth(userInfo);
+
+        if (response.success) {
+          login(response.user, response.accessToken);
+          toast.success('Welcome back!', 'Logged in with Google successfully.');
+          const roleRoutes = {
+            student:       '/dashboard/student',
+            candidate:     '/dashboard/student',
+            college_admin: '/dashboard/college-admin',
+            super_admin:   '/dashboard/super-admin',
+          };
+          navigate(roleRoutes[response.user.role] || '/dashboard');
+        } else {
+          setErrors({ submit: response.message || 'Google login failed' });
+          toast.error('Google Login Failed', response.message || 'Could not log in with Google.');
+        }
+      } catch (err) {
+        setErrors({ submit: err.message || 'Google login failed' });
+        toast.error('Google Login Failed', err.message || 'Something went wrong.');
+      }
+    },
+    onError: () => {
+      toast.error('Google Error', 'Google sign-in was cancelled or failed.');
+    },
+    flow: 'implicit',
+  });
  
   const handleFacebookLogin = () => {
     console.log('Facebook login clicked');

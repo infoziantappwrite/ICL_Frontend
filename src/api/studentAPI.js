@@ -82,6 +82,21 @@ export const collegeAdminStudentAPI = {
   downloadTemplate: () => downloadFileFromEndpoint('/college-admin/students/bulk/template', 'student_bulk_upload_template.xlsx'),
   validateBulkUpload: (file) => uploadMultipart('/college-admin/students/bulk/validate', file),
   bulkUpload: (file) => uploadMultipart('/college-admin/students/bulk/upload', file),
+
+  // ── Bulk JSON Upload (Excel parsed on frontend) ─────────────────
+  // rows: array of raw row objects from xlsx parsing
+  validateBulkUploadJSON: (rows) =>
+    apiCall('/college-admin/students/bulk/validate-json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    }),
+  bulkUploadJSON: (rows) =>
+    apiCall('/college-admin/students/bulk/upload-json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    }),
 };
 
 export const superAdminStudentAPI = {
@@ -115,6 +130,20 @@ export const superAdminStudentAPI = {
   downloadTemplate: () => downloadFileFromEndpoint('/super-admin/students/bulk/template', 'student_bulk_upload_template.xlsx'),
   validateBulkUpload: (file, collegeId = null) => uploadMultipart('/super-admin/students/bulk/validate', file, collegeId ? { collegeId } : {}),
   bulkUpload: (file, collegeId = null) => uploadMultipart('/super-admin/students/bulk/upload', file, collegeId ? { collegeId } : {}),
+
+  // ── Bulk JSON Upload (Excel parsed on frontend) ─────────────────
+  validateBulkUploadJSON: (rows, collegeId = null) =>
+    apiCall(`/super-admin/students/bulk/validate-json${collegeId ? `?collegeId=${collegeId}` : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    }),
+  bulkUploadJSON: (rows, collegeId = null) =>
+    apiCall(`/super-admin/students/bulk/upload-json${collegeId ? `?collegeId=${collegeId}` : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows }),
+    }),
 
   getColleges: () => apiCall('/super-admin/colleges?limit=100'),
 };

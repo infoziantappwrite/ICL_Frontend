@@ -127,6 +127,17 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+// ── SuperAdminOnlyRoute ───────────────────────────────────────────────────────
+// Blocks access to a route if the logged-in user is NOT super_admin.
+// Redirects college_admin (or any other role) to /unauthorized.
+const SuperAdminOnlyRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/unauthorized" replace />;
+  }
+  return children;
+};
+
 // ==================== APP ====================
 function App() {
   return (
@@ -202,8 +213,9 @@ function App() {
 
             {/* ===== COLLEGE ADMIN COURSES ===== */}
             <Route path="/dashboard/college-admin/courses" element={<ProtectedRoute><AdminCourseManagement /></ProtectedRoute>} />
-            <Route path="/dashboard/college-admin/courses/create" element={<ProtectedRoute><CourseForm /></ProtectedRoute>} />
-            <Route path="/dashboard/college-admin/courses/edit/:courseId" element={<ProtectedRoute><CourseForm /></ProtectedRoute>} />
+            {/* CREATE & EDIT are restricted to super_admin only */}
+            <Route path="/dashboard/college-admin/courses/create" element={<ProtectedRoute><SuperAdminOnlyRoute><CourseForm /></SuperAdminOnlyRoute></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/courses/edit/:courseId" element={<ProtectedRoute><SuperAdminOnlyRoute><CourseForm /></SuperAdminOnlyRoute></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/courses/:courseId/analytics" element={<ProtectedRoute><CourseAnalytics /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/courses/:courseId/enrollments" element={<ProtectedRoute><CourseEnrollments /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/courses/assign-batch" element={<ProtectedRoute><AssignCourseBatch /></ProtectedRoute>} />

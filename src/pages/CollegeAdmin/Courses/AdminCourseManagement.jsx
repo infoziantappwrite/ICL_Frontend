@@ -261,6 +261,7 @@ const AdminCourseManagement = () => {
             <button
               onClick={() => navigate('/dashboard/college-admin/courses/create')}
               className="flex-shrink-0 flex items-center gap-2 bg-white text-blue-700 font-bold px-5 py-3 rounded-xl hover:bg-blue-50 transition-all shadow-lg"
+              style={{ display: user?.role === 'super_admin' ? undefined : 'none' }}
             >
               <Plus className="w-5 h-5" /> Create Course
             </button>
@@ -340,6 +341,7 @@ const AdminCourseManagement = () => {
             <button
               onClick={() => navigate('/dashboard/college-admin/courses/create')}
               className="mt-4 flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-all"
+              style={{ display: user?.role === 'super_admin' ? undefined : 'none' }}
             >
               <Plus className="w-4 h-4" /> Create Course
             </button>

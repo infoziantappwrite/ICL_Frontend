@@ -525,10 +525,20 @@ const JobForm = () => {
                 options={[
                   { value: 'Full-Time', label: 'Full-Time' },
                   { value: 'Internship', label: 'Internship' },
-                  { value: 'Internship + FTE', label: 'Internship + FTE' }
+                  { value: 'Internship + FTE', label: 'Internship + FTE' },
+                  { value: 'Part-Time', label: 'Part-Time' },
+                  { value: 'Contract', label: 'Contract' },
+                  { value: 'Other', label: 'Other' }
                 ]}
                 required
               />
+              {formData.jobType === 'Other' && (
+                <div className="mt-2">
+                  <input type="text" placeholder="Specify job type..."
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    value={formData.jobTypeOther || ''} onChange={e => updateField('jobTypeOther', e.target.value)} />
+                </div>
+              )}
               <FormSelect
                 label="Job Role"
                 value={formData.jobRole}

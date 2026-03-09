@@ -89,6 +89,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         { icon: Users,           label: 'Admins',        path: '/dashboard/super-admin/admins' },
         { icon: GraduationCap,   label: 'Students',      path: '/dashboard/super-admin/students' },
         { icon: FileText,        label: 'Applications',  path: '/dashboard/super-admin/applications' },
+        { icon: BookOpen,        label: 'Courses',       path: '/dashboard/super-admin/courses' },
         { icon: BarChart3,       label: 'Analytics',     path: '/dashboard/super-admin/analytics' },
         { icon: CreditCard,      label: 'Subscriptions', path: '/dashboard/super-admin/subscriptions' },
         { icon: Bell,            label: 'Notifications', path: '/dashboard/super-admin/notifications' },
@@ -103,6 +104,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         { icon: Building2,       label: 'Companies',    path: '/dashboard/college-admin/companies' },
         { icon: Briefcase,       label: 'Jobs',         path: '/dashboard/college-admin/jobs' },
         { icon: FileText,        label: 'Applications', path: '/dashboard/college-admin/applications' },
+        { icon: BookOpen,        label: 'Courses',      path: '/dashboard/college-admin/courses' },
         { icon: ClipboardList,   label: 'Assessments',  path: '/dashboard/college-admin/assessments' },
         { icon: BarChart3,       label: 'Analytics',    path: '/dashboard/college-admin/analytics' },
         { icon: Bell,            label: 'Notifications',path: '/dashboard/college-admin/notifications' },
@@ -114,6 +116,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     return [
       { icon: LayoutDashboard, label: 'Dashboard',         path: '/dashboard/student' },
       { icon: Briefcase,       label: 'Job Opportunities', path: '/dashboard/student/jobs' },
+      { icon: BookOpen,        label: 'Courses',           path: '/dashboard/student/courses' },
       { icon: ClipboardList,   label: 'Assessments',       path: '/dashboard/student/assessments' },
       { icon: User,            label: 'My Profile',        path: '/profile/my-info' },
       { icon: Edit,            label: 'Edit Profile',      path: '/profile/edit' },

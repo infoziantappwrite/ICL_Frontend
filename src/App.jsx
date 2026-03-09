@@ -27,6 +27,19 @@ import JobDetail from './pages/Jobs/JobDetail';
 import StudentNotifications from './pages/Notifications';
 import StudentSettings from './pages/Settings';
 
+// ==================== STUDENT COURSE PAGES ====================
+import CourseList from './pages/Courses/CourseList';
+import CourseDetail from './pages/Courses/CourseDetail';
+import MyCourses from './pages/Courses/MyCourses';
+import CourseLearn from './pages/Courses/CourseLearn';
+
+// ==================== COLLEGE ADMIN COURSE PAGES ====================
+import AdminCourseManagement from './pages/CollegeAdmin/Courses/AdminCourseManagement';
+import CourseForm from './pages/CollegeAdmin/Courses/CourseForm';
+import CourseAnalytics from './pages/CollegeAdmin/Courses/CourseAnalytics';
+import CourseEnrollments from './pages/CollegeAdmin/Courses/CourseEnrollments';
+import AssignCourseBatch from './pages/CollegeAdmin/Courses/AssignCourseBatch';
+
 // ==================== STUDENT ASSESSMENT PAGES ====================
 import StudentAssessmentList from './pages/Student/Assessments/AssessmentList';
 import StudentTakeAssessment from './pages/Student/Assessments/TakeAssessment';
@@ -55,6 +68,13 @@ import AssessmentForm from './pages/CollegeAdmin/Assessments/AssessmentForm';
 import QuestionManager from './pages/CollegeAdmin/Assessments/QuestionManager';
 import AssessmentAttempts from './pages/CollegeAdmin/Assessments/AssessmentAttempts';
 import AIAssessmentGenerator from './pages/CollegeAdmin/Assessments/AIAssessmentGenerator';
+
+// ==================== SUPER ADMIN COURSE PAGES ====================
+import SuperAdminCourseManagement from './pages/SuperAdmin/Courses/SuperAdminCourseManagement';
+import SuperAdminCourseForm from './pages/SuperAdmin/Courses/SuperAdminCourseForm';
+import SuperAdminCourseAnalytics from './pages/SuperAdmin/Courses/SuperAdminCourseAnalytics';
+import SuperAdminCourseEnrollments from './pages/SuperAdmin/Courses/SuperAdminCourseEnrollments';
+import SuperAdminAssignCourseBatch from './pages/SuperAdmin/Courses/SuperAdminAssignCourseBatch';
 
 // ==================== SUPER ADMIN PAGES ====================
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
@@ -107,6 +127,17 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+// ── SuperAdminOnlyRoute ───────────────────────────────────────────────────────
+// Blocks access to a route if the logged-in user is NOT super_admin.
+// Redirects college_admin (or any other role) to /unauthorized.
+const SuperAdminOnlyRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== 'super_admin') {
+    return <Navigate to="/unauthorized" replace />;
+  }
+  return children;
+};
+
 // ==================== APP ====================
 function App() {
   return (
@@ -136,6 +167,12 @@ function App() {
             <Route path="/dashboard/student/jobs/:jobId" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
             <Route path="/dashboard/student/notifications" element={<ProtectedRoute><StudentNotifications /></ProtectedRoute>} />
             <Route path="/dashboard/student/settings" element={<ProtectedRoute><StudentSettings /></ProtectedRoute>} />
+
+            {/* ===== STUDENT COURSES ===== */}
+            <Route path="/dashboard/student/courses" element={<ProtectedRoute><CourseList /></ProtectedRoute>} />
+            <Route path="/dashboard/student/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/student/courses/:courseId/learn" element={<ProtectedRoute><CourseLearn /></ProtectedRoute>} />
+            <Route path="/dashboard/student/my-courses" element={<ProtectedRoute><MyCourses /></ProtectedRoute>} />
 
             {/* ===== STUDENT ASSESSMENTS ===== */}
             <Route path="/dashboard/student/assessments" element={<ProtectedRoute><StudentAssessmentList /></ProtectedRoute>} />
@@ -174,6 +211,15 @@ function App() {
             <Route path="/dashboard/college-admin/notifications" element={<ProtectedRoute><CollegeAdminNotifications /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/settings" element={<ProtectedRoute><CollegeAdminSettings /></ProtectedRoute>} />
 
+            {/* ===== COLLEGE ADMIN COURSES ===== */}
+            <Route path="/dashboard/college-admin/courses" element={<ProtectedRoute><AdminCourseManagement /></ProtectedRoute>} />
+            {/* CREATE & EDIT are restricted to super_admin only */}
+            <Route path="/dashboard/college-admin/courses/create" element={<ProtectedRoute><SuperAdminOnlyRoute><CourseForm /></SuperAdminOnlyRoute></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/courses/edit/:courseId" element={<ProtectedRoute><SuperAdminOnlyRoute><CourseForm /></SuperAdminOnlyRoute></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/courses/:courseId/analytics" element={<ProtectedRoute><CourseAnalytics /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/courses/:courseId/enrollments" element={<ProtectedRoute><CourseEnrollments /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/courses/assign-batch" element={<ProtectedRoute><AssignCourseBatch /></ProtectedRoute>} />
+
             {/* ===== COLLEGE ADMIN ASSESSMENTS ===== */}
             <Route path="/dashboard/college-admin/assessments" element={<ProtectedRoute><AssessmentManagement /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/create" element={<ProtectedRoute><AssessmentForm /></ProtectedRoute>} />
@@ -181,6 +227,14 @@ function App() {
             <Route path="/dashboard/college-admin/assessments/:assessmentId/questions" element={<ProtectedRoute><QuestionManager /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/attempts" element={<ProtectedRoute><AssessmentAttempts /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/generate" element={<ProtectedRoute><AIAssessmentGenerator /></ProtectedRoute>} />
+
+            {/* ===== SUPER ADMIN COURSES ===== */}
+            <Route path="/dashboard/super-admin/courses" element={<ProtectedRoute><SuperAdminCourseManagement /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/courses/create" element={<ProtectedRoute><SuperAdminCourseForm /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/courses/edit/:courseId" element={<ProtectedRoute><SuperAdminCourseForm /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/courses/:courseId/analytics" element={<ProtectedRoute><SuperAdminCourseAnalytics /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/courses/:courseId/enrollments" element={<ProtectedRoute><SuperAdminCourseEnrollments /></ProtectedRoute>} />
+            <Route path="/dashboard/super-admin/courses/assign-batch" element={<ProtectedRoute><SuperAdminAssignCourseBatch /></ProtectedRoute>} />
 
             {/* ===== SUPER ADMIN ===== */}
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />

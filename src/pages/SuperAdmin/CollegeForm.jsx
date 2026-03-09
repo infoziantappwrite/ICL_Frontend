@@ -446,7 +446,13 @@ const CollegeForm = () => {
                 <option value="Private">Private</option>
                 <option value="Autonomous">Autonomous</option>
                 <option value="Deemed">Deemed</option>
+                <option value="Other">Other</option>
               </select>
+              {formData.type === 'Other' && (
+                <input type="text" name="typeOther" className="w-full mt-2 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Specify college type..." value={formData.typeOther || ''}
+                  onChange={handleChange} />
+              )}
             </div>
 
             <div>

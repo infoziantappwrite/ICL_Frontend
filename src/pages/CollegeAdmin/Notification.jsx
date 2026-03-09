@@ -235,21 +235,21 @@ const Notifications = () => {
   return (
     <DashboardLayout title="Notifications">
       {/* Header */}
-      <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
+      <div className="mb-6">
+        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="text-white">
-              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                <Bell className="w-8 h-8" />
+              <h1 className="text-xl font-bold mb-1 flex items-center gap-3">
+                <Bell className="w-5 h-5" />
                 Notification Center
               </h1>
-              <p className="text-blue-100 text-lg">
+              <p className="text-blue-100 text-sm">
                 Stay updated with all your placement activities
               </p>
             </div>
             <button
               onClick={() => navigate('/notifications/settings')}
-              className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+              className="bg-white text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-blue-50 transition-all shadow-md hover:scale-105"
             >
               <Settings className="w-5 h-5" />
               Preferences
@@ -259,48 +259,48 @@ const Notifications = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-white/60">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">Total</p>
+              <p className="text-2xl font-black text-gray-900">
                 {notifications.length}
               </p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Bell className="w-7 h-7 text-white" />
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-md">
+              <Bell className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-white/60">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Unread</p>
-              <p className="text-3xl font-bold text-orange-600">{unreadCount}</p>
+              <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">Unread</p>
+              <p className="text-2xl font-black text-orange-600">{unreadCount}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center shadow-lg">
-              <BellOff className="w-7 h-7 text-white" />
+            <div className="w-11 h-11 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center shadow-md">
+              <BellOff className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-white/60">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Starred</p>
-              <p className="text-3xl font-bold text-yellow-600">{starredCount}</p>
+              <p className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">Starred</p>
+              <p className="text-2xl font-black text-yellow-600">{starredCount}</p>
             </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Star className="w-7 h-7 text-white" />
+            <div className="w-11 h-11 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+              <Star className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 mb-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-white/60 mb-5">
         <div className="flex flex-col lg:flex-row gap-4 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -369,7 +369,7 @@ const Notifications = () => {
               return (
                 <div
                   key={notification.id}
-                  className={`p-6 hover:bg-blue-50/50 transition-all cursor-pointer group ${
+                  className={`p-4 hover:bg-blue-50/50 transition-all cursor-pointer group ${
                     !notification.read ? 'bg-blue-50/30' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
@@ -377,7 +377,7 @@ const Notifications = () => {
                   <div className="flex items-start gap-4">
                     {/* Icon */}
                     <div
-                      className={`w-12 h-12 ${colorClasses.bg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}
+                      className={`w-10 h-10 ${colorClasses.bg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}
                     >
                       <NotificationIcon
                         className={`w-6 h-6 ${colorClasses.text}`}

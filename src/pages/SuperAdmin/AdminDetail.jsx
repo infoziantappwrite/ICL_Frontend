@@ -250,7 +250,11 @@ const AdminDetail = () => {
                     <label className="text-sm font-semibold text-gray-500 mb-1 block">College Address</label>
                     <div className="flex items-start gap-2 text-gray-900">
                       <MapPin className="w-4 h-4 text-gray-400 mt-1" />
-                      <p className="font-medium">{admin.college.address}</p>
+                      <p className="font-medium">
+                        {typeof admin.college.address === 'object'
+                          ? [admin.college.address.street, admin.college.address.city, admin.college.address.state, admin.college.address.pincode, admin.college.address.country].filter(Boolean).join(', ')
+                          : admin.college.address}
+                      </p>
                     </div>
                   </div>
                 )}

@@ -1,331 +1,325 @@
 // src/pages/SuperAdmin/SubscriptionManagement.jsx
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect, useCallback } from 'react';
+import apiCall from '../../api/Api';
+import {
+  CreditCard, Building2, Users, RefreshCw, Pencil, X,
+  CircleCheck, CircleX, Crown, Shield, Zap, Infinity,
+  AlertCircle, ChevronDown,
+} from 'lucide-react';
+import DashboardLayout from '../../components/layout/DashboardLayout';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { useToast } from '../../context/ToastContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+/* ── helpers ──────────────────────────────────────────────── */
+const PLANS = {
+  free:     { label: 'Free',     icon: Shield, badge: 'bg-gray-100 text-gray-700',   ring: 'border-gray-200'   },
+  pro:      { label: 'Pro',      icon: Zap,    badge: 'bg-blue-100 text-blue-700',   ring: 'border-blue-300'   },
+  pro_plus: { label: 'Pro Plus', icon: Crown,  badge: 'bg-indigo-100 text-indigo-700', ring: 'border-indigo-300' },
+};
 
+const planOf   = p => PLANS[p] || PLANS.free;
+const fmt      = v => (v === Infinity || v >= 999_999) ? '∞' : (v ?? 0).toLocaleString();
+const usePct   = (used, limit) => limit >= 999_999 ? 0 : Math.min(100, Math.round((used / (limit || 1)) * 100));
+
+const BarUsage = ({ pct }) => {
+  const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-400' : 'bg-gradient-to-r from-blue-500 to-cyan-500';
+  return (
+    <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+      <div className={`h-1.5 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+};
+
+/* ── modal ────────────────────────────────────────────────── */
+const UpdateModal = ({ college, onClose, onSaved }) => {
+  const toast = useToast();
+  const [plan,      setPlan]      = useState(college.plan || 'free');
+  const [perGroup,  setPerGroup]  = useState(college.limits?.perGroup >= 999_999 ? 999999 : college.limits?.perGroup || 100);
+  const [total,     setTotal]     = useState(college.limits?.total    >= 999_999 ? 999999 : college.limits?.total    || 500);
+  const [saving,    setSaving]    = useState(false);
+
+  const handlePlanChange = (p) => {
+    setPlan(p);
+    if (p === 'free')     { setPerGroup(100);    setTotal(500);    }
+    if (p === 'pro')      { setPerGroup(250);    setTotal(1000);   }
+    if (p === 'pro_plus') { setPerGroup(999999); setTotal(999999); }
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      await apiCall(`/subscriptions/${college._id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ plan, perGroupLimit: perGroup, totalStudentLimit: total }),
+      });
+      toast.success('Updated', `${college.name} subscription updated.`);
+      onSaved();
+      onClose();
+    } catch (err) {
+      toast.error('Failed', err.message || 'Could not update subscription.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const PlanBtn = ({ id }) => {
+    const p = PLANS[id];
+    const active = plan === id;
+    return (
+      <button
+        onClick={() => handlePlanChange(id)}
+        className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl border-2 transition-all ${
+          active ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-200'
+        }`}
+      >
+        <p.icon className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-gray-400'}`} />
+        <span className={`text-xs font-bold ${active ? 'text-blue-700' : 'text-gray-500'}`}>{p.label}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-white">Update Subscription</h2>
+            <p className="text-xs text-blue-100 mt-0.5 truncate max-w-[240px]">{college.name}</p>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Usage info */}
+          <div className="bg-blue-50 rounded-xl p-3 text-sm text-blue-800 border border-blue-100">
+            <strong>Current usage:</strong> {college.usage?.students ?? 0} students
+            in {college.usage?.groups ?? 0} groups
+          </div>
+
+          {/* Plan selector */}
+          <div>
+            <label className="text-xs font-bold text-gray-700 block mb-2">Select Plan</label>
+            <div className="flex gap-2">
+              {['free','pro','pro_plus'].map(id => <PlanBtn key={id} id={id} />)}
+            </div>
+          </div>
+
+          {/* Limits */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-gray-700 block mb-1.5">Per-Group Limit</label>
+              <input
+                type="number" min={1} value={perGroup}
+                onChange={e => setPerGroup(parseInt(e.target.value) || 1)}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <p className="text-xs text-gray-400 mt-1">Max students per group</p>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-700 block mb-1.5">Total Student Limit</label>
+              <input
+                type="number" min={1} value={total}
+                onChange={e => setTotal(parseInt(e.target.value) || 1)}
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <p className="text-xs text-gray-400 mt-1">Max students total</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 px-6 pb-6">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+            Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={saving}
+            className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition disabled:opacity-50">
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── main page ────────────────────────────────────────────── */
 const SubscriptionManagement = () => {
-  const [colleges, setColleges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCollege, setSelectedCollege] = useState(null);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [analytics, setAnalytics] = useState(null);
+  const toast = useToast();
+  const [colleges,  setColleges]  = useState([]);
+  const [summary,   setSummary]   = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [selected,  setSelected]  = useState(null);
+  const [search,    setSearch]    = useState('');
 
-  const [subscriptionUpdate, setSubscriptionUpdate] = useState({
-    plan: 'free',
-    perGroupLimit: 100,
-    totalStudentLimit: 500
-  });
-
-  useEffect(() => {
-    fetchSubscriptions();
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiCall('/subscriptions');
+      setColleges(res.data || []);
+      setSummary(res.analytics || null);
+    } catch (err) {
+      toast.error('Error', err.message || 'Failed to load subscriptions.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchSubscriptions = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setColleges(response.data.data || []);
-      setAnalytics(response.data.analytics);
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to fetch subscriptions:', err);
-      setLoading(false);
-    }
-  };
+  useEffect(() => { load(); }, [load]);
 
-  const handleUpdateSubscription = async (e) => {
-    e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `${API_URL}/subscriptions/${selectedCollege._id}`,
-        subscriptionUpdate,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      alert('Subscription updated successfully!');
-      setShowUpdateModal(false);
-      fetchSubscriptions();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update subscription');
-    }
-  };
+  const filtered = colleges.filter(c =>
+    !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.code?.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const openUpdateModal = (college) => {
-    setSelectedCollege(college);
-    setSubscriptionUpdate({
-      plan: college.plan,
-      perGroupLimit: college.limits.perGroup,
-      totalStudentLimit: college.limits.total
-    });
-    setShowUpdateModal(true);
-  };
-
-  const getPlanColor = (plan) => {
-    switch (plan) {
-      case 'free': return 'bg-gray-100 text-gray-800';
-      case 'pro': return 'bg-blue-100 text-blue-800';
-      case 'pro_plus': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPlanName = (plan) => {
-    switch (plan) {
-      case 'free': return 'Free';
-      case 'pro': return 'Pro';
-      case 'pro_plus': return 'Pro Plus';
-      default: return plan;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+  if (loading && !colleges.length) {
+    return <LoadingSpinner message="Loading Subscriptions…" />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Subscription Management</h1>
-          <p className="text-gray-600 mt-1">Manage college subscription plans and quotas</p>
-        </div>
+    <DashboardLayout title="Subscriptions">
 
-        {/* Analytics Cards */}
-        {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="text-sm text-gray-600 mb-1">Total Colleges</div>
-              <div className="text-3xl font-bold text-gray-900">{analytics.totalColleges}</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg shadow-sm p-6">
-              <div className="text-sm text-gray-600 mb-1">Free Plan</div>
-              <div className="text-3xl font-bold text-gray-700">{analytics.byPlan.free}</div>
-            </div>
-            <div className="bg-blue-100 rounded-lg shadow-sm p-6">
-              <div className="text-sm text-blue-700 mb-1">Pro Plan</div>
-              <div className="text-3xl font-bold text-blue-800">{analytics.byPlan.pro}</div>
-            </div>
-            <div className="bg-purple-100 rounded-lg shadow-sm p-6">
-              <div className="text-sm text-purple-700 mb-1">Pro Plus</div>
-              <div className="text-3xl font-bold text-purple-800">{analytics.byPlan.pro_plus}</div>
-            </div>
+      {/* Banner */}
+      <div className="mb-5">
+        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -right-20" />
           </div>
-        )}
-
-        {/* Colleges Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    College
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Plan
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Per Group Limit
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Limit
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Usage
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Groups
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {colleges.map((college) => (
-                  <tr key={college._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{college.name}</div>
-                      <div className="text-sm text-gray-500">{college.code}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPlanColor(college.plan)}`}>
-                        {getPlanName(college.plan)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {college.limits.perGroup === Infinity ? '∞' : college.limits.perGroup}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {college.limits.total === Infinity ? '∞' : college.limits.total}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="text-sm text-gray-900">
-                          {college.usage.students} / {college.limits.total === Infinity ? '∞' : college.limits.total}
-                        </div>
-                        <div className="ml-2">
-                          {college.usage.percentUsed >= 90 ? (
-                            <span className="text-red-600">⚠️</span>
-                          ) : college.usage.percentUsed >= 70 ? (
-                            <span className="text-orange-500">⚡</span>
-                          ) : (
-                            <span className="text-green-500">✓</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="w-32 bg-gray-200 rounded-full h-2 mt-1">
-                        <div
-                          className={`h-2 rounded-full ${
-                            college.usage.percentUsed >= 90 ? 'bg-red-600' :
-                            college.usage.percentUsed >= 70 ? 'bg-orange-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${Math.min(college.usage.percentUsed, 100)}%` }}
-                        ></div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {college.usage.groups}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {college.isActive ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openUpdateModal(college)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Update Plan
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {colleges.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No colleges found</p>
+          <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">Subscription Management</h1>
+                  <p className="text-blue-100 text-xs mt-0.5">Manage college plans and student quotas</p>
+                </div>
               </div>
-            )}
+            </div>
+            <button onClick={load} disabled={loading}
+              className="self-start sm:self-auto flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Update Subscription Modal */}
-      {showUpdateModal && selectedCollege && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6">Update Subscription</h2>
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-              <div className="font-semibold text-gray-900">{selectedCollege.name}</div>
-              <div className="text-sm text-gray-600">{selectedCollege.code}</div>
+      {/* Summary cards */}
+      {summary && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          {[
+            { icon: Building2, label: 'Total Colleges', value: summary.totalColleges, bg: 'from-blue-600 to-blue-700' },
+            { icon: Shield,    label: 'Free Plan',      value: summary.byPlan?.free     ?? 0, bg: 'from-gray-500 to-gray-600' },
+            { icon: Zap,       label: 'Pro Plan',       value: summary.byPlan?.pro      ?? 0, bg: 'from-blue-500 to-cyan-500' },
+            { icon: Crown,     label: 'Pro Plus',       value: summary.byPlan?.pro_plus ?? 0, bg: 'from-indigo-500 to-blue-600' },
+          ].map(({ icon: Icon, label, value, bg }) => (
+            <div key={label} className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-white/60 shadow-sm">
+              <div className={`w-10 h-10 bg-gradient-to-br ${bg} rounded-xl flex items-center justify-center mb-3 shadow-md`}>
+                <Icon className="w-5 h-5 text-white" />
+              </div>
+              <p className="text-2xl font-black text-gray-900">{value}</p>
+              <p className="text-sm text-gray-600">{label}</p>
             </div>
-
-            <form onSubmit={handleUpdateSubscription}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Subscription Plan
-                  </label>
-                  <select
-                    value={subscriptionUpdate.plan}
-                    onChange={(e) => {
-                      const plan = e.target.value;
-                      let limits = { perGroupLimit: 100, totalStudentLimit: 500 };
-                      
-                      if (plan === 'pro') {
-                        limits = { perGroupLimit: 250, totalStudentLimit: 1000 };
-                      } else if (plan === 'pro_plus') {
-                        limits = { perGroupLimit: 999999, totalStudentLimit: 999999 };
-                      }
-                      
-                      setSubscriptionUpdate({ ...subscriptionUpdate, plan, ...limits });
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="free">Free (100/group, 500 total)</option>
-                    <option value="pro">Pro (250/group, 1,000 total)</option>
-                    <option value="pro_plus">Pro Plus (Unlimited)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Per Group Limit
-                  </label>
-                  <input
-                    type="number"
-                    value={subscriptionUpdate.perGroupLimit}
-                    onChange={(e) => setSubscriptionUpdate({ ...subscriptionUpdate, perGroupLimit: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    min="1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum students per single group</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Total Student Limit
-                  </label>
-                  <input
-                    type="number"
-                    value={subscriptionUpdate.totalStudentLimit}
-                    onChange={(e) => setSubscriptionUpdate({ ...subscriptionUpdate, totalStudentLimit: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    min="1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum students across all groups</p>
-                </div>
-
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <div className="text-sm text-gray-700">
-                    <strong>Current Usage:</strong> {selectedCollege.usage.students} students in {selectedCollege.usage.groups} groups
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowUpdateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Update Subscription
-                </button>
-              </div>
-            </form>
-          </div>
+          ))}
         </div>
       )}
-    </div>
+
+      {/* Search */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by college name or code…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full sm:w-80 text-sm border border-gray-200 rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+      </div>
+
+      {/* Table card */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[800px]">
+            <thead>
+              <tr className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
+                {['College', 'Plan', 'Per Group', 'Total Limit', 'Usage', 'Groups', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtered.map(col => {
+                const p    = planOf(col.plan);
+                const pct  = usePct(col.usage?.students ?? 0, col.limits?.total ?? 500);
+                const warn = pct >= 90 ? 'text-red-600' : pct >= 70 ? 'text-amber-500' : 'text-emerald-600';
+                return (
+                  <tr key={col._id} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-gray-900 truncate max-w-[180px]">{col.name}</p>
+                      <p className="text-xs text-gray-400">{col.code}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${p.badge}`}>
+                        <p.icon className="w-3 h-3" />
+                        {p.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-gray-700">{fmt(col.limits?.perGroup)}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-700">{fmt(col.limits?.total)}</td>
+                    <td className="px-4 py-3 w-36">
+                      <div className="flex items-center justify-between mb-1 text-xs">
+                        <span className={`font-bold ${warn}`}>{col.usage?.students ?? 0}</span>
+                        <span className="text-gray-400">/ {fmt(col.limits?.total)}</span>
+                      </div>
+                      <BarUsage pct={pct} />
+                      <p className={`text-xs mt-0.5 font-medium ${warn}`}>{pct}% used</p>
+                    </td>
+                    <td className="px-4 py-3 text-gray-700 font-medium">{col.usage?.groups ?? 0}</td>
+                    <td className="px-4 py-3">
+                      {col.isActive
+                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full"><CircleCheck className="w-3 h-3" />Active</span>
+                        : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 text-xs font-bold rounded-full"><CircleX className="w-3 h-3" />Inactive</span>
+                      }
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setSelected(col)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold rounded-lg hover:opacity-90 transition"
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {filtered.length === 0 && (
+            <div className="py-16 text-center">
+              <CreditCard className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+              <p className="text-gray-400">{search ? 'No colleges match your search.' : 'No subscription data found.'}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50 text-xs text-gray-400">
+          Showing {filtered.length} of {colleges.length} colleges
+        </div>
+      </div>
+
+      {/* Update modal */}
+      {selected && (
+        <UpdateModal
+          college={selected}
+          onClose={() => setSelected(null)}
+          onSaved={load}
+        />
+      )}
+    </DashboardLayout>
   );
 };
 

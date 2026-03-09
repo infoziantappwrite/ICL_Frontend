@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, ChevronLeft, Briefcase, Layers, Hash, Check,
-  AlertCircle, Edit2, Save, Trash2, X, ArrowRight,
+  AlertCircle, PenLine, Save, Trash2, X, ArrowRight,
   BookOpen, RefreshCw, Loader2, ChevronDown, ChevronUp,
-  ClipboardList, Zap
+  ClipboardList, Zap, Sprout, Flame, Trophy, Timer, ClipboardCheck,
 } from 'lucide-react';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import apiCall from '../../../api/Api';
@@ -16,19 +16,25 @@ import { jobAPI } from '../../../api/Api';
 // ─── Difficulty config ─────────────────────────────────────────────────────────
 const LEVEL_CONFIG = {
   Beginner: {
-    emoji: '🌱',
+    Icon: Sprout,
+    iconColor: 'text-emerald-600',
+    iconBg: 'bg-emerald-100',
     desc: 'Foundational concepts & basic recall',
     active: 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-800',
     badge: 'bg-emerald-100 text-emerald-700',
   },
   Intermediate: {
-    emoji: '⚡',
+    Icon: Zap,
+    iconColor: 'text-blue-600',
+    iconBg: 'bg-blue-100',
     desc: 'Applied knowledge & problem solving',
     active: 'border-blue-400 bg-gradient-to-br from-blue-50 to-cyan-50 text-blue-800',
     badge: 'bg-blue-100 text-blue-700',
   },
   Advanced: {
-    emoji: '🔥',
+    Icon: Flame,
+    iconColor: 'text-orange-600',
+    iconBg: 'bg-orange-100',
     desc: 'Complex analysis & expert-level',
     active: 'border-indigo-400 bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-800',
     badge: 'bg-indigo-100 text-indigo-700',
@@ -231,7 +237,7 @@ const QuestionCard = ({ question, index, onEdit, onRemove }) => {
           <div className="flex flex-col gap-1 shrink-0">
             <button onClick={() => onEdit(index)}
               className="p-2 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Edit">
-              <Edit2 className="w-4 h-4" />
+              <PenLine className="w-4 h-4" />
             </button>
             <button onClick={() => onRemove(index)}
               className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Remove">
@@ -284,7 +290,7 @@ const EditModal = ({ question, onSave, onClose }) => {
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center">
-              <Edit2 className="w-4 h-4 text-blue-600" />
+              <PenLine className="w-4 h-4 text-blue-600" />
             </div>
             <h3 className="font-bold text-gray-900">Edit Question</h3>
           </div>
@@ -616,7 +622,9 @@ const AIAssessmentGenerator = () => {
                         ${level === lvl ? cfg.active + ' shadow-sm' : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200'}`}>
                         <input type="radio" name="level" value={lvl} checked={level === lvl}
                           onChange={() => setLevel(lvl)} className="sr-only" />
-                        <div className="text-2xl mb-1.5">{cfg.emoji}</div>
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${cfg.iconBg}`}>
+                          <cfg.Icon className={`w-4 h-4 ${cfg.iconColor}`} />
+                        </div>
                         <p className="font-bold text-sm">{lvl}</p>
                         <p className="text-xs mt-0.5 opacity-70 leading-tight">{cfg.desc}</p>
                       </label>
@@ -653,12 +661,12 @@ const AIAssessmentGenerator = () => {
                   {/* Summary stats */}
                   <div className="mt-4 grid grid-cols-3 gap-3">
                     {[
-                      { emoji: '⏱', label: 'Est. Duration', value: `${Math.max(numQuestions * 2, 10)} min` },
-                      { emoji: '🏆', label: 'Est. Marks', value: numQuestions },
-                      { emoji: '📋', label: 'Level', value: level },
+                      { Icon: Timer,           label: 'Est. Duration', value: `${Math.max(numQuestions * 2, 10)} min` },
+                      { Icon: Trophy,          label: 'Est. Marks',    value: numQuestions },
+                      { Icon: ClipboardCheck,  label: 'Level',         value: level },
                     ].map(s => (
                       <div key={s.label} className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl p-3 text-center">
-                        <div className="text-lg mb-0.5">{s.emoji}</div>
+                        <div className="flex justify-center mb-1"><s.Icon className="w-5 h-5 text-blue-500" /></div>
                         <div className="text-sm font-black text-gray-900">{s.value}</div>
                         <div className="text-xs text-gray-500">{s.label}</div>
                       </div>
@@ -731,12 +739,12 @@ const AIAssessmentGenerator = () => {
 
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {[
-                    { label: 'Questions', value: questions.length, emoji: '❓' },
-                    { label: 'Total Marks', value: totalMarks, emoji: '🏆' },
-                    { label: 'Single Choice', value: questions.filter(q => q.type === 'single_answer').length, emoji: '⭕' },
+                    { label: 'Questions',     value: questions.length,                                                  Icon: ClipboardList },
+                    { label: 'Total Marks',   value: totalMarks,                                                        Icon: Trophy        },
+                    { label: 'Single Choice', value: questions.filter(q => q.type === 'single_answer').length,         Icon: Check         },
                   ].map(s => (
                     <div key={s.label} className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl p-3 text-center">
-                      <div className="text-lg">{s.emoji}</div>
+                      <div className="flex justify-center mb-0.5"><s.Icon className="w-5 h-5 text-blue-500" /></div>
                       <div className="text-xl font-black text-gray-900">{s.value}</div>
                       <div className="text-xs text-gray-500">{s.label}</div>
                     </div>
@@ -747,7 +755,7 @@ const AIAssessmentGenerator = () => {
 
             {/* Tip */}
             <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-3.5 text-sm text-blue-800">
-              <Edit2 className="w-4 h-4 text-blue-500 shrink-0" />
+              <PenLine className="w-4 h-4 text-blue-500 shrink-0" />
               <span>Click <strong>edit</strong> on any question to adjust wording, options or marks before saving.</span>
             </div>
 

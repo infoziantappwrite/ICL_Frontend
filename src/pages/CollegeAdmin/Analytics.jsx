@@ -37,11 +37,11 @@ const StatCard = ({ icon: Icon, label, value, subtext, color = 'blue', trend }) 
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300 group hover:scale-105">
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-white/60 hover:shadow-lg transition-all duration-300 group hover:scale-[1.02]">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-gray-600 text-sm font-medium mb-1">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
+          <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
           {subtext && (
             <p className="text-sm text-gray-500 flex items-center gap-1">
               {trend && <ArrowUp className="w-3 h-3 text-green-600" />}
@@ -49,8 +49,8 @@ const StatCard = ({ icon: Icon, label, value, subtext, color = 'blue', trend }) 
             </p>
           )}
         </div>
-        <div className={`w-14 h-14 bg-gradient-to-br ${colorClasses[color]} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-          <Icon className="w-7 h-7 text-white" />
+        <div className={`w-11 h-11 bg-gradient-to-br ${colorClasses[color]} rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
+          <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
     </div>
@@ -190,8 +190,8 @@ const Analytics = () => {
   return (
     <DashboardLayout title="Analytics Dashboard">
       {/* Welcome Banner - Matching Dashboard Style */}
-      <div className="mb-8 animate-fade-in">
-        <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-blue-500/40 overflow-hidden">
+      <div className="mb-6 animate-fade-in">
+        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl overflow-hidden">
           {/* Animated Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -left-20 animate-pulse"></div>
@@ -200,11 +200,11 @@ const Analytics = () => {
           
           <div className="relative flex items-center justify-between">
             <div className="text-white max-w-2xl">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-3 flex items-center gap-3">
+              <h1 className="text-xl font-bold mb-2 flex items-center gap-3">
                 Analytics Dashboard
                 <span className="text-2xl">📊</span>
               </h1>
-              <p className="text-blue-100 text-base sm:text-lg font-medium">
+              <p className="text-blue-100 text-sm font-medium">
                 Comprehensive placement insights and performance metrics
               </p>
             </div>
@@ -225,7 +225,7 @@ const Analytics = () => {
       </div>
 
       {/* Overview Stats - Matching Dashboard Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
           icon={Users}
           label="Total Students"
@@ -261,7 +261,7 @@ const Analytics = () => {
       </div>
 
       {/* Placement Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <StatCard
           icon={Award}
           label="Students Placed"
@@ -288,7 +288,7 @@ const Analytics = () => {
       </div>
 
       {/* Job & Application Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Job Statistics */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
           <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
@@ -300,19 +300,19 @@ const Analytics = () => {
           <div className="p-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-green-50 rounded-xl border border-green-100">
-                <div className="text-3xl font-bold text-green-600 mb-1">{jobStats.active}</div>
+                <div className="text-2xl font-bold text-green-600 mb-1">{jobStats.active}</div>
                 <div className="text-sm text-gray-600 font-medium">Active Jobs</div>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <div className="text-3xl font-bold text-gray-600 mb-1">{jobStats.closed}</div>
+                <div className="text-2xl font-bold text-gray-600 mb-1">{jobStats.closed}</div>
                 <div className="text-sm text-gray-600 font-medium">Closed Jobs</div>
               </div>
               <div className="text-center p-4 bg-yellow-50 rounded-xl border border-yellow-100">
-                <div className="text-3xl font-bold text-yellow-600 mb-1">{jobStats.draft}</div>
+                <div className="text-2xl font-bold text-yellow-600 mb-1">{jobStats.draft}</div>
                 <div className="text-sm text-gray-600 font-medium">Draft Jobs</div>
               </div>
               <div className="text-center p-4 bg-red-50 rounded-xl border border-red-100">
-                <div className="text-3xl font-bold text-red-600 mb-1">{jobStats.cancelled}</div>
+                <div className="text-2xl font-bold text-red-600 mb-1">{jobStats.cancelled}</div>
                 <div className="text-sm text-gray-600 font-medium">Cancelled</div>
               </div>
             </div>
@@ -334,7 +334,7 @@ const Analytics = () => {
                 <div className="text-sm text-gray-600 font-medium">Pending</div>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <div className="text-3xl font-bold text-blue-600 mb-1">{applicationStats.shortlisted}</div>
+                <div className="text-2xl font-bold text-blue-600 mb-1">{applicationStats.shortlisted}</div>
                 <div className="text-sm text-gray-600 font-medium">Shortlisted</div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-xl border border-green-100">
@@ -351,7 +351,7 @@ const Analytics = () => {
       </div>
 
       {/* Branch-wise Placement & Top Companies */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Branch-wise Placement */}
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
           <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
@@ -442,15 +442,15 @@ const Analytics = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100">
                 <p className="text-sm text-gray-600 mb-2 font-medium">Highest Package</p>
-                <p className="text-4xl font-bold text-green-600">₹{packageStats.maxPackage.toFixed(2)}L</p>
+                <p className="text-2xl font-bold text-green-600">₹{packageStats.maxPackage.toFixed(2)}L</p>
               </div>
               <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
                 <p className="text-sm text-gray-600 mb-2 font-medium">Average Package</p>
-                <p className="text-4xl font-bold text-blue-600">₹{packageStats.avgPackage.toFixed(2)}L</p>
+                <p className="text-2xl font-bold text-blue-600">₹{packageStats.avgPackage.toFixed(2)}L</p>
               </div>
               <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-100">
                 <p className="text-sm text-gray-600 mb-2 font-medium">Minimum Package</p>
-                <p className="text-4xl font-bold text-orange-600">₹{packageStats.minPackage.toFixed(2)}L</p>
+                <p className="text-2xl font-bold text-orange-600">₹{packageStats.minPackage.toFixed(2)}L</p>
               </div>
             </div>
           </div>

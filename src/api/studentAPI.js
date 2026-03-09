@@ -138,12 +138,18 @@ export const superAdminStudentAPI = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rows }),
     }),
-  bulkUploadJSON: (rows, collegeId = null) =>
-    apiCall(`/super-admin/students/bulk/upload-json${collegeId ? `?collegeId=${collegeId}` : ''}`, {
+  // skipExisting:true -> backend only inserts NEW accounts; existing emails are NEVER updated
+  bulkUploadJSON: (rows, collegeId = null, options = {}) => {
+    const qs = new URLSearchParams();
+    if (collegeId) qs.set('collegeId', collegeId);
+    if (options.skipExisting) qs.set('skipExisting', 'true');
+    const query = qs.toString();
+    return apiCall(`/super-admin/students/bulk/upload-json${query ? `?${query}` : ''}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows }),
-    }),
+      body: JSON.stringify({ rows, skipExisting: true }),
+    });
+  },
 
   getColleges: () => apiCall('/super-admin/colleges?limit=100'),
 };

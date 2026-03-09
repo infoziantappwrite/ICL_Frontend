@@ -282,14 +282,14 @@ const Settings = () => {
   return (
     <DashboardLayout title="Settings">
       {/* Header */}
-      <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
+      <div className="mb-6">
+        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl">
           <div className="text-white">
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-              <SettingsIcon className="w-8 h-8" />
+            <h1 className="text-xl font-bold mb-1 flex items-center gap-3">
+              <SettingsIcon className="w-5 h-5" />
               Settings & Preferences
             </h1>
-            <p className="text-purple-100 text-lg">
+            <p className="text-blue-100 text-sm">
               Manage your account settings and preferences
             </p>
           </div>
@@ -312,10 +312,10 @@ const Settings = () => {
       )}
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
         {/* Sidebar Tabs */}
         <div className="lg:col-span-1">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-4 space-y-2">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/60 p-3 space-y-1.5">
             {tabs.map((tab) => {
               const TabIcon = tab.icon;
               return (
@@ -338,7 +338,7 @@ const Settings = () => {
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/60 p-6">
             {/* Profile Settings */}
             {activeTab === 'profile' && (
               <div>

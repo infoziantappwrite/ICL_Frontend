@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiCall from '../../api/Api';
 import {
-  Building2, Plus, Search, Eye, Edit, Trash2, MapPin,
-  Users, Briefcase, CheckCircle, XCircle, RefreshCw, Clock, FileText,
+  Building2, Plus, Search, Eye, Pencil, Trash2, MapPin,
+  Users, Briefcase, CircleCheck, RefreshCw, Clock, FileText,
+  CheckCircle2, XCircle,
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -31,6 +32,7 @@ const CollegeManagement = () => {
         limit: 10,
         ...(searchTerm && { search: searchTerm }),
         ...(filterStatus !== 'all' && { isActive: filterStatus === 'active' }),
+        sort: '-createdAt',
       });
 
       const data = await apiCall(`/super-admin/colleges?${params}`);
@@ -148,7 +150,7 @@ const CollegeManagement = () => {
       {/* Stats Cards — all live from backend */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatCard label="Total Colleges"  value={totalColleges} icon={Building2} color="from-blue-500 to-blue-600"   textColor="text-blue-600" />
-        <StatCard label="Active Colleges" value={activeCount}    icon={CheckCircle} color="from-blue-500 to-cyan-600" textColor="text-green-600" />
+        <StatCard label="Active Colleges" value={activeCount}    icon={CircleCheck} color="from-blue-500 to-cyan-600" textColor="text-green-600" />
         <StatCard label="Total Students"  value={totalStudents}  icon={Users}       color="from-blue-500 to-blue-700" textColor="text-purple-600" />
         <StatCard label="Total Companies" value={totalCompanies} icon={Briefcase}   color="from-slate-500 to-slate-600" textColor="text-orange-600" />
       </div>
@@ -267,25 +269,25 @@ const CollegeManagement = () => {
                         <button
                           onClick={() => handleToggleStatus(college._id, college.isActive, college.name)}
                           title={college.isActive ? 'Click to deactivate' : 'Click to activate'}
-                          className="group flex items-center gap-2.5 cursor-pointer focus:outline-none"
+                          className="group flex items-center gap-2 cursor-pointer focus:outline-none"
                         >
                           {/* Toggle Track */}
-                          <div className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                          <div className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 ${
                             college.isActive
-                              ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
-                              : 'bg-gray-200 group-hover:bg-gray-300'
+                              ? 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                              : 'bg-gray-300 group-hover:bg-gray-400'
                           }`}>
-                            {/* Knob */}
-                            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
-                              college.isActive ? 'translate-x-6' : 'translate-x-0.5'
+                            <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${
+                              college.isActive ? 'translate-x-4' : 'translate-x-0.5'
                             }`} />
                           </div>
-                          {/* Label badge */}
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full transition-all ${
-                            college.isActive
-                              ? 'text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200'
-                              : 'text-gray-400 bg-gray-50 ring-1 ring-gray-200'
+                          {/* Status icon + label */}
+                          <span className={`flex items-center gap-1 text-xs font-semibold ${
+                            college.isActive ? 'text-blue-600' : 'text-gray-400'
                           }`}>
+                            {college.isActive
+                              ? <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                              : <XCircle className="w-3.5 h-3.5 text-gray-400" />}
                             {college.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </button>
@@ -304,7 +306,7 @@ const CollegeManagement = () => {
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="Edit"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteCollege(college._id, college.name)}

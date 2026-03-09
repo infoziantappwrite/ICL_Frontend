@@ -655,7 +655,7 @@ const SABulkModal = ({ colleges, onClose }) => {
   const doUpload = async () => {
     setStep(4); setErr('');
     try {
-      const r = await superAdminStudentAPI.bulkUploadJSON(parsedRows, cid);
+      const r = await superAdminStudentAPI.bulkUploadJSON(parsedRows, cid, { skipExisting: true });
       setUr(r.data || r);
       setStep(5);
     } catch(e) { setErr(e.message || 'Upload failed.'); setStep(3); }
@@ -883,31 +883,51 @@ const SABulkModal = ({ colleges, onClose }) => {
             <div className="py-12 flex flex-col items-center gap-4">
               <Spin size="lg"/>
               <p className="text-sm font-bold text-slate-700">Uploading students…</p>
-              <p className="text-xs text-slate-400">Processing in batches — existing students will be updated (upsert)</p>
+              <p className="text-xs text-slate-400">Only NEW students will be created — existing emails are automatically skipped</p>
             </div>
           )}
 
           {/* Step 5: Upload complete */}
           {step === 5 && ur && (
             <div className="space-y-4">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 flex flex-col items-center text-center gap-2">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex flex-col items-center text-center gap-2">
                 <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
                   <CheckCircle size={28} className="text-emerald-500"/>
                 </div>
                 <p className="text-lg font-black text-emerald-800">Upload Complete!</p>
-                <p className="text-sm text-emerald-600">{ur.inserted ?? 0} new · {ur.updated ?? 0} updated · {ur.successCount ?? 0} total</p>
+                <p className="text-sm text-emerald-600">
+                  {ur.inserted ?? 0} new students created
+                  {(ur.skipped ?? ur.skippedCount ?? 0) > 0 && ` · ${ur.skipped ?? ur.skippedCount} skipped (already exist)`}
+                </p>
               </div>
+
               <div className="grid grid-cols-3 gap-3 text-center">
-                {[['New Students', ur.inserted ?? 0, 'text-emerald-600'], ['Updated', ur.updated ?? 0, 'text-blue-600'], ['Batches Run', ur.batchCount ?? 1, 'text-slate-600']].map(([l,v,c]) => (
+                {[
+                  ['New Created',      ur.inserted ?? 0,                                           'text-emerald-600'],
+                  ['Skipped (exist)',  ur.skipped  ?? ur.skippedCount ?? ur.existingCount ?? 0,    'text-amber-500' ],
+                  ['Errors',          ur.failed   ?? ur.errorCount   ?? 0,                         'text-red-500'   ],
+                ].map(([l, v, c]) => (
                   <div key={l} className="bg-white rounded-xl border border-slate-100 py-3">
                     <div className={`text-2xl font-black ${c}`}>{v}</div>
                     <div className="text-xs text-slate-500 mt-0.5">{l}</div>
                   </div>
                 ))}
               </div>
+
+              {/* Warning banner if any existing emails were found */}
+              {(ur.skipped ?? ur.skippedCount ?? ur.existingCount ?? 0) > 0 && (
+                <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                  <AlertTriangle size={13} className="flex-shrink-0 mt-0.5"/>
+                  <span>
+                    <strong>{ur.skipped ?? ur.skippedCount ?? ur.existingCount} rows were skipped</strong> — those email addresses already exist in the system.
+                    Existing student data was <strong>not modified</strong>. Remove duplicate emails from your file to avoid this.
+                  </span>
+                </div>
+              )}
+
               <div className="flex justify-end">
                 <button onClick={onClose}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors">
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity">
                   Done
                 </button>
               </div>
@@ -1045,7 +1065,7 @@ export default function SuperAdminStudentManagement() {
 
   return (
     <DashboardLayout title="Students">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
 
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">

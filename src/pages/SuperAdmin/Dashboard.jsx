@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2, Users, Briefcase, Award, Plus, Eye, Edit,
-  FileText, UserCheck, Clock, RefreshCw,
+  BookOpen, FileText, UserCheck, Clock, RefreshCw,
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import StatCard from '../../components/common/StatCard';
@@ -109,7 +109,7 @@ const SuperAdminDashboard = () => {
         <QuickAction icon={Plus}      gradient="from-blue-500 to-blue-600"   title="Add New College"    desc="Register a new college to the platform"        onClick={() => navigate('/dashboard/super-admin/colleges/new')} />
         <QuickAction icon={Building2} gradient="from-blue-700 to-blue-800"   title="Manage Companies"   desc="View and manage all companies"                  onClick={() => navigate('/dashboard/super-admin/companies')} />
         <QuickAction icon={Users}     gradient="from-blue-500 to-cyan-600"   title="Manage Admins"      desc="View and manage college administrators"          onClick={() => navigate('/dashboard/super-admin/admins')} />
-        <QuickAction icon={FileText}  gradient="from-slate-600 to-slate-700" title="View Applications"  desc="Track and manage all applications"               onClick={() => navigate('/dashboard/super-admin/applications')} />
+        <QuickAction icon={BookOpen}  gradient="from-blue-600 to-cyan-500"   title="View Courses"       desc="Browse and manage all platform courses"          onClick={() => navigate('/dashboard/super-admin/courses')} />
       </div>
 
       {/* Recent Colleges Table */}

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import StudentLayout from '../components/layout/StudentLayout';
 import {
   User,
   Mail,
@@ -71,7 +71,7 @@ const MyProfile = () => {
   };
  
   return (
-    <DashboardLayout>
+    <StudentLayout title="My Profile">
       {/* Profile Header Card */}
       <div className="max-w-5xl mx-auto">
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-blue-500/10 border border-white/50 overflow-hidden mb-8">
@@ -275,7 +275,7 @@ const MyProfile = () => {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
  

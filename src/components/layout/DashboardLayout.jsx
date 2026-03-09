@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   User, Settings, LogOut, Menu, X, LayoutDashboard, Bell,
-  ChevronLeft, ChevronRight, Edit, FileText, Briefcase, Target,
+  ChevronLeft, ChevronRight, FileText, Briefcase,
   Building2, Users, Activity, BarChart3, Crown, GraduationCap,
   CreditCard, BookOpen, ClipboardList,
 } from 'lucide-react';
@@ -46,8 +46,8 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
 
   const getUserRole = () => {
     const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
-    const labels = { student: 'Student', college_admin: 'College Admin', super_admin: 'Super Admin' };
-    return labels[role] || 'Student';
+    const labels = { college_admin: 'College Admin', super_admin: 'Super Admin' };
+    return labels[role] || 'Admin';
   };
 
   // For college_admin: show their college name; otherwise show 'ICL'
@@ -55,7 +55,6 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     if (user?.role === 'college_admin') {
       const name = user?.college?.name || collegeName;
       if (name) {
-        // Shorten long names: show first word or abbreviation
         const words = name.split(' ');
         if (words.length === 1) return name.substring(0, 8);
         return words.map(w => w[0]).join('').substring(0, 4).toUpperCase();
@@ -74,7 +73,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
 
   const getDashboardPath = () => {
     const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
-    const routes = { student: '/dashboard/student', college_admin: '/dashboard/college-admin', super_admin: '/dashboard/super-admin' };
+    const routes = { college_admin: '/dashboard/college-admin', super_admin: '/dashboard/super-admin' };
     return routes[role] || '/dashboard';
   };
 
@@ -112,23 +111,14 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
       ];
     }
 
-    // Student
-    return [
-      { icon: LayoutDashboard, label: 'Dashboard',         path: '/dashboard/student' },
-      { icon: Briefcase,       label: 'Job Opportunities', path: '/dashboard/student/jobs' },
-      { icon: BookOpen,        label: 'Courses',           path: '/dashboard/student/courses' },
-      { icon: ClipboardList,   label: 'Assessments',       path: '/dashboard/student/assessments' },
-      { icon: User,            label: 'My Profile',        path: '/profile/my-info' },
-      { icon: Edit,            label: 'Edit Profile',      path: '/profile/edit' },
-      { icon: Bell,            label: 'Notifications',     path: '/dashboard/student/notifications' },
-      { icon: Settings,        label: 'Settings',          path: '/dashboard/student/settings' },
-    ];
+    // Fallback (should not be reached for student role)
+    return [];
   };
 
   const sidebarMenuItems = getSidebarMenuItems();
 
   const isActive = (path) => {
-    if (path === '/dashboard/super-admin' || path === '/dashboard/college-admin' || path === '/dashboard/student') {
+    if (path === '/dashboard/super-admin' || path === '/dashboard/college-admin') {
       return location.pathname === path;
     }
     return location.pathname.startsWith(path);
@@ -137,7 +127,6 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
   const roleGradient = {
     super_admin: 'from-blue-700 via-blue-600 to-blue-700',
     college_admin: 'from-blue-600 via-blue-500 to-cyan-400',
-    student: 'from-blue-500 via-cyan-500 to-cyan-600',
   };
   const gradient = roleGradient[user?.role] || roleGradient.college_admin;
 
@@ -150,7 +139,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-gradient-to-br from-cyan-300 to-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
       </div>
 
-      {/* ✅ FIXED HEADER — stays visible at all scroll depths */}
+      {/* Fixed Header */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-white/50 shadow-lg fixed top-0 left-0 right-0 z-50">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
@@ -181,9 +170,8 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
             <div className="hidden md:flex items-center gap-4">
               <button
                 onClick={() => navigate(
-                  user?.role === 'super_admin'   ? '/dashboard/super-admin/notifications' :
-                  user?.role === 'college_admin' ? '/dashboard/college-admin/notifications' :
-                  '/dashboard/student/notifications'
+                  user?.role === 'super_admin' ? '/dashboard/super-admin/notifications' :
+                  '/dashboard/college-admin/notifications'
                 )}
                 className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all relative"
               >
@@ -221,22 +209,17 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
                     </div>
                     <div className="py-2">
                       <UserMenuItem icon={LayoutDashboard} label="Dashboard" onClick={() => { navigate(getDashboardPath()); setShowUserMenu(false); }} />
-                      {user?.role === 'student' && (
-                        <UserMenuItem icon={User} label="My Profile" onClick={() => { navigate('/profile/my-info'); setShowUserMenu(false); }} />
-                      )}
                       <UserMenuItem icon={Bell} label="Notifications" onClick={() => {
                         navigate(
-                          user?.role === 'super_admin'   ? '/dashboard/super-admin/notifications' :
-                          user?.role === 'college_admin' ? '/dashboard/college-admin/notifications' :
-                          '/dashboard/student/notifications'
+                          user?.role === 'super_admin' ? '/dashboard/super-admin/notifications' :
+                          '/dashboard/college-admin/notifications'
                         );
                         setShowUserMenu(false);
                       }} />
                       <UserMenuItem icon={Settings} label="Settings" onClick={() => {
                         navigate(
-                          user?.role === 'super_admin'   ? '/dashboard/super-admin/settings' :
-                          user?.role === 'college_admin' ? '/dashboard/college-admin/settings' :
-                          '/dashboard/student/settings'
+                          user?.role === 'super_admin' ? '/dashboard/super-admin/settings' :
+                          '/dashboard/college-admin/settings'
                         );
                         setShowUserMenu(false);
                       }} />
@@ -291,11 +274,11 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         </div>
       </header>
 
-      {/* ✅ HEADER SPACER — pushes all content below the fixed header */}
+      {/* Header Spacer */}
       <div className="h-[73px]" aria-hidden="true" />
 
       <div className="flex">
-        {/* Sidebar — fixed, aligned perfectly below the fixed header */}
+        {/* Sidebar */}
         {showSidebar && (
           <aside className={`hidden lg:flex flex-col bg-white/90 backdrop-blur-xl border-r border-white/50 shadow-sm transition-all duration-300 fixed top-[73px] left-0 h-[calc(100vh-73px)] z-40 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -325,7 +308,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
               </div>
             )}
 
-            {/* Logout at bottom of sidebar */}
+            {/* Logout at bottom */}
             <div className="p-4 border-t border-gray-100">
               <button
                 onClick={handleLogout}
@@ -338,7 +321,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
           </aside>
         )}
 
-        {/* Spacer that offsets main content to the right of the fixed sidebar */}
+        {/* Sidebar spacer */}
         {showSidebar && (
           <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`} aria-hidden="true" />
         )}

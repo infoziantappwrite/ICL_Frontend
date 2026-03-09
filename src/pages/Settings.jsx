@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import studentLayout from '../components/layout/StudentLayout';
 import {
   Settings, Bell, Shield, Eye, Palette, Globe,
   Mail, MessageSquare, Briefcase, BookOpen,
@@ -91,7 +91,7 @@ const StudentSettings = () => {
   };
 
   return (
-    <DashboardLayout>
+    <StudentLayout title="Settings">
       <div className="max-w-2xl mx-auto pb-8 space-y-6">
 
         {/* Header */}
@@ -269,7 +269,7 @@ const StudentSettings = () => {
         )}
 
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

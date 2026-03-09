@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   User, Settings, LogOut, Menu, X, LayoutDashboard, Bell,
-  ChevronLeft, ChevronRight, SquarePen, FileText, Briefcase,
+  ChevronLeft, ChevronRight, SquarePen, Briefcase,
   Building2, Users, BarChart3, Crown, GraduationCap,
   CreditCard, BookOpen, ClipboardList,
 } from 'lucide-react';
@@ -103,7 +103,6 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         { icon: GraduationCap,   label: 'Students',     path: '/dashboard/college-admin/students' },
         { icon: Building2,       label: 'Companies',    path: '/dashboard/college-admin/companies' },
         { icon: Briefcase,       label: 'Jobs',         path: '/dashboard/college-admin/jobs' },
-        { icon: FileText,        label: 'Applications', path: '/dashboard/college-admin/applications' },
         { icon: BookOpen,        label: 'Courses',      path: '/dashboard/college-admin/courses' },
         { icon: ClipboardList,   label: 'Assessments',  path: '/dashboard/college-admin/assessments' },
         { icon: BarChart3,       label: 'Analytics',    path: '/dashboard/college-admin/analytics' },

@@ -82,8 +82,8 @@ const CollegeAdminDashboard = () => {
       )}
 
       {/* Welcome Banner */}
-      <div className="mb-8 animate-fade-in">
-        <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-blue-500/40 overflow-hidden">
+      <div className="mb-6 animate-fade-in">
+        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -left-20 animate-pulse" />
             <div className="absolute w-96 h-96 bg-white rounded-full -bottom-32 -right-32 animate-pulse animation-delay-1000" />
@@ -91,11 +91,11 @@ const CollegeAdminDashboard = () => {
           <div className="relative flex items-start justify-between gap-6 flex-wrap">
             <div className="text-white flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <Building2 className="w-7 h-7 text-white" />
+                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+                  <h1 className="text-xl font-bold leading-tight">
                     {collegeName}
                   </h1>
                   {collegeCode && (
@@ -122,8 +122,8 @@ const CollegeAdminDashboard = () => {
               </div>
             </div>
             <div className="hidden lg:flex flex-col items-center gap-2">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-2xl">
-                <span className="text-3xl font-bold text-white">{collegeName.substring(0, 2).toUpperCase()}</span>
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-xl font-bold text-white">{collegeName.substring(0, 2).toUpperCase()}</span>
               </div>
               <div className="text-white/80 text-xs text-center">
                 <p className="font-semibold">{user?.fullName}</p>
@@ -135,7 +135,7 @@ const CollegeAdminDashboard = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Users}    label="Total Students"    value={stats?.totalStudents ?? 0}        subtext={`${stats?.placedStudents ?? 0} placed`}   color="blue"   trend="+12%" />
         <StatCard icon={Briefcase} label="Companies"        value={stats?.totalCompanies ?? 0}       subtext="Registered"                               color="cyan"   trend="+8%"  />
         <StatCard icon={FileText}  label="Job Descriptions" value={stats?.totalJDs ?? 0}             subtext={`${stats?.activeJDs ?? 0} active`}        color="indigo" trend="+15%" />
@@ -143,7 +143,7 @@ const CollegeAdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <QuickActionCard icon={Building2} title="Manage Companies" description="Add, edit, and manage companies" gradient="from-blue-600 via-blue-500 to-cyan-500" onClick={() => navigate('/dashboard/college-admin/companies')} />
         <QuickActionCard icon={Plus}      title="Add Company"      description="Register a new company"         gradient="from-blue-500 via-cyan-500 to-cyan-600" onClick={() => navigate('/dashboard/college-admin/companies/create')} />
         <QuickActionCard icon={FileText}  title="Create JD"        description="Post new job description"       gradient="from-blue-600 via-blue-500 to-cyan-500" onClick={() => navigate('/dashboard/college-admin/jobs/create')} />
@@ -151,7 +151,7 @@ const CollegeAdminDashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 overflow-hidden">
             <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center justify-between">
@@ -249,15 +249,15 @@ const StatCard = ({ icon: Icon, label, value, subtext, color, trend }) => {
     indigo: 'from-indigo-500 to-indigo-600', purple: 'from-blue-700 to-blue-800',
   };
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 group">
+    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 group">
       <div className="flex items-start justify-between mb-4">
-        <div className={`w-12 h-12 bg-gradient-to-br ${colorClasses[color]} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-          <Icon className="w-6 h-6 text-white" />
+        <div className={`w-10 h-10 bg-gradient-to-br ${colorClasses[color]} rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
+          <Icon className="w-5 h-5 text-white" />
         </div>
         {trend && <div className="flex items-center gap-1 text-green-600 text-sm font-semibold"><ArrowUp className="w-4 h-4" />{trend}</div>}
       </div>
       <p className="text-gray-600 text-sm font-medium mb-1">{label}</p>
-      <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+      <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
       <p className="text-sm text-gray-500">{subtext}</p>
     </div>
   );
@@ -265,14 +265,14 @@ const StatCard = ({ icon: Icon, label, value, subtext, color, trend }) => {
 
 const QuickActionCard = ({ icon: Icon, title, description, gradient, onClick }) => (
   <button onClick={onClick}
-    className={`relative bg-gradient-to-br ${gradient} rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left group overflow-hidden`}>
+    className={`relative bg-gradient-to-br ${gradient} rounded-2xl p-5 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 text-left group overflow-hidden`}>
     <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />
     <div className="relative">
-      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-        <Icon className="w-6 h-6 text-white" />
+      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+        <Icon className="w-5 h-5 text-white" />
       </div>
-      <h3 className="text-lg font-bold text-white mb-1">{title}</h3>
-      <p className="text-sm text-white/90">{description}</p>
+      <h3 className="text-sm font-bold text-white mb-1">{title}</h3>
+      <p className="text-xs text-white/80">{description}</p>
     </div>
   </button>
 );

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  BookOpen, Plus, Search, Pencil, Trash2, BarChart3, Users, RefreshCw,
+  BookOpen, Plus, Search, SquarePen, Trash2, BarChart3, Users, RefreshCw,
   AlertCircle, CircleCheck, Clock, X, Send, Star, Globe,
   Building2, ChevronLeft, ChevronRight,
 } from 'lucide-react';
@@ -106,8 +106,8 @@ const CourseRow = ({ course, onEdit, onDelete, onAnalytics, onViewEnrollments, o
     <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center flex-shrink-0">
-            <BookOpen className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+            <BookOpen className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-gray-900 text-sm truncate max-w-[180px]">{course.title}</p>
@@ -150,10 +150,10 @@ const CourseRow = ({ course, onEdit, onDelete, onAnalytics, onViewEnrollments, o
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center gap-1.5">
-          <button onClick={() => onEdit(course._id)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit"><Pencil className="w-4 h-4" /></button>
-          <button onClick={() => onViewEnrollments(course._id)} className="p-1.5 text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors" title="Enrollments"><Users className="w-4 h-4" /></button>
-          <button onClick={() => onAnalytics(course._id)} className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Analytics"><BarChart3 className="w-4 h-4" /></button>
-          <button onClick={() => onDelete(course)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
+          <button onClick={() => onEdit(course._id)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit"><SquarePen className="w-3.5 h-3.5" /></button>
+          <button onClick={() => onViewEnrollments(course._id)} className="p-1.5 text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors" title="Enrollments"><Users className="w-3.5 h-3.5" /></button>
+          <button onClick={() => onAnalytics(course._id)} className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Analytics"><BarChart3 className="w-3.5 h-3.5" /></button>
+          <button onClick={() => onDelete(course)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       </td>
     </tr>
@@ -188,7 +188,7 @@ const Pagination = ({ page, totalPages, total, pageSize, onPageChange }) => {
             <span key={`e${i}`} className="px-2 text-gray-400 text-sm">…</span>
           ) : (
             <button key={p} onClick={() => onPageChange(p)}
-              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-blue-600 text-white' : 'border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'}`}>
+              className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${p === page ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' : 'border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'}`}>
               {p}
             </button>
           )
@@ -301,8 +301,8 @@ const SuperAdminCourseManagement = () => {
       {deleteConfirm && <DeleteModal course={deleteConfirm} onConfirm={handleDelete} onCancel={() => setDeleteConfirm(null)} loading={deleting} />}
 
       {/* Banner */}
-      <div className="mb-8">
-        <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30 overflow-hidden">
+      <div className="mb-6">
+        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -right-20" />
             <div className="absolute w-48 h-48 bg-white rounded-full bottom-0 left-20" />
@@ -310,11 +310,11 @@ const SuperAdminCourseManagement = () => {
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="text-white">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <BookOpen className="w-7 h-7 text-white" />
+                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold">Platform Course Management</h1>
+                  <h1 className="text-xl font-bold">Platform Course Management</h1>
                   <p className="text-blue-100 text-sm">Manage all courses across all colleges</p>
                 </div>
               </div>
@@ -327,7 +327,7 @@ const SuperAdminCourseManagement = () => {
             </div>
             <button
               onClick={() => navigate('/dashboard/super-admin/courses/create')}
-              className="flex-shrink-0 flex items-center gap-2 bg-white text-blue-700 font-bold px-5 py-3 rounded-xl hover:bg-blue-50 transition-all shadow-lg"
+              className="flex-shrink-0 flex items-center gap-2 bg-white text-blue-700 font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-blue-50 transition-all shadow-md hover:scale-105"
             >
               <Plus className="w-5 h-5" /> Create Course
             </button>
@@ -336,7 +336,7 @@ const SuperAdminCourseManagement = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-4 mb-5">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -353,8 +353,9 @@ const SuperAdminCourseManagement = () => {
             <option value="">All Statuses</option>
             {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={fetchCourses} className="p-2.5 border border-gray-200 rounded-xl hover:border-blue-300 text-gray-500 hover:text-blue-600 transition-colors">
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          <button onClick={fetchCourses} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:opacity-90 transition-all shadow-sm">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
         </div>
       </div>
@@ -367,7 +368,7 @@ const SuperAdminCourseManagement = () => {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
           <p className="font-semibold text-gray-800">{courses.length} Courses</p>
           <button onClick={() => navigate('/dashboard/super-admin/courses/assign-batch')} className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:text-blue-700">
@@ -392,7 +393,7 @@ const SuperAdminCourseManagement = () => {
                 <thead>
                   <tr className="border-b border-gray-50">
                     {['Course', 'Level', 'Status', 'Scope', 'Enrolled', 'Duration', 'Rating', 'Actions'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide bg-gradient-to-r from-blue-50 to-cyan-50">{h}</th>
                     ))}
                   </tr>
                 </thead>

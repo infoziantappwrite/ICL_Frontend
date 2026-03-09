@@ -1127,7 +1127,7 @@ export default function StudentManagement() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: PER_PAGE,
+      const params = { page, limit: PER_PAGE, sort: '-createdAt',
         ...Object.fromEntries(Object.entries(filters).filter(([,v]) => v)) };
       const r = await collegeAdminStudentAPI.getStudents(params);
       // Filter out soft-deleted records (isDeleted: true)

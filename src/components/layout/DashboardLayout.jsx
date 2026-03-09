@@ -5,8 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   User, Settings, LogOut, Menu, X, LayoutDashboard, Bell,
-  ChevronLeft, ChevronRight, SquarePen, Briefcase,
-  Building2, Users, BarChart3, Crown, GraduationCap,
+  ChevronLeft, ChevronRight, FileText, Briefcase,
+  Building2, Users, Activity, BarChart3, Crown, GraduationCap,
   CreditCard, BookOpen, ClipboardList,
 } from 'lucide-react';
 
@@ -43,9 +43,9 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     return getUserName().substring(0, 2).toUpperCase();
   };
   const getUserRole = () => {
-    const role   = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
-    const labels = { student: 'Student', college_admin: 'College Admin', super_admin: 'Super Admin' };
-    return labels[role] || 'Student';
+    const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
+    const labels = { college_admin: 'College Admin', super_admin: 'Super Admin' };
+    return labels[role] || 'Admin';
   };
 
   const getHeaderBrandName = () => {
@@ -69,12 +69,8 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
   };
 
   const getDashboardPath = () => {
-    const role   = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
-    const routes = {
-      student:       '/dashboard/student',
-      college_admin: '/dashboard/college-admin',
-      super_admin:   '/dashboard/super-admin',
-    };
+    const role = user?.role?.toLowerCase().replace(/[-\s]/g, '_');
+    const routes = { college_admin: '/dashboard/college-admin', super_admin: '/dashboard/super-admin' };
     return routes[role] || '/dashboard';
   };
 
@@ -111,42 +107,24 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
       ];
     }
 
-    // Student
-    return [
-      { icon: LayoutDashboard, label: 'Dashboard',         path: '/dashboard/student' },
-      { icon: Briefcase,       label: 'Job Opportunities', path: '/dashboard/student/jobs' },
-      { icon: BookOpen,        label: 'Courses',           path: '/dashboard/student/courses' },
-      { icon: ClipboardList,   label: 'Assessments',       path: '/dashboard/student/assessments' },
-      { icon: User,            label: 'My Profile',        path: '/profile/my-info' },
-      { icon: SquarePen,       label: 'Edit Profile',      path: '/profile/edit' },
-      { icon: Bell,            label: 'Notifications',     path: '/dashboard/student/notifications' },
-      { icon: Settings,        label: 'Settings',          path: '/dashboard/student/settings' },
-    ];
+    // Fallback (should not be reached for student role)
+    return [];
   };
 
   const sidebarMenuItems = getSidebarMenuItems();
 
   const isActive = (path) => {
-    if (
-      path === '/dashboard/super-admin' ||
-      path === '/dashboard/college-admin' ||
-      path === '/dashboard/student'
-    ) return location.pathname === path;
+    if (path === '/dashboard/super-admin' || path === '/dashboard/college-admin') {
+      return location.pathname === path;
+    }
     return location.pathname.startsWith(path);
   };
 
-  // Single unified gradient matching login page theme
-  const gradient = 'from-blue-700 via-blue-600 to-cyan-500';
-
-  const notifPath = () =>
-    user?.role === 'super_admin'   ? '/dashboard/super-admin/notifications'  :
-    user?.role === 'college_admin' ? '/dashboard/college-admin/notifications' :
-    '/dashboard/student/notifications';
-
-  const settingsPath = () =>
-    user?.role === 'super_admin'   ? '/dashboard/super-admin/settings'  :
-    user?.role === 'college_admin' ? '/dashboard/college-admin/settings' :
-    '/dashboard/student/settings';
+  const roleGradient = {
+    super_admin: 'from-blue-700 via-blue-600 to-blue-700',
+    college_admin: 'from-blue-600 via-blue-500 to-cyan-400',
+  };
+  const gradient = roleGradient[user?.role] || roleGradient.college_admin;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 overflow-x-hidden">
@@ -158,9 +136,9 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-gradient-to-br from-cyan-300 to-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
       </div>
 
-      {/* ── Fixed Header ─────────────────────────────────────── */}
-      <header className="bg-white/90 backdrop-blur-xl border-b border-white/50 shadow-md fixed top-0 left-0 right-0 z-50">
-        <div className="px-3 sm:px-5 py-3">
+      {/* Fixed Header */}
+      <header className="bg-white/90 backdrop-blur-xl border-b border-white/50 shadow-lg fixed top-0 left-0 right-0 z-50">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
 
             {/* Left: toggle + logo */}
@@ -196,8 +174,11 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
             {/* Right: bell + avatar */}
             <div className="hidden md:flex items-center gap-2">
               <button
-                onClick={() => navigate(notifPath())}
-                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all relative"
+                onClick={() => navigate(
+                  user?.role === 'super_admin' ? '/dashboard/super-admin/notifications' :
+                  '/dashboard/college-admin/notifications'
+                )}
+                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all relative"
               >
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
@@ -231,19 +212,23 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
                         </div>
                       </div>
                     </div>
-
-                    <div className="py-1.5">
-                      <UserMenuItem icon={LayoutDashboard} label="Dashboard"
-                        onClick={() => { navigate(getDashboardPath()); setShowUserMenu(false); }} />
-                      {user?.role === 'student' && (
-                        <UserMenuItem icon={User} label="My Profile"
-                          onClick={() => { navigate('/profile/my-info'); setShowUserMenu(false); }} />
-                      )}
-                      <UserMenuItem icon={Bell} label="Notifications"
-                        onClick={() => { navigate(notifPath()); setShowUserMenu(false); }} />
-                      <UserMenuItem icon={Settings} label="Settings"
-                        onClick={() => { navigate(settingsPath()); setShowUserMenu(false); }} />
-                      <div className="my-1 border-t border-gray-100" />
+                    <div className="py-2">
+                      <UserMenuItem icon={LayoutDashboard} label="Dashboard" onClick={() => { navigate(getDashboardPath()); setShowUserMenu(false); }} />
+                      <UserMenuItem icon={Bell} label="Notifications" onClick={() => {
+                        navigate(
+                          user?.role === 'super_admin' ? '/dashboard/super-admin/notifications' :
+                          '/dashboard/college-admin/notifications'
+                        );
+                        setShowUserMenu(false);
+                      }} />
+                      <UserMenuItem icon={Settings} label="Settings" onClick={() => {
+                        navigate(
+                          user?.role === 'super_admin' ? '/dashboard/super-admin/settings' :
+                          '/dashboard/college-admin/settings'
+                        );
+                        setShowUserMenu(false);
+                      }} />
+                      <div className="my-2 border-t border-gray-100" />
                       <UserMenuItem icon={LogOut} label="Logout" onClick={handleLogout} variant="danger" />
                     </div>
                   </div>
@@ -300,11 +285,11 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
         </div>
       </header>
 
-      {/* Header spacer */}
-      <div className="h-[61px]" aria-hidden="true" />
+      {/* Header Spacer */}
+      <div className="h-[73px]" aria-hidden="true" />
 
       <div className="flex">
-        {/* ── Fixed Sidebar ────────────────────────────────────── */}
+        {/* Sidebar */}
         {showSidebar && (
           <aside
             className={`hidden lg:flex flex-col bg-white/90 backdrop-blur-xl border-r border-white/50 shadow-sm
@@ -337,7 +322,8 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
               </div>
             )}
 
-            <div className="p-2.5 border-t border-gray-100">
+            {/* Logout at bottom */}
+            <div className="p-4 border-t border-gray-100">
               <button
                 onClick={handleLogout}
                 className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-red-500 hover:bg-red-50 transition-all"
@@ -349,7 +335,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
           </aside>
         )}
 
-        {/* Sidebar width spacer */}
+        {/* Sidebar spacer */}
         {showSidebar && (
           <div
             className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-56' : 'w-[60px]'}`}

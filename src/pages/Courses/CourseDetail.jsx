@@ -8,9 +8,9 @@ import {
   User, Tag, Calendar, BarChart3, Zap, FileText, ArrowRight, Lock,
   RefreshCw
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { courseAPI } from '../../api/Api';
+import StudentLayout from '../../components/layout/StudentLayout';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const LEVEL_CONFIG = {
@@ -108,7 +108,7 @@ const CourseDetail = () => {
 
   if (error || !course) {
     return (
-      <DashboardLayout title="Course Detail">
+      <StudentLayout title="Course Detail">
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
           <AlertCircle className="w-12 h-12 text-red-400" />
           <p className="text-gray-600">{error || 'Course not found'}</p>
@@ -116,7 +116,7 @@ const CourseDetail = () => {
             ← Back to courses
           </button>
         </div>
-      </DashboardLayout>
+      </StudentLayout>
     );
   }
 
@@ -128,7 +128,7 @@ const CourseDetail = () => {
   const isCompleted = enrollment?.status === 'completed';
 
   return (
-    <DashboardLayout title={course.title}>
+    <StudentLayout title={course.title}>
       {/* Toast */}
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium transition-all ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
@@ -439,7 +439,7 @@ const CourseDetail = () => {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

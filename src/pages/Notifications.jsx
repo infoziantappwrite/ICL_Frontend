@@ -1,7 +1,7 @@
 // src/pages/Student/Notifications.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import StudentLayout from '../components/layout/StudentLayout';
 import {
   Bell, BellOff, Briefcase, BookOpen, CheckCircle,
   Award, AlertCircle, Clock, Trash2, CheckCheck,
@@ -87,7 +87,7 @@ const StudentNotifications = () => {
   const toggleStar = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, starred: !n.starred } : n));
 
   return (
-    <DashboardLayout>
+    <StudentLayout title="Notifications">
       <div className="max-w-3xl mx-auto pb-8">
 
         {/* Header */}
@@ -220,7 +220,7 @@ const StudentNotifications = () => {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

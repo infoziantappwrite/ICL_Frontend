@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import DashboardLayout from '../components/layout/DashboardLayout';
+import StudentLayout from '../components/layout/StudentLayout';
 import {
   User,
   Loader2,
@@ -447,7 +447,7 @@ const ProfileEdit = () => {
   };
 
   return (
-    <DashboardLayout>
+    <StudentLayout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -605,7 +605,7 @@ const ProfileEdit = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

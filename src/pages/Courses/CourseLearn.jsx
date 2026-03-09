@@ -7,7 +7,7 @@ import {
   BookOpen, Clock, PlayCircle, Download, AlertCircle, RefreshCw,
   Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
+import StudentLayout from '../../components/layout/StudentLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { courseAPI } from '../../api/Api';
 
@@ -429,7 +429,7 @@ const CourseLearn = () => {
 
   if (error || !course) {
     return (
-      <DashboardLayout title="Learn">
+      <StudentLayout title="Learn">
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
           <AlertCircle className="w-12 h-12 text-red-400" />
           <p className="text-gray-600">{error || 'Course not found'}</p>
@@ -437,7 +437,7 @@ const CourseLearn = () => {
             ← Back to My Courses
           </button>
         </div>
-      </DashboardLayout>
+      </StudentLayout>
     );
   }
 
@@ -463,7 +463,7 @@ const CourseLearn = () => {
   const canGoNextModule = canAccessModule(activeModule + 1, moduleProgress);
 
   return (
-    <DashboardLayout title={`Learn: ${course.title}`} showSidebar={false}>
+    <StudentLayout title={`Learn: ${course.title}`} showSidebar={false}>
       {/* Toast */}
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${
@@ -829,7 +829,7 @@ const CourseLearn = () => {
           )}
         </div>
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

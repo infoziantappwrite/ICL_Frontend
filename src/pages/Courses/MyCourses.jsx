@@ -6,7 +6,7 @@ import {
   BookOpen, PlayCircle, CheckCircle2, Clock, Award, Download,
   AlertCircle, RefreshCw, ChevronRight, BarChart3, Target, Zap
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
+import StudentLayout from '../../components/layout/StudentLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { courseAPI } from '../../api/Api';
 
@@ -228,7 +228,7 @@ const MyCourses = () => {
   }
 
   return (
-    <DashboardLayout title="My Courses">
+    <StudentLayout title="My Courses">
       {/* Header Banner */}
       <div className="mb-8">
         <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30 overflow-hidden">
@@ -349,7 +349,7 @@ const MyCourses = () => {
           </div>
         )
       )}
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

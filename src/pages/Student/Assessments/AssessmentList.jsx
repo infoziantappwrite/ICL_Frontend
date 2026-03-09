@@ -9,7 +9,7 @@ import {
   BookOpen, Clock, Star, Target, TrendingUp,
   PlayCircle, RefreshCw, AlertCircle, Calendar, Tag
 } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import StudentLayout from '../../../components/layout/StudentLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { assessmentAttemptAPI } from '../../../api/Api';
 
@@ -117,7 +117,7 @@ const AssessmentList = () => {
   };
 
   return (
-    <DashboardLayout title="Skill Assessments">
+    <StudentLayout title="Skill Assessments">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header */}
@@ -182,7 +182,7 @@ const AssessmentList = () => {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </StudentLayout>
   );
 };
 

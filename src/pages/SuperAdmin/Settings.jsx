@@ -31,7 +31,7 @@ import {
   LogOut,
   UserX,
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
+import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 
 const Settings = () => {
@@ -280,18 +280,19 @@ const Settings = () => {
   ];
 
   return (
-    <DashboardLayout title="Settings">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
-          <div className="text-white">
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-              <SettingsIcon className="w-8 h-8" />
-              Settings & Preferences
-            </h1>
-            <p className="text-purple-100 text-lg">
-              Manage your account settings and preferences
-            </p>
+    <SuperAdminDashboardLayout>
+      {/* Hero Banner */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full"/>
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full"/>
+          <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
+        </div>
+        <div className="relative flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"><SettingsIcon className="w-5 h-5 text-white"/></div>
+          <div>
+            <h1 className="text-white font-black text-lg leading-tight">Settings & Preferences</h1>
+            <p className="text-blue-200 text-[11px] mt-0.5">Manage your account settings, security & notifications</p>
           </div>
         </div>
       </div>
@@ -969,7 +970,7 @@ const Settings = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </SuperAdminDashboardLayout>
   );
 };
 

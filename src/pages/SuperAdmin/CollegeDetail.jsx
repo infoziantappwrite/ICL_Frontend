@@ -5,11 +5,67 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   Building2, Edit, Trash2, ArrowLeft, Mail, Phone, MapPin, Globe,
   Calendar, Award, Users, Briefcase, FileText, GraduationCap,
-  CheckCircle, XCircle, Plus, RefreshCw,
+  CheckCircle, XCircle, RefreshCw, ChevronRight, Hash,
+  TrendingUp, Shield,
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
+import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import apiCall from '../../api/Api';
+
+/* ─── Section heading ─────────────────────── */
+const SHead = ({ icon: Icon, title, sub }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+      <Icon className="w-3 h-3 text-white" />
+    </div>
+    <div>
+      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
+      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+    </div>
+  </div>
+);
+
+/* ─── Info row ────────────────────────────── */
+const InfoRow = ({ icon: Icon, label, value, href, mono }) => (
+  <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
+    <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+      <Icon className="w-3.5 h-3.5 text-blue-500" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">{label}</p>
+      {href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer"
+          className="text-sm font-medium text-blue-600 hover:underline break-all">{value || '—'}</a>
+      ) : (
+        <p className={`text-sm font-medium text-gray-800 break-all ${mono ? 'font-mono' : ''}`}>{value || '—'}</p>
+      )}
+    </div>
+  </div>
+);
+
+/* ─── Stat pill ───────────────────────────── */
+const StatPill = ({ icon: Icon, label, value, color, onClick }) => {
+  const c = {
+    blue:   'bg-blue-50 border-blue-100 text-blue-600',
+    cyan:   'bg-cyan-50 border-cyan-100 text-cyan-600',
+    indigo: 'bg-indigo-50 border-indigo-100 text-indigo-600',
+    violet: 'bg-violet-50 border-violet-100 text-violet-600',
+  }[color] || 'bg-blue-50 border-blue-100 text-blue-600';
+
+  const Tag = onClick ? 'button' : 'div';
+  return (
+    <Tag onClick={onClick}
+      className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl border ${c} ${onClick ? 'hover:shadow-md hover:scale-[1.03] transition-all duration-150 cursor-pointer' : ''} w-full text-left`}
+    >
+      <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-black leading-none">{value}</p>
+        <p className="text-[9px] font-medium opacity-60 mt-0.5 leading-none truncate">{label}</p>
+      </div>
+      {onClick && <ChevronRight className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity flex-shrink-0" />}
+    </Tag>
+  );
+};
 
 const CollegeDetail = () => {
   const toast = useToast();
@@ -80,260 +136,206 @@ const CollegeDetail = () => {
 
   if (!college) {
     return (
-      <DashboardLayout>
-        <div className="text-center py-16">
-          <Building2 className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-xl font-medium">College not found</p>
+      <SuperAdminDashboardLayout>
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
+            <Building2 className="w-7 h-7 text-blue-300" />
+          </div>
+          <p className="text-sm font-semibold text-gray-600 mb-4">College not found</p>
           <button
             onClick={() => navigate('/dashboard/super-admin/colleges')}
-            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm hover:scale-105 transition-all"
           >
-            Back to Colleges
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Colleges
           </button>
         </div>
-      </DashboardLayout>
+      </SuperAdminDashboardLayout>
     );
   }
 
+  const addressStr = [
+    college.address?.street,
+    college.address?.city,
+    college.address?.state,
+    college.address?.pincode && `- ${college.address.pincode}`,
+    college.address?.country,
+  ].filter(Boolean).join(', ');
+
   return (
-    <DashboardLayout title={college.name}>
-      <div className="mb-8 animate-fade-in">
-        {/* Header */}
-        <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30 overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full -ml-32 -mb-32" />
-          </div>
-          <div className="relative">
-            <button
-              onClick={() => navigate('/dashboard/super-admin/colleges')}
-              className="flex items-center gap-2 text-white/90 hover:text-white mb-4 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Colleges
-            </button>
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="text-white">
-                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                  <h1 className="text-3xl font-bold">{college.name}</h1>
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    college.isActive ? 'bg-green-500/20 text-green-100' : 'bg-red-500/20 text-red-100'
-                  }`}>
-                    {college.isActive ? 'Active' : 'Inactive'}
+    <SuperAdminDashboardLayout>
+
+      {/* ══ HERO BANNER ══ */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
+          <div className="absolute inset-0 opacity-[0.04]"
+            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        </div>
+        <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <button
+                onClick={() => navigate('/dashboard/super-admin/colleges')}
+                className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors"
+              >
+                <ArrowLeft className="w-3 h-3" /> Back to Colleges
+              </button>
+              <h1 className="text-white font-black text-lg leading-tight">{college.name}</h1>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
+                  <Hash className="w-3 h-3" /> {college.code}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                  college.isActive
+                    ? 'bg-white/15 text-white border-white/20'
+                    : 'bg-white/10 text-white/60 border-white/10'
+                }`}>
+                  {college.isActive
+                    ? <><CheckCircle className="w-3 h-3" /> Active</>
+                    : <><XCircle className="w-3 h-3" /> Inactive</>}
+                </span>
+                {college.type && (
+                  <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
+                    <Shield className="w-3 h-3" /> {college.type}
                   </span>
-                </div>
-                <p className="text-blue-100 text-lg">{college.university}</p>
-              </div>
-              <div className="flex gap-3 flex-wrap">
-                <button
-                  onClick={() => fetchCollegeDetails(true)}
-                  disabled={refreshing}
-                  className="flex items-center gap-2 bg-white/20 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-white/30 transition-all"
-                >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
-                <button
-                  onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/edit`)}
-                  className="flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg"
-                >
-                  <Edit className="w-5 h-5" />
-                  Edit
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-2 bg-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-600 transition-all shadow-lg"
-                >
-                  <Trash2 className="w-5 h-5" />
-                  Delete
-                </button>
+                )}
               </div>
             </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => fetchCollegeDetails(true)}
+              disabled={refreshing}
+              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/20 transition-all hover:scale-105 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button
+              onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/edit`)}
+              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/20 transition-all hover:scale-105"
+            >
+              <Edit className="w-3.5 h-3.5" /> Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-red-300/30 transition-all hover:scale-105"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Live Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Students — clickable */}
-        <div
-          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 cursor-pointer hover:shadow-xl hover:border-blue-200 transition-all group"
-          onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/students`)}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Total Students</p>
-              <p className="text-3xl font-bold text-purple-600 group-hover:text-blue-600 transition-colors">
-                {liveCounts.totalStudents}
-              </p>
-              <p className="text-xs text-blue-500 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                Click to view →
-              </p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Companies */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Companies</p>
-              <p className="text-3xl font-bold text-orange-600">{liveCounts.totalCompanies}</p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl flex items-center justify-center">
-              <Briefcase className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Job Descriptions */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Job Descriptions</p>
-              <p className="text-3xl font-bold text-blue-600">{liveCounts.totalJDs}</p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <FileText className="w-7 h-7 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Active Admins */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium mb-1">Active Admins</p>
-              <p className="text-3xl font-bold text-green-600">{liveCounts.activeAdmins}</p>
-            </div>
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
-              <Users className="w-7 h-7 text-white" />
-            </div>
-          </div>
+      {/* ══ LIVE STAT PILLS ══ */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <StatPill icon={Users}    label="Total Students"   value={liveCounts.totalStudents}  color="blue"   onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/students`)} />
+          <StatPill icon={Briefcase} label="Companies"       value={liveCounts.totalCompanies} color="cyan"   />
+          <StatPill icon={FileText} label="Job Descriptions" value={liveCounts.totalJDs}       color="indigo" />
+          <StatPill icon={Users}    label="Active Admins"    value={liveCounts.activeAdmins}   color="violet" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Information */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* ══ MAIN GRID ══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* ── LEFT (2 cols) ── */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+
           {/* Contact Information */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Mail className="w-5 h-5 text-blue-600" />
-                Contact Information
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <ContactRow icon={Mail} iconBg="bg-blue-100" iconColor="text-blue-600" label="Email" value={college.email} />
-              <ContactRow icon={Phone} iconBg="bg-green-100" iconColor="text-green-600" label="Phone" value={college.phone} />
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={Mail} title="Contact Information" sub="How to reach this institution" />
+            <div className="space-y-0.5">
+              <InfoRow icon={Mail}   label="Email Address" value={college.email} mono />
+              <InfoRow icon={Phone}  label="Phone Number"  value={college.phone} />
               {college.website && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Website</p>
-                    <a href={college.website} target="_blank" rel="noopener noreferrer"
-                       className="text-blue-600 hover:text-blue-700 font-medium">
-                      {college.website}
-                    </a>
-                  </div>
-                </div>
+                <InfoRow icon={Globe} label="Website" value={college.website} href={college.website} />
               )}
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Address</p>
-                  <p className="text-gray-900 font-medium">
-                    {college.address?.street && `${college.address.street}, `}
-                    {college.address?.city}, {college.address?.state}
-                    {college.address?.pincode && ` - ${college.address.pincode}`}
-                    {college.address?.country && `, ${college.address.country}`}
-                  </p>
-                </div>
-              </div>
+              <InfoRow icon={MapPin} label="Address" value={addressStr} />
             </div>
           </div>
 
           {/* Departments */}
           {college.departments && college.departments.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-blue-600" />
-                  Departments ({college.departments.length})
-                </h2>
-              </div>
-              <div className="p-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        {['Department', 'Code', 'HOD Name', 'HOD Email'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {college.departments.map((dept, i) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-gray-900 font-medium">{dept.name}</td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-semibold">{dept.code}</span>
-                          </td>
-                          <td className="px-4 py-3 text-gray-600">{dept.hodName || '—'}</td>
-                          <td className="px-4 py-3 text-gray-600">{dept.hodEmail || '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <GraduationCap className="w-3 h-3 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-800 leading-none">Departments</h3>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{college.departments.length} department{college.departments.length !== 1 ? 's' : ''}</p>
+                  </div>
                 </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-50 bg-gray-50/40">
+                      {['Department', 'Code', 'HOD Name', 'HOD Email'].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-[9px] font-black text-gray-400 uppercase tracking-wider">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {college.departments.map((dept, i) => (
+                      <tr key={i} className="hover:bg-blue-50/20 transition-colors">
+                        <td className="px-3 py-2.5 text-xs font-semibold text-gray-800">{dept.name}</td>
+                        <td className="px-3 py-2.5">
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">{dept.code}</span>
+                        </td>
+                        <td className="px-3 py-2.5 text-xs text-gray-600">{dept.hodName || '—'}</td>
+                        <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">{dept.hodEmail || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Basic Details */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-blue-600" />
-                College Details
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">College Code</p>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">{college.code}</span>
+        {/* ── RIGHT (1 col) ── */}
+        <div className="flex flex-col gap-4">
+
+          {/* College Details */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={Building2} title="College Details" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                <span className="text-xs text-gray-500">College Code</span>
+                <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-mono">{college.code}</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Type</p>
-                <p className="text-gray-900 font-medium">{college.type}</p>
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                <span className="text-xs text-gray-500">Type</span>
+                <span className="text-xs font-bold text-gray-700">{college.type}</span>
               </div>
+              {college.university && (
+                <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                  <span className="text-xs text-gray-500">University</span>
+                  <span className="text-xs font-bold text-gray-700 text-right max-w-[140px]">{college.university}</span>
+                </div>
+              )}
               {college.establishedYear && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1 flex items-center gap-1">
-                    <Calendar className="w-4 h-4" /> Established
-                  </p>
-                  <p className="text-gray-900 font-medium">{college.establishedYear}</p>
+                <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                  <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Established</span>
+                  <span className="text-xs font-bold text-gray-700">{college.establishedYear}</span>
                 </div>
               )}
               {college.accreditation && college.accreditation.length > 0 && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-                    <Award className="w-4 h-4" /> Accreditations
-                  </p>
-                  <div className="flex flex-wrap gap-2">
+                <div className="pt-1">
+                  <p className="text-xs text-gray-500 flex items-center gap-1 mb-2"><Award className="w-3 h-3" /> Accreditations</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {college.accreditation.map((acc, i) => (
-                      <span key={i} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">{acc}</span>
+                      <span key={i} className="px-2 py-0.5 bg-cyan-50 text-cyan-700 border border-cyan-100 rounded-full text-[10px] font-bold">{acc}</span>
                     ))}
                   </div>
                 </div>
@@ -342,107 +344,77 @@ const CollegeDetail = () => {
           </div>
 
           {/* Placement Configuration */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Award className="w-5 h-5 text-blue-600" />
-                Placement Config
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Academic Year</p>
-                <p className="text-gray-900 font-medium">{college.placementConfig?.academicYear || 'Not Set'}</p>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={TrendingUp} title="Placement Config" sub="Academic placement settings" />
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                <span className="text-xs text-gray-500">Academic Year</span>
+                <span className="text-xs font-bold text-gray-700">{college.placementConfig?.academicYear || 'Not Set'}</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Minimum CGPA</p>
-                <p className="text-gray-900 font-medium">{college.placementConfig?.minimumCGPA ?? 6.0}</p>
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                <span className="text-xs text-gray-500">Minimum CGPA</span>
+                <span className="text-xs font-black text-blue-600">{college.placementConfig?.minimumCGPA ?? 6.0}</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Allow Backlogs</p>
-                <div className="flex items-center gap-2">
-                  {(college.placementConfig?.allowBacklogs ?? true) ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-600" />
-                  )}
-                  <p className="text-gray-900 font-medium">
-                    {(college.placementConfig?.allowBacklogs ?? true) ? 'Yes' : 'No'}
-                  </p>
-                </div>
+              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
+                <span className="text-xs text-gray-500">Allow Backlogs</span>
+                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  (college.placementConfig?.allowBacklogs ?? true)
+                    ? 'bg-blue-50 text-blue-600 border border-blue-100'
+                    : 'bg-gray-50 text-gray-500 border border-gray-200'
+                }`}>
+                  {(college.placementConfig?.allowBacklogs ?? true)
+                    ? <><CheckCircle className="w-3 h-3" /> Yes</>
+                    : <><XCircle className="w-3 h-3" /> No</>}
+                </span>
               </div>
               {(college.placementConfig?.allowBacklogs ?? true) && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Max Backlogs</p>
-                  <p className="text-gray-900 font-medium">{college.placementConfig?.maxBacklogsAllowed ?? 3}</p>
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-xs text-gray-500">Max Backlogs</span>
+                  <span className="text-xs font-black text-gray-700">{college.placementConfig?.maxBacklogsAllowed ?? 3}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900">Quick Actions</h2>
-            </div>
-            <div className="p-6 space-y-3">
-              <ActionBtn
-                icon={Users}
-                label="View Students"
-                color="purple"
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={Shield} title="Quick Actions" />
+            <div className="space-y-2">
+              <button
                 onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/students`)}
-              />
-              <ActionBtn
-                icon={Edit}
-                label="Edit College"
-                color="green"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 text-xs font-semibold transition-all hover:scale-[1.02]"
+              >
+                <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-3 h-3" />
+                </div>
+                View Students
+              </button>
+              <button
                 onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/edit`)}
-              />
-              <ActionBtn
-                icon={Trash2}
-                label="Delete College"
-                color="red"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 border border-cyan-100 text-cyan-700 text-xs font-semibold transition-all hover:scale-[1.02]"
+              >
+                <div className="w-6 h-6 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Edit className="w-3 h-3" />
+                </div>
+                Edit College
+              </button>
+              <button
                 onClick={handleDelete}
-              />
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-100 text-red-700 text-xs font-semibold transition-all hover:scale-[1.02]"
+              >
+                <div className="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-3 h-3" />
+                </div>
+                Delete College
+              </button>
             </div>
           </div>
+
         </div>
       </div>
 
-      <style>{`
-        @keyframes fade-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fade-in 0.5s ease-out; }
-      `}</style>
-    </DashboardLayout>
+    </SuperAdminDashboardLayout>
   );
 };
-
-const ContactRow = ({ icon: Icon, iconBg, iconColor, label, value }) => (
-  <div className="flex items-center gap-3">
-    <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
-      <Icon className={`w-5 h-5 ${iconColor}`} />
-    </div>
-    <div>
-      <p className="text-sm text-gray-600">{label}</p>
-      <p className="text-gray-900 font-medium">{value || '—'}</p>
-    </div>
-  </div>
-);
-
-const colorMap = {
-  purple: 'bg-purple-50 text-purple-700 hover:bg-purple-100',
-  green:  'bg-green-50 text-green-700 hover:bg-green-100',
-  red:    'bg-red-50 text-red-700 hover:bg-red-100',
-};
-
-const ActionBtn = ({ icon: Icon, label, color, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 ${colorMap[color]} rounded-xl transition-colors font-medium`}
-  >
-    <Icon className="w-5 h-5" />
-    {label}
-  </button>
-);
 
 export default CollegeDetail;

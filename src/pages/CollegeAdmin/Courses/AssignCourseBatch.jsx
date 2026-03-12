@@ -6,7 +6,7 @@ import {
   Send, BookOpen, Users, Search, CheckCircle2, ChevronLeft,
   AlertCircle, RefreshCw, X, CheckSquare, Square
 } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { collegeAdminCourseAPI as courseAPI, collegeAdminAPI } from '../../../api/Api';
 
@@ -26,9 +26,7 @@ const AssignCourseBatch = () => {
     setTimeout(() => setToast(null), 3500);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -105,7 +103,7 @@ const AssignCourseBatch = () => {
   }
 
   return (
-    <DashboardLayout title="Assign Course to Batch">
+    <CollegeAdminLayout>
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
           {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -113,59 +111,69 @@ const AssignCourseBatch = () => {
         </div>
       )}
 
-      <button
-        onClick={() => navigate('/dashboard/college-admin/courses')}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 mb-6 transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" /> Back to Courses
-      </button>
-
-      <div className="mb-6">
-        <div className="relative bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -right-20" />
-          </div>
-          <div className="relative text-white">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center">
-                <Send className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Assign Course to Batch</h1>
-                <p className="text-blue-100 text-sm">Select a course and students to enroll them</p>
-              </div>
+      {/* Hero Banner */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        </div>
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Send className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-white font-black text-lg leading-tight">Assign Course to Batch</h1>
+              <p className="text-blue-200 text-[11px] mt-0.5">Select a course and students to enroll them</p>
             </div>
           </div>
+          <button
+            onClick={() => navigate('/dashboard/college-admin/courses')}
+            className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex-shrink-0"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back to Courses
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Course Selection */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-blue-500" />
-            Select Course
-          </h3>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
+            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-3.5 h-3.5 text-white" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm">Select Course</h3>
+          </div>
+          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
             {courses.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No active courses found</p>
+              <div className="text-center py-10">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                  <BookOpen className="w-6 h-6 text-blue-300" />
+                </div>
+                <p className="text-sm text-gray-400">No active courses found</p>
+              </div>
             ) : courses.map(c => (
               <button
                 key={c._id}
                 onClick={() => setSelectedCourse(c._id)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                className={`w-full text-left p-3.5 rounded-xl border-2 transition-all ${
                   selectedCourse === c._id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedCourse === c._id ? 'bg-blue-500' : 'bg-gray-100'}`}>
-                    {selectedCourse === c._id ? <CheckCircle2 className="w-4 h-4 text-white" /> : <BookOpen className="w-4 h-4 text-gray-400" />}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${selectedCourse === c._id ? 'bg-gradient-to-br from-blue-500 to-cyan-500' : 'bg-gray-100'}`}>
+                    {selectedCourse === c._id
+                      ? <CheckCircle2 className="w-4 h-4 text-white" />
+                      : <BookOpen className="w-4 h-4 text-gray-400" />
+                    }
                   </div>
-                  <div>
-                    <p className={`font-semibold text-sm ${selectedCourse === c._id ? 'text-blue-700' : 'text-gray-800'}`}>{c.title}</p>
-                    <p className="text-xs text-gray-400">{c.category} • {c.level} • {c.enrollmentCount || 0} enrolled</p>
+                  <div className="min-w-0">
+                    <p className={`font-semibold text-sm truncate ${selectedCourse === c._id ? 'text-blue-700' : 'text-gray-800'}`}>{c.title}</p>
+                    <p className="text-xs text-gray-400">{c.category} · {c.level} · {c.enrollmentCount || 0} enrolled</p>
                   </div>
                 </div>
               </button>
@@ -174,16 +182,20 @@ const AssignCourseBatch = () => {
         </div>
 
         {/* Student Selection */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-500" />
-              Select Students
-              {selectedStudents.length > 0 && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{selectedStudents.length} selected</span>
-              )}
-            </h3>
-            <button onClick={selectAll} className="text-xs text-blue-600 font-medium hover:text-blue-700">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center">
+                <Users className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                Select Students
+                {selectedStudents.length > 0 && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{selectedStudents.length} selected</span>
+                )}
+              </h3>
+            </div>
+            <button onClick={selectAll} className="text-xs text-blue-600 font-semibold hover:text-blue-700 transition-colors">
               {allVisibleSelected ? 'Deselect All' : 'Select All'}
             </button>
           </div>
@@ -204,9 +216,14 @@ const AssignCourseBatch = () => {
             )}
           </div>
 
-          <div className="space-y-1.5 max-h-72 overflow-y-auto">
+          <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
             {filteredStudents.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No students found</p>
+              <div className="text-center py-8">
+                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <Users className="w-5 h-5 text-gray-300" />
+                </div>
+                <p className="text-sm text-gray-400">No students found</p>
+              </div>
             ) : filteredStudents.map(s => {
               const isSelected = selectedStudents.includes(s._id);
               return (
@@ -223,7 +240,7 @@ const AssignCourseBatch = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{s.fullName || s.email}</p>
                     <p className="text-xs text-gray-400 truncate">
-                      {s.studentInfo?.rollNumber && <span>{s.studentInfo.rollNumber} • </span>}
+                      {s.studentInfo?.rollNumber && <span>{s.studentInfo.rollNumber} · </span>}
                       {s.studentInfo?.branch || s.email}
                     </p>
                   </div>
@@ -234,23 +251,28 @@ const AssignCourseBatch = () => {
         </div>
       </div>
 
-      {/* Assign Button */}
-      <div className="mt-6 flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      {/* Assign Action Bar */}
+      <div className="mt-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4 flex items-center justify-between gap-4">
         <div className="text-sm text-gray-600">
-          {selectedCourse && selectedStudents.length > 0
-            ? `Ready to assign course to ${selectedStudents.length} student(s)`
-            : 'Select a course and students to proceed'}
+          {selectedCourse && selectedStudents.length > 0 ? (
+            <span className="flex items-center gap-2 text-blue-700 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              Ready to assign course to <strong>{selectedStudents.length}</strong> student(s)
+            </span>
+          ) : (
+            <span className="text-gray-400">Select a course and students to proceed</span>
+          )}
         </div>
         <button
           onClick={handleAssign}
           disabled={assigning || !selectedCourse || selectedStudents.length === 0}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl hover:opacity-90 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           {assigning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {assigning ? 'Assigning...' : `Assign to ${selectedStudents.length || 0} Students`}
         </button>
       </div>
-    </DashboardLayout>
+    </CollegeAdminLayout>
   );
 };
 

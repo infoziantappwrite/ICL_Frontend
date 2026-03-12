@@ -1,36 +1,72 @@
-// pages/CollegeAdmin/CompanyDetail.jsx - Fixed JD live fetching + eligible student count
+// pages/CollegeAdmin/CompanyDetail.jsx — redesigned to match SuperAdmin/CollegeAdmin theme
 import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Building2, ArrowLeft, Edit, Trash2, Mail, Phone, Globe, MapPin,
+  Building2, ArrowLeft, SquarePen, Trash2, Mail, Phone, Globe, MapPin,
   Briefcase, Users, ToggleLeft, ToggleRight, Calendar, FileText,
-  Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, GraduationCap,
+  Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, GraduationCap, Plus,
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
+import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { companyAPI, collegeAdminAPI } from '../../api/Api';
 
-// Status values from backend are capitalized
 const JD_STATUS_CONFIG = {
-  Active:    { label: 'Active',    color: 'bg-green-100 text-green-700',   icon: CheckCircle },
-  Closed:    { label: 'Closed',    color: 'bg-red-100 text-red-700',       icon: XCircle },
-  Draft:     { label: 'Draft',     color: 'bg-yellow-100 text-yellow-700', icon: AlertCircle },
-  Cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-600',     icon: XCircle },
+  Active:    { label: 'Active',    color: 'bg-blue-50 text-blue-600 border-blue-100',   dot: 'bg-blue-500',   icon: CheckCircle  },
+  Closed:    { label: 'Closed',    color: 'bg-gray-50 text-gray-500 border-gray-200',   dot: 'bg-gray-400',   icon: XCircle      },
+  Draft:     { label: 'Draft',     color: 'bg-amber-50 text-amber-600 border-amber-100', dot: 'bg-amber-400',  icon: AlertCircle  },
+  Cancelled: { label: 'Cancelled', color: 'bg-red-50 text-red-500 border-red-100',      dot: 'bg-red-400',    icon: XCircle      },
 };
 
-// Compute how many students are eligible for a given job
 const countEligibleStudents = (job, students) => {
   if (!students || students.length === 0) return 0;
   const { branches = [], batches = [], minCGPA } = job.eligibility || {};
   return students.filter((s) => {
-    const cgpaOk  = !minCGPA  || (s.cgpa  != null && parseFloat(s.cgpa)  >= parseFloat(minCGPA));
+    const cgpaOk   = !minCGPA  || (s.cgpa  != null && parseFloat(s.cgpa)  >= parseFloat(minCGPA));
     const branchOk = !branches.length || branches.includes(s.branch);
     const batchOk  = !batches.length  || batches.includes(String(s.batch));
     return cgpaOk && branchOk && batchOk;
   }).length;
 };
 
+/* ─── Section heading ─────────────────────── */
+const SHead = ({ icon: Icon, title, count }) => (
+  <div className="flex items-center gap-2 mb-4">
+    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+      <Icon className="w-3 h-3 text-white" />
+    </div>
+    <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
+    {count !== undefined && (
+      <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">{count}</span>
+    )}
+  </div>
+);
+
+/* ─── Info row ─────────────────────────────── */
+const InfoRow = ({ icon: Icon, label, children }) => (
+  <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
+    <div className="w-5 h-5 mt-0.5 flex-shrink-0 text-gray-400">
+      <Icon className="w-4 h-4" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] text-gray-400 font-medium leading-none mb-0.5">{label}</p>
+      <div className="text-xs text-gray-800 font-semibold">{children}</div>
+    </div>
+  </div>
+);
+
+/* ─── Sidebar stat tile ─────────────────────── */
+const StatTile = ({ icon: Icon, label, value, color, bg }) => (
+  <div className={`flex items-center justify-between px-3 py-2.5 ${bg} rounded-xl border`}>
+    <div className="flex items-center gap-2">
+      <Icon className={`w-4 h-4 ${color}`} />
+      <span className="text-xs font-medium text-gray-700">{label}</span>
+    </div>
+    <span className={`text-base font-black ${color}`}>{value}</span>
+  </div>
+);
+
+/* ══════════════════════════════════════════ */
 const CompanyDetail = () => {
   const toast = useToast();
   const navigate = useNavigate();
@@ -42,17 +78,12 @@ const CompanyDetail = () => {
   const [students,    setStudents]    = useState([]);
   const [jobsLoading, setJobsLoading] = useState(false);
 
-  // 1️⃣ Load company details
   useEffect(() => { fetchCompanyDetails(); }, [companyId]);
 
-  // 2️⃣ Load jobs + students in parallel (both needed for eligible count)
   useEffect(() => {
     if (companyId) {
       setJobsLoading(true);
-      Promise.all([
-        fetchCompanyJobs(),
-        fetchAllStudents(),
-      ]).finally(() => setJobsLoading(false));
+      Promise.all([fetchCompanyJobs(), fetchAllStudents()]).finally(() => setJobsLoading(false));
     }
   }, [companyId]);
 
@@ -69,33 +100,21 @@ const CompanyDetail = () => {
     }
   };
 
-  // ✅ FIX: Use collegeAdminAPI.getJobs() (existing working endpoint) + filter client-side
   const fetchCompanyJobs = async () => {
     try {
       const response = await collegeAdminAPI.getJobs();
       if (response.success) {
         const allJobs = response.jobs || [];
-        // Filter to only this company's JDs
-        const filtered = allJobs.filter(
-          (job) => job.companyId?._id === companyId || job.companyId === companyId
-        );
-        setJobs(filtered);
+        setJobs(allJobs.filter(job => job.companyId?._id === companyId || job.companyId === companyId));
       }
-    } catch (error) {
-      console.error('Error fetching company jobs:', error);
-    }
+    } catch (error) { console.error('Error fetching company jobs:', error); }
   };
 
-  // Fetch all students once so we can compute eligible count per JD on the frontend
   const fetchAllStudents = async () => {
     try {
       const response = await collegeAdminAPI.getStudents({ limit: 10000 });
-      if (response.success) {
-        setStudents(response.students || []);
-      }
-    } catch (error) {
-      console.error('Error fetching students for eligible count:', error);
-    }
+      if (response.success) setStudents(response.students || []);
+    } catch (error) { console.error('Error fetching students:', error); }
   };
 
   const handleDelete = async () => {
@@ -104,9 +123,7 @@ const CompanyDetail = () => {
       await companyAPI.deleteCompany(companyId);
       toast.success('Success', 'Company deleted successfully');
       navigate('/dashboard/college-admin/companies');
-    } catch (error) {
-      toast.error('Error', 'Failed to delete company: ' + error.message);
-    }
+    } catch (error) { toast.error('Error', 'Failed to delete company: ' + error.message); }
   };
 
   const handleToggleStatus = async () => {
@@ -114,259 +131,232 @@ const CompanyDetail = () => {
       await companyAPI.updateCompany(companyId, { isActive: !company.isActive });
       toast.success('Success', `Company ${company.isActive ? 'deactivated' : 'activated'} successfully`);
       fetchCompanyDetails();
-    } catch (error) {
-      toast.error('Error', 'Failed to update status: ' + error.message);
-    }
+    } catch (error) { toast.error('Error', 'Failed to update status: ' + error.message); }
   };
 
   if (loading) return <LoadingSpinner message="Loading Company Details..." />;
 
   if (!company) {
     return (
-      <DashboardLayout title="Company Not Found">
-        <div className="text-center py-16">
-          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">Company not found</p>
+      <CollegeAdminLayout>
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
+            <Building2 className="w-6 h-6 text-blue-300" />
+          </div>
+          <p className="text-sm font-semibold text-gray-600 mb-4">Company not found</p>
           <button onClick={() => navigate('/dashboard/college-admin/companies')}
-            className="mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold">
-            Back to Companies
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm hover:scale-105 transition-all">
+            <ArrowLeft className="w-3 h-3" /> Back to Companies
           </button>
         </div>
-      </DashboardLayout>
+      </CollegeAdminLayout>
     );
   }
 
-  const totalEligibleAcrossJDs = jobs.reduce(
-    (sum, job) => sum + countEligibleStudents(job, students), 0
-  );
+  const totalEligibleAcrossJDs = jobs.reduce((sum, job) => sum + countEligibleStudents(job, students), 0);
+  const activeJDs = jobs.filter(j => j.status === 'Active').length;
 
   return (
-    <DashboardLayout title={company.name}>
-      {/* Back + Hero */}
-      <div className="mb-8">
-        <button onClick={() => navigate('/dashboard/college-admin/companies')}
-          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group">
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-medium">Back to Companies</span>
-        </button>
+    <CollegeAdminLayout>
 
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4 text-white">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <Building2 className="w-10 h-10 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold mb-1">{company.name}</h1>
-                <p className="text-blue-100 text-lg">{company.industry || 'N/A'}</p>
+      {/* Back button */}
+      <button onClick={() => navigate('/dashboard/college-admin/companies')}
+        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-4 transition-colors group text-sm font-medium">
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        Back to Companies
+      </button>
+
+      {/* ══ HERO BANNER ══ */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
+        </div>
+        <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Building2 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-white font-black text-xl leading-tight">{company.name}</h1>
+              <p className="text-blue-200 text-[11px] font-semibold mt-0.5">{company.industry || 'N/A'}</p>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                  company.isActive ? 'bg-white/15 text-white border-white/20' : 'bg-white/10 text-white/60 border-white/10'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${company.isActive ? 'bg-green-400' : 'bg-gray-400'}`} />
+                  {company.isActive ? 'Active' : 'Inactive'}
+                </span>
+                <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
+                  <Briefcase className="w-3 h-3" /> {jobs.length} JD{jobs.length !== 1 ? 's' : ''}
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <button onClick={handleToggleStatus}
-                className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-lg ${company.isActive ? 'bg-white text-green-600 hover:bg-green-50' : 'bg-white text-red-600 hover:bg-red-50'}`}>
-                {company.isActive ? <><ToggleRight className="w-5 h-5" />Active</> : <><ToggleLeft className="w-5 h-5" />Inactive</>}
-              </button>
-              <button onClick={() => navigate(`/dashboard/college-admin/companies/edit/${companyId}`)}
-                className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-blue-50 transition-all shadow-lg">
-                <Edit className="w-5 h-5" /> Edit
-              </button>
-              <button onClick={handleDelete}
-                className="bg-white text-red-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-red-50 transition-all shadow-lg">
-                <Trash2 className="w-5 h-5" /> Delete
-              </button>
-            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            <button onClick={handleToggleStatus}
+              className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all hover:scale-105 ${
+                company.isActive
+                  ? 'bg-white/20 hover:bg-white/30 text-white border-white/20'
+                  : 'bg-white/20 hover:bg-white/30 text-white border-white/20'
+              }`}>
+              {company.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+              {company.isActive ? 'Deactivate' : 'Activate'}
+            </button>
+            <button onClick={() => navigate(`/dashboard/college-admin/companies/edit/${companyId}`)}
+              className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-3 py-2 rounded-xl hover:bg-blue-50 transition-all shadow-sm hover:scale-105">
+              <SquarePen className="w-3.5 h-3.5" /> Edit
+            </button>
+            <button onClick={handleDelete}
+              className="inline-flex items-center gap-1.5 bg-white text-red-500 text-xs font-bold px-3 py-2 rounded-xl hover:bg-red-50 transition-all shadow-sm hover:scale-105">
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ── Main Content ── */}
-        <div className="lg:col-span-2 space-y-6">
+      {/* ══ MAIN GRID ══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-          {/* Contact Information */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <Mail className="w-6 h-6 text-blue-600" /> Contact Information
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-semibold text-gray-600 mb-2 block">Email</label>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <Mail className="w-5 h-5 text-gray-400" />
-                  <a href={`mailto:${company.email}`} className="hover:text-blue-600">{company.email || 'N/A'}</a>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-600 mb-2 block">Phone</label>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <Phone className="w-5 h-5 text-gray-400" />
-                  <a href={`tel:${company.phone}`} className="hover:text-blue-600">{company.phone || 'N/A'}</a>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-600 mb-2 block">Website</label>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <Globe className="w-5 h-5 text-gray-400" />
-                  {company.website
-                    ? <a href={company.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 truncate">{company.website}</a>
-                    : 'N/A'}
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-gray-600 mb-2 block">Location</label>
-                <div className="flex items-center gap-2 text-gray-900">
-                  <MapPin className="w-5 h-5 text-gray-400" />
-                  <span>{company.headquarters?.city || company.location || 'N/A'}</span>
-                </div>
-              </div>
+        {/* ── LEFT (2 cols) ── */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+
+          {/* Contact & Details */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={Mail} title="Contact Information" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+              <InfoRow icon={Mail} label="Email">
+                <a href={`mailto:${company.email}`} className="hover:text-blue-600 transition-colors">{company.email || 'N/A'}</a>
+              </InfoRow>
+              <InfoRow icon={Phone} label="Phone">
+                <a href={`tel:${company.phone}`} className="hover:text-blue-600 transition-colors">{company.phone || 'N/A'}</a>
+              </InfoRow>
+              <InfoRow icon={Globe} label="Website">
+                {company.website
+                  ? <a href={company.website} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 truncate block transition-colors">{company.website}</a>
+                  : 'N/A'}
+              </InfoRow>
+              <InfoRow icon={MapPin} label="Location">
+                {company.headquarters?.city || company.location || 'N/A'}
+              </InfoRow>
             </div>
           </div>
 
           {/* Company Details */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <FileText className="w-6 h-6 text-blue-600" /> Company Details
-            </h2>
-            <div>
-              <label className="text-sm font-semibold text-gray-600 mb-2 block">Description</label>
-              <p className="text-gray-900 leading-relaxed">{company.description || 'No description provided'}</p>
-            </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={FileText} title="Company Details" />
+            <p className="text-xs text-gray-700 leading-relaxed mb-3">{company.description || 'No description provided'}</p>
             {company.specialization?.length > 0 && (
-              <div className="mt-4">
-                <label className="text-sm font-semibold text-gray-600 mb-2 block">Specialization</label>
-                <div className="flex flex-wrap gap-2">
+              <div>
+                <p className="text-[10px] text-gray-400 font-semibold mb-2">SPECIALIZATION</p>
+                <div className="flex flex-wrap gap-1.5">
                   {company.specialization.map((spec, i) => (
-                    <span key={i} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">{spec}</span>
+                    <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-semibold border border-blue-100">{spec}</span>
                   ))}
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── JOB DESCRIPTIONS ── */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 shadow-xl border border-white/50">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <Briefcase className="w-6 h-6 text-blue-600" />
-                Job Descriptions
-                <span className="ml-1 px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">{jobs.length}</span>
-              </h2>
-              <button
-                onClick={() => navigate(`/dashboard/college-admin/jobs/create?companyId=${companyId}`)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                + Add JD
+          {/* Job Descriptions */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
+                  <Briefcase className="w-3 h-3 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800 leading-none">Job Descriptions</h3>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{jobs.length} posting{jobs.length !== 1 ? 's' : ''} for this company</p>
+                </div>
+              </div>
+              <button onClick={() => navigate(`/dashboard/college-admin/jobs/create?companyId=${companyId}`)}
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-gradient-to-r from-blue-600 to-cyan-500 px-2.5 py-1.5 rounded-lg shadow-sm hover:scale-105 transition-all">
+                <Plus className="w-3 h-3" /> Add JD
               </button>
             </div>
 
             {jobsLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                <span className="ml-3 text-gray-500 font-medium">Loading job descriptions...</span>
+              <div className="flex items-center justify-center py-10 gap-2">
+                <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                <span className="text-xs text-gray-400 font-medium">Loading job descriptions...</span>
               </div>
             ) : jobs.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl">
-                <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No job descriptions yet</p>
-                <p className="text-gray-400 text-sm mt-1">Create a JD for this company to see it here</p>
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center mb-2">
+                  <Briefcase className="w-5 h-5 text-blue-300" />
+                </div>
+                <p className="text-sm font-semibold text-gray-500 mb-1">No job descriptions yet</p>
+                <p className="text-[10px] text-gray-400 mb-3">Create a JD for this company to see it here</p>
                 <button onClick={() => navigate(`/dashboard/college-admin/jobs/create?companyId=${companyId}`)}
-                  className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                  Create First JD
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm hover:scale-105 transition-all">
+                  <Plus className="w-3 h-3" /> Create First JD
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="divide-y divide-gray-50">
                 {jobs.map((job) => {
-                  const statusCfg = JD_STATUS_CONFIG[job.status] || JD_STATUS_CONFIG.Draft;
-                  const StatusIcon = statusCfg.icon;
-
-                  // ✅ Eligible count computed from students + job.eligibility (no extra API call)
+                  const statusCfg     = JD_STATUS_CONFIG[job.status] || JD_STATUS_CONFIG.Draft;
                   const eligibleCount = countEligibleStudents(job, students);
                   const totalApplications = job.stats?.totalApplications || 0;
-
-                  // ✅ Correct field: job.package?.ctc
                   const ctcMin = job.package?.ctc?.min;
                   const ctcMax = job.package?.ctc?.max;
                   const ctcLabel = ctcMin != null && ctcMax != null
-                    ? `₹${ctcMin} – ₹${ctcMax} LPA`
-                    : ctcMin != null ? `₹${ctcMin} LPA` : null;
+                    ? `₹${ctcMin}–₹${ctcMax} LPA` : ctcMin != null ? `₹${ctcMin} LPA` : null;
 
                   return (
-                    <div
-                      key={job._id}
+                    <div key={job._id}
                       onClick={() => navigate(`/dashboard/college-admin/jobs/view/${job._id}`)}
-                      className="border border-gray-100 rounded-xl p-5 bg-gray-50/50 hover:border-blue-200 hover:shadow-md transition-all group cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        {/* Left info */}
+                      className="p-4 hover:bg-blue-50/20 transition-colors group cursor-pointer">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {job.title}
-                            </h3>
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusCfg.color}`}>
-                              <StatusIcon className="w-3 h-3" />{statusCfg.label}
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{job.title}</h4>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold border ${statusCfg.color}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
+                              {statusCfg.label}
                             </span>
                             {job.jobType && (
-                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">{job.jobType}</span>
-                            )}
-                            {job.isPinned && (
-                              <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs font-semibold">📌 Pinned</span>
+                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-bold border border-indigo-100">{job.jobType}</span>
                             )}
                           </div>
-
-                          {/* Meta */}
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-3">
-                            {job.location && (
-                              <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{job.location}</span>
-                            )}
-                            {ctcLabel && (
-                              <span className="flex items-center gap-1 font-medium text-gray-700">💰 {ctcLabel}</span>
-                            )}
+                          <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 mb-2">
+                            {job.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>}
+                            {ctcLabel && <span className="font-semibold text-gray-700">💰 {ctcLabel}</span>}
                             {job.lastDate && (
                               <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
+                                <Clock className="w-3 h-3" />
                                 Deadline: {new Date(job.lastDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </span>
                             )}
                           </div>
-
-                          {/* Eligibility tags — ✅ correct field: job.eligibility */}
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
                             {job.eligibility?.minCGPA && (
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-xs font-medium border border-blue-100">
-                                Min CGPA: {job.eligibility.minCGPA}
-                              </span>
+                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-semibold border border-blue-100">Min CGPA: {job.eligibility.minCGPA}</span>
                             )}
                             {job.eligibility?.branches?.slice(0, 3).map((b, i) => (
-                              <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-xs font-medium">{b}</span>
+                              <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md text-[9px] font-medium">{b}</span>
                             ))}
                             {(job.eligibility?.branches?.length || 0) > 3 && (
-                              <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-md text-xs">
-                                +{job.eligibility.branches.length - 3} more
-                              </span>
-                            )}
-                            {job.eligibility?.batches?.length > 0 && (
-                              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-xs font-medium border border-indigo-100">
-                                Batch: {job.eligibility.batches.join(', ')}
-                              </span>
+                              <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-md text-[9px]">+{job.eligibility.branches.length - 3}</span>
                             )}
                           </div>
                         </div>
 
-                        {/* Right: Eligible + Applied counts */}
-                        <div className="flex flex-col items-center gap-2 shrink-0">
-                          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl px-4 py-3 text-center min-w-[90px]">
-                            <GraduationCap className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-                            <p className="text-2xl font-bold text-blue-700 leading-none">{eligibleCount}</p>
-                            <p className="text-xs text-blue-500 mt-1 font-medium">Eligible</p>
+                        {/* Eligible + Applied counts */}
+                        <div className="flex flex-col items-center gap-1.5 shrink-0">
+                          <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-center min-w-[70px]">
+                            <GraduationCap className="w-3.5 h-3.5 text-blue-500 mx-auto mb-0.5" />
+                            <p className="text-base font-black text-blue-700 leading-none">{eligibleCount}</p>
+                            <p className="text-[9px] text-blue-500 font-medium">Eligible</p>
                           </div>
-                          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-center min-w-[90px]">
-                            <p className="text-lg font-bold text-green-700 leading-none">{totalApplications}</p>
-                            <p className="text-xs text-green-500 font-medium mt-0.5">Applied</p>
+                          <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-1.5 text-center min-w-[70px]">
+                            <p className="text-sm font-black text-green-700 leading-none">{totalApplications}</p>
+                            <p className="text-[9px] text-green-500 font-medium">Applied</p>
                           </div>
                         </div>
 
-                        <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-400 transition-colors self-center shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition-colors self-center shrink-0" />
                       </div>
                     </div>
                   );
@@ -374,81 +364,78 @@ const CompanyDetail = () => {
               </div>
             )}
           </div>
-        </div>
 
-        {/* ── Sidebar ── */}
-        <div className="space-y-6">
+        </div>{/* end LEFT */}
+
+        {/* ── RIGHT (1 col) ── */}
+        <div className="flex flex-col gap-4">
+
           {/* Quick Stats */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-                <div className="flex items-center gap-3"><Briefcase className="w-5 h-5 text-blue-600" /><span className="text-sm font-medium text-gray-700">Active JDs</span></div>
-                <span className="text-lg font-bold text-blue-600">{jobs.filter((j) => j.status === 'Active').length}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                <div className="flex items-center gap-3"><FileText className="w-5 h-5 text-purple-600" /><span className="text-sm font-medium text-gray-700">Total JDs</span></div>
-                <span className="text-lg font-bold text-purple-600">{jobs.length}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-cyan-50 rounded-xl">
-                <div className="flex items-center gap-3"><GraduationCap className="w-5 h-5 text-cyan-600" /><span className="text-sm font-medium text-gray-700">Total Eligible</span></div>
-                <span className="text-lg font-bold text-cyan-600">{totalEligibleAcrossJDs}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                <div className="flex items-center gap-3"><Users className="w-5 h-5 text-green-600" /><span className="text-sm font-medium text-gray-700">Hired Students</span></div>
-                <span className="text-lg font-bold text-green-600">{company.stats?.hiredStudents || 0}</span>
-              </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={Briefcase} title="Quick Stats" />
+            <div className="space-y-2">
+              <StatTile icon={Briefcase}    label="Active JDs"      value={activeJDs}               color="text-blue-600"   bg="bg-blue-50 border-blue-100"    />
+              <StatTile icon={FileText}     label="Total JDs"       value={jobs.length}             color="text-indigo-600" bg="bg-indigo-50 border-indigo-100" />
+              <StatTile icon={GraduationCap} label="Total Eligible" value={totalEligibleAcrossJDs}  color="text-cyan-600"   bg="bg-cyan-50 border-cyan-100"     />
+              <StatTile icon={Users}        label="Hired Students"  value={company.stats?.hiredStudents || 0} color="text-green-600" bg="bg-green-50 border-green-100" />
             </div>
           </div>
 
           {/* Additional Info */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Additional Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-gray-700">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-xs text-gray-500">Added On</p>
-                  <p className="text-sm font-medium">{company.createdAt ? new Date(company.createdAt).toLocaleDateString() : 'N/A'}</p>
-                </div>
-              </div>
-              {company.createdBy && (
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Users className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Added By</p>
-                    <p className="text-sm font-medium">{company.createdBy.fullName || 'N/A'}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <SHead icon={Calendar} title="Additional Information" />
+            <InfoRow icon={Calendar} label="Added On">
+              {company.createdAt ? new Date(company.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+            </InfoRow>
+            {company.createdBy && (
+              <InfoRow icon={Users} label="Added By">
+                {company.createdBy.fullName || 'N/A'}
+              </InfoRow>
+            )}
+            {company.companySize && (
+              <InfoRow icon={Users} label="Company Size">
+                {company.companySize} employees
+              </InfoRow>
+            )}
           </div>
 
           {/* JD Breakdown */}
           {jobs.length > 0 && (
-            <div className="bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl text-white">
-              <h3 className="text-lg font-bold mb-4">JD Breakdown</h3>
-              <div className="space-y-3">
-                {['Active', 'Draft', 'Closed', 'Cancelled'].map((status) => {
-                  const count = jobs.filter((j) => j.status === status).length;
-                  if (!count) return null;
-                  return (
-                    <div key={status} className="flex justify-between items-center">
-                      <span className="text-blue-100 text-sm">{status}</span>
-                      <span className="font-bold">{count}</span>
-                    </div>
-                  );
-                })}
-                <div className="border-t border-white/20 pt-3 flex justify-between items-center">
-                  <span className="text-blue-100 text-sm">Total Eligible Students</span>
-                  <span className="font-bold text-lg">{totalEligibleAcrossJDs}</span>
+            <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-cyan-500 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
+              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-5 h-5 bg-white/20 rounded-md flex items-center justify-center">
+                    <Briefcase className="w-3 h-3 text-white" />
+                  </div>
+                  <p className="text-xs font-bold text-white">JD Breakdown</p>
+                </div>
+                <div className="space-y-2">
+                  {['Active', 'Draft', 'Closed', 'Cancelled'].map((status) => {
+                    const count = jobs.filter(j => j.status === status).length;
+                    if (!count) return null;
+                    return (
+                      <div key={status} className="flex justify-between items-center">
+                        <span className="text-blue-100 text-[11px]">{status}</span>
+                        <span className="font-black text-sm">{count}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="border-t border-white/20 pt-2 flex justify-between items-center">
+                    <span className="text-blue-100 text-[11px]">Total Eligible Students</span>
+                    <span className="font-black text-base">{totalEligibleAcrossJDs}</span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </div>
-    </DashboardLayout>
+
+        </div>{/* end RIGHT */}
+
+      </div>{/* end main grid */}
+
+    </CollegeAdminLayout>
   );
 };
 

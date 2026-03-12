@@ -110,18 +110,11 @@ const StudentLayout = ({ children }) => {
 
     // ─── render ───────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 overflow-x-hidden">
-
-            {/* Background blobs */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 -left-20 w-96 h-96 bg-gradient-to-br from-cyan-200 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-                <div className="absolute top-40 -right-20 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-                <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-gradient-to-br from-cyan-300 to-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
-            </div>
+        <div className="min-h-screen bg-[#f8f9fa] overflow-x-hidden">
 
             {/* ── Fixed Header ── */}
-            <header className="bg-white/90 backdrop-blur-xl border-b border-white/50 shadow-lg fixed top-0 left-0 right-0 z-50">
-                <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50 transition-shadow duration-300">
+                <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-3 w-full">
                     <div className="flex justify-between items-center gap-6">
 
                         {/* Brand */}
@@ -129,14 +122,14 @@ const StudentLayout = ({ children }) => {
                             onClick={() => navigate('/dashboard/student')}
                             className="flex items-center space-x-3 hover:opacity-80 transition-opacity flex-shrink-0"
                         >
-                            <div className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                                <span className="text-white font-bold text-xl">I</span>
+                            <div className={`w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center`}>
+                                <span className="text-white font-bold text-xl leading-none">I</span>
                             </div>
                             <div className="text-left hidden sm:block">
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
+                                <h1 className="text-[18px] font-bold text-gray-900 leading-tight">
                                     ICL
                                 </h1>
-                                <p className="text-xs text-gray-500">Student Dashboard</p>
+                                <p className="text-[12px] text-gray-500 leading-tight mt-0.5">Student Dashboard</p>
                             </div>
                         </button>
 
@@ -153,11 +146,11 @@ const StudentLayout = ({ children }) => {
                                         onClick={() => handleNavClick(index, link.path)}
                                         className={`
                                             relative flex items-center px-4 py-2
-                                            text-sm font-medium rounded-lg
+                                            text-[14px] font-medium rounded-lg
                                             transition-colors duration-200 cursor-pointer
                                             ${isActive(link.path)
-                                                ? 'text-blue-700'
-                                                : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'
+                                                ? 'text-gray-900'
+                                                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                                             }
                                         `}
                                     >
@@ -178,10 +171,10 @@ const StudentLayout = ({ children }) => {
                                         bottom: 0,
                                         left: indicator.left,
                                         width: indicator.width,
-                                        height: '2.5px',
+                                        height: '3px',
                                         opacity: indicator.width === 0 ? 0 : 1, // hide initially to prevent 0px dot flash
-                                        borderRadius: '9999px',
-                                        background: 'linear-gradient(to right, #3b82f6, #06b6d4)',
+                                        borderRadius: '9999px 9999px 0 0',
+                                        background: '#2563eb', // Standard blue to match ProfileDashboard active indicator
                                     }}
                                 />
                             </div>
@@ -203,16 +196,16 @@ const StudentLayout = ({ children }) => {
                             <div className="relative" ref={userMenuRef}>
                                 <button
                                     onClick={() => setShowUserMenu(!showUserMenu)}
-                                    className={`w-10 h-10 bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105`}
+                                    className={`w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center transition-all hover:ring-2 hover:ring-blue-100 ring-offset-1`}
                                 >
-                                    <span className="text-white font-bold text-sm">{getUserInitials()}</span>
+                                    <span className="text-white font-bold text-[13px]">{getUserInitials()}</span>
                                 </button>
 
                                 {showUserMenu && (
                                     <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fadeIn">
                                         <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-12 h-12 bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center shadow-lg`}>
+                                                <div className={`w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center`}>
                                                     <span className="text-white font-bold text-lg">{getUserInitials()}</span>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
@@ -285,24 +278,16 @@ const StudentLayout = ({ children }) => {
             </header>
 
             {/* Header spacer */}
-            <div className="h-[73px]" aria-hidden="true" />
+            <div className="h-[65px]" aria-hidden="true" />
 
             {/* Main content */}
-            <main className="p-4 lg:p-6 relative min-h-[calc(100vh-73px)]">
-                <div className="max-w-full">
+            <main className="relative h-[calc(100vh-65px)] overflow-hidden">
+                <div className="h-full overflow-y-auto">
                     {children}
                 </div>
             </main>
 
             <style>{`
-                @keyframes blob {
-                    0%, 100% { transform: translate(0,0) scale(1); }
-                    33%       { transform: translate(30px,-50px) scale(1.1); }
-                    66%       { transform: translate(-20px,20px) scale(0.9); }
-                }
-                .animate-blob { animation: blob 7s infinite; }
-                .animation-delay-2000 { animation-delay: 2s; }
-                .animation-delay-4000 { animation-delay: 4s; }
                 @keyframes fadeIn {
                     from { opacity:0; transform: translateY(-10px); }
                     to   { opacity:1; transform: translateY(0); }

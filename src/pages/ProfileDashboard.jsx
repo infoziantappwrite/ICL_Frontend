@@ -24,6 +24,15 @@ const timeAgo = (dateStr) => {
   return Math.floor(hours / 24) + 'd ago';
 };
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
 // ─── Reusable Naukri-Style Card Wrapper ───
 const Card = ({ children, className = '' }) => (
   <div className={`bg-white rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 ${className}`}>
@@ -59,8 +68,27 @@ const ProfileDashboard = () => {
   const [jobs, setJobs] = useState([]);
   const [activeTab, setActiveTab] = useState('Jobs');
   const [loadingFeeds, setLoadingFeeds] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => { fetchProfile(); loadJobs(); }, []);
+
+  useEffect(() => {
+    if (user && (user._id || user.id)) {
+      const userId = user._id || user.id;
+      const hasSeen = localStorage.getItem(`hasSeenWelcome_${userId}`);
+      if (!hasSeen) {
+        setShowWelcome(true);
+      }
+    }
+  }, [user]);
+
+  const dismissWelcome = () => {
+    if (user && (user._id || user.id)) {
+      const userId = user._id || user.id;
+      localStorage.setItem(`hasSeenWelcome_${userId}`, 'true');
+    }
+    setShowWelcome(false);
+  };
 
   const loadJobs = async () => {
     try {
@@ -92,152 +120,200 @@ const ProfileDashboard = () => {
 
   return (
     <StudentLayout>
-      <div className="min-h-screen bg-[#f8f9fa] -mx-4 lg:-mx-6 -mt-4 lg:-mt-6 px-4 md:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
         {/* Max width container modeling standard dashboard bounds */}
-        <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
-
+        <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6 h-full">
           {/* ─────── LEFT COLUMN (Sticky Sidebar) ─────── */}
-          <div className="md:col-span-3 md:sticky md:top-[100px] self-start space-y-5">
+          <div className="md:col-span-3 self-start">
 
-            {/* 1. User Profile Widget */}
-            <Card className="text-center pt-8 pb-6">
-              <div className="relative inline-block mb-4">
+            <div className="md:col-span-3 self-start sticky top-[65px] h-fit">
+              {/* 1. User Profile Widget */}
+              <Card className="text-center pb-6">
+                <div className="relative inline-block mb-4">
 
-                {/* Donut Progress */}
-                <svg className="w-[104px] h-[104px] transform -rotate-90">
-                  <circle
-                    cx="52"
-                    cy="52"
-                    r="48"
-                    stroke="#f1f5f9"
-                    strokeWidth="6"
-                    fill="#f8fafc"
-                  />
+                  {/* Donut Progress */}
+                  <svg className="w-[104px] h-[104px] transform -rotate-90">
+                    <circle
+                      cx="52"
+                      cy="52"
+                      r="48"
+                      stroke="#f1f5f9"
+                      strokeWidth="6"
+                      fill="#f8fafc"
+                    />
 
-                  <circle
-                    cx="52"
-                    cy="52"
-                    r="48"
-                    stroke={profileCompleteness >= 80 ? '#22c55e' : '#3b82f6'}
-                    strokeWidth="6"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray="301.6"
-                    strokeDashoffset={301.6 - (301.6 * profileCompleteness) / 100}
-                    className="transition-all duration-1000"
-                  />
-                </svg>
+                    <circle
+                      cx="52"
+                      cy="52"
+                      r="48"
+                      stroke={profileCompleteness >= 80 ? '#22c55e' : '#3b82f6'}
+                      strokeWidth="6"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray="301.6"
+                      strokeDashoffset={301.6 - (301.6 * profileCompleteness) / 100}
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
 
-                {/* Initials */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-3xl font-bold text-[#334155] tracking-tight">
-                    {getUserInitials()}
+                  {/* Initials */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-3xl font-bold text-[#334155] tracking-tight">
+                      {getUserInitials()}
+                    </div>
+                  </div>
+
+                  {/* Percentage */}
+                  <div
+                    className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[12px] font-bold px-3 py-0.5 rounded-full border-[3px] border-white ${profileCompleteness >= 80
+                      ? 'bg-[#dcfce7] text-[#166534]'
+                      : 'bg-[#e0e7ff] text-[#2563eb]'
+                      }`}
+                  >
+                    {profileCompleteness}%
                   </div>
                 </div>
 
-                {/* Percentage */}
-                <div
-                  className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[12px] font-bold px-3 py-0.5 rounded-full border-[3px] border-white ${profileCompleteness >= 80
-                    ? 'bg-[#dcfce7] text-[#166534]'
-                    : 'bg-[#e0e7ff] text-[#2563eb]'
-                    }`}
+                {/* Name */}
+                <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                  {getUserName()}
+                </h2>
+
+                {/* Subtitle */}
+                <p className="text-[13px] text-gray-500 mt-1 max-w-[200px] mx-auto leading-snug">
+                  {profile?.candidateType ||
+                    profile?.currentRole ||
+                    user?.college?.name ||
+                    'Complete your profile to stand out'}
+                </p>
+
+                <p className="text-[11px] text-gray-400 mt-2">
+                  {profile?.updatedAt
+                    ? `Last updated: ${formatDate(profile.updatedAt)}`
+                    : 'Last updated today'}
+                </p>
+
+                {/* View Profile Button */}
+                <button
+                  onClick={() => navigate('/profile/my-info')}
+                  className="mt-5 w-[85%] mx-auto block py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-full transition-colors"
                 >
-                  {profileCompleteness}%
-                </div>
-              </div>
+                  View profile
+                </button>
+              </Card>
 
-              {/* Name */}
-              <h2 className="text-lg font-bold text-gray-900 leading-tight">
-                {getUserName()}
-              </h2>
+              {/* 2. Profile Performance Widget */}
+              <Card className="pb-4">
 
-              {/* Subtitle */}
-              <p className="text-[13px] text-gray-500 mt-1 max-w-[200px] mx-auto leading-snug">
-                {profile?.candidateType ||
-                  profile?.currentRole ||
-                  user?.college?.name ||
-                  'Complete your profile to stand out'}
-              </p>
-
-              <p className="text-[11px] text-gray-400 mt-2">
-                Last updated today
-              </p>
-
-              {/* View Profile Button */}
-              <button
-                onClick={() => navigate('/profile/my-info')}
-                className="mt-5 w-[85%] mx-auto block py-2 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-full transition-colors"
-              >
-                View profile
-              </button>
-            </Card>
-
-            {/* 2. Profile Performance Widget */}
-            <Card className="pb-4">
-
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 text-[15px]">
-                  Profile performance
-                </h3>
-                <AlertCircle className="w-4 h-4 text-gray-400" />
-              </div>
-
-              {/* Stats */}
-              <div className="flex pb-4 border-b border-gray-100">
-
-                {/* Skills */}
-                <div className="flex-1 cursor-pointer group">
-                  <p className="text-[12px] text-gray-500 group-hover:text-blue-600 transition-colors">
-                    Skills Added
-                  </p>
-
-                  <p className="text-xl font-bold text-gray-900 mt-1 flex items-center gap-1 group-hover:text-blue-600 transition-colors">
-                    {profile?.primarySkills?.length || 0}
-                    <ChevronRight className="w-4 h-4 text-blue-600" />
-                  </p>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900 text-[15px]">
+                    Profile performance
+                  </h3>
+                  <AlertCircle className="w-4 h-4 text-gray-400" />
                 </div>
 
-                <div className="w-px bg-gray-100 mx-4" />
+                {/* Stats */}
+                <div className="flex pb-4 border-b border-gray-100">
 
-                {/* Experience */}
-                <div className="flex-1 cursor-pointer group">
-                  <p className="text-[12px] text-gray-500 group-hover:text-blue-600 transition-colors">
-                    Experience (yrs)
-                  </p>
+                  {/* Skills */}
+                  <div className="flex-1 cursor-pointer group">
+                    <p className="text-[12px] text-gray-500 group-hover:text-blue-600 transition-colors">
+                      Skills Added
+                    </p>
 
-                  <p className="text-xl font-bold text-gray-900 mt-1 flex items-center gap-1 group-hover:text-blue-600 transition-colors">
-                    {profile?.yearsOfExperience || 0}
-                    <ChevronRight className="w-4 h-4 text-blue-600" />
-                  </p>
+                    <p className="text-xl font-bold text-gray-900 mt-1 flex items-center gap-1 group-hover:text-blue-600 transition-colors">
+                      {profile?.primarySkills?.length || 0}
+                      <ChevronRight className="w-4 h-4 text-blue-600" />
+                    </p>
+                  </div>
+
+                  <div className="w-px bg-gray-100 mx-4" />
+
+                  {/* Experience */}
+                  <div className="flex-1 cursor-pointer group">
+                    <p className="text-[12px] text-gray-500 group-hover:text-blue-600 transition-colors">
+                      Experience (yrs)
+                    </p>
+
+                    <p className="text-xl font-bold text-gray-900 mt-1 flex items-center gap-1 group-hover:text-blue-600 transition-colors">
+                      {profile?.yearsOfExperience || 0}
+                      <ChevronRight className="w-4 h-4 text-blue-600" />
+                    </p>
+                  </div>
+
                 </div>
-              </div>
 
-              {/* Boost Button */}
-              <button
-                onClick={() => navigate('/profile/edit')}
-                className="mt-4 w-full flex items-center justify-between text-left group"
-              >
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
+                {/* Boost Button */}
+                <button
+                  onClick={() => navigate('/profile/edit')}
+                  className="mt-4 w-full flex items-center justify-between text-left group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
 
-                  <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">
-                    Get 3X boost to your profile
-                  </span>
-                </div>
+                    <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">
+                      Get 3X boost to your profile
+                    </span>
+                  </div>
 
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900" />
-              </button>
+                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900" />
+                </button>
 
-            </Card>
+              </Card>
 
+            </div>
           </div>
 
           {/* ─────── MAIN CONTENT FEED (Expanded to fill remaining space) ─────── */}
           <div className="md:col-span-9 space-y-5 md:space-y-6">
 
             {/* 1. Promo / Warning Banner */}
-            {profileCompleteness >= 100 ? (
+            {showWelcome ? (
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-5 md:p-6 text-white shadow-lg flex flex-col md:flex-row md:items-center gap-5 md:gap-6 relative overflow-hidden">
+                <div className="flex-1 z-10 w-full relative">
+                  <h2 className="text-[20px] md:text-[24px] font-bold leading-tight flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-yellow-300" />
+                    Welcome to ICL, {getFirstName()}!
+                  </h2>
+                  <p className="text-[14px] text-blue-100 mt-2 max-w-xl">
+                    We're thrilled to have you here. Your journey to finding the perfect job starts now. Let's get your profile set up so recruiters can find you.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <button onClick={() => { dismissWelcome(); navigate('/profile/edit'); }} className="bg-white text-blue-700 hover:bg-gray-50 px-5 py-2.5 rounded-full text-[14px] font-bold transition-colors shadow-sm whitespace-nowrap">
+                      Get Started
+                    </button>
+                    <button onClick={dismissWelcome} className="px-5 py-2.5 rounded-full text-[14px] font-medium transition-colors border border-white/30 hover:bg-white/10 whitespace-nowrap">
+                      Skip for now
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 z-10 relative hidden md:flex items-center justify-end w-full mt-4 md:mt-0">
+                  <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 w-full max-w-sm">
+                    <h3 className="font-bold text-white mb-3 text-[14px]">Your Quick Start Guide</h3>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-center gap-3 text-[13px] text-blue-50">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/50 flex items-center justify-center font-bold text-[11px] shrink-0">1</div>
+                        Complete your profile details
+                      </li>
+                      <li className="flex items-center gap-3 text-[13px] text-blue-50">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/50 flex items-center justify-center font-bold text-[11px] shrink-0">2</div>
+                        Take technical skill assessments
+                      </li>
+                      <li className="flex items-center gap-3 text-[13px] text-blue-50">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/50 flex items-center justify-center font-bold text-[11px] shrink-0">3</div>
+                        Apply for recommended jobs
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Decorative background elements */}
+                <div className="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                <div className="absolute left-0 bottom-0 w-48 h-48 bg-blue-400 opacity-20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+              </div>
+            ) : profileCompleteness >= 100 ? (
               <div className="bg-[#f0fdf4] rounded-2xl p-5 md:p-6 border border-[#bbf7d0] flex flex-col md:flex-row md:items-center gap-5 md:gap-6 relative overflow-hidden">
                 <div className="flex-1 z-10 w-full">
                   <h2 className="text-[20px] md:text-[22px] font-bold text-gray-900 leading-tight">

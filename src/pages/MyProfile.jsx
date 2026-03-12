@@ -1,321 +1,951 @@
-// src/pages/MyProfile.jsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/MyProfile.jsx — Full Naukri-style profile with all fields + inline editing
+import { useState, useEffect } from 'react';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import StudentLayout from '../components/layout/StudentLayout';
 import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Briefcase,
-  GraduationCap,
-  Code,
-  Edit,
-  Shield,
-  CheckCircle,
-  Clock,
-  Target,
-  Award
+  Pencil, X, Check, MapPin, Phone, Mail,
+  Briefcase, GraduationCap, Target,
+  Upload, Download, Plus, Loader2,
+  CheckCircle, Clock, Code, BookOpen, FileText
 } from 'lucide-react';
- 
+
+// ─── Card ──────────────────────────────────────────────────────────────────
+const Card = ({ children, id, className = '' }) => (
+  <div id={id} className={`bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>
+    {children}
+  </div>
+);
+
+// ─── Skill tag ─────────────────────────────────────────────────────────────
+const SkillTag = ({ label, color = 'blue', onRemove }) => {
+  const colors = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-100',
+    purple: 'bg-purple-50 text-purple-700 border-purple-100',
+    green: 'bg-green-50 text-green-700 border-green-100',
+    orange: 'bg-orange-50 text-orange-700 border-orange-100',
+    gray: 'bg-gray-50 text-gray-700 border-gray-200',
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold border ${colors[color] || colors.blue}`}>
+      {label}
+      {onRemove && (
+        <button type="button" onClick={onRemove} className="ml-0.5 hover:text-red-500 transition">
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </span>
+  );
+};
+
+// ─── Pencil button ─────────────────────────────────────────────────────────
+const EditBtn = ({ onClick }) => (
+  <button type="button" onClick={onClick}
+    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Edit">
+    <Pencil className="w-4 h-4" />
+  </button>
+);
+
+// ─── Save/Cancel row ───────────────────────────────────────────────────────
+const ActionRow = ({ onSave, onCancel, saving }) => (
+  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+    <button type="button" onClick={onSave} disabled={saving}
+      className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-60">
+      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+      {saving ? 'Saving…' : 'Save'}
+    </button>
+    <button type="button" onClick={onCancel} disabled={saving}
+      className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50 transition">
+      <X className="w-4 h-4" /> Cancel
+    </button>
+  </div>
+);
+
+// ─── Shared styles ─────────────────────────────────────────────────────────
+const iCls = 'w-full px-3 py-2 border border-gray-200 rounded-xl text-[13px] focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition bg-white';
+const lCls = 'block text-[12px] font-bold text-gray-500 mb-1 uppercase tracking-wide';
+const gridTwo = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+const spanTwo = 'sm:col-span-2';
+
+// ─── Circular progress avatar ──────────────────────────────────────────────
+const AvatarProgress = ({ initials, percent }) => {
+  const r = 54, circ = 2 * Math.PI * r;
+  const offset = circ - (percent / 100) * circ;
+  return (
+    <div className="relative w-32 h-32 flex-shrink-0">
+      <svg className="w-32 h-32 -rotate-90" viewBox="0 0 128 128">
+        <circle cx="64" cy="64" r={r} stroke="#e5e7eb" strokeWidth="6" fill="none" />
+        <circle cx="64" cy="64" r={r} stroke="#2563eb" strokeWidth="6" fill="none"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          className="transition-all duration-700" />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-[22px] font-bold text-gray-800">{initials}</span>
+        <span className="text-[11px] font-bold text-blue-600">{percent}%</span>
+      </div>
+    </div>
+  );
+};
+
+// ─── InfoPair ──────────────────────────────────────────────────────────────
+const InfoPair = ({ label, value }) => (
+  <div>
+    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{label}</p>
+    <p className="text-[14px] text-gray-800 font-medium mt-0.5">{value || <span className="text-gray-400">—</span>}</p>
+  </div>
+);
+
+// ─── Tag input helper ──────────────────────────────────────────────────────
+const TagInput = ({ label, field, tags, color = 'blue', onAdd, onRemove }) => {
+  const [val, setVal] = useState('');
+  const add = () => { if (val.trim()) { onAdd(field, val.trim()); setVal(''); } };
+  return (
+    <div>
+      <label className={lCls}>{label}</label>
+      <div className="flex gap-2 mb-2">
+        <input className={iCls + ' flex-1'} value={val}
+          onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          placeholder="Type and press Enter or +" />
+        <button type="button" onClick={add} className="px-3 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition">
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((s, i) => <SkillTag key={i} label={s} color={color} onRemove={() => onRemove(field, i)} />)}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Skeleton shimmer block ────────────────────────────────────────────────
+const Sk = ({ className = '' }) => (
+  <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />
+);
+
+// ─── Full-page skeleton mirroring the profile layout ─────────────────────────
+const ProfileSkeleton = () => (
+  <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
+    <div className="max-w-[1240px] mx-auto space-y-5">
+      {/* Hero card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
+        <div className="flex flex-col sm:flex-row gap-5">
+          <Sk className="w-32 h-32 rounded-full flex-shrink-0" />
+          <div className="flex-1 space-y-3 pt-1">
+            <Sk className="h-6 w-40" />
+            <Sk className="h-4 w-56" />
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <Sk className="h-4 w-32" />
+              <Sk className="h-4 w-40" />
+              <Sk className="h-4 w-28" />
+              <Sk className="h-4 w-36" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Two-column */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+        {/* Sidebar */}
+        <div className="md:col-span-3">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-5 space-y-3">
+            <Sk className="h-5 w-28 mb-2" />
+            {[...Array(7)].map((_, i) => <Sk key={i} className="h-9 w-full rounded-lg" />)}
+          </div>
+        </div>
+
+        {/* Sections */}
+        <div className="md:col-span-9 space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6 space-y-3">
+              <Sk className="h-5 w-36" />
+              <Sk className="h-4 w-full" />
+              <Sk className="h-4 w-3/4" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// ─── Main Component ────────────────────────────────────────────────────────
 const MyProfile = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, profileCompleteness } = useProfile();
- 
-  // Helper function to get user's display name
-  const getUserName = () => {
-    if (profile?.fullName) return profile.fullName;
-    if (user?.fullName) return user.fullName;
-    if (user?.name) return user.name;
-    return 'User';
-  };
- 
-  // Helper function to get initials
-  const getUserInitials = () => {
-    const fullName = getUserName();
-    const names = fullName.split(' ');
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return fullName.substring(0, 2).toUpperCase();
-  };
- 
-  // Helper function to get user role
-  const getUserRole = () => {
-    if (user?.role) {
-      return user.role.charAt(0).toUpperCase() + user.role.slice(1);
-    }
-    return 'Candidate';
-  };
- 
-  // Helper function to get status badge color
-  const getStatusColor = () => {
-    if (user?.isActive) return 'bg-green-100 text-green-700';
-    return 'bg-gray-100 text-gray-700';
-  };
- 
-  // Helper function to format date
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not specified';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  const { profile, updateProfile, fetchProfile, isLoading } = useProfile();
+  const toast = useToast();
+  const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [idProofFile, setIdProofFile] = useState(null);
+
+  // ── Draft states per section ──
+  const [draftHeader, setDraftHeader] = useState({});
+  const [draftPersonal, setDraftPersonal] = useState({});
+  const [draftEducation, setDraftEducation] = useState({});
+  const [draftProfessional, setDraftProfessional] = useState({});
+  const [draftSkills, setDraftSkills] = useState({ primary: [], secondary: [], langs: [], tools: [] });
+  const [draftCourses, setDraftCourses] = useState({});
+  const [draftCareer, setDraftCareer] = useState({ careerObjective: '', preferredJobRole: '', targetCompanies: [] });
+  const [newCompany, setNewCompany] = useState('');
+
+  // Sync all drafts when profile loads
+  useEffect(() => {
+    if (!profile) return;
+    setDraftHeader({
+      fullName: profile.fullName || user?.fullName || '',
+      currentRole: profile.currentRole || '',
+      city: profile.address?.city || '',
+      state: profile.address?.state || '',
     });
+    setDraftPersonal({
+      fullName: profile.fullName || user?.fullName || '',
+      email: profile.email || user?.email || '',
+      mobileNumber: profile.mobileNumber || '',
+      whatsappNumber: profile.whatsappNumber || '',
+      alternateMobileNumber: profile.alternateMobileNumber || '',
+      gender: profile.gender || '',
+      dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth).toISOString().split('T')[0] : '',
+      city: profile.address?.city || '',
+      state: profile.address?.state || '',
+      country: profile.address?.country || '',
+      pincode: profile.address?.pincode || '',
+    });
+    setDraftEducation({
+      highestQualification: profile.highestQualification || '',
+      specialization: profile.specialization || '',
+      collegeName: profile.collegeName || '',
+      university: profile.university || '',
+      graduationYear: profile.graduationYear || '',
+      cgpaOrPercentage: profile.cgpaOrPercentage || '',
+      tenthPercentage: profile.tenthPercentage || '',
+      twelfthOrDiplomaPercentage: profile.twelfthOrDiplomaPercentage || '',
+    });
+    setDraftProfessional({
+      currentStatus: profile.currentStatus || '',
+      candidateType: profile.candidateType || '',
+      yearsOfExperience: profile.yearsOfExperience || 0,
+      previousOrganization: profile.previousOrganization || '',
+      currentRole: profile.currentRole || '',
+    });
+    setDraftSkills({
+      primary: [...(profile.primarySkills || [])],
+      secondary: [...(profile.secondarySkills || [])],
+      langs: [...(profile.programmingLanguages || [])],
+      tools: [...(profile.toolsAndTechnologies || [])],
+    });
+    setDraftCourses({
+      courseInterestedIn: profile.courseInterestedIn || '',
+      preferredLearningMode: profile.preferredLearningMode || '',
+      availability: profile.availability || '',
+      expectedStartDate: profile.expectedStartDate ? new Date(profile.expectedStartDate).toISOString().split('T')[0] : '',
+      dailyStudyHours: profile.dailyStudyHours || '',
+    });
+    setDraftCareer({
+      careerObjective: profile.careerObjective || '',
+      preferredJobRole: profile.preferredJobRole || '',
+      targetCompanies: Array.isArray(profile.targetCompanies) ? [...profile.targetCompanies] : [],
+    });
+  }, [profile, user]);
+
+  const getName = () => profile?.fullName || user?.fullName || user?.name || 'User';
+  const getInitials = () => {
+    const n = getName().split(' ');
+    return n.length >= 2 ? `${n[0][0]}${n[n.length - 1][0]}`.toUpperCase() : getName().substring(0, 2).toUpperCase();
   };
- 
+  const percent = profile?.profileCompletionPercentage || 0;
+
+  const openEdit = s => setEditing(s);
+  const closeEdit = () => { setEditing(null); setResumeFile(null); setIdProofFile(null); };
+
+  // ── Generic save ──
+  const saveSection = async (data, opts = {}) => {
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      fd.append('profileData', JSON.stringify(data));
+      if (opts.resume) fd.append('resumeFile', opts.resume);
+      if (opts.idProof) fd.append('idProofFile', opts.idProof);
+      const res = await updateProfile(fd);
+      if (res?.success) {
+        toast.success('Saved!', 'Section updated.');
+        await fetchProfile();
+        closeEdit();
+      } else toast.error('Error', res?.message || 'Failed to save.');
+    } catch (e) { toast.error('Error', e.message || 'Failed to save.'); }
+    finally { setSaving(false); }
+  };
+
+  const saveHeader = () => saveSection({
+    fullName: draftHeader.fullName, currentRole: draftHeader.currentRole,
+    address: { city: draftHeader.city, state: draftHeader.state, country: profile?.address?.country || '' }
+  });
+  const savePersonal = () => saveSection({
+    fullName: draftPersonal.fullName,
+    mobileNumber: draftPersonal.mobileNumber,
+    whatsappNumber: draftPersonal.whatsappNumber,
+    alternateMobileNumber: draftPersonal.alternateMobileNumber,
+    gender: draftPersonal.gender,
+    dateOfBirth: draftPersonal.dateOfBirth || undefined,
+    address: { city: draftPersonal.city, state: draftPersonal.state, country: draftPersonal.country, pincode: draftPersonal.pincode }
+  });
+  const saveEducation = () => saveSection({
+    highestQualification: draftEducation.highestQualification,
+    specialization: draftEducation.specialization,
+    collegeName: draftEducation.collegeName,
+    university: draftEducation.university,
+    graduationYear: draftEducation.graduationYear ? parseInt(draftEducation.graduationYear) : undefined,
+    cgpaOrPercentage: draftEducation.cgpaOrPercentage,
+    tenthPercentage: draftEducation.tenthPercentage,
+    twelfthOrDiplomaPercentage: draftEducation.twelfthOrDiplomaPercentage,
+  });
+  const saveProfessional = () => saveSection({
+    currentStatus: draftProfessional.currentStatus,
+    candidateType: draftProfessional.candidateType,
+    yearsOfExperience: parseInt(draftProfessional.yearsOfExperience) || 0,
+    previousOrganization: draftProfessional.previousOrganization,
+    currentRole: draftProfessional.currentRole,
+  });
+  const saveSkills = () => saveSection({
+    primarySkills: draftSkills.primary,
+    secondarySkills: draftSkills.secondary,
+    programmingLanguages: draftSkills.langs,
+    toolsAndTechnologies: draftSkills.tools,
+  });
+  const saveCourses = () => saveSection({
+    courseInterestedIn: draftCourses.courseInterestedIn,
+    preferredLearningMode: draftCourses.preferredLearningMode,
+    availability: draftCourses.availability,
+    expectedStartDate: draftCourses.expectedStartDate || undefined,
+    dailyStudyHours: draftCourses.dailyStudyHours,
+  });
+  const saveCareer = () => saveSection({
+    careerObjective: draftCareer.careerObjective,
+    preferredJobRole: draftCareer.preferredJobRole,
+    targetCompanies: draftCareer.targetCompanies,
+  });
+  const saveDocuments = () => saveSection(
+    { documents: { resume: resumeFile ? { filename: resumeFile.name } : undefined } },
+    { resume: resumeFile, idProof: idProofFile }
+  );
+
+  // ── Tag helpers ──
+  const addTag = (field, val) => setDraftSkills(p => ({ ...p, [field]: [...p[field], val] }));
+  const removeTag = (field, i) => setDraftSkills(p => ({ ...p, [field]: p[field].filter((_, idx) => idx !== i) }));
+  const addCompany = () => {
+    if (newCompany.trim()) { setDraftCareer(p => ({ ...p, targetCompanies: [...p.targetCompanies, newCompany.trim()] })); setNewCompany(''); }
+  };
+  const removeCompany = i => setDraftCareer(p => ({ ...p, targetCompanies: p.targetCompanies.filter((_, idx) => idx !== i) }));
+
+  const resumeUrl = profile?.documents?.resume?.url || profile?.resumeUrl;
+  const resumeFilename = profile?.documents?.resume?.filename || 'Resume.pdf';
+  const resumeUploadedAt = profile?.documents?.resume?.uploadedAt;
+  const idProofUrl = profile?.documents?.idProof?.url || profile?.idProofUrl;
+
+  // Quick links
+  const quickLinks = [
+    { id: 'sec-resume', label: 'Resume', badge: !resumeUrl ? 'Update' : null, bc: 'text-blue-600' },
+    { id: 'sec-headline', label: 'Resume headline', badge: !profile?.currentRole ? 'Add' : null, bc: 'text-green-600' },
+    { id: 'sec-skills', label: 'Key skills', badge: !profile?.primarySkills?.length ? 'Add' : null, bc: 'text-green-600' },
+    { id: 'sec-education', label: 'Education', badge: !profile?.collegeName ? 'Add' : null, bc: 'text-green-600' },
+    { id: 'sec-professional', label: 'Professional details', badge: !profile?.currentStatus ? 'Add' : null, bc: 'text-green-600' },
+    { id: 'sec-courses', label: 'Course preferences', badge: !profile?.preferredLearningMode ? 'Add' : null, bc: 'text-green-600' },
+    { id: 'sec-career', label: 'Career goals', badge: !profile?.careerObjective ? 'Add' : null, bc: 'text-green-600' },
+    { id: 'sec-personal', label: 'Personal details', badge: null, bc: '' },
+    { id: 'sec-documents', label: 'Documents', badge: null, bc: '' },
+  ];
+  const scrollTo = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (isLoading && !profile) {
+    return (
+      <StudentLayout title="My Profile">
+        <ProfileSkeleton />
+      </StudentLayout>
+    );
+  }
+
   return (
     <StudentLayout title="My Profile">
-      {/* Profile Header Card */}
-      <div className="max-w-5xl mx-auto">
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl shadow-blue-500/10 border border-white/50 overflow-hidden mb-8">
-          {/* Cover/Banner */}
-          <div className="h-32 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 relative">
-            <div className="absolute inset-0 opacity-10" style={{backgroundImage:'linear-gradient(to right, rgb(255 255 255 / 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / 0.1) 1px, transparent 1px)', backgroundSize:'20px 20px'}}></div>
-          </div>
- 
-          {/* Profile Info */}
-          <div className="relative px-6 pb-6">
-            {/* Avatar */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between -mt-16 mb-4">
-              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center shadow-2xl border-4 border-white">
-                  <span className="text-white font-bold text-4xl">{getUserInitials()}</span>
-                </div>
-                <div className="text-center sm:text-left mb-4 sm:mb-0">
-                  <h1 className="text-3xl font-bold text-gray-900">{getUserName()}</h1>
-                  <p className="text-gray-600 mt-1">{profile?.email || user?.email}</p>
-                  <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
-                    <div className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                      <Shield className="w-3 h-3" />
-                      {getUserRole()}
+      <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
+        <div className="max-w-[1240px] mx-auto space-y-5">
+
+          {/* ══ HERO CARD — full width ══ */}
+          <Card className="p-6">
+            <div className="flex flex-col sm:flex-row gap-5">
+              <AvatarProgress initials={getInitials()} percent={percent} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-[22px] font-bold text-gray-900 leading-tight">{getName()}</h1>
+                      <EditBtn onClick={() => openEdit('header')} />
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor()}`}>
-                      {user?.isActive ? 'Active' : 'Inactive'}
-                    </div>
+                    {profile?.currentRole && <p className="text-[14px] font-semibold text-gray-700 mt-0.5">{profile.currentRole}</p>}
                   </div>
-                </div>
-              </div>
- 
-              {/* Edit Profile Button + Completeness */}
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => navigate('/profile/edit')}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit Profile
-                </button>
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                      {profileCompleteness}%
+                  {profile?.updatedAt && (
+                    <div className="hidden sm:block text-right shrink-0">
+                      <p className="text-[12px] text-gray-400">Profile last updated · {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">Profile Complete</p>
-                  </div>
+                  )}
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6">
+                  {profile?.address?.city && (
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span>{[profile.address.city, profile.address.state, profile.address.country].filter(Boolean).join(', ')}</span>
+                    </div>
+                  )}
+                  {profile?.currentStatus && (
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span>{profile.currentStatus}</span>
+                    </div>
+                  )}
+                  {profile?.availability && (
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span>{profile.availability.replace(/_/g, ' ')}</span>
+                    </div>
+                  )}
+                  {profile?.mobileNumber && (
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span>{profile.mobileNumber}</span>
+                      <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                    </div>
+                  )}
+                  {(profile?.email || user?.email) && (
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600 min-w-0">
+                      <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="truncate">{profile?.email || user?.email}</span>
+                      <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
- 
-            {/* Bio/Summary */}
-            {profile?.careerObjective && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">About Me</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{profile.careerObjective}</p>
-              </div>
-            )}
-          </div>
-        </div>
- 
-        {/* Profile Details Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Personal Information */}
-          <InfoCard title="Personal Information" icon={User}>
-            <InfoRow label="Full Name" value={getUserName()} />
-            <InfoRow
-              label="Date of Birth"
-              value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString() : 'Not specified'}
-            />
-            <InfoRow label="Gender" value={profile?.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : 'Not specified'} />
-          </InfoCard>
- 
-          {/* Contact Information */}
-          <InfoCard title="Contact Information" icon={Phone}>
-            <InfoRow label="Email" value={profile?.email || user?.email} icon={Mail} />
-            <InfoRow label="Mobile" value={profile?.mobileNumber || 'Not specified'} icon={Phone} />
-            {profile?.whatsappNumber && (
-              <InfoRow label="WhatsApp" value={profile.whatsappNumber} icon={Phone} />
-            )}
-            {profile?.address?.city && (
-              <InfoRow
-                label="Location"
-                value={`${profile.address.city}, ${profile.address.state}, ${profile.address.country}`}
-                icon={MapPin}
-              />
-            )}
-          </InfoCard>
- 
-          {/* Educational Details */}
-          <InfoCard title="Educational Background" icon={GraduationCap}>
-            <InfoRow
-              label="Highest Qualification"
-              value={profile?.highestQualification ? profile.highestQualification.toUpperCase() : 'Not specified'}
-            />
-            <InfoRow label="Specialization" value={profile?.specialization || 'Not specified'} />
-            <InfoRow label="Institution" value={profile?.collegeName || 'Not specified'} />
-            <InfoRow label="University" value={profile?.university || 'Not specified'} />
-            <InfoRow
-              label="Graduation Year"
-              value={profile?.graduationYear || 'Not specified'}
-            />
-            <InfoRow label="CGPA/Percentage" value={profile?.cgpaOrPercentage || 'Not specified'} />
-          </InfoCard>
- 
-          {/* Professional Details */}
-          <InfoCard title="Professional Information" icon={Briefcase}>
-            <InfoRow label="Candidate Type" value={profile?.candidateType || 'Not specified'} />
-            <InfoRow label="Current Status" value={profile?.currentStatus?.replace('-', ' ') || 'Not specified'} />
-            {profile?.candidateType === 'EXPERIENCED' && (
-              <>
-                <InfoRow label="Experience" value={`${profile?.yearsOfExperience || 0} years`} />
-                <InfoRow label="Current Role" value={profile?.currentRole || 'Not specified'} />
-                <InfoRow label="Previous Organization" value={profile?.previousOrganization || 'Not specified'} />
-              </>
-            )}
-          </InfoCard>
- 
-          {/* Skills */}
-          <InfoCard title="Skills & Expertise" icon={Code}>
-            {profile?.primarySkills && profile.primarySkills.length > 0 ? (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Primary Skills</p>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.primarySkills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+
+            {/* Inline: header edit */}
+            {editing === 'header' && (
+              <div className="mt-5 pt-5 border-t border-gray-100">
+                <div className={gridTwo}>
+                  <div className={spanTwo}>
+                    <label className={lCls}>Full Name</label>
+                    <input className={iCls} value={draftHeader.fullName} onChange={e => setDraftHeader(p => ({ ...p, fullName: e.target.value }))} placeholder="Your full name" />
+                  </div>
+                  <div className={spanTwo}>
+                    <label className={lCls}>Current Role / Designation</label>
+                    <input className={iCls} value={draftHeader.currentRole} onChange={e => setDraftHeader(p => ({ ...p, currentRole: e.target.value }))} placeholder="e.g. Full Stack Developer" />
+                  </div>
+                  <div>
+                    <label className={lCls}>City</label>
+                    <input className={iCls} value={draftHeader.city} onChange={e => setDraftHeader(p => ({ ...p, city: e.target.value }))} placeholder="Coimbatore" />
+                  </div>
+                  <div>
+                    <label className={lCls}>State</label>
+                    <input className={iCls} value={draftHeader.state} onChange={e => setDraftHeader(p => ({ ...p, state: e.target.value }))} placeholder="Tamil Nadu" />
                   </div>
                 </div>
-                {profile?.programmingLanguages && profile.programmingLanguages.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Programming Languages</p>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.programmingLanguages.map((lang, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
-                        >
-                          {lang}
-                        </span>
-                      ))}
+                <ActionRow onSave={saveHeader} onCancel={closeEdit} saving={saving} />
+              </div>
+            )}
+          </Card>
+
+          {/* ══ TWO-COLUMN: Quick Links + Sections ══ */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+
+            {/* ── LEFT: Quick Links ── */}
+            <div className="md:col-span-3 md:sticky md:top-[15px] self-start">
+              <Card className="p-5">
+                <h3 className="font-bold text-gray-900 text-[16px] mb-4">Quick links</h3>
+                <div className="space-y-0.5">
+                  {quickLinks.map(link => (
+                    <button key={link.id} type="button" onClick={() => scrollTo(link.id)}
+                      className="w-full flex items-center justify-between py-2.5 px-2 text-[14px] text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-left font-medium">
+                      <span>{link.label}</span>
+                      {link.badge && <span className={`text-[11px] font-bold ${link.bc}`}>{link.badge}</span>}
+                    </button>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* ── RIGHT: All Sections ── */}
+            <div className="md:col-span-9 space-y-4">
+
+              {/* ── RESUME ── */}
+              <Card id="sec-resume" className="p-6">
+                <h2 className="font-bold text-[18px] text-gray-900 mb-4">Resume</h2>
+                {resumeUrl ? (
+                  <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl mb-4">
+                    <div>
+                      <p className="text-[14px] font-bold text-gray-800">{resumeFilename}</p>
+                      {resumeUploadedAt && <p className="text-[12px] text-gray-400 mt-0.5">Uploaded on {new Date(resumeUploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
                     </div>
+                    <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                      <Download className="w-4 h-4" />
+                    </a>
+                  </div>
+                ) : <p className="text-[13px] text-gray-400 mb-4">No resume uploaded yet.</p>}
+
+                {editing === 'resume' ? (
+                  <div>
+                    <label className="block mb-1 text-[12px] font-bold text-gray-500 uppercase">Resume file</label>
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-300 transition mb-1">
+                      <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                      <label className="cursor-pointer">
+                        <span className="text-[13px] font-bold text-blue-600 hover:underline">{resumeFile ? resumeFile.name : 'Choose file'}</span>
+                        <input type="file" accept=".pdf,.doc,.docx,.rtf" className="hidden" onChange={e => setResumeFile(e.target.files[0] || null)} />
+                      </label>
+                      <p className="text-[11px] text-gray-400 mt-1">Supported: doc, docx, rtf, pdf · Max 2 MB</p>
+                    </div>
+                    <ActionRow onSave={saveDocuments} onCancel={closeEdit} saving={saving} />
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => openEdit('resume')}
+                    className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 text-[13px] font-bold rounded-full hover:bg-blue-50 transition">
+                    <Upload className="w-4 h-4" />
+                    {resumeUrl ? 'Update resume' : 'Upload resume'}
+                  </button>
+                )}
+              </Card>
+
+              {/* ── RESUME HEADLINE ── */}
+              <Card id="sec-headline" className="p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold text-[18px] text-gray-900">Resume headline</h2>
+                  <EditBtn onClick={() => openEdit('headline')} />
+                </div>
+                {editing === 'headline' ? (
+                  <div>
+                    <label className={lCls}>Headline</label>
+                    <textarea rows={2} className={iCls + ' resize-none'}
+                      value={draftProfessional.currentRole}
+                      onChange={e => setDraftProfessional(p => ({ ...p, currentRole: e.target.value }))}
+                      placeholder="e.g. Entry level Full Stack Developer" />
+                    <ActionRow onSave={saveProfessional} onCancel={closeEdit} saving={saving} />
+                  </div>
+                ) : (
+                  <p className="text-[14px] text-gray-700 font-medium">
+                    {profile?.currentRole || <span className="text-gray-400">Add a headline to describe your role</span>}
+                  </p>
+                )}
+              </Card>
+
+              {/* ── KEY SKILLS (primary + secondary + langs + tools merged) ── */}
+              <Card id="sec-skills" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Key skills</h2>
+                  <EditBtn onClick={() => openEdit('skills')} />
+                </div>
+                {editing === 'skills' ? (
+                  <div className="space-y-5">
+                    <TagInput label="Primary Skills" field="primary" tags={draftSkills.primary} color="blue" onAdd={addTag} onRemove={removeTag} />
+                    <TagInput label="Secondary Skills" field="secondary" tags={draftSkills.secondary} color="green" onAdd={addTag} onRemove={removeTag} />
+                    <TagInput label="Programming Languages" field="langs" tags={draftSkills.langs} color="purple" onAdd={addTag} onRemove={removeTag} />
+                    <TagInput label="Tools & Technologies" field="tools" tags={draftSkills.tools} color="orange" onAdd={addTag} onRemove={removeTag} />
+                    <ActionRow onSave={saveSkills} onCancel={closeEdit} saving={saving} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {(profile?.primarySkills?.length > 0 || profile?.secondarySkills?.length > 0 || profile?.programmingLanguages?.length > 0 || profile?.toolsAndTechnologies?.length > 0) ? (
+                      <div className="space-y-3">
+                        {profile?.primarySkills?.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Primary Skills</p>
+                            <div className="flex flex-wrap gap-1.5">{profile.primarySkills.map((s, i) => <SkillTag key={i} label={s} color="blue" />)}</div>
+                          </div>
+                        )}
+                        {profile?.secondarySkills?.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Secondary Skills</p>
+                            <div className="flex flex-wrap gap-1.5">{profile.secondarySkills.map((s, i) => <SkillTag key={i} label={s} color="green" />)}</div>
+                          </div>
+                        )}
+                        {profile?.programmingLanguages?.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Programming Languages</p>
+                            <div className="flex flex-wrap gap-1.5">{profile.programmingLanguages.map((s, i) => <SkillTag key={i} label={s} color="purple" />)}</div>
+                          </div>
+                        )}
+                        {profile?.toolsAndTechnologies?.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Tools & Technologies</p>
+                            <div className="flex flex-wrap gap-1.5">{profile.toolsAndTechnologies.map((s, i) => <SkillTag key={i} label={s} color="orange" />)}</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : <p className="text-[13px] text-gray-400">No skills added yet. Click ✏️ to add.</p>}
                   </div>
                 )}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">No skills added yet</p>
-            )}
-          </InfoCard>
- 
-          {/* Career Goals */}
-          <InfoCard title="Career Goals & Preferences" icon={Target}>
-            <InfoRow label="Preferred Role" value={profile?.preferredJobRole || 'Not specified'} />
-            <InfoRow label="Target Companies" value={profile?.targetCompanies || 'Not specified'} />
-            {profile?.preferredLearningMode && (
-              <InfoRow
-                label="Learning Mode"
-                value={profile.preferredLearningMode.replace('_', ' ')}
-              />
-            )}
-            {profile?.availability && (
-              <InfoRow
-                label="Availability"
-                value={profile.availability.replace('_', ' ')}
-              />
-            )}
-          </InfoCard>
- 
-          {/* Account Information */}
-          <InfoCard title="Account Information" icon={Clock} fullWidth>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoRow
-                label="Created At"
-                value={formatDate(user?.createdAt)}
-                icon={Calendar}
-              />
-              <InfoRow
-                label="Last Updated"
-                value={formatDate(user?.updatedAt)}
-                icon={Clock}
-              />
-            </div>
-          </InfoCard>
- 
-          {/* Permissions */}
-          {user?.role === 'admin' && (
-            <InfoCard title="Permissions" icon={Award} fullWidth>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <PermissionBadge label="Create Assessments" allowed={true} />
-                <PermissionBadge label="Assign Tests" allowed={true} />
-                <PermissionBadge label="View Analytics" allowed={true} />
-                <PermissionBadge label="Export Reports" allowed={true} />
-              </div>
-            </InfoCard>
-          )}
-        </div>
+              </Card>
+
+              {/* ── EDUCATION ── */}
+              <Card id="sec-education" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Education</h2>
+                  <EditBtn onClick={() => openEdit('education')} />
+                </div>
+                {editing === 'education' ? (
+                  <div className={gridTwo}>
+                    <div className={spanTwo}>
+                      <label className={lCls}>College / Institution</label>
+                      <input className={iCls} value={draftEducation.collegeName} onChange={e => setDraftEducation(p => ({ ...p, collegeName: e.target.value }))} placeholder="e.g. Anna University" />
+                    </div>
+                    <div>
+                      <label className={lCls}>University</label>
+                      <input className={iCls} value={draftEducation.university} onChange={e => setDraftEducation(p => ({ ...p, university: e.target.value }))} placeholder="e.g. Anna University" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Highest Qualification</label>
+                      <select className={iCls} value={draftEducation.highestQualification} onChange={e => setDraftEducation(p => ({ ...p, highestQualification: e.target.value }))}>
+                        <option value="">Select…</option>
+                        {["High School (10th)", "Intermediate (12th)", "Diploma", "Bachelor's Degree", "Master's Degree", "PhD", "Other"].map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lCls}>Branch / Specialization</label>
+                      <input className={iCls} value={draftEducation.specialization} onChange={e => setDraftEducation(p => ({ ...p, specialization: e.target.value }))} placeholder="e.g. Computer Science" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Graduation Year</label>
+                      <input type="number" className={iCls} value={draftEducation.graduationYear} onChange={e => setDraftEducation(p => ({ ...p, graduationYear: e.target.value }))} placeholder="2025" />
+                    </div>
+                    <div>
+                      <label className={lCls}>CGPA / Percentage</label>
+                      <input className={iCls} value={draftEducation.cgpaOrPercentage} onChange={e => setDraftEducation(p => ({ ...p, cgpaOrPercentage: e.target.value }))} placeholder="8.5" />
+                    </div>
+                    <div>
+                      <label className={lCls}>10th Percentage</label>
+                      <input className={iCls} value={draftEducation.tenthPercentage} onChange={e => setDraftEducation(p => ({ ...p, tenthPercentage: e.target.value }))} placeholder="90%" />
+                    </div>
+                    <div>
+                      <label className={lCls}>12th / Diploma Percentage</label>
+                      <input className={iCls} value={draftEducation.twelfthOrDiplomaPercentage} onChange={e => setDraftEducation(p => ({ ...p, twelfthOrDiplomaPercentage: e.target.value }))} placeholder="88%" />
+                    </div>
+                    <div className={spanTwo}><ActionRow onSave={saveEducation} onCancel={closeEdit} saving={saving} /></div>
+                  </div>
+                ) : (
+                  profile?.collegeName ? (
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                        <GraduationCap className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[15px] font-bold text-gray-900">{profile.highestQualification || 'Degree'}{profile.specialization ? ` — ${profile.specialization}` : ''}</p>
+                        <p className="text-[13px] text-gray-600 mt-0.5">{profile.collegeName}</p>
+                        {profile.university && <p className="text-[12px] text-gray-400">{profile.university}</p>}
+                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                          {profile.graduationYear && <span className="text-[12px] text-gray-500">{profile.graduationYear}</span>}
+                          {profile.cgpaOrPercentage && <span className="text-[12px] text-gray-500">CGPA: {profile.cgpaOrPercentage}</span>}
+                          {profile.tenthPercentage && <span className="text-[12px] text-gray-500">10th: {profile.tenthPercentage}%</span>}
+                          {profile.twelfthOrDiplomaPercentage && <span className="text-[12px] text-gray-500">12th: {profile.twelfthOrDiplomaPercentage}%</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ) : <p className="text-[13px] text-gray-400">No education details added. Click ✏️ to add.</p>
+                )}
+              </Card>
+
+              {/* ── PROFESSIONAL DETAILS ── */}
+              <Card id="sec-professional" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Professional details</h2>
+                  <EditBtn onClick={() => openEdit('professional')} />
+                </div>
+                {editing === 'professional' ? (
+                  <div className={gridTwo}>
+                    <div>
+                      <label className={lCls}>Current Status</label>
+                      <select className={iCls} value={draftProfessional.currentStatus} onChange={e => setDraftProfessional(p => ({ ...p, currentStatus: e.target.value }))}>
+                        <option value="">Select…</option>
+                        {['Student', 'Graduate', 'Working Professional'].map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lCls}>Candidate Type</label>
+                      <select className={iCls} value={draftProfessional.candidateType} onChange={e => setDraftProfessional(p => ({ ...p, candidateType: e.target.value }))}>
+                        <option value="">Select…</option>
+                        <option value="FRESHER">Fresher</option>
+                        <option value="EXPERIENCED">Experienced</option>
+                      </select>
+                    </div>
+                    {draftProfessional.candidateType === 'EXPERIENCED' && (
+                      <>
+                        <div>
+                          <label className={lCls}>Years of Experience</label>
+                          <input type="number" min="0" className={iCls} value={draftProfessional.yearsOfExperience} onChange={e => setDraftProfessional(p => ({ ...p, yearsOfExperience: e.target.value }))} placeholder="2" />
+                        </div>
+                        <div>
+                          <label className={lCls}>Current / Previous Role</label>
+                          <input className={iCls} value={draftProfessional.currentRole} onChange={e => setDraftProfessional(p => ({ ...p, currentRole: e.target.value }))} placeholder="e.g. Software Engineer" />
+                        </div>
+                        <div className={spanTwo}>
+                          <label className={lCls}>Previous Organization</label>
+                          <input className={iCls} value={draftProfessional.previousOrganization} onChange={e => setDraftProfessional(p => ({ ...p, previousOrganization: e.target.value }))} placeholder="e.g. Infosys" />
+                        </div>
+                      </>
+                    )}
+                    <div className={spanTwo}><ActionRow onSave={saveProfessional} onCancel={closeEdit} saving={saving} /></div>
+                  </div>
+                ) : (
+                  <div className={gridTwo}>
+                    <InfoPair label="Current Status" value={profile?.currentStatus} />
+                    <InfoPair label="Candidate Type" value={profile?.candidateType === 'EXPERIENCED' ? 'Experienced' : profile?.candidateType === 'FRESHER' ? 'Fresher' : undefined} />
+                    {profile?.candidateType === 'EXPERIENCED' && (
+                      <>
+                        <InfoPair label="Years of Experience" value={profile?.yearsOfExperience ? `${profile.yearsOfExperience} yr${profile.yearsOfExperience !== 1 ? 's' : ''}` : undefined} />
+                        <InfoPair label="Current Role" value={profile?.currentRole} />
+                        <InfoPair label="Previous Organization" value={profile?.previousOrganization} />
+                      </>
+                    )}
+                    {!profile?.currentStatus && <p className="text-[13px] text-gray-400 col-span-2">No professional details added. Click ✏️ to add.</p>}
+                  </div>
+                )}
+              </Card>
+
+              {/* ── COURSE PREFERENCES ── */}
+              <Card id="sec-courses" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Course preferences</h2>
+                  <EditBtn onClick={() => openEdit('courses')} />
+                </div>
+                {editing === 'courses' ? (
+                  <div className={gridTwo}>
+                    <div>
+                      <label className={lCls}>Course Interested In</label>
+                      <input className={iCls} value={draftCourses.courseInterestedIn} onChange={e => setDraftCourses(p => ({ ...p, courseInterestedIn: e.target.value }))} placeholder="e.g. Full Stack Development" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Preferred Learning Mode</label>
+                      <select className={iCls} value={draftCourses.preferredLearningMode} onChange={e => setDraftCourses(p => ({ ...p, preferredLearningMode: e.target.value }))}>
+                        <option value="">Select…</option>
+                        {['online', 'offline', 'hybrid', 'self_paced'].map(o => <option key={o} value={o}>{o.replace('_', ' ')}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lCls}>Availability</label>
+                      <select className={iCls} value={draftCourses.availability} onChange={e => setDraftCourses(p => ({ ...p, availability: e.target.value }))}>
+                        <option value="">Select…</option>
+                        {['immediate', 'within_1_month', 'within_3_months', 'within_6_months', 'not_available'].map(o => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lCls}>Daily Study Hours</label>
+                      <input type="number" min="1" max="24" className={iCls} value={draftCourses.dailyStudyHours} onChange={e => setDraftCourses(p => ({ ...p, dailyStudyHours: e.target.value }))} placeholder="e.g. 4" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Expected Start Date</label>
+                      <input type="date" className={iCls} value={draftCourses.expectedStartDate} onChange={e => setDraftCourses(p => ({ ...p, expectedStartDate: e.target.value }))} />
+                    </div>
+                    <div className={spanTwo}><ActionRow onSave={saveCourses} onCancel={closeEdit} saving={saving} /></div>
+                  </div>
+                ) : (
+                  <div className={gridTwo}>
+                    <InfoPair label="Course Interest" value={profile?.courseInterestedIn} />
+                    <InfoPair label="Learning Mode" value={profile?.preferredLearningMode?.replace('_', ' ')} />
+                    <InfoPair label="Availability" value={profile?.availability?.replace(/_/g, ' ')} />
+                    <InfoPair label="Daily Study Hours" value={profile?.dailyStudyHours ? `${profile.dailyStudyHours} hrs/day` : undefined} />
+                    {!profile?.preferredLearningMode && !profile?.courseInterestedIn && (
+                      <p className="text-[13px] text-gray-400 col-span-2">No preferences added. Click ✏️ to add.</p>
+                    )}
+                  </div>
+                )}
+              </Card>
+
+              {/* ── CAREER GOALS ── */}
+              <Card id="sec-career" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Career goals</h2>
+                  <EditBtn onClick={() => openEdit('career')} />
+                </div>
+                {editing === 'career' ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className={lCls}>Career Objective / Profile Summary</label>
+                      <textarea rows={4} className={iCls + ' resize-none'} value={draftCareer.careerObjective} onChange={e => setDraftCareer(p => ({ ...p, careerObjective: e.target.value }))} placeholder="Briefly describe your career goals…" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Preferred Job Role</label>
+                      <input className={iCls} value={draftCareer.preferredJobRole} onChange={e => setDraftCareer(p => ({ ...p, preferredJobRole: e.target.value }))} placeholder="e.g. Full Stack Developer" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Target Companies</label>
+                      <div className="flex gap-2 mb-2">
+                        <input className={iCls + ' flex-1'} value={newCompany} onChange={e => setNewCompany(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCompany(); } }} placeholder="e.g. Google, Infosys" />
+                        <button type="button" onClick={addCompany} className="px-3 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"><Plus className="w-4 h-4" /></button>
+                      </div>
+                      {draftCareer.targetCompanies.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {draftCareer.targetCompanies.map((c, i) => <SkillTag key={i} label={c} color="gray" onRemove={() => removeCompany(i)} />)}
+                        </div>
+                      )}
+                    </div>
+                    <ActionRow onSave={saveCareer} onCancel={closeEdit} saving={saving} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {profile?.careerObjective
+                      ? <p className="text-[14px] text-gray-700 leading-relaxed">{profile.careerObjective}</p>
+                      : <p className="text-[13px] text-gray-400">No career objective added. Click ✏️ to add.</p>}
+                    {profile?.preferredJobRole && (
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-gray-400" />
+                        <span className="text-[13px] text-gray-600 font-medium">Preferred Role: {profile.preferredJobRole}</span>
+                      </div>
+                    )}
+                    {profile?.targetCompanies?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {profile.targetCompanies.map((c, i) => <SkillTag key={i} label={c} color="gray" />)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
+
+              {/* ── PERSONAL DETAILS ── */}
+              <Card id="sec-personal" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Personal details</h2>
+                  <EditBtn onClick={() => openEdit('personal')} />
+                </div>
+                {editing === 'personal' ? (
+                  <div className={gridTwo}>
+                    <div className={spanTwo}>
+                      <label className={lCls}>Full Name</label>
+                      <input className={iCls} value={draftPersonal.fullName} onChange={e => setDraftPersonal(p => ({ ...p, fullName: e.target.value }))} placeholder="Your full name" />
+                    </div>
+                    <div className={spanTwo}>
+                      <label className={lCls}>Email Address</label>
+                      <input className={iCls + ' bg-gray-50 cursor-not-allowed'} value={draftPersonal.email} disabled placeholder="Email" />
+                      <p className="text-[11px] text-gray-400 mt-1">Email cannot be changed</p>
+                    </div>
+                    <div>
+                      <label className={lCls}>Mobile Number</label>
+                      <input type="tel" className={iCls} value={draftPersonal.mobileNumber} onChange={e => setDraftPersonal(p => ({ ...p, mobileNumber: e.target.value }))} placeholder="10-digit number" />
+                    </div>
+                    <div>
+                      <label className={lCls}>WhatsApp Number</label>
+                      <input type="tel" className={iCls} value={draftPersonal.whatsappNumber} onChange={e => setDraftPersonal(p => ({ ...p, whatsappNumber: e.target.value }))} placeholder="10-digit number" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Alternate Mobile</label>
+                      <input type="tel" className={iCls} value={draftPersonal.alternateMobileNumber} onChange={e => setDraftPersonal(p => ({ ...p, alternateMobileNumber: e.target.value }))} placeholder="10-digit number" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Gender</label>
+                      <select className={iCls} value={draftPersonal.gender} onChange={e => setDraftPersonal(p => ({ ...p, gender: e.target.value }))}>
+                        <option value="">Select…</option>
+                        {['Male', 'Female', 'Other', 'Prefer not to say'].map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={lCls}>Date of Birth</label>
+                      <input type="date" className={iCls} value={draftPersonal.dateOfBirth} onChange={e => setDraftPersonal(p => ({ ...p, dateOfBirth: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className={lCls}>City</label>
+                      <input className={iCls} value={draftPersonal.city} onChange={e => setDraftPersonal(p => ({ ...p, city: e.target.value }))} placeholder="Chennai" />
+                    </div>
+                    <div>
+                      <label className={lCls}>State</label>
+                      <input className={iCls} value={draftPersonal.state} onChange={e => setDraftPersonal(p => ({ ...p, state: e.target.value }))} placeholder="Tamil Nadu" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Country</label>
+                      <input className={iCls} value={draftPersonal.country} onChange={e => setDraftPersonal(p => ({ ...p, country: e.target.value }))} placeholder="India" />
+                    </div>
+                    <div>
+                      <label className={lCls}>Pincode</label>
+                      <input className={iCls} value={draftPersonal.pincode} onChange={e => setDraftPersonal(p => ({ ...p, pincode: e.target.value }))} placeholder="600001" maxLength={6} />
+                    </div>
+                    <div className={spanTwo}><ActionRow onSave={savePersonal} onCancel={closeEdit} saving={saving} /></div>
+                  </div>
+                ) : (
+                  <div className={gridTwo}>
+                    <InfoPair label="Full Name" value={getName()} />
+                    <InfoPair label="Email" value={profile?.email || user?.email} />
+                    <InfoPair label="Mobile" value={profile?.mobileNumber} />
+                    <InfoPair label="WhatsApp" value={profile?.whatsappNumber} />
+                    <InfoPair label="Alternate Mobile" value={profile?.alternateMobileNumber} />
+                    <InfoPair label="Gender" value={profile?.gender} />
+                    <InfoPair label="Date of Birth" value={profile?.dateOfBirth ? new Date(profile.dateOfBirth).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null} />
+                    <InfoPair label="City" value={profile?.address?.city} />
+                    <InfoPair label="State" value={profile?.address?.state} />
+                    <InfoPair label="Country" value={profile?.address?.country} />
+                    <InfoPair label="Pincode" value={profile?.address?.pincode} />
+                  </div>
+                )}
+              </Card>
+
+              {/* ── DOCUMENTS ── */}
+              <Card id="sec-documents" className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <h2 className="font-bold text-[18px] text-gray-900">Documents</h2>
+                  <EditBtn onClick={() => openEdit('documents')} />
+                </div>
+                {editing === 'documents' ? (
+                  <div className="space-y-5">
+                    <div>
+                      <label className={lCls}>Resume / CV</label>
+                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center hover:border-blue-300 transition">
+                        <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1.5" />
+                        <label className="cursor-pointer">
+                          <span className="text-[13px] font-bold text-blue-600 hover:underline">{resumeFile ? resumeFile.name : 'Choose resume file'}</span>
+                          <input type="file" accept=".pdf,.doc,.docx,.rtf" className="hidden" onChange={e => setResumeFile(e.target.files[0] || null)} />
+                        </label>
+                        <p className="text-[11px] text-gray-400 mt-1">doc, docx, rtf, pdf · Max 2 MB</p>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={lCls}>ID Proof</label>
+                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center hover:border-blue-300 transition">
+                        <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1.5" />
+                        <label className="cursor-pointer">
+                          <span className="text-[13px] font-bold text-blue-600 hover:underline">{idProofFile ? idProofFile.name : 'Choose ID proof'}</span>
+                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setIdProofFile(e.target.files[0] || null)} />
+                        </label>
+                        <p className="text-[11px] text-gray-400 mt-1">pdf, jpg, png · Max 2 MB</p>
+                      </div>
+                    </div>
+                    <ActionRow onSave={saveDocuments} onCancel={closeEdit} saving={saving} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {resumeUrl ? (
+                      <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-blue-500" />
+                          <div>
+                            <p className="text-[13px] font-bold text-gray-800">{resumeFilename}</p>
+                            {resumeUploadedAt && <p className="text-[11px] text-gray-400">Uploaded {new Date(resumeUploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
+                          </div>
+                        </div>
+                        <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition"><Download className="w-4 h-4" /></a>
+                      </div>
+                    ) : <p className="text-[13px] text-gray-400">No resume uploaded.</p>}
+                    {idProofUrl ? (
+                      <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-green-500" />
+                          <p className="text-[13px] font-bold text-gray-800">ID Proof</p>
+                        </div>
+                        <a href={idProofUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition"><Download className="w-4 h-4" /></a>
+                      </div>
+                    ) : <p className="text-[13px] text-gray-400">No ID proof uploaded.</p>}
+                  </div>
+                )}
+              </Card>
+
+            </div>{/* end right col */}
+          </div>{/* end two-col grid */}
+        </div>{/* end max-w */}
       </div>
     </StudentLayout>
   );
 };
- 
-// Reusable Components
-const InfoCard = ({ title, icon: Icon, children, fullWidth = false }) => (
-  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl shadow-blue-500/10 border border-white/50 ${fullWidth ? 'lg:col-span-2' : ''}`}>
-    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-lg flex items-center justify-center">
-        <Icon className="w-5 h-5 text-blue-600" />
-      </div>
-      <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-    </div>
-    <div className="space-y-3">
-      {children}
-    </div>
-  </div>
-);
- 
-const InfoRow = ({ label, value, icon: Icon }) => (
-  <div className="flex items-start justify-between py-2 border-b border-gray-50 last:border-0">
-    <div className="flex items-center gap-2">
-      {Icon && <Icon className="w-4 h-4 text-gray-400" />}
-      <span className="text-sm font-medium text-gray-600">{label}:</span>
-    </div>
-    <span className="text-sm text-gray-900 font-medium text-right max-w-[60%] capitalize">
-      {value || 'Not specified'}
-    </span>
-  </div>
-);
- 
-const PermissionBadge = ({ label, allowed }) => (
-  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-    <CheckCircle className={`w-4 h-4 ${allowed ? 'text-green-600' : 'text-gray-400'}`} />
-    <div>
-      <p className="text-xs text-gray-600">{label}</p>
-      <p className={`text-xs font-medium ${allowed ? 'text-green-600' : 'text-gray-500'}`}>
-        {allowed ? 'Yes' : 'No'}
-      </p>
-    </div>
-  </div>
-);
- 
+
 export default MyProfile;

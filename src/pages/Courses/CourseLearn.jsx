@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, Circle, ChevronLeft, ChevronRight, Award, Zap,
   BookOpen, Clock, PlayCircle, Download, AlertCircle, RefreshCw,
-  Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare
+  Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare, Home
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -84,7 +84,7 @@ const YouTubePlayer = ({ url, playerId, onComplete, alreadyWatched }) => {
                         onComplete();
                         clearInterval(intervalRef.current);
                       }
-                    } catch (_) {}
+                    } catch (_) { }
                   }, 3000);
                 } else {
                   clearInterval(intervalRef.current);
@@ -92,13 +92,13 @@ const YouTubePlayer = ({ url, playerId, onComplete, alreadyWatched }) => {
               }
             }
           });
-        } catch (_) {}
+        } catch (_) { }
       }, 300);
     });
 
     return () => {
       clearInterval(intervalRef.current);
-      try { playerRef.current?.destroy(); } catch (_) {}
+      try { playerRef.current?.destroy(); } catch (_) { }
       playerRef.current = null;
     };
   }, [url, playerId, alreadyWatched]);
@@ -164,7 +164,7 @@ const VimeoPlayer = ({ url, onComplete, alreadyWatched }) => {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (data.event === 'finish') onComplete();
         if (data.event === 'playProgress' && data.data?.percent >= 0.9) onComplete();
-      } catch (_) {}
+      } catch (_) { }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
@@ -283,7 +283,7 @@ const loadWatched = (courseId) => {
 };
 
 const saveWatched = (courseId, data) => {
-  try { sessionStorage.setItem(storageKey(courseId), JSON.stringify(data)); } catch (_) {}
+  try { sessionStorage.setItem(storageKey(courseId), JSON.stringify(data)); } catch (_) { }
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────────
@@ -466,9 +466,8 @@ const CourseLearn = () => {
     <StudentLayout title={`Learn: ${course.title}`} showSidebar={false}>
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${
-          toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
-        }`}>
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
+          }`}>
           {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
           {toast.msg}
         </div>
@@ -488,39 +487,80 @@ const CourseLearn = () => {
         </div>
       )}
 
-      {/* Top Navigation Bar */}
-      <div className="mb-6">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(`/dashboard/student/courses/${courseId}`)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors">
-              <ChevronLeft className="w-4 h-4" /> Back
+      {/* Breadcrumb Navigation - Outside Hero */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
+          <nav className="flex items-center flex-wrap gap-y-2 gap-x-2 text-[14px] text-gray-500 font-medium">
+            <button title="Home" onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 transition-colors flex items-center">
+              <Home className="w-4 h-4" />
             </button>
-            <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-gray-900 text-sm sm:text-base truncate">{course.title}</h1>
-              <p className="text-xs text-gray-500">{course.category} • {course.level}</p>
+            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 transition-colors">
+              Courses
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <button onClick={() => navigate(`/dashboard/student/courses/${courseId}`)} className="hover:text-blue-600 transition-colors truncate max-w-[150px] sm:max-w-[200px]">
+              {course.title}
+            </button>
+            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <span className="text-gray-900 font-bold">
+              Learn
+            </span>
+          </nav>
+        </div>
+      </div>
+
+      {/* Hero Section (Light Premium Design) */}
+      <div className="relative bg-[#f8fafc] border-b border-gray-200 overflow-hidden flex text-gray-900">
+        {/* Dynamic Abstract Background Elements */}
+        <div className="absolute inset-0 z-0 opacity-60">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50"></div>
+          <div className="absolute top-[-20%] right-[10%] w-[500px] h-[500px] rounded-full bg-blue-100/50 blur-[100px] mix-blend-multiply opacity-70"></div>
+          <div className="absolute bottom-[-20%] left-[-5%] w-[400px] h-[400px] rounded-full bg-indigo-100/50 blur-[80px] mix-blend-multiply opacity-60"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wMykiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,black,transparent)]"></div>
+        </div>
+
+        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="bg-white/80 backdrop-blur-sm border border-gray-200 text-blue-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
+                {course.category}
+              </span>
+              <span className="bg-indigo-50/80 backdrop-blur-sm border border-indigo-200 text-indigo-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> {course.level}
+              </span>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-xs font-semibold text-gray-700">{overallProgress}% Complete</span>
-                <span className="text-xs text-gray-400">{completedCount}/{curriculum.length} modules</span>
-              </div>
-              <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-cyan-500'}`}
-                  style={{ width: `${overallProgress}%` }} />
-              </div>
-              {isCompleted && enrollment?.certificateUrl && (
-                <a href={enrollment.certificateUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-xl hover:bg-purple-200 transition-all">
-                  <Award className="w-4 h-4" /> Certificate
-                </a>
-              )}
+            <h1 className="text-[24px] md:text-[28px] font-bold text-gray-900 leading-tight mb-2">{course.title}</h1>
+          </div>
+
+          <div className="flex items-center gap-4 flex-shrink-0 bg-white/70 backdrop-blur-md border border-gray-200 p-4 rounded-2xl shadow-sm">
+            <div className="flex flex-col items-end mr-2">
+              <span className="text-[12px] font-bold text-gray-900 uppercase tracking-wider mb-1">Course Progress</span>
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{completedCount}/{curriculum.length} modules</span>
             </div>
+
+            <div className="relative w-[60px] h-[60px] flex items-center justify-center">
+              {/* Progress Ring Background */}
+              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                <circle className="text-gray-200" strokeWidth="6" stroke="currentColor" fill="transparent" r="26" cx="30" cy="30" />
+                <circle className={`text-blue-500 transition-all duration-1000 ease-out`} strokeWidth="6" strokeDasharray="163.3" strokeDashoffset={163.3 - (163.3 * overallProgress) / 100} strokeLinecap="round" stroke="currentColor" fill="transparent" r="26" cx="30" cy="30" />
+              </svg>
+              <span className={`text-[15px] font-bold ${isCompleted ? 'text-green-600' : 'text-blue-700'}`}>{overallProgress}%</span>
+            </div>
+
+            {isCompleted && enrollment?.certificateUrl && (
+              <a href={enrollment.certificateUrl} target="_blank" rel="noopener noreferrer"
+                className="ml-2 flex flex-col items-center justify-center gap-1 w-[60px] h-[60px] bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 font-bold border border-green-200 rounded-xl hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <Award className="w-5 h-5" />
+                <span className="text-[9px] uppercase tracking-wider">Cert</span>
+              </a>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="flex gap-6">
+      {/* Main Content Area */}
+      <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row items-start gap-8">
         {/* Sidebar */}
         <div className={`flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-14'}`}>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden sticky top-4">
@@ -557,15 +597,13 @@ const CourseLearn = () => {
 
                 return (
                   <button key={i} onClick={() => handleModuleClick(i)}
-                    className={`w-full flex items-center gap-3 p-4 text-left transition-all ${
-                      isLocked ? 'opacity-50 cursor-not-allowed' :
+                    className={`w-full flex items-center gap-3 p-4 text-left transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' :
                       isActive ? 'bg-blue-50 border-l-4 border-blue-500' :
-                      'hover:bg-gray-50 border-l-4 border-transparent'
-                    }`}
+                        'hover:bg-gray-50 border-l-4 border-transparent'
+                      }`}
                   >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isDone ? 'bg-green-100' : isLocked ? 'bg-gray-100' : isActive ? 'bg-blue-100' : 'bg-gray-100'
-                    }`}>
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isDone ? 'bg-green-100' : isLocked ? 'bg-gray-100' : isActive ? 'bg-blue-100' : 'bg-gray-100'
+                      }`}>
                       {isDone ? (
                         <CheckCircle2 className="w-4 h-4 text-green-600" />
                       ) : isLocked ? (
@@ -577,9 +615,8 @@ const CourseLearn = () => {
 
                     {sidebarOpen && (
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium truncate ${
-                          isLocked ? 'text-gray-400' : isActive ? 'text-blue-700' : isDone ? 'text-gray-500' : 'text-gray-800'
-                        }`}>
+                        <p className={`text-sm font-medium truncate ${isLocked ? 'text-gray-400' : isActive ? 'text-blue-700' : isDone ? 'text-gray-500' : 'text-gray-800'
+                          }`}>
                           {mod.module}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -644,11 +681,10 @@ const CourseLearn = () => {
                       <button
                         onClick={() => handleMarkComplete(activeModule, !isCurrentComplete)}
                         disabled={marking}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-                          isCurrentComplete
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                            : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
-                        } disabled:opacity-60 disabled:cursor-not-allowed`}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${isCurrentComplete
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                          : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
+                          } disabled:opacity-60 disabled:cursor-not-allowed`}
                       >
                         {marking ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
@@ -767,11 +803,10 @@ const CourseLearn = () => {
                       onClick={handleNextModule}
                       disabled={!isCurrentComplete}
                       title={!isCurrentComplete ? 'Complete this module first' : ''}
-                      className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all ${
-                        isCurrentComplete
-                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
-                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all ${isCurrentComplete
+                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        }`}
                     >
                       {!isCurrentComplete ? <Lock className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       Next Module

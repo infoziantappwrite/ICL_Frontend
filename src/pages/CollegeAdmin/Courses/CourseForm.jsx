@@ -7,7 +7,7 @@ import {
   CheckCircle2, Layers, Target, Award, Clock, RefreshCw,
   X, Video, Link
 } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
@@ -28,10 +28,9 @@ const INITIAL_FORM = {
   startDate: '', endDate: '', registrationDeadline: '',
 };
 
-const inputClass = "w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm text-gray-800 placeholder-gray-400";
-const selectClass = `${inputClass} bg-white`;
+const inputClass = "w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm text-gray-800 placeholder-gray-400 bg-white";
+const selectClass = `${inputClass}`;
 
-// Reusable select with "Other (specify)" option
 const SelectWithOther = ({ value, onChange, options, className }) => {
   const knownOptions = options;
   const isOther = value && !knownOptions.includes(value);
@@ -79,13 +78,13 @@ const FormField = ({ label, required, hint, children }) => (
   </div>
 );
 
-const Section = ({ title, icon: Icon, iconBg, children }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+const Section = ({ title, icon: Icon, gradient, children }) => (
+  <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
     <div className="flex items-center gap-3 mb-5 pb-4 border-b border-gray-50">
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg}`}>
-        <Icon className="w-5 h-5" />
+      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${gradient}`}>
+        <Icon className="w-4 h-4 text-white" />
       </div>
-      <h3 className="font-bold text-gray-900">{title}</h3>
+      <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
     </div>
     <div className="space-y-5">{children}</div>
   </div>
@@ -99,17 +98,17 @@ const ListInput = ({ values, onChange, placeholder }) => {
       <div className="flex gap-2 mb-2">
         <input type="text" placeholder={placeholder} value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} className={inputClass} />
-        <button type="button" onClick={add} className="px-3 py-2.5 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors">
+        <button type="button" onClick={add} className="px-3 py-2.5 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors flex-shrink-0">
           <Plus className="w-4 h-4" />
         </button>
       </div>
       {values.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {values.map((v, i) => (
-            <span key={i} className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full">
+            <span key={i} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-full border border-blue-100">
               {v}
-              <button type="button" onClick={() => onChange(values.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500">
-                <X className="w-3.5 h-3.5" />
+              <button type="button" onClick={() => onChange(values.filter((_, j) => j !== i))} className="text-blue-400 hover:text-red-500 transition-colors">
+                <X className="w-3 h-3" />
               </button>
             </span>
           ))}
@@ -136,13 +135,12 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+    <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
       <div className="flex items-start gap-3">
-        <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-          <span className="text-xs font-bold text-blue-700">{index + 1}</span>
+        <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+          <span className="text-xs font-bold text-white">{index + 1}</span>
         </div>
         <div className="flex-1 space-y-3">
-          {/* Name + Hours */}
           <div className="flex gap-2">
             <input type="text" placeholder="Module name *" value={mod.module}
               onChange={e => onChange({ ...mod, module: e.target.value })} className={inputClass} />
@@ -151,22 +149,21 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
               className={`${inputClass} w-28`} min="0" />
           </div>
 
-          {/* Topics */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1.5">Topics</p>
+            <p className="text-xs font-bold text-gray-500 mb-1.5">Topics</p>
             <div className="flex gap-2 mb-2">
               <input type="text" placeholder="Add topic and press Enter" value={topicInput}
                 onChange={e => setTopicInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTopic(); } }}
                 className={inputClass} />
-              <button type="button" onClick={addTopic} className="px-3 py-2 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200">
+              <button type="button" onClick={addTopic} className="px-3 py-2 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 flex-shrink-0">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
             {mod.topics?.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {mod.topics.map((t, j) => (
-                  <span key={j} className="flex items-center gap-1 bg-white text-gray-700 text-xs px-2 py-1 rounded-full border border-gray-200">
+                  <span key={j} className="flex items-center gap-1 bg-white text-gray-700 text-xs px-2.5 py-1 rounded-full border border-gray-200">
                     {t}
                     <button type="button" onClick={() => onChange({ ...mod, topics: mod.topics.filter((_, k) => k !== j) })} className="text-gray-400 hover:text-red-500">
                       <X className="w-3 h-3" />
@@ -177,9 +174,8 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
             )}
           </div>
 
-          {/* Primary Video URL */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1.5">
+            <p className="text-xs font-bold text-gray-500 mb-1.5 flex items-center gap-1.5">
               <Video className="w-3.5 h-3.5 text-cyan-500" /> Primary Module Video URL
             </p>
             <input type="url" placeholder="https://youtube.com/... or any video URL"
@@ -188,9 +184,8 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
               className={inputClass} />
           </div>
 
-          {/* Multiple Additional Videos */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1.5">
+            <p className="text-xs font-bold text-gray-500 mb-1.5 flex items-center gap-1.5">
               <Link className="w-3.5 h-3.5 text-indigo-500" /> Additional Videos
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
@@ -228,7 +223,7 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
             )}
           </div>
         </div>
-        <button type="button" onClick={onRemove} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1">
+        <button type="button" onClick={onRemove} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1 flex-shrink-0">
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
@@ -315,7 +310,7 @@ const CourseForm = () => {
   if (loading) return <LoadingSpinner message="Loading Course..." submessage="Fetching course data" icon={BookOpen} />;
 
   return (
-    <DashboardLayout title={isEdit ? 'Edit Course' : 'Create Course'}>
+    <CollegeAdminLayout>
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
           {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -323,29 +318,43 @@ const CourseForm = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate('/dashboard/college-admin/courses')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back to Courses
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-            <BookOpen className="w-5 h-5 text-white" />
+      {/* Hero Banner */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        </div>
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-white font-black text-lg leading-tight">{isEdit ? 'Edit Course' : 'Create New Course'}</h1>
+              <p className="text-blue-200 text-[11px] mt-0.5">{isEdit ? 'Update course details and curriculum' : 'Fill in the details below to create a new course'}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-gray-900">{isEdit ? 'Edit Course' : 'Create New Course'}</h1>
-            <p className="text-xs text-gray-500">{isEdit ? 'Update course details' : 'Fill in the details below'}</p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => navigate('/dashboard/college-admin/courses')}
+              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Back
+            </button>
+            <button onClick={handleSubmit} disabled={saving}
+              className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-blue-50 hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {saving ? 'Saving...' : isEdit ? 'Update Course' : 'Create Course'}
+            </button>
           </div>
         </div>
-        <button onClick={handleSubmit} disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg transition-all disabled:opacity-60">
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? 'Saving...' : isEdit ? 'Update Course' : 'Create Course'}
-        </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Info */}
-        <Section title="Basic Information" icon={BookOpen} iconBg="bg-blue-100 text-blue-600">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Basic Information */}
+        <Section title="Basic Information" icon={BookOpen} gradient="bg-gradient-to-br from-blue-500 to-cyan-500">
           <FormField label="Course Title" required>
             <input type="text" value={form.title} onChange={e => set('title', e.target.value)} className={inputClass} placeholder="e.g., Full Stack Web Development with React & Node.js" />
             {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
@@ -388,7 +397,7 @@ const CourseForm = () => {
         </Section>
 
         {/* Duration & Pricing */}
-        <Section title="Duration & Pricing" icon={Clock} iconBg="bg-amber-100 text-amber-600">
+        <Section title="Duration & Pricing" icon={Clock} gradient="bg-gradient-to-br from-amber-400 to-orange-500">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FormField label="Duration (Hours)" required>
               <input type="number" value={form.duration.hours} onChange={e => setNested('duration','hours',+e.target.value)} className={inputClass} min="1" />
@@ -416,7 +425,7 @@ const CourseForm = () => {
         </Section>
 
         {/* Instructor */}
-        <Section title="Instructor" icon={Target} iconBg="bg-purple-100 text-purple-600">
+        <Section title="Instructor" icon={Target} gradient="bg-gradient-to-br from-purple-500 to-violet-600">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Instructor Name" required>
               <input type="text" value={form.instructor.name} onChange={e => setNested('instructor','name',e.target.value)} className={inputClass} placeholder="Full name" />
@@ -434,7 +443,7 @@ const CourseForm = () => {
         </Section>
 
         {/* Curriculum */}
-        <Section title="Course Curriculum" icon={Layers} iconBg="bg-cyan-100 text-cyan-600">
+        <Section title="Course Curriculum" icon={Layers} gradient="bg-gradient-to-br from-cyan-500 to-teal-600">
           <p className="text-xs text-gray-400 -mt-2 mb-1">Each module has a primary video URL and supports multiple additional videos.</p>
           <div className="space-y-3">
             {form.curriculum.map((mod, i) => (
@@ -444,14 +453,14 @@ const CourseForm = () => {
             ))}
             <button type="button"
               onClick={() => set('curriculum', [...form.curriculum, { module: '', topics: [], duration: 0, videoUrl: '', videos: [] }])}
-              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-blue-200 text-blue-600 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all text-sm font-medium">
+              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-blue-200 text-blue-600 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all text-sm font-semibold">
               <Plus className="w-4 h-4" /> Add Module
             </button>
           </div>
         </Section>
 
         {/* Learning & Prerequisites */}
-        <Section title="Learning & Prerequisites" icon={Award} iconBg="bg-green-100 text-green-600">
+        <Section title="Learning & Prerequisites" icon={Award} gradient="bg-gradient-to-br from-green-500 to-emerald-600">
           <FormField label="Learning Outcomes" hint="What students will learn — press Enter to add">
             <ListInput values={form.learningOutcomes} onChange={v => set('learningOutcomes', v)} placeholder="e.g., Build full-stack web applications" />
           </FormField>
@@ -461,7 +470,7 @@ const CourseForm = () => {
         </Section>
 
         {/* Media & Resources */}
-        <Section title="Media & Resources" icon={BookOpen} iconBg="bg-indigo-100 text-indigo-600">
+        <Section title="Media & Resources" icon={BookOpen} gradient="bg-gradient-to-br from-indigo-500 to-blue-600">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Thumbnail URL" hint="Course cover image">
               <input type="url" value={form.thumbnail} onChange={e => set('thumbnail', e.target.value)} className={inputClass} placeholder="https://..." />
@@ -476,26 +485,37 @@ const CourseForm = () => {
         </Section>
 
         {/* Dates & Settings */}
-        <Section title="Dates & Settings" icon={Award} iconBg="bg-rose-100 text-rose-600">
+        <Section title="Dates & Settings" icon={Clock} gradient="bg-gradient-to-br from-rose-500 to-pink-600">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <FormField label="Start Date"><input type="date" value={form.startDate} onChange={e => set('startDate', e.target.value)} className={inputClass} /></FormField>
-            <FormField label="End Date"><input type="date" value={form.endDate} onChange={e => set('endDate', e.target.value)} className={inputClass} /></FormField>
-            <FormField label="Registration Deadline"><input type="date" value={form.registrationDeadline} onChange={e => set('registrationDeadline', e.target.value)} className={inputClass} /></FormField>
+            <FormField label="Start Date">
+              <input type="date" value={form.startDate} onChange={e => set('startDate', e.target.value)} className={inputClass} />
+            </FormField>
+            <FormField label="End Date">
+              <input type="date" value={form.endDate} onChange={e => set('endDate', e.target.value)} className={inputClass} />
+            </FormField>
+            <FormField label="Registration Deadline">
+              <input type="date" value={form.registrationDeadline} onChange={e => set('registrationDeadline', e.target.value)} className={inputClass} />
+            </FormField>
           </div>
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-            <input id="cert" type="checkbox" checked={form.certificateProvided} onChange={e => set('certificateProvided', e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+          <div className="flex items-center gap-3 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+            <input id="cert" type="checkbox" checked={form.certificateProvided} onChange={e => set('certificateProvided', e.target.checked)} className="w-4 h-4 rounded accent-blue-600" />
             <label htmlFor="cert" className="text-sm font-medium text-gray-700 cursor-pointer">Provide certificate upon course completion</label>
           </div>
         </Section>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <button type="button" onClick={() => navigate('/dashboard/college-admin/courses')} className="px-5 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50">Cancel</button>
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg transition-all disabled:opacity-60">
+        {/* Submit Row */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4 flex items-center justify-end gap-3">
+          <button type="button" onClick={() => navigate('/dashboard/college-admin/courses')}
+            className="px-5 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" disabled={saving}
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-xl hover:opacity-90 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-60 text-sm">
             {saving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> {isEdit ? 'Update Course' : 'Create Course'}</>}
           </button>
         </div>
       </form>
-    </DashboardLayout>
+    </CollegeAdminLayout>
   );
 };
 

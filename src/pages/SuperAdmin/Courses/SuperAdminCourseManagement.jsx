@@ -7,7 +7,7 @@ import {
   AlertCircle, CircleCheck, Clock, X, Send, Star, Globe,
   Building2, ChevronLeft, ChevronRight,
 } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { superAdminCourseAPI } from '../../../api/Api';
 
@@ -291,7 +291,7 @@ const SuperAdminCourseManagement = () => {
     return <LoadingSpinner message="Loading Courses..." submessage="Fetching all course data" icon={BookOpen} />;
 
   return (
-    <DashboardLayout title="Course Management">
+    <SuperAdminDashboardLayout>
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
           {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CircleCheck className="w-4 h-4" />}
@@ -300,49 +300,38 @@ const SuperAdminCourseManagement = () => {
       )}
       {deleteConfirm && <DeleteModal course={deleteConfirm} onConfirm={handleDelete} onCancel={() => setDeleteConfirm(null)} loading={deleting} />}
 
-      {/* Banner */}
-      <div className="mb-6">
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -right-20" />
-            <div className="absolute w-48 h-48 bg-white rounded-full bottom-0 left-20" />
-          </div>
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="text-white">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">Platform Course Management</h1>
-                  <p className="text-blue-100 text-sm">Manage all courses across all colleges</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-4 text-sm text-blue-100">
-                <span className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {stats.total} Total</span>
-                <span className="flex items-center gap-1.5"><CircleCheck className="w-4 h-4" /> {stats.active} Active</span>
-                <span className="flex items-center gap-1.5"><Globe className="w-4 h-4" /> {stats.platformWide} Platform-wide</span>
-                <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {stats.totalEnrollments} Enrollments</span>
-              </div>
+      {/* Hero */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full"/>
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full"/>
+          <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
+        </div>
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"><BookOpen className="w-5 h-5 text-white"/></div>
+            <div>
+              <h1 className="text-white font-black text-lg leading-tight">Course Management</h1>
+              <p className="text-blue-200 text-[11px] mt-0.5">
+                {stats.total} total · {stats.active} active · {stats.platformWide} platform-wide · {stats.totalEnrollments} enrollments
+              </p>
             </div>
-            <button
-              onClick={() => navigate('/dashboard/super-admin/courses/create')}
-              className="flex-shrink-0 flex items-center gap-2 bg-white text-blue-700 font-bold px-5 py-2.5 rounded-xl text-sm hover:bg-blue-50 transition-all shadow-md hover:scale-105"
-            >
-              <Plus className="w-5 h-5" /> Create Course
-            </button>
           </div>
+          <button onClick={() => navigate('/dashboard/super-admin/courses/create')}
+            className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-blue-50 hover:scale-105 transition-all flex-shrink-0">
+            <Plus className="w-4 h-4"/> Create Course
+          </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-4 mb-5">
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" placeholder="Search title, category, instructor, college..." value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm" />
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm" />
             {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>}
           </div>
           <select value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setPage(1); }} className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm text-gray-700">
@@ -353,9 +342,8 @@ const SuperAdminCourseManagement = () => {
             <option value="">All Statuses</option>
             {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={fetchCourses} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:opacity-90 transition-all shadow-sm">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+          <button onClick={fetchCourses} className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:opacity-90 transition-all shadow-sm">
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
         </div>
       </div>
@@ -417,7 +405,7 @@ const SuperAdminCourseManagement = () => {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </SuperAdminDashboardLayout>
   );
 };
 

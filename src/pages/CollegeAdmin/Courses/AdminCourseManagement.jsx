@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, Clock, Award, X,
   Star, ChevronLeft, ChevronRight, Send,
 } from 'lucide-react';
-import DashboardLayout from '../../../components/layout/DashboardLayout';
+import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
@@ -23,6 +23,13 @@ const STATUS_CONFIG = {
   'Coming Soon': { label: 'Coming Soon',  color: 'bg-blue-100 text-blue-700 border-blue-200'    },
 };
 
+const STATUS_DOT = {
+  Active: 'bg-green-500',
+  Draft: 'bg-amber-500',
+  'Coming Soon': 'bg-blue-500',
+  Inactive: 'bg-gray-400',
+};
+
 const LEVEL_COLOR = {
   Beginner:     'bg-green-50 text-green-700',
   Intermediate: 'bg-blue-50 text-blue-700',
@@ -31,22 +38,42 @@ const LEVEL_COLOR = {
 
 const PER_PAGE = 10;
 
-const Pagination = ({ page, totalPages, onPrev, onNext, total, perPage }) => {
+const Pagination = ({ page, totalPages, onPageChange, total, perPage }) => {
   if (totalPages <= 1) return null;
   const from = (page - 1) * perPage + 1;
   const to = Math.min(page * perPage, total);
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
+    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
+  const withEllipsis = pages.reduce((acc, p, i, arr) => {
+    if (i > 0 && p - arr[i - 1] > 1) acc.push('…');
+    acc.push(p);
+    return acc;
+  }, []);
+
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 bg-gray-50/50">
-      <span className="text-xs text-gray-500">Showing {from}–{to} of {total}</span>
-      <div className="flex items-center gap-2">
-        <button onClick={onPrev} disabled={page === 1}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          <ChevronLeft className="w-3.5 h-3.5" /> Prev
+    <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+      <p className="text-sm text-gray-500">
+        Showing <span className="font-semibold text-gray-700">{from}–{to}</span> of{' '}
+        <span className="font-semibold text-gray-700">{total}</span> courses
+      </p>
+      <div className="flex items-center gap-1">
+        <button onClick={() => onPageChange(page - 1)} disabled={page === 1}
+          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-xs text-gray-500 px-1">{page} / {totalPages}</span>
-        <button onClick={onNext} disabled={page === totalPages}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          Next <ChevronRight className="w-3.5 h-3.5" />
+        {withEllipsis.map((p, i) =>
+          p === '…' ? (
+            <span key={`e${i}`} className="px-2 text-gray-400 text-sm">…</span>
+          ) : (
+            <button key={p} onClick={() => onPageChange(p)}
+              className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${p === page ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' : 'border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'}`}>
+              {p}
+            </button>
+          )
+        )}
+        <button onClick={() => onPageChange(page + 1)} disabled={page === totalPages}
+          className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -57,7 +84,7 @@ const CourseRow = ({ course, onAnalytics, onViewEnrollments }) => {
   const statusCfg = STATUS_CONFIG[course.status] || STATUS_CONFIG.Inactive;
   const levelColor = LEVEL_COLOR[course.level] || '';
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr className="hover:bg-gray-50/80 transition-colors">
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -73,7 +100,10 @@ const CourseRow = ({ course, onAnalytics, onViewEnrollments }) => {
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${levelColor}`}>{course.level}</span>
       </td>
       <td className="px-4 py-4">
-        <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statusCfg.color}`}>{statusCfg.label}</span>
+        <span className={`flex items-center gap-1.5 w-fit text-xs font-medium px-2.5 py-1 rounded-full border ${statusCfg.color}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[course.status] || 'bg-gray-400'}`} />
+          {statusCfg.label}
+        </span>
       </td>
       <td className="px-4 py-4 text-sm text-gray-600">{course.enrollmentCount || 0}</td>
       <td className="px-4 py-4">
@@ -88,7 +118,7 @@ const CourseRow = ({ course, onAnalytics, onViewEnrollments }) => {
             <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
             {course.rating.average?.toFixed(1)}
           </span>
-        ) : <span className="text-xs text-gray-400">No ratings</span>}
+        ) : <span className="text-xs text-gray-400">—</span>}
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center gap-1.5">
@@ -154,7 +184,7 @@ const AdminCourseManagement = () => {
     );
   });
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const stats = {
@@ -169,69 +199,81 @@ const AdminCourseManagement = () => {
   }
 
   return (
-    <DashboardLayout title="Course Management">
-      {/* Header Banner */}
-      <div className="mb-6">
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl p-6 shadow-xl overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute w-64 h-64 bg-white rounded-full -top-20 -right-20" />
-            <div className="absolute w-48 h-48 bg-white rounded-full bottom-0 left-20" />
-          </div>
-          <div className="relative text-white">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">Course Management</h1>
-                <p className="text-blue-100 text-sm">View and track course performance</p>
-              </div>
+    <CollegeAdminLayout>
+      {/* Hero Banner */}
+      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
+          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        </div>
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-blue-100">
-              <span className="flex items-center gap-1.5"><BookOpen className="w-4 h-4" /> {stats.total} Total</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> {stats.active} Active</span>
-              <span className="flex items-center gap-1.5"><Users className="w-4 h-4" /> {stats.totalEnrollments} Enrollments</span>
-              <span className="flex items-center gap-1.5"><Award className="w-4 h-4" /> {stats.withCerts} with Certificates</span>
+            <div>
+              <h1 className="text-white font-black text-lg leading-tight">Course Management</h1>
+              <p className="text-blue-200 text-[11px] mt-0.5">
+                {stats.total} total · {stats.active} active · {stats.totalEnrollments} enrollments · {stats.withCerts} with certificates
+              </p>
             </div>
           </div>
+          <button
+            onClick={() => navigate('/dashboard/college-admin/courses/assign-batch')}
+            className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-blue-50 hover:scale-105 transition-all flex-shrink-0"
+          >
+            <Send className="w-4 h-4" /> Assign to Batch
+          </button>
         </div>
       </div>
 
-      {/* Search + Filters */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm p-4 mb-5">
-        <div className="flex flex-col sm:flex-row gap-3">
+      {/* Filters */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="text" placeholder="Search by title, category, instructor, tags..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-sm" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by title, category, instructor, tags..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm"
+            />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
-          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm text-gray-700">
+          <select
+            value={categoryFilter}
+            onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}
+            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm text-gray-700"
+          >
             <option value="">All Categories</option>
             {CATEGORIES.filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm text-gray-700">
+          <select
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm text-gray-700"
+          >
             <option value="">All Statuses</option>
             {Object.keys(STATUS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button onClick={fetchCourses}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:opacity-90 transition-all shadow-sm">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+          <button
+            onClick={fetchCourses}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:opacity-90 transition-all shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500" />
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
@@ -240,10 +282,14 @@ const AdminCourseManagement = () => {
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
           <p className="font-semibold text-gray-800">{filtered.length} Courses</p>
-          <button onClick={() => navigate('/dashboard/college-admin/courses/assign-batch')}
-            className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors">
-            <Send className="w-4 h-4" /> Assign to Batch
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {stats.active} Active
+            </span>
+            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 text-amber-500" /> {stats.withCerts} Certified
+            </span>
+          </div>
         </div>
 
         {loading ? (
@@ -252,7 +298,9 @@ const AdminCourseManagement = () => {
           </div>
         ) : paginated.length === 0 ? (
           <div className="text-center py-16">
-            <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <BookOpen className="w-7 h-7 text-blue-300" />
+            </div>
             <p className="text-gray-500 font-medium">No courses found</p>
             <p className="text-sm text-gray-400 mt-1">Try adjusting your search or filters</p>
           </div>
@@ -262,14 +310,16 @@ const AdminCourseManagement = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-50">
-                    {['Course','Level','Status','Enrolled','Duration','Rating','Actions'].map(h => (
+                    {['Course', 'Level', 'Status', 'Enrolled', 'Duration', 'Rating', 'Actions'].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide bg-gradient-to-r from-blue-50 to-cyan-50 first:px-5">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {paginated.map(course => (
-                    <CourseRow key={course._id} course={course}
+                    <CourseRow
+                      key={course._id}
+                      course={course}
                       onAnalytics={id => navigate(`/dashboard/college-admin/courses/${id}/analytics`)}
                       onViewEnrollments={id => navigate(`/dashboard/college-admin/courses/${id}/enrollments`)}
                     />
@@ -277,14 +327,17 @@ const AdminCourseManagement = () => {
                 </tbody>
               </table>
             </div>
-            <Pagination page={page} totalPages={totalPages} total={filtered.length} perPage={PER_PAGE}
-              onPrev={() => setPage(p => Math.max(1, p - 1))}
-              onNext={() => setPage(p => Math.min(totalPages, p + 1))}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={filtered.length}
+              perPage={PER_PAGE}
+              onPageChange={setPage}
             />
           </>
         )}
       </div>
-    </DashboardLayout>
+    </CollegeAdminLayout>
   );
 };
 

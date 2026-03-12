@@ -132,7 +132,7 @@ const JobList = () => {
 
   return (
     <StudentLayout>
-      <div className="min-h-screen bg-[#f8f9fa] -mx-4 lg:-mx-6 -mt-4 lg:-mt-6 px-4 md:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
         <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
 
           {/* ─────── LEFT SIDEBAR: FILTERS (col-span-3) ─────── */}

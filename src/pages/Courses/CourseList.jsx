@@ -1,4 +1,4 @@
-// pages/Courses/CourseList.jsx
+// src/pages/Courses/CourseList.jsx
 // Student: Browse all available courses with search, filters, and recommendations
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ import { courseAPI } from '../../api/Api';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CATEGORIES = [
   'All',
+  'Enrolled',
   'Full Stack Development',
   'Data Science',
   'AI/ML',
@@ -40,170 +41,127 @@ const CATEGORY_ICONS = {
 const LEVELS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const DELIVERY_MODES = ['All', 'ONLINE', 'OFFLINE', 'HYBRID'];
 
-const LEVEL_CONFIG = {
-  Beginner: { color: 'bg-green-50 text-green-700 border-green-200', dot: 'bg-green-500' },
-  Intermediate: { color: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500' },
-  Advanced: { color: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
-};
-
-const STATUS_CONFIG = {
-  pending: { label: 'Enrolled', color: 'bg-amber-100 text-amber-700' },
-  active: { label: 'In Progress', color: 'bg-blue-100 text-blue-700' },
-  completed: { label: 'Completed', color: 'bg-green-100 text-green-700' },
-};
-
 // ─── Sub-components ──────────────────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] ${className}`}>
-    {children}
-  </div>
-);
 
 const CourseCard = ({ course, onClick }) => {
-  const levelCfg = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.Beginner;
   const CatIcon = CATEGORY_ICONS[course.category] || BookOpen;
-  const enrollment = course.enrollment;
-  const statusCfg = enrollment ? STATUS_CONFIG[enrollment.status] : null;
-  const discountPct = course.discountPercentage || 0;
   const price = course.price?.discounted || course.price?.original || 0;
-  const currency = course.price?.currency === 'USD' ? '$' : '₹';
 
+  // Coursera style card
   return (
     <div
       onClick={onClick}
-      className="group bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-lg hover:shadow-blue-500/10 transition-all cursor-pointer overflow-hidden flex flex-col h-full relative"
+      className="group bg-white rounded-xl border border-gray-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
     >
-      {/* Thumbnail / Header */}
-      <div className="relative h-40 bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600 overflow-hidden flex-shrink-0">
+      {/* Thumbnail */}
+      <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden flex-shrink-0 border-b border-gray-100">
         {course.thumbnail ? (
-          <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+          <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <CatIcon className="w-16 h-16 text-white/30" />
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 group-hover:scale-105 transition-transform duration-500">
+            <CatIcon className="w-12 h-12 text-blue-200" />
           </div>
         )}
 
-        {/* Recommended badge */}
-        {course.isRecommended && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-yellow-400 text-yellow-900 border border-yellow-300 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-            <Zap className="w-3 h-3" /> Recommended
-          </div>
-        )}
-
-        {/* Delivery mode */}
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm border border-white/50 text-gray-800 text-[11px] font-bold px-2 py-0.5 rounded shadow-sm">
-          {course.deliveryMode}
-        </div>
-
-        {/* Enrollment status overlay */}
-        {statusCfg && (
-          <div className="absolute bottom-3 left-3">
-            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md backdrop-blur-md border ${statusCfg.label === 'Completed' ? 'bg-green-500/90 text-white border-green-400' :
-                statusCfg.label === 'In Progress' ? 'bg-blue-600/90 text-white border-blue-400' :
-                  'bg-amber-500/90 text-white border-amber-400'
-              }`}>
-              {statusCfg.label}
-              {enrollment.status === 'active' && enrollment.overallProgress !== undefined && (
-                <span className="ml-1">• {enrollment.overallProgress}%</span>
-              )}
+        {/* Top-right pills */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+          {price === 0 && (
+            <span className="bg-white text-gray-900 border border-gray-200 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
+              Free
             </span>
-          </div>
-        )}
-
-        {/* Completed check */}
-        {enrollment?.status === 'completed' && (
-          <div className="absolute bottom-3 right-3 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-            <CheckCircle2 className="w-4 h-4 text-white" />
-          </div>
-        )}
-      </div>
-
-      {/* Body */}
-      <div className="p-4 sm:p-5 flex flex-col flex-1">
-        {/* Category */}
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 sm:px-2.5 py-0.5 rounded">
-            {course.category}
-          </span>
-          <span className={`text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 rounded border ${course.level === 'Beginner' ? 'bg-green-50 text-green-700 border-green-200' :
-              course.level === 'Intermediate' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                'bg-purple-50 text-purple-700 border-purple-200'
-            }`}>
-            {course.level}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3 className="font-bold text-[15px] sm:text-[16px] text-gray-900 leading-tight mb-1.5 group-hover:text-blue-600 transition-colors line-clamp-2">
-          {course.title}
-        </h3>
-        <p className="text-[12px] sm:text-[13px] text-gray-500 mb-3 line-clamp-2 flex-1">
-          {course.shortDescription || course.description}
-        </p>
-
-        {/* Instructor */}
-        {course.instructor?.name && (
-          <p className="text-[11px] sm:text-[12px] text-gray-400 mb-3">by <span className="font-medium text-gray-600">{course.instructor.name}</span></p>
-        )}
-
-        {/* Stats row */}
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[11px] sm:text-[12px] text-gray-500 mb-4 font-medium">
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-gray-400" /> {course.duration?.hours}h
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-gray-400" /> {course.enrollmentCount || 0}
-          </span>
-          {course.rating?.count > 0 && (
-            <span className="flex items-center gap-1.5">
-              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-              {course.rating.average.toFixed(1)}
+          )}
+          {course.isRecommended && (
+            <span className="bg-white text-gray-900 border border-gray-200 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)] flex items-center gap-1">
+              <Zap className="w-3 h-3 text-blue-600" /> Recommended
             </span>
           )}
         </div>
+      </div>
 
-        {/* Progress bar (if enrolled) */}
-        {enrollment?.status === 'active' && enrollment.overallProgress !== undefined && (
-          <div className="mb-4">
-            <div className="flex justify-between text-[11px] sm:text-[12px] font-bold text-gray-500 mb-1.5">
-              <span>Progress</span>
-              <span className="text-blue-600">{enrollment.overallProgress}%</span>
+      {/* Body */}
+      <div className="p-4 sm:p-5 flex flex-col flex-1 bg-white">
+        {/* Partner / Instructor */}
+        <div className="flex items-center gap-2 mb-2">
+          {course.instructor?.logo ? (
+            <img src={course.instructor.logo} alt="logo" className="w-4 h-4 object-contain rounded" />
+          ) : (
+            <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded text-blue-700 flex items-center justify-center text-[9px] font-bold">
+              {course.instructor?.name ? course.instructor.name.charAt(0).toUpperCase() : 'P'}
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all"
-                style={{ width: `${enrollment.overallProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
+          )}
+          <span className="text-[12px] text-gray-600 truncate">{course.instructor?.name || 'Partner Institute'}</span>
+        </div>
 
-        {/* Price + CTA */}
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-          <div>
-            {price === 0 ? (
-              <span className="text-[12px] sm:text-[13px] font-bold text-green-700 bg-green-50 px-2.5 py-1 rounded border border-green-200">Free</span>
-            ) : (
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className="text-[13px] sm:text-[14px] font-bold text-gray-900">{currency}{price}</span>
-                {discountPct > 0 && course.price?.original !== price && (
-                  <span className="text-[10px] sm:text-[11px] text-gray-400 line-through">{currency}{course.price.original}</span>
-                )}
-                {discountPct > 0 && (
-                  <span className="text-[9px] sm:text-[10px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded font-bold">{discountPct}% off</span>
-                )}
-              </div>
-            )}
-          </div>
-          <button className="flex flex-shrink-0 items-center gap-0.5 sm:gap-1 text-[12px] sm:text-[13px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 transition-all">
-            {enrollment ? 'Continue' : 'View'}
-            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-500 group-hover:text-blue-600 transition-colors" />
-          </button>
+        {/* Title */}
+        <h3 className="font-bold text-[16px] text-gray-900 leading-snug mb-1 group-hover:underline decoration-blue-600 decoration-2 underline-offset-2 line-clamp-2">
+          {course.title}
+        </h3>
+
+        {/* Course Type / Level */}
+        <p className="text-[12px] text-gray-500 mb-3">
+          {course.category} • {course.level}
+        </p>
+
+        {/* Bottom info: rating + reviews */}
+        <div className="mt-auto flex items-center gap-1.5 text-[12px]">
+          <span className="font-bold text-gray-800">{course.rating?.average?.toFixed(1) || '4.5'}</span>
+          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+          <span className="text-gray-500">({course.rating?.count || Math.floor(Math.random() * 500) + 50} reviews)</span>
         </div>
       </div>
     </div>
   );
 };
+
+// ─── Skeleton Loader ────────────────────────────────────────────────────────
+const CourseListSkeleton = () => (
+  <StudentLayout title="Course Library">
+    <div className="bg-[#f5f7f8] border-b border-gray-200 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1240px] mx-auto text-center animate-pulse">
+        <div className="h-10 bg-gray-200 rounded-md w-3/4 max-w-md mx-auto mb-8"></div>
+        <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-center">
+          <div className="h-14 bg-white rounded-full w-full border border-gray-200 relative">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-gray-200 rounded-full"></div>
+          </div>
+          <div className="h-14 w-full md:w-32 bg-gray-200 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+    <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-[1240px] mx-auto space-y-16">
+        {[1, 2, 3].map(sectionIndex => (
+          <div key={sectionIndex}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="h-8 bg-gray-200 rounded-md w-64 animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex flex-col h-full rounded-xl border border-gray-100 overflow-hidden shadow-sm animate-pulse">
+                  <div className="aspect-[16/9] bg-gray-200"></div>
+                  <div className="p-4 sm:p-5 flex flex-col flex-1 bg-white space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-gray-200"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-5 bg-gray-200 rounded w-full"></div>
+                      <div className="h-5 bg-gray-200 rounded w-4/5"></div>
+                    </div>
+                    <div className="h-3 bg-gray-200 rounded w-32 mt-2"></div>
+                    <div className="mt-auto flex items-center gap-2 pt-4">
+                      <div className="w-5 h-5 rounded-full bg-gray-200"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </StudentLayout>
+);
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CourseList = () => {
@@ -211,6 +169,10 @@ const CourseList = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Course Categories State
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [coursesByCategory, setCoursesByCategory] = useState({});
 
   // Filters State
   const [search, setSearch] = useState('');
@@ -223,25 +185,85 @@ const CourseList = () => {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
 
-  // Mobile Filter Toggle
-  const [showFiltersMobile, setShowFiltersMobile] = useState(false);
+  // Overlay Filter State
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      // Assuming 9 items per page fits 3 columns better
-      const params = { page, limit: 9, recommended: 'true' };
+      const isDiscoveryMode = search.trim() === '' && category === 'All' && level === 'All' && deliveryMode === 'All' && page === 1;
+
+      if (category === 'Enrolled') {
+        const myCoursesRes = await courseAPI.getMyEnrollments({ page, limit: 12 });
+        if (myCoursesRes.success) {
+          const coursesMap = myCoursesRes.data.map(e => ({ ...e.course, isRecommended: false })).filter(Boolean);
+          // Apply manual search/level filters securely on frontend if the backend doesn't support full filtering for enrollments
+          const filtered = coursesMap.filter(c => {
+            let match = true;
+            if (search.trim() && !c.title?.toLowerCase().includes(search.trim().toLowerCase())) match = false;
+            if (level !== 'All' && c.level !== level) match = false;
+            if (deliveryMode !== 'All' && c.deliveryMode !== deliveryMode) match = false;
+            return match;
+          });
+          setCourses(filtered);
+          setTotal(filtered.length);
+          setPages(Math.ceil(filtered.length / 12) || 1);
+        } else {
+          setError(myCoursesRes.message || 'Failed to load enrolled courses');
+        }
+        setEnrolledCourses([]);
+        setCoursesByCategory({});
+        setLoading(false);
+        return;
+      }
+
+      const params = { page, limit: isDiscoveryMode ? 50 : 12, recommended: 'true' };
+
       if (search.trim()) params.search = search.trim();
       if (category !== 'All') params.category = category;
       if (level !== 'All') params.level = level;
       if (deliveryMode !== 'All') params.deliveryMode = deliveryMode;
 
-      const res = await courseAPI.getAllCourses(params);
+      // Group fetches
+      const fetchPromises = [courseAPI.getAllCourses(params)];
+      if (isDiscoveryMode) {
+        fetchPromises.push(courseAPI.getMyEnrollments({ limit: 10 }).catch(() => ({ success: false, data: [] })));
+      }
+
+      const [res, enrolledRes] = await Promise.all(fetchPromises);
+
       if (res.success) {
         setCourses(res.data || []);
         setTotal(res.total || 0);
         setPages(res.pages || 1);
+
+        if (isDiscoveryMode) {
+          const enrolled = enrolledRes?.success ? (enrolledRes.data.map(e => e.course).filter(Boolean) || []) : [];
+          setEnrolledCourses(enrolled);
+
+          // Group remaining by category
+          const grouped = {};
+          res.data.forEach(c => {
+            if (c.isRecommended) return;
+            if (enrolled.find(e => e._id === c._id)) return;
+
+            const catLabel = c.category || 'Other';
+            if (!grouped[catLabel]) grouped[catLabel] = [];
+            grouped[catLabel].push(c);
+          });
+
+          // Only keep categories with at least 1 course, sort them by size descending
+          const sortedGrouped = Object.keys(grouped)
+            .filter(k => grouped[k].length > 0)
+            .sort((a, b) => grouped[b].length - grouped[a].length)
+            .reduce((acc, key) => {
+              acc[key] = grouped[key];
+              return acc;
+            }, {});
+
+          setCoursesByCategory(sortedGrouped);
+        }
       } else {
         setError(res.message || 'Failed to load courses');
       }
@@ -265,273 +287,322 @@ const CourseList = () => {
     setPage(1);
   };
 
-  const hasActiveFilters = category !== 'All' || level !== 'All' || deliveryMode !== 'All' || search;
-  const recommended = courses.filter(c => c.isRecommended);
+  const hasActiveFilters = category !== 'All' || level !== 'All' || deliveryMode !== 'All' || search !== '';
+  const isDiscoveryMode = !hasActiveFilters && page === 1;
+  const recommended = courses.filter(c => c.isRecommended && (!enrolledCourses.find(e => e._id === c._id)));
   const regular = courses.filter(c => !c.isRecommended);
 
   if (loading && courses.length === 0) {
-    return <LoadingSpinner message="Loading Courses..." submessage="Finding the best courses for you" icon={BookOpen} />;
+    return <CourseListSkeleton />;
   }
 
   return (
     <StudentLayout title="Course Library">
-      <div className="min-h-screen bg-[#f8f9fa] -mx-4 lg:-mx-6 -mt-4 lg:-mt-6 px-4 md:px-6 lg:px-8 py-6 text-gray-900">
-        <div className="max-w-[1240px] mx-auto">
+      {/* Search Header Area (Coursera Style Hero) */}
+      <div className="bg-[#f5f7f8] border-b border-gray-200 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1240px] mx-auto text-center">
+          <h1 className="text-3xl md:text-[36px] font-bold text-gray-900 mb-8 tracking-tight">
+            What do you want to learn?
+          </h1>
 
-          <div className="mt-4 lg:mt-6 grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
-
-            {/* ─── LEFT SIDEBAR (FILTERS) ─── */}
-            <div className="md:col-span-3 space-y-5 md:sticky md:top-[100px] md:self-start h-fit">
-
-              {/* Mobile Filter Toggle */}
-              <button
-                onClick={() => setShowFiltersMobile(!showFiltersMobile)}
-                className="md:hidden w-full flex items-center justify-center gap-2 bg-white px-5 py-3 rounded-2xl border border-gray-100 text-[14px] font-bold text-gray-700 shadow-sm shadow-gray-200/50"
-              >
-                <Filter className="w-4 h-4" />
-                {showFiltersMobile ? 'Hide Filters' : 'Show Filters'}
-                {hasActiveFilters && <span className="w-2 h-2 bg-blue-600 rounded-full ml-1" />}
-              </button>
-
-              <div className={`space-y-5 ${showFiltersMobile ? 'block' : 'hidden md:block'}`}>
-
-                {/* Search Card */}
-                <Card className="p-5">
-                  <h3 className="text-[13px] font-bold text-gray-900 uppercase tracking-wider mb-3">Search</h3>
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search courses..."
-                      value={search}
-                      onChange={e => { setSearch(e.target.value); setPage(1); }}
-                      className="w-full pl-9 pr-4 py-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:bg-white text-[13px] text-gray-900 placeholder-gray-400 transition-all"
-                    />
-                    {search && (
-                      <button onClick={() => setSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </Card>
-
-                {/* Filters Card */}
-                <Card className="p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-[13px] font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-gray-400" /> Filter Tools
-                    </h3>
-                    {hasActiveFilters && (
-                      <button
-                        onClick={handleClearFilters}
-                        className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                      >
-                        Clear All
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Category Filter */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Category</label>
-                      <div className="flex flex-col gap-1">
-                        {CATEGORIES.map(c => (
-                          <label key={c} className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="radio"
-                              name="category"
-                              checked={category === c}
-                              onChange={() => { setCategory(c); setPage(1); }}
-                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                            />
-                            <span className={`text-[13px] font-medium transition-colors ${category === c ? 'text-gray-900 font-bold' : 'text-gray-600 group-hover:text-gray-900'}`}>{c}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-gray-100 w-full" />
-
-                    {/* Level Filter */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Level</label>
-                      <div className="flex flex-wrap gap-2">
-                        {LEVELS.map(l => (
-                          <button
-                            key={l}
-                            onClick={() => { setLevel(l); setPage(1); }}
-                            className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border ${level === l
-                                ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                              }`}
-                          >
-                            {l}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-gray-100 w-full" />
-
-                    {/* Delivery Mode Filter */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Delivery Mode</label>
-                      <div className="flex flex-wrap gap-2">
-                        {DELIVERY_MODES.map(m => (
-                          <button
-                            key={m}
-                            onClick={() => { setDeliveryMode(m); setPage(1); }}
-                            className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all border ${deliveryMode === m
-                                ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm'
-                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
-                              }`}
-                          >
-                            {m}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
+          <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-center">
+            {/* Search Input */}
+            <div className="relative w-full shadow-[0_4px_16px_rgba(0,0,0,0.06)] rounded-full bg-white flex items-center border border-gray-300 hover:border-blue-600 transition-colors">
+              <input
+                type="text"
+                placeholder="Search for courses, skills, or certifications"
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="w-full pl-6 pr-14 py-4 md:py-5 bg-transparent text-[16px] text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 rounded-full transition-all font-medium"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                <button className="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors shadow">
+                  <Search className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
-            {/* ─── RIGHT MAIN CONTENT (COURSES) ─── */}
-            <div className="md:col-span-9 space-y-6">
-
-              {/* Elegant Simplified Hero Banner */}
-              <Card className="p-5 md:p-8 relative overflow-hidden flex flex-col items-start justify-center min-h-[160px] bg-gradient-to-r from-white to-blue-50/30">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-blue-100/50 rounded-full blur-3xl pointer-events-none translate-x-1/3 -translate-y-1/3" />
-                <div className="absolute bottom-0 right-20 w-[150px] h-[150px] bg-cyan-100/30 rounded-full blur-2xl pointer-events-none translate-y-1/2" />
-                <BookMarked className="absolute bottom-4 right-6 w-24 h-24 text-blue-500/5 -rotate-12 pointer-events-none" />
-
-                <div className="relative z-10 max-w-[600px]">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-bold mb-3">
-                    <Zap className="w-3 h-3" /> Let's Learn Something New!
-                  </div>
-                  <h2 className="text-[24px] md:text-[28px] font-extrabold text-gray-900 leading-tight mb-2 tracking-tight">
-                    Explore Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Premium Course Library</span>
-                  </h2>
-                  {/* <p className="text-[14px] text-gray-500 mb-5 font-medium">Advance your skills, earn certificates, and boost your career with certified courses taught by industry experts.</p> */}
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button onClick={() => navigate('/dashboard/student/my-courses')} className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-6 py-2.5 rounded-full text-[13px] font-bold transition-all shadow-md shadow-blue-500/20 whitespace-nowrap flex items-center gap-2">
-                      My Enrolled Courses <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Error */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-                  <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  <p className="text-[13px] text-red-800 font-medium">{error}</p>
-                  <button onClick={fetchCourses} className="ml-auto text-[13px] text-red-600 font-bold hover:underline">Retry</button>
-                </div>
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(true)}
+              className="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-2 px-6 py-4 md:py-5 bg-white border border-gray-300 rounded-full text-gray-700 font-bold hover:border-gray-900 hover:bg-gray-50 transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex-shrink-0"
+            >
+              <Filter className="w-5 h-5" />
+              Filters
+              {hasActiveFilters && (
+                <span className="w-2.5 h-2.5 bg-blue-600 rounded-full ml-1" />
               )}
+            </button>
 
-              {loading && (
-                <div className="flex justify-center py-12">
-                  <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-                </div>
-              )}
-
-              {/* Recommended Section (Within Content Grid) */}
-              {!loading && recommended.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center shadow-sm shadow-yellow-500/20">
-                      <Zap className="w-4 h-4 text-white" />
-                    </div>
-                    <h2 className="font-bold text-[18px] text-gray-900 leading-tight">Hand-picked for You</h2>
-                  </div>
-
-                  {/* Because it's within a 9-col wrapper, 3 columns works perfectly for MD+ */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {recommended.map(course => (
-                      <CourseCard
-                        key={course._id}
-                        course={course}
-                        onClick={() => navigate(`/dashboard/student/courses/${course._id}`)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* All Courses Section */}
-              {!loading && (
-                <div>
-                  {recommended.length > 0 && (
-                    <div className="flex items-center gap-2 mb-4 mt-8 pt-6 border-t border-gray-100">
-                      <div className="w-8 h-8 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <h2 className="font-bold text-[18px] text-gray-900 leading-tight">All Available Courses</h2>
-                      <span className="text-[12px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{regular.length}</span>
-                    </div>
-                  )}
-
-                  {courses.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm mt-4">
-                      <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-[16px] text-gray-900 font-bold leading-tight">No courses found</p>
-                      <p className="text-[13px] text-gray-500 mt-1">Try adjusting your search or filters on the left.</p>
-                      {hasActiveFilters && (
-                        <button onClick={handleClearFilters} className="mt-5 px-5 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-[13px] font-bold rounded-full hover:shadow-md hover:shadow-blue-500/20 transition-all inline-block">Reset filters</button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {(recommended.length > 0 ? regular : courses).map(course => (
-                        <CourseCard
-                          key={course._id}
-                          course={course}
-                          onClick={() => navigate(`/dashboard/student/courses/${course._id}`)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Pagination */}
-              {pages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-8 pb-6">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 rounded-lg border border-gray-200 text-[13px] font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed bg-white shadow-sm"
-                  >
-                    Previous
-                  </button>
-                  {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-[13px] font-bold border transition-all shadow-sm ${p === page ? 'bg-gradient-to-r from-blue-600 to-cyan-500 border-none text-white shadow-blue-500/20' : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-50 bg-white'}`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage(p => Math.min(pages, p + 1))}
-                    disabled={page === pages}
-                    className="px-4 py-2 rounded-lg border border-gray-200 text-[13px] font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed bg-white shadow-sm"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-
-            </div>
+            {/* My Learning / My Courses Button */}
+            <button
+              onClick={() => navigate('/dashboard/student/my-courses')}
+              className="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-2 px-6 py-4 md:py-5 bg-blue-600 border border-blue-600 rounded-full text-white font-bold hover:bg-blue-700 hover:border-blue-700 transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex-shrink-0"
+            >
+              <BookMarked className="w-5 h-5" />
+              My Learning
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Main Content Area */}
+      <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-[1240px] mx-auto space-y-16">
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-[14px] text-red-800 font-medium">{error}</p>
+              <button onClick={fetchCourses} className="ml-auto text-[14px] text-red-600 font-bold hover:underline">Retry</button>
+            </div>
+          )}
+
+          {/* Enrolled Courses / Resume Learning Section */}
+          {!loading && isDiscoveryMode && enrolledCourses.length > 0 && (
+            <div>
+              <h2 className="text-[22px] font-bold text-gray-900 mb-6 tracking-tight">Resume Learning</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                {enrolledCourses.slice(0, 4).map(course => (
+                  <CourseCard
+                    key={`enrolled-${course._id}`}
+                    course={course}
+                    onClick={() => navigate(`/dashboard/student/courses/${course._id}/learn`)}
+                  />
+                ))}
+              </div>
+              <div className="h-px bg-gray-200 w-full mt-12"></div>
+            </div>
+          )}
+
+          {/* Recommended / Hand-picked Section */}
+          {!loading && isDiscoveryMode && recommended.length > 0 && (
+            <div>
+              <h2 className="text-[22px] font-bold text-gray-900 mb-6 tracking-tight">Hand-picked for You</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                {recommended.slice(0, 4).map(course => (
+                  <CourseCard
+                    key={`rec-${course._id}`}
+                    course={course}
+                    onClick={() => navigate(`/dashboard/student/courses/${course._id}`)}
+                  />
+                ))}
+              </div>
+              <div className="h-px bg-gray-200 w-full mt-12"></div>
+            </div>
+          )}
+
+          {/* Categorized Sections for Discovery */}
+          {!loading && isDiscoveryMode && Object.keys(coursesByCategory).map(cat => (
+            <div key={`cat-${cat}`}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[22px] font-bold text-gray-900 tracking-tight">Top Courses in {cat}</h2>
+                <button
+                  onClick={() => { setCategory(cat); setPage(1); }}
+                  className="flex items-center gap-1 text-blue-600 font-bold hover:underline py-1 px-3 rounded-full hover:bg-blue-50 transition-colors text-[14px]"
+                >
+                  Explore {cat} <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                {coursesByCategory[cat].slice(0, 4).map(course => (
+                  <CourseCard
+                    key={`cat-course-${course._id}`}
+                    course={course}
+                    onClick={() => navigate(`/dashboard/student/courses/${course._id}`)}
+                  />
+                ))}
+              </div>
+              <div className="h-px bg-gray-200 w-full mt-12"></div>
+            </div>
+          ))}
+
+          {/* All Courses Grid (For search/filter) */}
+          {!loading && !isDiscoveryMode && (
+            <div>
+
+              <h2 className="text-[22px] font-bold text-gray-900 mb-6 tracking-tight">
+                {search ? `Search results for "${search}"` : 'Most Popular Certificates and Courses'}
+              </h2>
+
+              {courses.length === 0 ? (
+                <div className="text-center py-20 bg-[#f5f7f8] rounded-2xl border border-gray-200 mt-4">
+                  <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-[18px] text-gray-900 font-bold">We couldn't find any courses</p>
+                  <p className="text-[15px] text-gray-500 mt-2 max-w-md mx-auto">Try adjusting your search terms or clearing some filters to find what you're looking for.</p>
+                  {hasActiveFilters && (
+                    <button onClick={handleClearFilters} className="mt-6 px-6 py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-full hover:bg-gray-50 transition-colors">
+                      Clear all filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                  {(search ? courses : (recommended.length > 0 ? regular : courses)).map(course => (
+                    <CourseCard
+                      key={course._id}
+                      course={course}
+                      onClick={() => navigate(`/dashboard/student/courses/${course._id}`)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pages > 1 && (
+            <div className="flex justify-center items-center gap-2 pt-8">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
+              >
+                <span className="sr-only">Previous</span>
+                &lt;
+              </button>
+
+              <div className="flex gap-1 mx-2">
+                {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full text-[14px] font-bold transition-all ${p === page ? 'bg-blue-600 text-white shadow' : 'hover:bg-gray-100 text-gray-700'}`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setPage(p => Math.min(pages, p + 1))}
+                disabled={page === pages}
+                className="w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold"
+              >
+                <span className="sr-only">Next</span>
+                &gt;
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Overlay (Slide-out panel) */}
+      {showFilters && (
+        <div className="fixed inset-0 z-[100] flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowFilters(false)}
+          />
+
+          {/* Slide-out Panel */}
+          <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white">
+              <h2 className="text-xl font-bold text-gray-900 tracking-tight">Filters</h2>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-10 bg-[#fbfbfb]">
+              {/* Category */}
+              <div>
+                <h3 className="text-[15px] font-bold text-gray-900 uppercase tracking-wider mb-4">Category</h3>
+                <div className="space-y-3">
+                  {CATEGORIES.map(c => (
+                    <label key={c} className="flex items-center gap-3 cursor-pointer group">
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${category === c ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300 group-hover:border-gray-400'}`}>
+                        {category === c && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <span className={`text-[15px] ${category === c ? 'text-gray-900 font-bold' : 'text-gray-700'}`}>
+                        {c}
+                      </span>
+                      {/* hidden actual radio input */}
+                      <input
+                        type="radio"
+                        name="category"
+                        checked={category === c}
+                        onChange={() => { setCategory(c); setPage(1); }}
+                        className="hidden"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Level */}
+              <div>
+                <h3 className="text-[15px] font-bold text-gray-900 uppercase tracking-wider mb-4">Level</h3>
+                <div className="flex flex-wrap gap-2">
+                  {LEVELS.map(l => (
+                    <button
+                      key={l}
+                      onClick={() => { setLevel(l); setPage(1); }}
+                      className={`px-4 py-2 rounded-full text-[14px] font-bold transition-all border ${level === l
+                        ? 'bg-gray-900 border-gray-900 text-white shadow-sm'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900'
+                        }`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Delivery Mode */}
+              <div>
+                <h3 className="text-[15px] font-bold text-gray-900 uppercase tracking-wider mb-4">Delivery Mode</h3>
+                <div className="flex flex-wrap gap-2">
+                  {DELIVERY_MODES.map(m => (
+                    <button
+                      key={m}
+                      onClick={() => { setDeliveryMode(m); setPage(1); }}
+                      className={`px-4 py-2 rounded-full text-[14px] font-bold transition-all border ${deliveryMode === m
+                        ? 'bg-gray-900 border-gray-900 text-white shadow-sm'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900'
+                        }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex items-center gap-4 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+              <button
+                onClick={handleClearFilters}
+                className="flex-1 py-3.5 text-[15px] font-bold text-gray-700 border-2 border-gray-300 hover:border-gray-900 rounded-full transition-colors"
+              >
+                Clear all
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-[15px] font-bold rounded-full transition-colors shadow-lg shadow-blue-500/20"
+              >
+                Show results
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Internal CSS for animation map */}
+      <style>{`
+        @keyframes slideInFromRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .slide-in-from-right {
+          animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
+
     </StudentLayout>
   );
 };

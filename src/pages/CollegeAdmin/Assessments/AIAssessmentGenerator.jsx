@@ -502,7 +502,7 @@ const AIAssessmentGenerator = () => {
                 subtitle="Configure the complexity and size of the question bank">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Difficulty Level</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {Object.entries(LEVEL_CONFIG).map(([lvl, cfg]) => (
                       <label key={lvl} className={`cursor-pointer rounded-xl border-2 p-4 transition-all hover:shadow-sm select-none
                         ${level === lvl ? cfg.active + ' shadow-sm' : 'border-gray-100 bg-gray-50 text-gray-600 hover:border-gray-200'}`}>
@@ -534,7 +534,7 @@ const AIAssessmentGenerator = () => {
                   <div className="flex justify-between text-xs text-gray-300 mt-1.5">
                     {[5,10,15,20,25,30,35,40,45,50].map(v => <span key={v} className={numQuestions===v?'text-blue-500 font-bold':''}>{v}</span>)}
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-3">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { Icon: Timer,          label: 'Est. Duration', value: `${Math.max(numQuestions*2,10)} min` },
                       { Icon: Trophy,         label: 'Est. Marks',    value: numQuestions },
@@ -602,7 +602,7 @@ const AIAssessmentGenerator = () => {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
                   {[
                     { label:'Questions',     value:questions.length,                                           Icon:ClipboardList },
                     { label:'Total Marks',   value:totalMarks,                                                 Icon:Trophy       },

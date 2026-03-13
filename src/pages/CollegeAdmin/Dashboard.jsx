@@ -298,7 +298,7 @@ const CollegeAdminDashboard = () => {
 
       {/* ══ STATS PILLS — all live data ══ */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           <Pill icon={Users}        label="Students"     value={stats.totalStudents}   color="blue"   onClick={() => navigate('/dashboard/college-admin/students')} />
           <Pill icon={UserCheck}    label="Placed"       value={stats.placedStudents}  color="green"  onClick={() => navigate('/dashboard/college-admin/students')} />
           <Pill icon={Building2}    label="Companies"    value={stats.totalCompanies}  color="cyan"   onClick={() => navigate('/dashboard/college-admin/companies')} />

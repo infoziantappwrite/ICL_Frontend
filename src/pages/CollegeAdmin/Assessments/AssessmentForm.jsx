@@ -179,7 +179,7 @@ const AssessmentForm = () => {
 
             {/* Level */}
             <Field label="Difficulty Level" required>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { value: 'Beginner',     color: 'border-cyan-400 bg-cyan-50 text-cyan-700'   },
                   { value: 'Intermediate', color: 'border-blue-400 bg-blue-50 text-blue-700'   },

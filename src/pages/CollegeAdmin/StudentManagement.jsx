@@ -479,10 +479,10 @@ function AddMultipleModal({ onClose, onDone }) {
 
   const addRow    = () => setRows(p => [...p, EMPTY_ROW()]);
   const removeRow = (id) => setRows(p => p.filter(r => r.id !== id));
-  const setCell   = (id, field, value) => {
+  const setCell = useCallback((id, field, value) => {
     setRows(p => p.map(r => r.id === id ? {...r, [field]: value} : r));
     setRowErr(p => { const n = {...p}; if (n[id]) delete n[id][field]; return n; });
-  };
+  }, []);
 
   const validate = () => {
     const errs = {};
@@ -967,7 +967,7 @@ function BulkUploadModal({ onClose, onDone }) {
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
         <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose}/>
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               {l:'Total Rows', v:uploadResult?.totalRows || parsedRows.length, bg:'bg-blue-50',    text:'text-blue-700',    border:'border-blue-100'},
               {l:'Inserted',   v:uploadResult?.inserted  || 0,                  bg:'bg-emerald-50', text:'text-emerald-700', border:'border-emerald-100'},

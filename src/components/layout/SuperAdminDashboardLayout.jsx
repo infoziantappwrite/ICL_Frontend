@@ -6,47 +6,47 @@ import { useToast } from '../../context/ToastContext';
 import {
   LayoutDashboard, Bell, Settings, LogOut, Menu, X,
   Building2, Users, GraduationCap, BookOpen, CreditCard,
-  ChevronLeft, ChevronRight, Crown, Search, Activity, ChevronDown,
+  ChevronLeft, ChevronRight, Crown, Search, Activity, ChevronDown, Landmark
 } from 'lucide-react';
 
 const MENU_GROUPS = [
   {
     label: 'Overview',
     items: [
-      { icon: LayoutDashboard, label: 'Dashboard',     path: '/dashboard/super-admin' },
-      { icon: Activity,        label: 'Analytics',     path: '/dashboard/super-admin/analytics' },
+      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard/super-admin' },
+      { icon: Activity, label: 'Analytics', path: '/dashboard/super-admin/analytics' },
     ],
   },
   {
     label: 'Management',
     items: [
-      { icon: Building2,     label: 'Colleges',   path: '/dashboard/super-admin/colleges' },
-      { icon: Building2,     label: 'Companies',  path: '/dashboard/super-admin/companies' },
-      { icon: Users,         label: 'Admins',     path: '/dashboard/super-admin/admins' },
-      { icon: GraduationCap, label: 'Students',   path: '/dashboard/super-admin/students' },
+      { icon: Building2, label: 'Colleges', path: '/dashboard/super-admin/colleges' },
+      { icon: Landmark, label: 'Companies', path: '/dashboard/super-admin/companies' },
+      { icon: Users, label: 'Admins', path: '/dashboard/super-admin/admins' },
+      { icon: GraduationCap, label: 'Students', path: '/dashboard/super-admin/students' },
     ],
   },
   {
     label: 'Platform',
     items: [
-      { icon: BookOpen,   label: 'Courses',       path: '/dashboard/super-admin/courses' },
+      { icon: BookOpen, label: 'Courses', path: '/dashboard/super-admin/courses' },
       { icon: CreditCard, label: 'Subscriptions', path: '/dashboard/super-admin/subscriptions' },
-      { icon: Bell,       label: 'Notifications', path: '/dashboard/super-admin/notifications' },
-      { icon: Settings,   label: 'Settings',      path: '/dashboard/super-admin/settings' },
+      { icon: Bell, label: 'Notifications', path: '/dashboard/super-admin/notifications' },
+      { icon: Settings, label: 'Settings', path: '/dashboard/super-admin/settings' },
     ],
   },
 ];
 
 const SuperAdminDashboardLayout = ({ children }) => {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const toast = useToast();
 
-  const [sidebarOpen,  setSidebarOpen]  = useState(true);
-  const [showMobile,   setShowMobile]   = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showMobile, setShowMobile] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchVal,    setSearchVal]    = useState('');
+  const [searchVal, setSearchVal] = useState('');
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -325,9 +325,9 @@ const SuperAdminDashboardLayout = ({ children }) => {
                   </div>
                   <div className="py-1.5">
                     {[
-                      { icon: LayoutDashboard, label: 'Dashboard',     path: '/dashboard/super-admin' },
-                      { icon: Bell,            label: 'Notifications', path: '/dashboard/super-admin/notifications' },
-                      { icon: Settings,        label: 'Settings',      path: '/dashboard/super-admin/settings' },
+                      { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard/super-admin' },
+                      { icon: Bell, label: 'Notifications', path: '/dashboard/super-admin/notifications' },
+                      { icon: Settings, label: 'Settings', path: '/dashboard/super-admin/settings' },
                     ].map(m => (
                       <button
                         key={m.path}

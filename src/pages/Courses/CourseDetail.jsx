@@ -1,5 +1,4 @@
 // src/pages/Courses/CourseDetail.jsx
-// Student: View full course info, enroll, and navigate to learning
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -12,7 +11,6 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { courseAPI } from '../../api/Api';
 import StudentLayout from '../../components/layout/StudentLayout';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
   pending: 'Enrolled',
   active: 'In Progress',
@@ -20,72 +18,21 @@ const STATUS_LABEL = {
   dropped: 'Dropped',
 };
 
-const TABS = ['About', 'Outcomes', 'Modules', 'Recommendations', 'Testimonials', 'Reviews'];
+const TABS = ['About', 'Outcomes', 'Modules', 'Reviews'];
 
-// ─── Skeleton Loader ──────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 const CourseDetailSkeleton = () => (
-  <StudentLayout title="Loading Course...">
+  <StudentLayout title="Loading...">
     <div className="animate-pulse">
-      {/* Hero Section Skeleton */}
-      <div className="relative bg-[#f8fafc] border-b border-gray-200 overflow-hidden flex min-h-[440px]">
-        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 md:py-20 flex flex-col lg:flex-row justify-between gap-12">
-          <div className="max-w-2xl flex-1 space-y-6 pt-4">
-            <div className="flex gap-3 mb-6">
-              <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
-              <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
-            </div>
-            <div className="h-16 w-3/4 bg-gray-200 rounded-lg"></div>
-            <div className="space-y-3 mt-8">
-              <div className="h-4 w-full bg-gray-200 rounded"></div>
-              <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
-            </div>
-            <div className="flex items-center gap-4 mt-8">
-              <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
-              <div className="space-y-2">
-                <div className="h-3 w-16 bg-gray-200 rounded"></div>
-                <div className="h-4 w-32 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
-          {/* Right Card Skeleton */}
-          <div className="w-full lg:w-[400px] flex-shrink-0">
-            <div className="bg-white border border-gray-100 rounded-3xl p-8 h-64 flex flex-col justify-end space-y-4 shadow-sm">
-              <div className="h-6 w-48 bg-gray-200 rounded"></div>
-              <div className="h-4 w-full bg-gray-200 rounded"></div>
-              <div className="h-14 w-full bg-gray-200 rounded-2xl mt-4"></div>
-            </div>
-          </div>
+      <div className="bg-white border-b border-gray-100 h-10" />
+      <div className="bg-[#f8fafc] h-48 md:h-64" />
+      <div className="max-w-[1240px] mx-auto px-3 md:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="h-6 bg-gray-200 rounded w-2/3" />
+          <div className="h-4 bg-gray-100 rounded w-full" />
+          <div className="h-4 bg-gray-100 rounded w-5/6" />
         </div>
-      </div>
-
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Floating Stats Skeleton */}
-        <div className="relative z-20 -mt-10 mb-10 bg-white rounded-lg shadow-sm border border-gray-100 flex p-6 gap-6 h-24">
-          <div className="flex-1 bg-gray-100 rounded"></div>
-          <div className="w-px bg-gray-100"></div>
-          <div className="flex-1 bg-gray-100 rounded"></div>
-          <div className="w-px bg-gray-100"></div>
-          <div className="flex-1 bg-gray-100 rounded"></div>
-        </div>
-
-        {/* Layout Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pb-20 pt-8">
-          <div className="lg:col-span-2 space-y-12">
-            <div className="h-8 w-48 bg-gray-200 rounded mb-4"></div>
-            <div className="space-y-3">
-              <div className="h-4 w-full bg-gray-200 rounded"></div>
-              <div className="h-4 w-full bg-gray-200 rounded"></div>
-              <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
-              <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
-            </div>
-            <div className="h-8 w-48 bg-gray-200 rounded mt-12 mb-4"></div>
-            <div className="flex gap-3"><div className="h-10 w-24 bg-gray-200 rounded-full"></div><div className="h-10 w-32 bg-gray-200 rounded-full"></div></div>
-          </div>
-          <div className="space-y-8">
-            <div className="h-64 bg-gray-100 rounded-lg"></div>
-            <div className="h-48 bg-gray-100 rounded-lg"></div>
-          </div>
-        </div>
+        <div className="h-48 bg-gray-100 rounded-2xl" />
       </div>
     </div>
   </StudentLayout>
@@ -104,9 +51,7 @@ const CourseDetail = () => {
   const [activeTab, setActiveTab] = useState('About');
   const [expandedModule, setExpandedModule] = useState(null);
 
-  useEffect(() => {
-    fetchCourse();
-  }, [courseId]);
+  useEffect(() => { fetchCourse(); }, [courseId]);
 
   const fetchCourse = async () => {
     setLoading(true);
@@ -116,9 +61,7 @@ const CourseDetail = () => {
       if (res.success) {
         setCourse(res.data);
         setEnrollment(res.data.enrollment || null);
-      } else {
-        setError(res.message || 'Course not found');
-      }
+      } else setError(res.message || 'Course not found');
     } catch (err) {
       setError(err.message || 'Failed to load course');
     } finally {
@@ -138,9 +81,7 @@ const CourseDetail = () => {
       if (res.success) {
         setEnrollment(res.data);
         showToast('Successfully enrolled! Start learning now.');
-      } else {
-        showToast(res.message || 'Enrollment failed', 'error');
-      }
+      } else showToast(res.message || 'Enrollment failed', 'error');
     } catch (err) {
       showToast(err.message || 'Enrollment failed', 'error');
     } finally {
@@ -148,17 +89,15 @@ const CourseDetail = () => {
     }
   };
 
-  if (loading) {
-    return <CourseDetailSkeleton />;
-  }
+  if (loading) return <CourseDetailSkeleton />;
 
   if (error || !course) {
     return (
       <StudentLayout title="Course Detail">
-        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-          <AlertCircle className="w-12 h-12 text-red-500" />
-          <p className="text-gray-600">{error || 'Course not found'}</p>
-          <button onClick={() => navigate('/dashboard/student/courses')} className="text-blue-600 hover:underline text-[14px]">
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 p-6">
+          <AlertCircle className="w-10 h-10 text-red-400" />
+          <p className="text-gray-600 text-sm">{error || 'Course not found'}</p>
+          <button onClick={() => navigate('/dashboard/student/courses')} className="text-blue-600 text-sm hover:underline">
             ← Back to courses
           </button>
         </div>
@@ -167,316 +106,354 @@ const CourseDetail = () => {
   }
 
   const price = course.price?.discounted || course.price?.original || 0;
-  const currency = course.price?.currency === 'USD' ? '$' : '₹';
   const isEnrolled = !!enrollment;
   const isCompleted = enrollment?.status === 'completed';
-
-  // Extract instructors or partner details safely
   const partnerName = course.instructor?.name || course.provider?.name || 'Partner Institute';
   const partnerLogo = course.instructor?.logo || course.provider?.logo || null;
+  const hasImage = !!(course.thumbnail || course.image);
+
+  // ─── CTA Button (shared between desktop card + mobile bar)
+  const CTAButton = ({ compact = false }) => !isEnrolled ? (
+    <button
+      onClick={handleEnroll}
+      disabled={enrolling || course.status !== 'Active'}
+      className={`w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md ${compact ? 'py-2.5 text-[13px]' : 'py-3.5 text-[15px]'}`}
+    >
+      {enrolling ? <><RefreshCw className="w-4 h-4 animate-spin" /> Enrolling...</> : course.status !== 'Active' ? 'Enrollment Closed' : 'Enroll for Free'}
+    </button>
+  ) : (
+    <button
+      onClick={() => navigate(`/dashboard/student/courses/${courseId}/learn`)}
+      className={`w-full bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md ${compact ? 'py-2.5 text-[13px]' : 'py-3.5 text-[15px]'}`}
+    >
+      <PlayCircle className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
+      {isCompleted ? 'Review Course' : 'Continue Learning'}
+    </button>
+  );
 
   return (
     <StudentLayout title={course.title}>
+
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-lg shadow-xl text-[14px] font-bold transition-all ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
-          {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-[13px] font-bold ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
           {toast.msg}
         </div>
       )}
 
-      {/* Breadcrumb Navigation - Outside Hero */}
+      {/* ── Breadcrumb ── */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
-          <nav className="flex items-center flex-wrap gap-y-2 gap-x-2 text-[14px] text-gray-500 font-medium">
-            <button title="Home" onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 transition-colors flex items-center">
-              <Home className="w-4 h-4" />
+        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-2">
+          <nav className="flex items-center gap-1.5 text-sm text-gray-500 font-medium overflow-x-auto hide-scrollbar">
+            <button onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 flex-shrink-0">
+              <Home className="w-[18px] h-[18px]" />
             </button>
             <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 transition-colors">
-              Courses
-            </button>
+            <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 flex-shrink-0">Courses</button>
             <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-gray-900 font-bold truncate max-w-[400px]" title={course.title}>
-              {course.title.length > 40 ? course.title.substring(0, 40) + '...' : course.title}
-            </span>
+            <span className="text-gray-900 font-bold truncate">{course.title}</span>
           </nav>
         </div>
       </div>
 
-      {/* Hero Section (Light Premium Design) */}
-      <div className="relative bg-[#f8fafc] border-b border-gray-200 overflow-hidden flex min-h-[440px] text-gray-900">
-        {/* Dynamic Abstract Background Elements */}
-        <div className="absolute inset-0 z-0 opacity-60">
-          {/* Light gradient base */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50"></div>
-          {/* Soft Geometric/Abstract Orbs */}
-          <div className="absolute top-[-10%] right-[10%] w-[500px] h-[500px] rounded-full bg-blue-100/50 blur-[100px] mix-blend-multiply opacity-70"></div>
-          <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-indigo-100/50 blur-[80px] mix-blend-multiply opacity-60"></div>
-
-          {/* Subtle Grid Pattern */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wMykiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,black,transparent)]"></div>
+      {/* ══ MOBILE: Course image banner (hidden on lg+) ══ */}
+      {hasImage && (
+        <div className="lg:hidden w-full h-44 sm:h-56 overflow-hidden">
+          <img
+            src={course.thumbnail || course.image}
+            alt={course.title}
+            className="w-full h-full object-cover"
+          />
+          {/* subtle bottom fade */}
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         </div>
+      )}
 
-        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 md:py-20 relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+      {/* ── Hero ── */}
+      <div className="relative bg-gradient-to-br from-[#f0f4ff] via-white to-[#f5f0ff] border-b border-gray-200">
+        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-5 md:py-12 flex flex-col lg:flex-row items-start gap-6 lg:gap-12">
 
-          <div className="max-w-2xl flex-1">
-
-
-            {/* Top Badges */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <span className="bg-white/80 backdrop-blur-sm border border-gray-200 text-blue-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
-                {course.category || 'Premium Course'}
+          {/* Left: Info */}
+          <div className="flex-1 min-w-0">
+            {/* Badges */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              <span className="bg-white border border-blue-200 text-blue-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+                {course.category || 'Course'}
               </span>
-              <span className="bg-indigo-50/80 backdrop-blur-sm border border-indigo-200 text-indigo-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
+              <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                 {course.level || 'All Levels'}
               </span>
               {price === 0 && (
-                <span className="bg-emerald-50/80 backdrop-blur-sm border border-emerald-200 text-emerald-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
-                  Free Enrollment
+                <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                  Free
+                </span>
+              )}
+              {isEnrolled && (
+                <span className="bg-gray-900 text-white text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                  {STATUS_LABEL[enrollment.status] || enrollment.status}
                 </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="text-[24px] md:text-[28px] font-bold text-gray-900 leading-tight mb-2">
+            <h1 className="text-[18px] sm:text-[22px] md:text-[30px] font-bold text-gray-900 leading-tight mb-2">
               {course.title}
             </h1>
 
-            <p className="text-[14px] text-gray-500 mb-8 max-w-2xl mt-1">
-              {course.shortDescription || course.description?.substring(0, 150) + "..." || "Master this topic with hands-on practice, expert guidance, and community support."}
+            <p className="text-[12px] md:text-[14px] text-gray-500 leading-relaxed mb-4">
+              {course.shortDescription || course.description?.substring(0, 250) + '...' || 'Master this topic with hands-on practice and expert guidance.'}
             </p>
 
-            {/* Instructor Mapping */}
-            <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md border border-gray-200 p-3 rounded-2xl w-fit shadow-sm">
-              {partnerLogo ? (
-                <div className="bg-white border border-gray-100 p-1.5 rounded-xl w-12 h-12 flex items-center justify-center flex-shrink-0">
-                  <img src={partnerLogo} alt="Partner Logo" className="max-h-full max-w-full object-contain" />
+            {/* Stats row */}
+            <div className="flex items-center gap-3 flex-wrap mt-1">
+              <div className="flex items-center gap-1 text-[11px] md:text-[12px] text-gray-600">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span className="font-bold text-gray-900">{course.rating?.average?.toFixed(1) || '4.7'}</span>
+                <span className="text-gray-400">({course.rating?.count || 108})</span>
+              </div>
+              <span className="text-gray-300">•</span>
+              <div className="flex items-center gap-1 text-[11px] md:text-[12px] text-gray-600">
+                <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                {course.curriculum?.length || 5} modules
+              </div>
+              <span className="text-gray-300">•</span>
+              <div className="flex items-center gap-1 text-[11px] md:text-[12px] text-gray-600">
+                <Users className="w-3.5 h-3.5 text-gray-400" />
+                {parseInt(course.enrollmentCount || 0).toLocaleString()} learners
+              </div>
+            </div>
+
+            {/* What you'll learn — always visible */}
+            <div className="mt-5 pt-5 border-t border-gray-200/70">
+              <p className="text-[11px] md:text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">What you'll learn</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                {(course.learningOutcomes?.length > 0
+                  ? course.learningOutcomes.slice(0, 4)
+                  : course.tags?.length > 0
+                    ? course.tags.slice(0, 4)
+                    : ['Core concepts and fundamentals', 'Hands-on practical projects', 'Industry best practices', 'Career-ready skills']
+                ).map((item, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-[12px] md:text-[13px] text-gray-700 leading-snug">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature pills row */}
+            <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-gray-200/60">
+              {[
+                { icon: Globe, label: course.deliveryMode || '100% Online' },
+                { icon: Clock, label: 'Flexible Schedule' },
+                ...(course.certificateProvided ? [{ icon: Award, label: 'Certificate' }] : []),
+                { icon: Layers, label: `${course.curriculum?.length || 5} Modules` },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm">
+                  <Icon className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="text-[11px] md:text-[12px] font-semibold text-gray-700">{label}</span>
                 </div>
+              ))}
+            </div>
+
+            {/* Instructor row */}
+            <div className="flex items-center gap-2 mt-4">
+              {partnerLogo ? (
+                <img src={partnerLogo} alt={partnerName} className="w-7 h-7 rounded-lg object-contain border border-gray-200 flex-shrink-0" />
               ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 border border-blue-200 text-blue-700 font-bold text-[18px] rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 border border-blue-200 text-blue-700 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
                   {partnerName.charAt(0)}
                 </div>
               )}
-              <div className="flex flex-col pr-4">
-                <span className="text-[11px] text-gray-500 uppercase tracking-widest font-bold mb-0.5">Taught By</span>
-                <span className="text-[16px] font-bold text-gray-900 hover:text-blue-700 transition-colors cursor-pointer">{partnerName}</span>
+              <span className="text-[11px] text-gray-500">Taught by <span className="font-bold text-gray-800">{partnerName}</span></span>
+            </div>
+          </div>
+
+
+
+          {/* Right: CTA Card — desktop only, image at top */}
+          <div className="hidden lg:block w-full lg:w-[360px] flex-shrink-0">
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden">
+              {/* Course image thumbnail */}
+              {hasImage ? (
+                <img
+                  src={course.thumbnail || course.image}
+                  alt={course.title}
+                  className="w-full h-48 object-cover"
+                />
+              ) : (
+                <div className="w-full h-36 bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 flex items-center justify-center">
+                  <BookOpen className="w-12 h-12 text-blue-300" />
+                </div>
+              )}
+
+              {/* Card body */}
+              <div className="p-5">
+                <h3 className="text-[18px] font-bold text-gray-900 mb-1">Start Learning</h3>
+                <p className="text-[13px] text-gray-500 mb-4">
+                  Join <strong className="text-blue-700">{parseInt(course.enrollmentCount || 0).toLocaleString()}</strong> learners already enrolled.
+                </p>
+                {isEnrolled && (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex items-center gap-3 mb-4">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Status</p>
+                      <p className="text-[13px] font-bold text-emerald-900">{STATUS_LABEL[enrollment.status] || enrollment.status}</p>
+                    </div>
+                  </div>
+                )}
+                <CTAButton />
+                <div className="mt-4 space-y-2.5 pt-4 border-t border-gray-100">
+                  {[
+                    { icon: Globe, label: course.deliveryMode || '100% Online' },
+                    { icon: Clock, label: 'Flexible schedule' },
+                    ...(course.certificateProvided ? [{ icon: Award, label: 'Certificate on completion' }] : []),
+                  ].map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-2.5 text-[12px] text-gray-600">
+                      <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      {label}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Right side CTA Card (Light Glassmorphism) */}
-          <div className="w-full lg:w-[400px] flex-shrink-0">
-            <div className="bg-white/90 backdrop-blur-2xl border border-gray-100 rounded-3xl p-8 shadow-[0_12px_40px_rgba(0,0,0,0.08)] relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-transparent pointer-events-none"></div>
+        </div>
+      </div>
 
-              <h3 className="text-2xl font-bold text-gray-900 mb-2 relative z-10">Start Learning Today</h3>
-              <p className="text-gray-600 text-[14px] mb-8 font-medium relative z-10">Join <strong className="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">{parseInt(course.enrollmentCount || 0).toLocaleString()}</strong> learners already enrolled in this journey.</p>
-
-              {/* Main CTA Area */}
-              <div className="relative z-10">
-                {!isEnrolled ? (
-                  <button
-                    onClick={handleEnroll}
-                    disabled={enrolling || course.status !== 'Active'}
-                    className="w-full bg-gradient-to-r from-blue-600 hover:from-blue-700 to-indigo-600 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_4px_15px_rgba(37,99,235,0.25)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.4)] transform hover:-translate-y-1"
-                  >
-                    {enrolling ? (
-                      <><RefreshCw className="w-5 h-5 animate-spin" /> Enrolling...</>
-                    ) : (
-                      course.status !== 'Active' ? 'Enrollment Closed' : 'Enroll for Free'
-                    )}
-                  </button>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-4">
-                      <div className="bg-emerald-100 p-2 rounded-full text-emerald-600">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-[12px] text-emerald-700 uppercase font-bold tracking-widest">Status</p>
-                        <p className="text-[16px] font-bold text-emerald-900">{STATUS_LABEL[enrollment.status] || enrollment.status}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => navigate(`/dashboard/student/courses/${courseId}/learn`)}
-                      className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg transform hover:-translate-y-1"
-                    >
-                      <PlayCircle className="w-5 h-5" /> Go to course
-                    </button>
-                  </div>
-                )}
+      {/* ── Stats ribbon (mobile: horizontal scroll pills, desktop: grid) ── */}
+      <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-20">
+        <div className="max-w-[1240px] mx-auto px-3 md:px-6 lg:px-8">
+          {/* Mobile: scrollable pill row */}
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar py-2.5 lg:hidden">
+            {[
+              { icon: BookOpen, value: `${course.curriculum?.length || 5} modules` },
+              { icon: Star, value: `${course.rating?.average?.toFixed(1) || '4.7'} rated` },
+              { icon: BarChart3, value: `${course.level || 'All'} level` },
+              { icon: ThumbsUp, value: '96% liked' },
+            ].map(({ icon: Icon, value }) => (
+              <div key={value} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 flex-shrink-0">
+                <Icon className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-[11px] font-bold text-gray-700 whitespace-nowrap">{value}</span>
               </div>
-            </div>
+            ))}
+          </div>
+          {/* Desktop: 4-col row */}
+          <div className="hidden lg:grid grid-cols-4 divide-x divide-gray-100 py-4">
+            {[
+              { label: `${course.curriculum?.length || 5} modules`, sub: 'Gain insight into fundamentals' },
+              { label: `${course.rating?.average?.toFixed(1) || '4.7'} ★`, sub: `${course.rating?.count || 108} reviews` },
+              { label: `${course.level} level`, sub: 'Recommended experience' },
+              { label: '96%', sub: 'Learners liked this' },
+            ].map(({ label, sub }) => (
+              <div key={label} className="px-5">
+                <p className="text-[16px] font-bold text-gray-900">{label}</p>
+                <p className="text-[12px] text-gray-500 mt-0.5">{sub}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Floating Stats Ribbon */}
-        <div className="relative z-20 -mt-10 mb-10 bg-white rounded-lg shadow-[0_4px_16px_rgba(0,0,0,0.08)] border border-gray-100 flex flex-wrap md:flex-nowrap divide-y md:divide-y-0 md:divide-x divide-gray-100 p-6 gap-y-4">
-          {/* Section 1 */}
-          <div className="w-full md:w-1/4 px-2">
-            <div className="flex items-center gap-2 font-bold text-gray-900 text-[18px]">
-              {course.curriculum?.length || 5} modules
-            </div>
-            <p className="text-[14px] text-gray-600 mt-1">
-              Gain insight into a topic and learn the fundamentals.
-            </p>
-          </div>
-
-          {/* Section 2 */}
-          <div className="w-full md:w-1/4 px-2 md:px-6 flex flex-col justify-center">
-            <div className="flex items-center gap-1.5 font-bold text-[18px] text-gray-900">
-              {course.rating?.average?.toFixed(1) || '4.7'} <Star className="w-5 h-5 text-blue-700 fill-blue-700" />
-            </div>
-            <p className="text-[14px] text-gray-600 mt-1">
-              {course.rating?.count || Math.floor(Math.random() * 500) + 50} reviews
-            </p>
-          </div>
-
-          {/* Section 3 */}
-          <div className="w-full md:w-1/4 px-2 md:px-6">
-            <div className="font-bold text-[18px] text-gray-900 flex items-center gap-2">
-              {course.level} level
-              <AlertCircle className="w-4 h-4 text-gray-400 cursor-help" />
-            </div>
-            <p className="text-[14px] text-gray-600 mt-1">Recommended experience</p>
-          </div>
-
-          {/* Section 4 */}
-          <div className="w-full md:w-1/4 px-2 md:px-6">
-            <div className="flex items-center gap-1.5 font-bold text-[18px] text-gray-900">
-              <ThumbsUp className="w-5 h-5 text-blue-700 fill-blue-700" /> 96%
-            </div>
-            <p className="text-[14px] text-gray-600 mt-1">Most learners liked this course</p>
-          </div>
-        </div>
-
-        {/* Tab Navigation Menu */}
-        <div className="border-b border-gray-200 mb-8 pt-4 hidden md:block">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            {TABS.map((tab) => (
+      {/* ── Tab bar ── */}
+      <div className="bg-white border-b border-gray-200 sticky top-[50px] z-10">
+        <div className="max-w-[1240px] mx-auto px-3 md:px-6 lg:px-8">
+          <nav className="flex gap-1 overflow-x-auto hide-scrollbar">
+            {TABS.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`
-                   whitespace-nowrap py-4 px-1 border-b-2 font-bold text-[16px] transition-colors
-                   ${activeTab === tab
-                    ? 'border-blue-700 text-blue-700'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                  }
-                 `}
+                className={`whitespace-nowrap py-3 px-2 md:px-4 border-b-2 text-[12px] md:text-[14px] font-bold flex-shrink-0 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
               >
                 {tab}
               </button>
             ))}
           </nav>
         </div>
+      </div>
 
-        {/* Two Column Layout (Content + Sticky Sidebar) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pb-20">
+      {/* ── Body ── */}
+      <div className="max-w-[1240px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8 pb-24 lg:pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-10">
 
-          {/* LEFT CONTENT COLUMN */}
-          <div className="lg:col-span-2 space-y-12">
+          {/* LEFT CONTENT */}
+          <div className="lg:col-span-2 space-y-8">
 
-            {/* About Tab Content */}
+            {/* About / Outcomes */}
             {(activeTab === 'About' || activeTab === 'Outcomes') && (
-              <div className="space-y-12">
-
-                {/* About / Description */}
-                <section id="about">
-                  <h2 className="text-[24px] font-bold text-gray-900 mb-4">About this course</h2>
-                  <div className="text-[16px] leading-relaxed text-gray-700 whitespace-pre-line">
-                    {course.description || course.shortDescription || 'No description available for this course.'}
-                  </div>
-                </section>
-
-                {/* Skills you'll gain */}
-                <section id="outcomes">
-                  <h2 className="text-[20px] font-bold text-gray-900 mb-4">Skills you'll gain</h2>
-                  <div className="flex flex-wrap gap-2.5">
-                    {course.learningOutcomes?.length > 0 ? (
-                      course.learningOutcomes.map((skill, idx) => (
-                        <span key={idx} className="bg-gray-100 text-gray-800 text-[14px] font-medium px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-200 transition-colors cursor-default">
-                          {skill}
-                        </span>
-                      ))
-                    ) : (
-                      ['Android Development', 'iOS Development', 'React.js', 'Cross Platform Development', 'User Interface (UI)'].map(skill => (
-                        <span key={skill} className="bg-gray-100 text-gray-800 text-[14px] font-medium px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-200 transition-colors cursor-default">
-                          {skill}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </section>
-
-                {/* Tools you'll learn */}
+              <div className="space-y-6 md:space-y-10">
                 <section>
-                  <h2 className="text-[20px] font-bold text-gray-900 mb-4">Tools you'll learn</h2>
-                  <div className="flex flex-wrap gap-2.5">
-                    {course.tags?.length > 0 ? (
-                      course.tags.map(tag => (
-                        <span key={tag} className="bg-gray-100 text-gray-800 text-[14px] font-medium px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-200 transition-colors cursor-default">
+                  <h2 className="text-[16px] md:text-[22px] font-bold text-gray-900 mb-3">About this course</h2>
+                  <p className="text-[13px] md:text-[15px] leading-relaxed text-gray-700 whitespace-pre-line">
+                    {course.description || course.shortDescription || 'No description available.'}
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-[15px] md:text-[18px] font-bold text-gray-900 mb-3">Skills you'll gain</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {(course.learningOutcomes?.length > 0 ? course.learningOutcomes : ['Android Development', 'React.js', 'Cross Platform', 'UI Design']).map((skill, i) => (
+                      <span key={i} className="bg-gray-100 text-gray-800 text-[12px] md:text-[13px] font-medium px-3 py-1.5 rounded-full border border-gray-200">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+
+                {course.tags?.length > 0 && (
+                  <section>
+                    <h2 className="text-[15px] md:text-[18px] font-bold text-gray-900 mb-3">Tools you'll use</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {course.tags.map(tag => (
+                        <span key={tag} className="bg-blue-50 text-blue-700 text-[12px] md:text-[13px] font-medium px-3 py-1.5 rounded-full border border-blue-100">
                           {tag}
                         </span>
-                      ))
-                    ) : (
-                      ['UI Components', 'React Native'].map(tool => (
-                        <span key={tool} className="bg-gray-100 text-gray-800 text-[14px] font-medium px-4 py-2 rounded-full border border-gray-200 hover:bg-gray-200 transition-colors cursor-default">
-                          {tool}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </section>
-
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
             )}
 
-            {/* Modules Tab Content */}
-            {(activeTab === 'Modules') && (
-              <section id="modules">
-                <h2 className="text-[24px] font-bold text-gray-900 mb-6">Modules</h2>
-
+            {/* Modules */}
+            {activeTab === 'Modules' && (
+              <section>
+                <h2 className="text-[16px] md:text-[22px] font-bold text-gray-900 mb-4">Course Modules</h2>
                 {course.curriculum?.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {course.curriculum.map((mod, i) => (
-                      <div key={i} className={`border border-gray-200 rounded-lg overflow-hidden transition-all ${expandedModule === i ? 'bg-[#f7f9fa] shadow-sm' : 'bg-white hover:bg-[#f7f9fa]'}`}>
-                        <div
+                      <div key={i} className={`border border-gray-200 rounded-xl overflow-hidden transition-all ${expandedModule === i ? 'bg-blue-50/40 border-blue-200' : 'bg-white hover:bg-gray-50'}`}>
+                        <button
                           onClick={() => setExpandedModule(expandedModule === i ? null : i)}
-                          className="p-6 flex items-start justify-between cursor-pointer"
+                          className="w-full flex items-center justify-between p-3 md:p-4 text-left"
                         >
-                          <div>
-                            <h3 className="text-[18px] font-bold text-gray-900 mb-1">{mod.module}</h3>
-                            <p className="text-[14px] text-gray-600">Module {i + 1} • {mod.duration ? `${mod.duration} hours to complete` : 'Self-paced'}</p>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[11px] md:text-[12px] font-bold flex-shrink-0 ${expandedModule === i ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                              {i + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[13px] md:text-[15px] font-bold text-gray-900 truncate">{mod.module}</p>
+                              <p className="text-[11px] text-gray-500">{mod.duration ? `${mod.duration}h` : 'Self-paced'} • {mod.topics?.length || 0} topics</p>
+                            </div>
                           </div>
+                          <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${expandedModule === i ? 'rotate-90 text-blue-600' : ''}`} />
+                        </button>
 
-                          <div className="flex items-center gap-2">
-                            {expandedModule !== i && (
-                              <span className="text-blue-700 font-bold text-[14px] hidden sm:block">Module details</span>
-                            )}
-                            <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${expandedModule === i ? 'rotate-90 text-blue-700' : ''}`} />
-                          </div>
-                        </div>
-
-                        {/* Expanded Content */}
                         {expandedModule === i && (
-                          <div className="px-6 pb-6 pt-2 border-t border-gray-100 bg-white">
-                            <h4 className="font-bold text-gray-900 mb-3 text-[14px] uppercase tracking-wider">What's included</h4>
+                          <div className="px-3 md:px-4 pb-3 border-t border-blue-100">
                             {mod.topics?.length > 0 ? (
-                              <ul className="space-y-3">
+                              <ul className="mt-2 space-y-1.5">
                                 {mod.topics.map((topic, j) => (
-                                  <li key={j} className="flex gap-3 text-[15px] text-gray-700 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                                    <PlayCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                  <li key={j} className="flex items-start gap-2 text-[12px] md:text-[13px] text-gray-700 py-1.5 border-b border-gray-100 last:border-0">
+                                    <PlayCircle className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
                                     {topic}
                                   </li>
                                 ))}
                               </ul>
                             ) : (
-                              <p className="text-[14px] text-gray-500 italic">Topic details not provided.</p>
+                              <p className="text-[12px] text-gray-400 italic mt-2">Topic details not available.</p>
                             )}
                           </div>
                         )}
@@ -484,141 +461,120 @@ const CourseDetail = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-8 border border-gray-200 rounded-lg text-center bg-[#f7f9fa]">
-                    <Layers className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">Detailed syllabus is currently unavailable.</p>
+                  <div className="p-8 border border-gray-200 rounded-xl text-center bg-gray-50">
+                    <Layers className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500 text-[13px]">Syllabus is currently unavailable.</p>
                   </div>
                 )}
               </section>
             )}
 
-            {/* Placeholder for other tabs */}
-            {['Recommendations', 'Testimonials', 'Reviews'].includes(activeTab) && (
-              <div className="py-12 text-center border border-gray-200 border-dashed rounded-lg bg-gray-50">
-                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <h3 className="text-[18px] font-bold text-gray-900 mb-1">Coming Soon</h3>
-                <p className="text-gray-500 text-[14px]">The {activeTab} section is currently being updated.</p>
+            {/* Reviews placeholder */}
+            {activeTab === 'Reviews' && (
+              <div className="py-10 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                <h3 className="text-[15px] font-bold text-gray-900 mb-1">Reviews Coming Soon</h3>
+                <p className="text-gray-500 text-[13px]">This section is being updated.</p>
               </div>
             )}
 
           </div>
 
-          {/* RIGHT SIDEBAR COLUMN */}
-          <div className="space-y-8">
+          {/* RIGHT SIDEBAR — desktop only */}
+          <div className="hidden lg:block space-y-4">
 
-            {/* Instructor Card */}
-            <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-              <h3 className="text-[20px] font-bold text-gray-900 mb-4">Instructor</h3>
-
-              <div className="flex items-center gap-2 mb-4">
-                <p className="text-[14px] text-gray-700">Instructor ratings</p>
-                <AlertCircle className="w-4 h-4 text-gray-400 cursor-help" />
-
-                <span className="font-bold text-[16px] text-gray-900 ml-auto">4.8</span>
-                <Star className="w-4 h-4 text-blue-700 fill-blue-700" />
-                <span className="text-[14px] text-gray-500">({course.rating?.count || '108'} ratings)</span>
-              </div>
-
-              <div className="flex items-start gap-4 pt-4 border-t border-gray-100">
+            {/* Instructor */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 shadow-sm">
+              <h3 className="text-[15px] font-bold text-gray-900 mb-3">Instructor</h3>
+              <div className="flex items-center gap-3">
                 {partnerLogo ? (
-                  <div className="w-12 h-12 border border-gray-200 rounded flex items-center justify-center p-1 bg-white flex-shrink-0">
-                    <img src={partnerLogo} alt="Logo" className="w-full h-full object-contain" />
-                  </div>
+                  <img src={partnerLogo} alt="Logo" className="w-10 h-10 rounded-lg object-contain border border-gray-100" />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-[20px] flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-[16px] flex-shrink-0">
                     {partnerName.charAt(0)}
                   </div>
                 )}
                 <div>
-                  <h4 className="font-bold text-[16px] text-blue-700 hover:underline cursor-pointer">{course.instructor?.name ? `Taught by ${course.instructor.name}` : `Taught by ${partnerName} Experts`}</h4>
-                  <p className="text-[14px] text-gray-600 mb-1">{partnerName}</p>
-                  <p className="text-[12px] text-gray-500 font-medium">132 Courses • 1,295,231 learners</p>
+                  <p className="text-[14px] font-bold text-blue-700">{course.instructor?.name ? `${course.instructor.name}` : partnerName}</p>
+                  <p className="text-[12px] text-gray-500">132 Courses • 1.2M learners</p>
                 </div>
+              </div>
+              <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span className="text-[13px] font-bold text-gray-900">4.8</span>
+                <span className="text-[12px] text-gray-500">instructor rating</span>
               </div>
             </div>
 
-            {/* Offered By Card */}
-            <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-              <h3 className="text-[20px] font-bold text-gray-900 mb-4">Offered by</h3>
-
-              <div className="flex items-center gap-4">
-                {partnerLogo ? (
-                  <div className="w-16 h-16 border border-gray-200 rounded flex items-center justify-center p-2 bg-white flex-shrink-0">
-                    <img src={partnerLogo} alt="Logo" className="w-full h-full object-contain" />
+            {/* Details */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 shadow-sm">
+              <h3 className="text-[15px] font-bold text-gray-900 mb-3">Details</h3>
+              <div className="space-y-3">
+                {[
+                  { icon: Globe, title: course.deliveryMode || '100% Online', sub: 'Learn at your own schedule' },
+                  { icon: Clock, title: 'Flexible schedule', sub: 'Set your own deadlines' },
+                  ...(course.certificateProvided ? [{ icon: Award, title: 'Certificate included', sub: 'Share on LinkedIn' }] : []),
+                  ...(course.language ? [{ icon: FileText, title: course.language, sub: 'Course language' }] : []),
+                ].map(({ icon: Icon, title, sub }) => (
+                  <div key={title} className="flex gap-3 items-start">
+                    <Icon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[13px] font-bold text-gray-900 leading-tight">{title}</p>
+                      <p className="text-[11px] text-gray-500">{sub}</p>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Offered By */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 shadow-sm">
+              <h3 className="text-[15px] font-bold text-gray-900 mb-3">Offered by</h3>
+              <div className="flex items-center gap-3">
+                {partnerLogo ? (
+                  <img src={partnerLogo} alt="Logo" className="w-10 h-10 object-contain border border-gray-100 rounded-lg" />
                 ) : (
-                  <div className="w-16 h-16 rounded bg-gray-50 border border-gray-200 flex items-center justify-center p-2 flex-shrink-0">
-                    <BookOpen className="w-8 h-8 text-gray-400" />
+                  <div className="w-10 h-10 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-gray-400" />
                   </div>
                 )}
                 <div>
-                  <p className="font-bold text-[16px] text-gray-900">{partnerName}</p>
-                  <a href="#" className="font-bold text-[14px] text-blue-700 hover:underline mt-1 inline-block">Learn more</a>
+                  <p className="text-[13px] font-bold text-gray-900">{partnerName}</p>
+                  <a href="#" className="text-[12px] text-blue-600 hover:underline">Learn more</a>
                 </div>
               </div>
             </div>
 
-            {/* Details to Know Card */}
-            <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-              <h3 className="text-[20px] font-bold text-gray-900 mb-4">Details to know</h3>
-
-              <div className="space-y-5">
-                {course.certificateProvided && (
-                  <div className="flex gap-4">
-                    <Award className="w-6 h-6 text-gray-600 flex-shrink-0" />
-                    <div>
-                      <p className="font-bold text-[15px] text-gray-900">Shareable certificate</p>
-                      <p className="text-[14px] text-gray-600">Add to your LinkedIn profile</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-4">
-                  <Globe className="w-6 h-6 text-gray-600 flex-shrink-0" />
-                  <div>
-                    <p className="font-bold text-[15px] text-gray-900">{course.deliveryMode || '100% online'}</p>
-                    <p className="text-[14px] text-gray-600">Start instantly and learn at your own schedule.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <Clock className="w-6 h-6 text-gray-600 flex-shrink-0" />
-                  <div>
-                    <p className="font-bold text-[15px] text-gray-900">Flexible schedule</p>
-                    <p className="text-[14px] text-gray-600">Set and maintain flexible deadlines.</p>
-                  </div>
-                </div>
-
-                {course.language && (
-                  <div className="flex gap-4">
-                    <FileText className="w-6 h-6 text-gray-600 flex-shrink-0" />
-                    <div>
-                      <p className="font-bold text-[15px] text-gray-900">{course.language}</p>
-                      <p className="text-[14px] text-gray-600">Subtitles available.</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Embedded Assessment Notice */}
+            {/* Assessment badge */}
             {course.assessmentId && (
-              <div className="bg-blue-50 p-6 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-5 h-5 text-blue-700" />
-                  <h3 className="text-[16px] font-bold text-blue-900">Assessment Included</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Zap className="w-4 h-4 text-blue-700" />
+                  <h3 className="text-[13px] font-bold text-blue-900">Assessment Included</h3>
                 </div>
-                <p className="text-[14px] text-blue-800">
-                  A linked assessment will trigger upon completion. Validates your skills immediately!
-                </p>
+                <p className="text-[12px] text-blue-700 leading-relaxed">Validates your skills on completion!</p>
               </div>
             )}
 
           </div>
         </div>
-
       </div>
 
+      {/* ══ Mobile: Fixed bottom CTA bar ══ */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex-shrink-0 min-w-0">
+          <p className="text-[11px] text-gray-500 leading-none">Course</p>
+          <p className="text-[13px] font-bold text-gray-900 truncate max-w-[120px]">{course.title}</p>
+        </div>
+        <div className="flex-1">
+          <CTAButton compact={true} />
+        </div>
+      </div>
+
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </StudentLayout>
   );
 };

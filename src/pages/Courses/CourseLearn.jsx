@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, Circle, ChevronLeft, ChevronRight, Award, Zap,
   BookOpen, Clock, PlayCircle, Download, AlertCircle, RefreshCw,
-  Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare, Home
+  Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare, Home, Menu, X
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -300,6 +300,7 @@ const CourseLearn = () => {
   const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [completionCelebration, setCompletionCelebration] = useState(false);
+  const [mobileModulesOpen, setMobileModulesOpen] = useState(false);
 
   // videoWatched[i] = true means the primary video of module i has been watched
   const [videoWatched, setVideoWatched] = useState({});
@@ -466,9 +467,8 @@ const CourseLearn = () => {
     <StudentLayout title={`Learn: ${course.title}`} showSidebar={false}>
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
-          }`}>
-          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+        <div className={`fixed top-4 right-3 left-3 sm:left-auto sm:right-5 z-50 flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl shadow-xl text-[12px] sm:text-[13px] font-bold ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> : <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />}
           {toast.msg}
         </div>
       )}
@@ -476,93 +476,93 @@ const CourseLearn = () => {
       {/* Completion Celebration */}
       {completionCelebration && (
         <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
-          <div className="bg-white rounded-3xl shadow-2xl p-10 text-center border border-green-200 max-w-sm mx-4">
-            <Trophy className="w-20 h-20 text-amber-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Course Completed! 🎉</h2>
-            <p className="text-gray-600 mb-4">Congratulations! You've completed <strong>{course.title}</strong></p>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-10 text-center border border-green-200 max-w-sm mx-4">
+            <Trophy className="w-14 h-14 md:w-20 md:h-20 text-amber-400 mx-auto mb-3" />
+            <h2 className="text-[18px] md:text-[22px] font-bold text-gray-900 mb-2">Course Completed! 🎉</h2>
+            <p className="text-[13px] text-gray-600 mb-3">Congratulations! You've completed <strong>{course.title}</strong></p>
             {enrollment?.certificateIssued && (
-              <p className="text-sm text-green-600 font-medium">Your certificate is ready for download!</p>
+              <p className="text-[12px] text-green-600 font-medium">Your certificate is ready for download!</p>
             )}
           </div>
         </div>
       )}
 
-      {/* Breadcrumb Navigation - Outside Hero */}
+      {/* Breadcrumb Navigation */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-3">
-          <nav className="flex items-center flex-wrap gap-y-2 gap-x-2 text-[14px] text-gray-500 font-medium">
-            <button title="Home" onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 transition-colors flex items-center">
-              <Home className="w-4 h-4" />
+        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <nav className="flex items-center gap-1.5 text-sm text-gray-500 font-medium overflow-x-auto hide-scrollbar">
+              <button onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 flex-shrink-0">
+                <Home className="w-[18px] h-[18px]" />
+              </button>
+              <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 flex-shrink-0">Courses</button>
+              <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <button onClick={() => navigate(`/dashboard/student/courses/${courseId}`)} className="hover:text-blue-600 truncate max-w-[80px] sm:max-w-[140px] md:max-w-[200px] flex-shrink-0">
+                {course.title}
+              </button>
+              <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-gray-900 font-bold flex-shrink-0">Learn</span>
+            </nav>
+            {/* Mobile Modules Button */}
+            <button
+              onClick={() => setMobileModulesOpen(true)}
+              className="lg:hidden flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 text-white text-[11px] font-bold rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+            >
+              <Menu className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Modules</span>
+              <span className="bg-white/20 text-[10px] px-1 py-0.5 rounded">{completedCount}/{curriculum.length}</span>
             </button>
-            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 transition-colors">
-              Courses
-            </button>
-            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <button onClick={() => navigate(`/dashboard/student/courses/${courseId}`)} className="hover:text-blue-600 transition-colors truncate max-w-[150px] sm:max-w-[200px]">
-              {course.title}
-            </button>
-            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-gray-900 font-bold">
-              Learn
-            </span>
-          </nav>
+          </div>
         </div>
       </div>
 
-      {/* Hero Section (Light Premium Design) */}
-      <div className="relative bg-[#f8fafc] border-b border-gray-200 overflow-hidden flex text-gray-900">
-        {/* Dynamic Abstract Background Elements */}
-        <div className="absolute inset-0 z-0 opacity-60">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50"></div>
-          <div className="absolute top-[-20%] right-[10%] w-[500px] h-[500px] rounded-full bg-blue-100/50 blur-[100px] mix-blend-multiply opacity-70"></div>
-          <div className="absolute bottom-[-20%] left-[-5%] w-[400px] h-[400px] rounded-full bg-indigo-100/50 blur-[80px] mix-blend-multiply opacity-60"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wMykiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,black,transparent)]"></div>
-        </div>
-
-        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="bg-white/80 backdrop-blur-sm border border-gray-200 text-blue-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
-                {course.category}
-              </span>
-              <span className="bg-indigo-50/80 backdrop-blur-sm border border-indigo-200 text-indigo-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" /> {course.level}
-              </span>
-            </div>
-            <h1 className="text-[24px] md:text-[28px] font-bold text-gray-900 leading-tight mb-2">{course.title}</h1>
-          </div>
-
-          <div className="flex items-center gap-4 flex-shrink-0 bg-white/70 backdrop-blur-md border border-gray-200 p-4 rounded-2xl shadow-sm">
-            <div className="flex flex-col items-end mr-2">
-              <span className="text-[12px] font-bold text-gray-900 uppercase tracking-wider mb-1">Course Progress</span>
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">{completedCount}/{curriculum.length} modules</span>
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-[#f0f4ff] via-white to-[#f5f0ff] border-b border-gray-200">
+        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8">
+          {/* Mobile: stack everything vertically; Desktop: row */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                <span className="bg-white border border-blue-200 text-blue-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                  {course.category}
+                </span>
+                <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {course.level}
+                </span>
+              </div>
+              <h1 className="text-[16px] sm:text-[20px] md:text-[26px] font-bold text-gray-900 leading-tight">{course.title}</h1>
             </div>
 
-            <div className="relative w-[60px] h-[60px] flex items-center justify-center">
-              {/* Progress Ring Background */}
-              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-                <circle className="text-gray-200" strokeWidth="6" stroke="currentColor" fill="transparent" r="26" cx="30" cy="30" />
-                <circle className={`text-blue-500 transition-all duration-1000 ease-out`} strokeWidth="6" strokeDasharray="163.3" strokeDashoffset={163.3 - (163.3 * overallProgress) / 100} strokeLinecap="round" stroke="currentColor" fill="transparent" r="26" cx="30" cy="30" />
-              </svg>
-              <span className={`text-[15px] font-bold ${isCompleted ? 'text-green-600' : 'text-blue-700'}`}>{overallProgress}%</span>
+            {/* Progress card — compact on mobile */}
+            <div className="flex items-center gap-3 bg-white/80 border border-gray-200 p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-sm flex-shrink-0">
+              <div className="flex flex-col items-start md:items-end">
+                <span className="text-[10px] md:text-[11px] font-bold text-gray-900 uppercase tracking-wider">Progress</span>
+                <span className="text-[10px] font-bold text-gray-500">{completedCount}/{curriculum.length} done</span>
+              </div>
+              <div className="relative w-10 h-10 md:w-[52px] md:h-[52px] flex items-center justify-center">
+                <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                  <circle className="text-gray-200" strokeWidth="4" stroke="currentColor" fill="transparent" r="16" cx="50%" cy="50%" />
+                  <circle className="text-blue-500 transition-all duration-1000 ease-out" strokeWidth="4" strokeDasharray="100.5" strokeDashoffset={100.5 - (100.5 * overallProgress) / 100} strokeLinecap="round" stroke="currentColor" fill="transparent" r="16" cx="50%" cy="50%" />
+                </svg>
+                <span className={`text-[11px] md:text-[13px] font-bold ${isCompleted ? 'text-green-600' : 'text-blue-700'}`}>{overallProgress}%</span>
+              </div>
+              {isCompleted && enrollment?.certificateUrl && (
+                <a href={enrollment.certificateUrl} target="_blank" rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-0.5 w-10 h-10 md:w-[52px] md:h-[52px] bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 font-bold border border-green-200 rounded-lg md:rounded-xl hover:shadow-md transition-all">
+                  <Award className="w-4 h-4" />
+                  <span className="text-[8px] uppercase tracking-wider">Cert</span>
+                </a>
+              )}
             </div>
-
-            {isCompleted && enrollment?.certificateUrl && (
-              <a href={enrollment.certificateUrl} target="_blank" rel="noopener noreferrer"
-                className="ml-2 flex flex-col items-center justify-center gap-1 w-[60px] h-[60px] bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 font-bold border border-green-200 rounded-xl hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <Award className="w-5 h-5" />
-                <span className="text-[9px] uppercase tracking-wider">Cert</span>
-              </a>
-            )}
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row items-start gap-8">
-        {/* Sidebar */}
-        <div className={`flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-14'}`}>
+      <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 md:py-6 flex flex-col lg:flex-row items-start gap-3 md:gap-6">
+        {/* Sidebar — desktop only */}
+        <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-72' : 'w-14'}`}>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden sticky top-4">
             <div className="flex items-center justify-between p-4 border-b border-gray-50">
               {sidebarOpen && (
@@ -639,95 +639,149 @@ const CourseLearn = () => {
           </div>
         </div>
 
+        {/* Mobile Modules Drawer */}
+        {mobileModulesOpen && (
+          <div className="fixed inset-0 z-[100] lg:hidden flex">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setMobileModulesOpen(false)} />
+            <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-[340px] bg-white flex flex-col shadow-2xl filter-drawer-enter">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <div>
+                  <p className="font-bold text-gray-900 text-sm">Course Modules</p>
+                  <p className="text-xs text-gray-400">{completedCount}/{curriculum.length} completed</p>
+                </div>
+                <button onClick={() => setMobileModulesOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="px-4 py-2 border-b border-gray-50">
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all" style={{ width: `${overallProgress}%` }} />
+                </div>
+              </div>
+              <div className="overflow-y-auto flex-1">
+                {curriculum.map((mod, i) => {
+                  const modProg = moduleProgress.find(m => m.moduleIndex === i);
+                  const isDone = modProg?.completed;
+                  const isActive = activeModule === i;
+                  const isLocked = !canAccessModule(i, moduleProgress);
+                  const modHasVideo = !!(mod.videoUrl || (i === 0 && course.videoUrl));
+                  const isWatched = videoWatched[i];
+                  return (
+                    <button key={i} onClick={() => { handleModuleClick(i); setMobileModulesOpen(false); }}
+                      className={`w-full flex items-center gap-3 p-4 text-left transition-all ${isLocked ? 'opacity-50 cursor-not-allowed' :
+                        isActive ? 'bg-blue-50 border-l-4 border-blue-500' :
+                          'hover:bg-gray-50 border-l-4 border-transparent'
+                        }`}
+                    >
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${isDone ? 'bg-green-100' : isLocked ? 'bg-gray-100' : isActive ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                        {isDone ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        ) : isLocked ? (
+                          <Lock className="w-3.5 h-3.5 text-gray-400" />
+                        ) : (
+                          <span className={`text-xs font-bold ${isActive ? 'text-blue-700' : 'text-gray-500'}`}>{i + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${isLocked ? 'text-gray-400' : isActive ? 'text-blue-700' : isDone ? 'text-gray-500' : 'text-gray-800'}`}>
+                          {mod.module}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {mod.topics?.length > 0 && (<span className="text-xs text-gray-400">{mod.topics.length} topics</span>)}
+                          {modHasVideo && !isDone && (
+                            <span className={`flex items-center gap-0.5 text-xs ${isWatched ? 'text-green-500' : 'text-amber-500'}`}>
+                              <Video className="w-3 h-3" />{isWatched ? 'Watched' : 'Watch required'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="flex-1 min-w-0 space-y-2.5 md:space-y-4">
           {currentModule ? (
             <>
               {/* Module Header */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                        Module {activeModule + 1} of {curriculum.length}
-                      </span>
-                      {isCurrentComplete && (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">{currentModule.module}</h2>
-                    {currentModule.duration && (
-                      <p className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
-                        <Clock className="w-4 h-4" /> {currentModule.duration}h estimated
-                      </p>
-                    )}
-                  </div>
+              <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm p-3 md:p-5">
+                {/* Badges + title */}
+                <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                  <span className="text-[10px] md:text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                    Module {activeModule + 1}/{curriculum.length}
+                  </span>
+                  {isCurrentComplete && (
+                    <span className="flex items-center gap-0.5 text-[10px] md:text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" /> Done
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-[15px] md:text-[20px] font-bold text-gray-900 leading-snug">{currentModule.module}</h2>
+                {currentModule.duration && (
+                  <p className="flex items-center gap-1 text-[11px] md:text-[13px] text-gray-500 mt-1">
+                    <Clock className="w-3 h-3 md:w-3.5 md:h-3.5" /> {currentModule.duration}h estimated
+                  </p>
+                )}
 
-                  {/* Mark Complete button — locked until video watched */}
-                  <div className="flex-shrink-0">
-                    {!canMarkComplete ? (
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 text-gray-400 text-sm font-medium cursor-not-allowed select-none">
-                          <Lock className="w-4 h-4" />
-                          Watch video first
-                        </div>
-                        <span className="text-xs text-amber-600 flex items-center gap-1">
-                          <Eye className="w-3 h-3" /> Watch the video to unlock
-                        </span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleMarkComplete(activeModule, !isCurrentComplete)}
-                        disabled={marking}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${isCurrentComplete
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                          : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
-                          } disabled:opacity-60 disabled:cursor-not-allowed`}
-                      >
-                        {marking ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : isCurrentComplete ? (
-                          <><CheckCircle2 className="w-4 h-4" /> Completed</>
-                        ) : (
-                          <><CheckSquare className="w-4 h-4" /> Mark Complete</>
-                        )}
-                      </button>
-                    )}
-                  </div>
+                {/* Mark Complete button — stacked below title on mobile */}
+                <div className="mt-3">
+                  {!canMarkComplete ? (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-400 text-[12px] font-medium cursor-not-allowed select-none w-fit">
+                      <Lock className="w-3.5 h-3.5" />
+                      Watch video first
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleMarkComplete(activeModule, !isCurrentComplete)}
+                      disabled={marking}
+                      className={`flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg md:rounded-xl font-medium text-[12px] md:text-[13px] transition-all ${isCurrentComplete
+                        ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
+                        } disabled:opacity-60 disabled:cursor-not-allowed`}
+                    >
+                      {marking ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : isCurrentComplete ? (
+                        <><CheckCircle2 className="w-3.5 h-3.5" /> Completed</>
+                      ) : (
+                        <><CheckSquare className="w-3.5 h-3.5" /> Mark Complete</>
+                      )}
+                    </button>
+                  )}
                 </div>
 
-                {/* Video watch required notice */}
+                {/* Video watch notices */}
                 {hasVideo && !videoWatchedForModule && !isCurrentComplete && (
-                  <div className="mt-4 flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                    <Video className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="mt-2.5 flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <Video className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-semibold text-amber-800">Video required</p>
-                      <p className="text-xs text-amber-700 mt-0.5">
-                        You must watch the module video completely before you can mark this module as complete or proceed to the next one.
-                      </p>
+                      <p className="text-[12px] font-semibold text-amber-800">Video required</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5">Watch the video fully to unlock module completion.</p>
                     </div>
                   </div>
                 )}
                 {hasVideo && videoWatchedForModule && !isCurrentComplete && (
-                  <div className="mt-4 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                    <p className="text-sm text-green-700 font-medium">Video watched! Click "Mark Complete" to continue.</p>
+                  <div className="mt-2.5 flex items-center gap-2 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                    <p className="text-[12px] text-green-700 font-medium">Video watched! Click "Mark Complete" to continue.</p>
                   </div>
                 )}
               </div>
 
               {/* Primary Video Player */}
               {primaryVideoUrl && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-gray-50 flex items-center justify-between">
-                    <p className="font-semibold text-gray-800 text-sm flex items-center gap-2">
-                      <PlayCircle className="w-4 h-4 text-blue-500" /> Module Video
+                <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-3 py-2 md:p-4 border-b border-gray-50 flex items-center justify-between">
+                    <p className="font-semibold text-gray-800 text-[12px] md:text-[13px] flex items-center gap-1.5">
+                      <PlayCircle className="w-3.5 h-3.5 text-blue-500" /> Module Video
                     </p>
                     {videoWatchedForModule && (
-                      <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Watched
+                      <span className="flex items-center gap-1 text-[10px] md:text-[11px] text-green-600 font-semibold">
+                        <CheckCircle2 className="w-3 h-3" /> Watched
                       </span>
                     )}
                   </div>
@@ -743,23 +797,23 @@ const CourseLearn = () => {
 
               {/* Additional module videos */}
               {currentModule.videos?.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <PlayCircle className="w-5 h-5 text-cyan-500" />
+                <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm p-3 md:p-5">
+                  <h3 className="font-bold text-gray-900 text-[13px] md:text-[15px] mb-3 flex items-center gap-1.5">
+                    <PlayCircle className="w-4 h-4 text-cyan-500" />
                     Additional Videos ({currentModule.videos.length})
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {currentModule.videos.map((v, j) => (
                       <a key={j} href={v.url} target="_blank" rel="noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 border border-gray-100 hover:border-blue-200 transition-colors group">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200">
-                          <PlayCircle className="w-4 h-4 text-blue-600" />
+                        className="flex items-center gap-2.5 p-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 border border-gray-100 hover:border-blue-200 transition-colors group">
+                        <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200">
+                          <PlayCircle className="w-3.5 h-3.5 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800">{v.title || `Video ${j + 1}`}</p>
-                          <p className="text-xs text-gray-400 truncate">{v.url}</p>
+                          <p className="text-[12px] md:text-[13px] font-medium text-gray-800">{v.title || `Video ${j + 1}`}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{v.url}</p>
                         </div>
-                        <ExternalLink className="w-4 h-4 text-gray-300 group-hover:text-blue-500 flex-shrink-0" />
+                        <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 flex-shrink-0" />
                       </a>
                     ))}
                   </div>
@@ -768,19 +822,18 @@ const CourseLearn = () => {
 
               {/* Topics */}
               {currentModule.topics?.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-blue-500" />
+                <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm p-3 md:p-5">
+                  <h3 className="font-bold text-gray-900 text-[13px] md:text-[15px] mb-3 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-blue-500" />
                     Topics in this Module
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-1.5">
                     {currentModule.topics.map((topic, j) => (
-                      <div key={j} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors">
-                        <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-xs font-bold text-blue-700">{j + 1}</span>
+                      <div key={j} className="flex items-start gap-2 p-2 md:p-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 transition-colors">
+                        <div className="w-5 h-5 md:w-6 md:h-6 bg-blue-100 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-[10px] md:text-[11px] font-bold text-blue-700">{j + 1}</span>
                         </div>
-                        <p className="text-sm text-gray-700 flex-1">{topic}</p>
-                        <Circle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                        <p className="text-[12px] md:text-[13px] text-gray-700 flex-1">{topic}</p>
                       </div>
                     ))}
                   </div>
@@ -788,82 +841,87 @@ const CourseLearn = () => {
               )}
 
               {/* Navigation */}
-              <div className="flex justify-between gap-4">
+              <div className="flex justify-between gap-2 md:gap-3">
                 <button
                   onClick={() => setActiveModule(p => Math.max(0, p - 1))}
                   disabled={activeModule === 0}
-                  className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium text-sm hover:border-blue-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-2.5 md:px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg md:rounded-xl font-medium text-[12px] md:text-[13px] hover:border-blue-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="w-4 h-4" /> Previous
+                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
                 </button>
 
                 {activeModule < curriculum.length - 1 ? (
-                  <div className="flex flex-col items-end gap-1">
-                    <button
-                      onClick={handleNextModule}
-                      disabled={!isCurrentComplete}
-                      title={!isCurrentComplete ? 'Complete this module first' : ''}
-                      className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all ${isCurrentComplete
-                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        }`}
-                    >
-                      {!isCurrentComplete ? <Lock className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      Next Module
-                    </button>
-                    {!isCurrentComplete && (
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Lock className="w-3 h-3" /> Complete this module to unlock next
-                      </span>
-                    )}
-                  </div>
+                  <button
+                    onClick={handleNextModule}
+                    disabled={!isCurrentComplete}
+                    title={!isCurrentComplete ? 'Complete this module first' : ''}
+                    className={`flex items-center gap-1 px-2.5 md:px-4 py-2 rounded-lg md:rounded-xl font-medium text-[12px] md:text-[13px] transition-all ${isCurrentComplete
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 shadow-md'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                  >
+                    {!isCurrentComplete ? <Lock className="w-3.5 h-3.5" /> : null}
+                    Next
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 ) : (
                   <button
                     onClick={() => !isCurrentComplete && handleMarkComplete(activeModule, true)}
                     disabled={isCurrentComplete || marking || !canMarkComplete}
-                    className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium text-sm hover:from-green-600 hover:to-emerald-600 shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-2.5 md:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg md:rounded-xl font-medium text-[12px] md:text-[13px] hover:from-green-600 hover:to-emerald-600 shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Trophy className="w-4 h-4" />
-                    {isCompleted ? 'Course Completed! 🎉' : 'Complete Course'}
+                    <Trophy className="w-3.5 h-3.5" />
+                    {isCompleted ? 'Completed! 🎉' : 'Finish'}
                   </button>
                 )}
               </div>
 
               {/* Completion message */}
               {isCompleted && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 text-center">
-                  <Trophy className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-                  <h3 className="font-bold text-gray-900 text-lg mb-2">Course Completed! 🎉</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    You've successfully completed <strong>{course.title}</strong>. Great work!
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl md:rounded-2xl p-4 md:p-6 text-center">
+                  <Trophy className="w-10 h-10 md:w-12 md:h-12 text-amber-400 mx-auto mb-2" />
+                  <h3 className="font-bold text-gray-900 text-[14px] md:text-[18px] mb-1.5">Course Completed! 🎉</h3>
+                  <p className="text-[12px] md:text-[13px] text-gray-600 mb-3">
+                    You've completed <strong>{course.title}</strong>. Great work!
                   </p>
-                  <div className="flex justify-center gap-3 flex-wrap">
+                  <div className="flex justify-center gap-2 flex-wrap">
                     {enrollment?.certificateUrl && (
                       <a href={enrollment.certificateUrl} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-700 transition-all">
-                        <Download className="w-4 h-4" /> Download Certificate
+                        className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg text-[11px] md:text-[12px] font-medium hover:bg-purple-700 transition-all">
+                        <Download className="w-3.5 h-3.5" /> Certificate
                       </a>
                     )}
                     <button onClick={() => navigate('/dashboard/student/assessments')}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-all">
-                      <Zap className="w-4 h-4" /> Take Assessment
+                      className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white rounded-lg text-[11px] md:text-[12px] font-medium hover:bg-amber-600 transition-all">
+                      <Zap className="w-3.5 h-3.5" /> Assessment
                     </button>
                     <button onClick={() => navigate('/dashboard/student/courses')}
-                      className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:border-blue-300 transition-all">
-                      <BookOpen className="w-4 h-4" /> More Courses
+                      className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-[11px] md:text-[12px] font-medium hover:border-blue-300 transition-all">
+                      <BookOpen className="w-3.5 h-3.5" /> Courses
                     </button>
                   </div>
                 </div>
               )}
             </>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-              <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No modules found in this course.</p>
+            <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm p-6 md:p-10 text-center">
+              <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-[13px] text-gray-500">No modules found in this course.</p>
             </div>
           )}
         </div>
       </div>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .filter-drawer-enter {
+          animation: slideInRight 0.28s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
+      `}</style>
     </StudentLayout>
   );
 };

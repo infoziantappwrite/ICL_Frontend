@@ -13,7 +13,7 @@ import {
   Upload, Building2, ChevronRight, UserPlus, UsersRound,
   Plus, Mail, Hash, BookOpen, Star, Calendar, Phone, Eye,
   Trash2, ArrowLeft, Check, UploadCloud, Loader2, Search,
-  ChevronLeft, Users, Filter, SortAsc, SortDesc,
+  ChevronLeft, Users, Filter, SortAsc, SortDesc, TrendingUp,
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════
@@ -263,7 +263,7 @@ function AddSingleModal({ colleges, onClose, onDone }) {
           </div>
           <button
             onClick={() => downloadResultsAsExcel([result], `student_${result?.rollNumber}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
           >
             <Download size={14}/> Download Student Details (Excel)
           </button>
@@ -372,7 +372,7 @@ function AddSingleModal({ colleges, onClose, onDone }) {
             Password is auto-generated and emailed to the student. They must change it on first login.
           </div>
         </div>
-        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-slate-50/60">
+        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
           <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">Cancel</button>
           <button onClick={goPreview} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity">
             <Eye size={14}/> Preview Details
@@ -489,7 +489,7 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
         <div className="p-5 border-t border-slate-100 space-y-2">
           <button
             onClick={() => downloadResultsAsExcel(result || [], `students_${Date.now()}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
           >
             <Download size={14}/> Download All Students + Passwords (Excel)
           </button>
@@ -507,9 +507,9 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
         <div className="overflow-auto flex-1">
           <table className="w-full text-xs border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-700 text-white">
+              <tr className="bg-blue-700 text-white">
                 {['#','Full Name','Email','Roll No.','Branch','Batch','Sem.','CGPA','Phone'].map(h=>(
-                  <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-slate-600 last:border-r-0">{h}</th>
+                  <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-blue-500 last:border-r-0">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -583,7 +583,7 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
         <div className="overflow-auto flex-1 px-5 py-3">
           <table className="w-full border-collapse text-xs">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-700 text-white">
+              <tr className="bg-blue-700 text-white">
                 <th className="py-2 px-2 text-left text-[11px] font-semibold w-8">#</th>
                 {[
                   {k:'fullName',   l:'Full Name *',  w:'min-w-[140px]'},
@@ -627,7 +627,7 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
             <Plus size={13}/> Add Row
           </button>
         </div>
-        <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-slate-50/60">
+        <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
           <span className="text-xs text-slate-400">{filledRows.length} filled row(s)</span>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
@@ -900,7 +900,7 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
               }));
               downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
           >
             <Download size={14}/> Download Uploaded Students List (Excel)
           </button>
@@ -979,11 +979,11 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
           <div className="overflow-auto flex-1">
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-slate-800 text-white">
-                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-slate-700">Row</th>
-                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-slate-700">✓</th>
+                <tr className="bg-blue-800 text-white">
+                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-blue-600">Row</th>
+                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-blue-600">✓</th>
                   {displayHdrs.map(h=>(
-                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-slate-700 last:border-r-0 ${REQUIRED_COLS.includes(h)?'text-yellow-300':''}`}>
+                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-blue-600 last:border-r-0 ${REQUIRED_COLS.includes(h)?'text-yellow-300':''}`}>
                       {h.replace(/_/g,' ').toUpperCase()}{REQUIRED_COLS.includes(h)&&<span className="ml-1 opacity-60">*</span>}
                     </th>
                   ))}
@@ -1117,7 +1117,7 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
               <p className="text-sm font-bold text-slate-700">Download Template</p>
               <p className="text-xs text-slate-400 mt-0.5">Excel with correct columns and sample rows</p>
             </div>
-            <button onClick={()=>superAdminStudentAPI.downloadTemplate()} className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors">
+            <button onClick={()=>superAdminStudentAPI.downloadTemplate()} className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition-colors">
               <Download size={13}/> Template
             </button>
           </div>
@@ -1189,7 +1189,7 @@ function ExportModal({ colleges, onClose }) {
   return (
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-emerald-600 to-teal-500" onClose={onClose}/>
+        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-blue-700 via-blue-600 to-cyan-500" onClose={onClose}/>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -1224,9 +1224,9 @@ function ExportModal({ colleges, onClose }) {
             </div>
           </div>
           {preview && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <p className="text-sm font-black text-emerald-700">{(preview.totalRecords||0).toLocaleString()} records match</p>
-              <p className="text-xs text-emerald-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <p className="text-sm font-black text-blue-700">{(preview.totalRecords||0).toLocaleString()} records match</p>
+              <p className="text-xs text-blue-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
             </div>
           )}
           {!preview && (
@@ -1239,7 +1239,7 @@ function ExportModal({ colleges, onClose }) {
             <button
               onClick={doExport}
               disabled={exporting || prevLoad}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50"
             >
               {exporting?<><Spin size="sm"/>Downloading…</>:<><FileDown size={14}/>Export{preview?.totalRecords?` (${preview.totalRecords})`:''}</>}
             </button>
@@ -1315,14 +1315,14 @@ function StudentListSection({ colleges }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Section header */}
-      <div className="bg-gradient-to-r from-slate-700 to-slate-600 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
             <Users size={18} className="text-white"/>
           </div>
           <div>
             <h3 className="text-sm font-black text-white">Student Directory</h3>
-            <p className="text-slate-300 text-[11px] mt-0.5">
+            <p className="text-blue-200 text-[11px] mt-0.5">
               {selectedCollege && total > 0 ? `${total.toLocaleString()} student${total!==1?'s':''} found` : 'Select a college to view students'}
             </p>
           </div>
@@ -1393,18 +1393,23 @@ function StudentListSection({ colleges }) {
 
       {/* Stats bar */}
       {collegeStats && (
-        <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100">
-          {[
-            { label: 'Total',    value: collegeStats.totalStudents,  color: 'text-slate-700' },
-            { label: 'Active',   value: collegeStats.totalActive,    color: 'text-green-600' },
-            { label: 'Placed',   value: collegeStats.totalPlaced,    color: 'text-blue-600'  },
-            { label: 'Rate',     value: `${collegeStats.placementRate}%`, color: 'text-violet-600' },
-          ].map(s => (
-            <div key={s.label} className="p-3 text-center">
-              <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
-              <p className="text-[10px] text-slate-400 font-semibold">{s.label}</p>
-            </div>
-          ))}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { icon: Users,        label: 'Total',   value: collegeStats.totalStudents,       c: 'bg-blue-50 border-blue-100 text-blue-600'    },
+              { icon: CheckCircle,  label: 'Active',  value: collegeStats.totalActive,         c: 'bg-green-50 border-green-100 text-green-600'  },
+              { icon: GraduationCap,label: 'Placed',  value: collegeStats.totalPlaced,         c: 'bg-amber-50 border-amber-100 text-amber-600'  },
+              { icon: TrendingUp,   label: 'Rate',    value: `${collegeStats.placementRate}%`, c: 'bg-violet-50 border-violet-100 text-violet-600'},
+            ].map(({ icon: Icon, label, value, c }) => (
+              <div key={label} className={`flex items-center gap-2 px-3 py-2 border rounded-xl ${c}`}>
+                <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
+                <div className="min-w-0">
+                  <p className="text-sm font-black leading-none">{value}</p>
+                  <p className="text-[9px] font-medium opacity-60 mt-0.5 leading-none truncate">{label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1465,7 +1470,7 @@ function StudentListSection({ colleges }) {
                           {s.isActive ? 'Active' : 'Inactive'}
                         </span>
                         {si.isPlaced && (
-                          <span className="ml-1 px-1.5 py-0.5 bg-violet-50 text-violet-700 border border-violet-100 rounded text-[10px] font-semibold">Placed</span>
+                          <span className="ml-1 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold">Placed</span>
                         )}
                       </div>
                     </td>
@@ -1545,16 +1550,16 @@ export default function SuperAdminStudentManagement() {
       action:()=>setModal('single'), btnLabel:'Add Single Student',
     },
     {
-      icon: UsersRound, gradient:'from-violet-600 to-purple-500', border:'border-violet-100',
-      light:'from-violet-50 to-purple-50/50',
+      icon: UsersRound, gradient:'from-blue-600 to-cyan-500', border:'border-blue-100',
+      light:'from-blue-50 to-cyan-50/50',
       title:'Add Multiple Students',
       desc:'Fill a spreadsheet-like table in the browser. Preview all rows before saving.',
       tips:['Inline table — no file needed','Preview all rows before confirm','All students emailed passwords'],
       action:()=>setModal('multiple'), btnLabel:'Add Multiple Students',
     },
     {
-      icon: CloudUpload, gradient:'from-indigo-600 to-blue-500', border:'border-indigo-100',
-      light:'from-indigo-50 to-blue-50/50',
+      icon: CloudUpload, gradient:'from-blue-600 to-cyan-500', border:'border-blue-100',
+      light:'from-blue-50 to-cyan-50/50',
       title:'Bulk Excel Upload',
       desc:'Upload .xlsx or .csv. Full preview with error highlighting + DB conflict detection.',
       tips:['Instant client-side Excel parsing','DB conflict detection before upload','Confirm only when all rows valid'],
@@ -1568,10 +1573,8 @@ export default function SuperAdminStudentManagement() {
 
         {/* Hero */}
         <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-6 py-5 shadow-xl shadow-blue-500/25 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute -top-12 -right-12 w-52 h-52 bg-white/10 rounded-full"/>
-            <div className="absolute -bottom-10 left-1/3 w-36 h-36 bg-white/10 rounded-full"/>
-            <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.06]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
           </div>
           <div className="relative flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
@@ -1596,7 +1599,7 @@ export default function SuperAdminStudentManagement() {
               <button onClick={()=>setModal('multiple')} className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
                 <UsersRound size={13}/> Add Multiple
               </button>
-              <button onClick={()=>setModal('upload')} className="inline-flex items-center gap-1.5 bg-white text-blue-700 text-xs font-bold px-3 py-2 rounded-xl shadow-md hover:bg-blue-50 transition-all">
+              <button onClick={()=>setModal('upload')} className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                 <CloudUpload size={13}/> Bulk Upload
               </button>
             </div>
@@ -1658,11 +1661,11 @@ export default function SuperAdminStudentManagement() {
 
         {/* Export card */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-4 flex items-center gap-3">
+          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileDown size={18} className="text-white"/></div>
             <div>
               <h3 className="text-sm font-black text-white">Export Students</h3>
-              <p className="text-emerald-200 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
+              <p className="text-blue-100 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
             </div>
           </div>
           <div className="p-5 flex items-center gap-5 flex-wrap">
@@ -1674,7 +1677,7 @@ export default function SuperAdminStudentManagement() {
                 ))}
               </div>
             </div>
-            <button onClick={()=>setModal('export')} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20">
+            <button onClick={()=>setModal('export')} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-500/20">
               <FileDown size={14}/> Open Export
             </button>
           </div>

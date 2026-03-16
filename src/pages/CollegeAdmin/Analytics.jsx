@@ -219,7 +219,7 @@ const Analytics = () => {
 
       {/* ══ STATS PILLS ══ */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           <Pill icon={Users}      label="Students"     value={overviewStats.totalStudents}    color="blue"   />
           <Pill icon={Award}      label="Placed"       value={overviewStats.placedStudents}   color="green"  />
           <Pill icon={Building2}  label="Companies"    value={overviewStats.totalCompanies}   color="cyan"   />
@@ -332,7 +332,7 @@ const Analytics = () => {
           {packageStats.maxPackage > 0 && (
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
               <SHead icon={DollarSign} title="Package Statistics" sub="CTC distribution across offers" />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <InsightTile label="Highest Package" value={`₹${packageStats.maxPackage.toFixed(1)}L`}
                   sub="Best offer"   color="text-green-600" bg="bg-green-50 border-green-100"  />
                 <InsightTile label="Average Package" value={`₹${packageStats.avgPackage.toFixed(1)}L`}
@@ -346,7 +346,7 @@ const Analytics = () => {
           {/* Quick Actions */}
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
             <SHead icon={Star} title="Quick Actions" sub="Jump to key sections" />
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 { label: 'Manage Jobs',   sub: 'View job postings',   gradient: 'bg-gradient-to-br from-blue-600 to-blue-700',   onClick: () => navigate('/dashboard/college-admin/jobs'),         icon: Briefcase },
                 { label: 'Applications', sub: 'Review submissions',   gradient: 'bg-gradient-to-br from-cyan-500 to-blue-600',   onClick: () => navigate('/dashboard/college-admin/applications'), icon: FileText  },

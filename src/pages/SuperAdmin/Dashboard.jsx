@@ -254,7 +254,7 @@ const SuperAdminDashboard = () => {
 
       {/* ══ STATS PILLS ══ */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           <Pill icon={Building2}     label="Colleges"      value={stats.totalColleges}    color="blue"   onClick={() => navigate('/dashboard/super-admin/colleges')} />
           <Pill icon={Users}         label="Admins"        value={stats.totalAdmins}      color="cyan"   onClick={() => navigate('/dashboard/super-admin/admins')} />
           <Pill icon={GraduationCap} label="Students"      value={stats.totalStudents}    color="indigo" onClick={() => navigate('/dashboard/super-admin/students')} />
@@ -578,7 +578,7 @@ const SuperAdminDashboard = () => {
           {/* Platform Reach */}
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
             <SHead icon={Globe} title="Platform Reach" />
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 mb-3">
               {[
                 { label: 'Colleges', value: fmt(stats.totalColleges), color: 'text-blue-600'   },
                 { label: 'Cities',   value: fmt(stats.totalColleges), color: 'text-cyan-600'   },

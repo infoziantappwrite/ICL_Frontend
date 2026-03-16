@@ -1069,6 +1069,32 @@ export const assessmentAPI = {
     });
   },
 
+  // POST /api/assessment/:id/bulk-add-questions
+  bulkAddQuestions: async (assessmentId, questions) => {
+    return apiCall(`/assessment/${assessmentId}/bulk-add-questions`, {
+      method: 'POST',
+      body: JSON.stringify({ questions }),
+    });
+  },
+
+  // PATCH /api/assessment/:id/status  → { success, status }
+  transitionStatus: async (id, status) => {
+    return apiCall(`/assessment/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // GET /api/assessment/:id/report  → { success, assessment, report[] }
+  getAssessmentReport: async (id) => {
+    return apiCall(`/assessment/${id}/report`);
+  },
+
+  // GET /api/assessment/:id/attempts/:attemptId  → { success, student, summary, answers[] }
+  getAttemptDetail: async (assessmentId, attemptId) => {
+    return apiCall(`/assessment/${assessmentId}/attempts/${attemptId}`);
+  },
+
   // POST /api/assessment/generate-questions (AI)
   generateQuestionsFromJD: async (data) => {
     return apiCall('/assessment/generate-questions', {

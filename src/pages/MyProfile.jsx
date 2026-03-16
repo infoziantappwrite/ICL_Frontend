@@ -1,9 +1,11 @@
 // src/pages/MyProfile.jsx — Full Naukri-style profile with all fields + inline editing
 import { useState, useEffect } from 'react';
+import Select from 'react-select';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import StudentLayout from '../components/layout/StudentLayout';
+import { skillAPI } from '../api/Api';
 import {
   Pencil, X, Check, MapPin, Phone, Mail,
   Briefcase, GraduationCap, Target,
@@ -122,6 +124,74 @@ const TagInput = ({ label, field, tags, color = 'blue', onAdd, onRemove }) => {
   );
 };
 
+const getSkillName = (skill) => {
+  if (typeof skill === 'string') return skill.trim();
+  if (skill && typeof skill === 'object') return (skill.name || skill.label || skill.value || '').trim();
+  return '';
+};
+
+const getSkillCategory = (skill) => {
+  if (skill && typeof skill === 'object') return (skill.category || '').trim().toLowerCase();
+  return '';
+};
+
+const SkillMultiSelect = ({ label, values, options, onChange, allowedCategories, excludedCategories = [], blockedValues = [] }) => {
+  const normalizedValues = values.map(getSkillName).filter(Boolean);
+  const normalizedAllowedCategories = (allowedCategories || []).map((category) => category.trim().toLowerCase());
+  const normalizedExcludedCategories = excludedCategories.map((category) => category.trim().toLowerCase());
+  const normalizedBlockedValues = blockedValues.map((value) => value.trim().toLowerCase());
+
+  const filteredOptions = options.filter((option) => {
+    const category = getSkillCategory(option);
+    const skillName = getSkillName(option).toLowerCase();
+
+    if (normalizedBlockedValues.includes(skillName)) return false;
+
+    if (normalizedAllowedCategories.length > 0) {
+      return normalizedAllowedCategories.includes(category);
+    }
+
+    return !normalizedExcludedCategories.includes(category);
+  });
+
+  const mergedOptions = [...new Set([
+    ...filteredOptions.map(getSkillName),
+    ...normalizedValues,
+  ])]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map((skillName) => ({ value: skillName, label: skillName }));
+
+  return (
+    <div>
+      <label className={lCls}>{label}</label>
+      <Select
+        isMulti
+        isSearchable
+        closeMenuOnSelect
+        options={mergedOptions}
+        placeholder="Search and select skills..."
+        value={normalizedValues.map((skillName) => ({ value: skillName, label: skillName }))}
+        menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+        menuPosition="fixed"
+        styles={{
+          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+          menu: (base) => ({ ...base, zIndex: 9999 }),
+          control: (base, state) => ({
+            ...base,
+            minHeight: 44,
+            borderRadius: 12,
+            borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
+            boxShadow: state.isFocused ? '0 0 0 2px rgba(191, 219, 254, 1)' : 'none',
+            '&:hover': { borderColor: state.isFocused ? '#3b82f6' : '#d1d5db' },
+          }),
+        }}
+        onChange={(selected) => onChange(selected ? selected.map((item) => item.value) : [])}
+      />
+    </div>
+  );
+};
+
 // ─── Skeleton shimmer block ────────────────────────────────────────────────
 const Sk = ({ className = '' }) => (
   <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />
@@ -188,11 +258,12 @@ const MyProfile = () => {
   const [draftPersonal, setDraftPersonal] = useState({});
   const [draftEducation, setDraftEducation] = useState({});
   const [draftProfessional, setDraftProfessional] = useState({});
-  const [draftSkills, setDraftSkills] = useState({ primary: [], secondary: [], langs: [], tools: [] });
+  const [draftSkills, setDraftSkills] = useState({ primary: [], secondary: [], langs: [] });
   const [draftCourses, setDraftCourses] = useState({});
   const [draftCareer, setDraftCareer] = useState({ careerObjective: '', preferredJobRole: '', targetCompanies: [] });
   const [newCompany, setNewCompany] = useState('');
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [skillsCatalog, setSkillsCatalog] = useState([]);
 
   // Sync all drafts when profile loads
   useEffect(() => {
@@ -237,7 +308,6 @@ const MyProfile = () => {
       primary: [...(profile.primarySkills || [])],
       secondary: [...(profile.secondarySkills || [])],
       langs: [...(profile.programmingLanguages || [])],
-      tools: [...(profile.toolsAndTechnologies || [])],
     });
     setDraftCourses({
       courseInterestedIn: profile.courseInterestedIn || '',
@@ -252,6 +322,19 @@ const MyProfile = () => {
       targetCompanies: Array.isArray(profile.targetCompanies) ? [...profile.targetCompanies] : [],
     });
   }, [profile, user]);
+
+  useEffect(() => {
+    const fetchSkillsCatalog = async () => {
+      try {
+        const response = await skillAPI.getAllSkills();
+        if (response?.success) setSkillsCatalog(response.skills || []);
+      } catch (error) {
+        console.error('Error fetching skills catalog:', error);
+      }
+    };
+
+    fetchSkillsCatalog();
+  }, []);
 
   const getName = () => profile?.fullName || user?.fullName || user?.name || 'User';
   const getInitials = () => {
@@ -315,7 +398,6 @@ const MyProfile = () => {
     primarySkills: draftSkills.primary,
     secondarySkills: draftSkills.secondary,
     programmingLanguages: draftSkills.langs,
-    toolsAndTechnologies: draftSkills.tools,
   });
   const saveCourses = () => saveSection({
     courseInterestedIn: draftCourses.courseInterestedIn,
@@ -629,15 +711,34 @@ const MyProfile = () => {
                 </div>
                 {editing === 'skills' ? (
                   <div className="space-y-5">
-                    <TagInput label="Primary Skills" field="primary" tags={draftSkills.primary} color="blue" onAdd={addTag} onRemove={removeTag} />
-                    <TagInput label="Secondary Skills" field="secondary" tags={draftSkills.secondary} color="green" onAdd={addTag} onRemove={removeTag} />
-                    <TagInput label="Programming Languages" field="langs" tags={draftSkills.langs} color="purple" onAdd={addTag} onRemove={removeTag} />
-                    <TagInput label="Tools & Technologies" field="tools" tags={draftSkills.tools} color="orange" onAdd={addTag} onRemove={removeTag} />
+                    <SkillMultiSelect
+                      label="Primary Skills"
+                      values={draftSkills.primary}
+                      options={skillsCatalog}
+                      excludedCategories={['Programming Language']}
+                      blockedValues={draftSkills.secondary}
+                      onChange={(values) => setDraftSkills((p) => ({ ...p, primary: values }))}
+                    />
+                    <SkillMultiSelect
+                      label="Secondary Skills"
+                      values={draftSkills.secondary}
+                      options={skillsCatalog}
+                      excludedCategories={['Programming Language']}
+                      blockedValues={draftSkills.primary}
+                      onChange={(values) => setDraftSkills((p) => ({ ...p, secondary: values }))}
+                    />
+                    <SkillMultiSelect
+                      label="Programming Languages"
+                      values={draftSkills.langs}
+                      options={skillsCatalog}
+                      allowedCategories={['Programming Language']}
+                      onChange={(values) => setDraftSkills((p) => ({ ...p, langs: values }))}
+                    />
                     <ActionRow onSave={saveSkills} onCancel={closeEdit} saving={saving} />
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(profile?.primarySkills?.length > 0 || profile?.secondarySkills?.length > 0 || profile?.programmingLanguages?.length > 0 || profile?.toolsAndTechnologies?.length > 0) ? (
+                    {(profile?.primarySkills?.length > 0 || profile?.secondarySkills?.length > 0 || profile?.programmingLanguages?.length > 0) ? (
                       <div className="space-y-3">
                         {profile?.primarySkills?.length > 0 && (
                           <div>
@@ -655,12 +756,6 @@ const MyProfile = () => {
                           <div>
                             <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Programming Languages</p>
                             <div className="flex flex-wrap gap-1.5">{profile.programmingLanguages.map((s, i) => <SkillTag key={i} label={s} color="purple" />)}</div>
-                          </div>
-                        )}
-                        {profile?.toolsAndTechnologies?.length > 0 && (
-                          <div>
-                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Tools & Technologies</p>
-                            <div className="flex flex-wrap gap-1.5">{profile.toolsAndTechnologies.map((s, i) => <SkillTag key={i} label={s} color="orange" />)}</div>
                           </div>
                         )}
                       </div>

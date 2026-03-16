@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpen, Clock, Star, Target, TrendingUp,
   PlayCircle, RefreshCw, AlertCircle, Calendar, Tag,
-  Search, Filter, X, ChevronRight, Award, Zap, SlidersHorizontal
+  Search, Filter, X, ChevronRight, Award, Zap, SlidersHorizontal, Briefcase
 } from 'lucide-react';
 import StudentLayout from '../../../components/layout/StudentLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
@@ -20,6 +20,20 @@ const SOURCE_LABEL = {
   college_admin_manual: 'Admin',
   college_admin_ai: 'AI',
   student_skill_based: 'Skill-Based',
+};
+
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return '--:--';
+  try {
+    const [hours, minutes] = timeStr.split(':');
+    let h = parseInt(hours, 10);
+    const m = minutes.padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+  } catch (e) {
+    return timeStr;
+  }
 };
 
 const Card = ({ children, className = '' }) => (
@@ -106,7 +120,7 @@ const AssessmentCard = ({ assessment, onStart }) => {
         </div>
         <div className="min-w-0">
           <h3 className="font-bold text-[13px] md:text-[16px] text-gray-900 leading-tight hover:text-blue-600 transition-colors line-clamp-2">
-            {assessment.skill_id?.name || 'Skill Assessment'}
+            {assessment?.jd_id?.jobTitle || assessment?.title || 'Skill Assessment'}
           </h3>
           <p className="text-[11px] md:text-[13px] text-gray-600 mt-0.5 flex items-center gap-1.5 line-clamp-1">
             {sourceLabel} Assessment
@@ -116,15 +130,12 @@ const AssessmentCard = ({ assessment, onStart }) => {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 mb-3 md:mb-5">
-        <span className={`px-2 py-0.5 rounded text-[10px] md:text-[11px] font-bold border ${levelCfg.color} flex items-center gap-1`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${levelCfg.dot}`}></span>
-          {levelCfg.label}
-        </span>
-        {assessment.tags?.slice(0, 2).map((t, idx) => (
-          <span key={idx} className="px-2 py-0.5 rounded text-[10px] md:text-[11px] font-bold bg-gray-50 text-gray-600 border border-gray-200">
-            {t}
+        {assessment?.jd_id?.companyId?.name && (
+          <span className="px-2 py-0.5 rounded text-[10px] md:text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-100 flex items-center gap-1">
+            <Briefcase className="w-3 h-3" />
+            {assessment.jd_id.companyId.name}
           </span>
-        ))}
+        )}
       </div>
 
       <div className="space-y-1.5 mb-3 md:mb-5 mt-auto">
@@ -135,9 +146,17 @@ const AssessmentCard = ({ assessment, onStart }) => {
           </span>
         </div>
         {assessment.scheduled_date ? (
-          <div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-gray-500 font-medium">
-            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-            <span>Scheduled: {new Date(assessment.scheduled_date).toLocaleDateString()}</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-gray-500 font-medium">
+              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+              <span>Scheduled: {new Date(assessment.scheduled_date).toLocaleDateString()}</span>
+            </div>
+            {(assessment.start_time || assessment.end_time) && (
+              <div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-gray-500 font-medium ">
+                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                <span>{formatTime12h(assessment.start_time)} to {formatTime12h(assessment.end_time)}</span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-green-600 font-medium">
@@ -190,6 +209,10 @@ const AssessmentList = () => {
   };
 
   const handleStart = (assessment) => {
+    if (window.innerWidth < 1024) {
+      alert("Assessments can only be taken on a desktop screen for a strictly controlled environment. Please switch to a laptop or desktop.");
+      return;
+    }
     navigate(`/dashboard/student/assessments/${assessment._id}/take`);
   };
 
@@ -201,7 +224,8 @@ const AssessmentList = () => {
 
   const filteredAssessments = useMemo(() => {
     return allAssessments.filter(a => {
-      const matchSearch = searchTerm === '' || (a.skill_id?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const title = a.jd_id?.jobTitle || a.title || '';
+      const matchSearch = searchTerm === '' || title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchLevel = levelFilter === '' || a.level === levelFilter;
       const matchSource = sourceFilter === '' || a.source_type === sourceFilter;
       return matchSearch && matchLevel && matchSource;
@@ -235,7 +259,7 @@ const AssessmentList = () => {
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <h1 className="text-[18px] sm:text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">
-                  Skill Assessments
+                  Assessments
                 </h1>
                 <p className="text-[12px] md:text-[14px] text-gray-600 mt-0.5">
                   {filteredAssessments.length} {filteredAssessments.length === 1 ? 'assessment' : 'assessments'} available

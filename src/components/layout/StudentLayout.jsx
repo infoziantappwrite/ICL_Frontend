@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import {
     User, Settings, LogOut, Menu, X, Bell,
     Home, Briefcase, BookOpen, ClipboardList,
+    Clock, FileText, Star, Users, ArrowRight
 } from 'lucide-react';
 
 const navLinks = [
@@ -287,6 +288,64 @@ const StudentLayout = ({ children }) => {
             <main className="relative h-[calc(100vh-56px)] md:h-[calc(100vh-65px)] overflow-hidden">
                 <div className="h-full overflow-y-auto">
                     {children}
+
+                    {/* ═══════════════════════════════════════
+                        FOOTER
+                    ═══════════════════════════════════════ */}
+                    <footer className="mt-6 bg-[#0f172a]">
+                        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pb-8 border-b border-slate-700">
+                                {/* Brand */}
+                                <div className="col-span-2 lg:col-span-1">
+                                    <h3 className="text-[17px] font-extrabold text-white mb-3">🎓 ICL Careers</h3>
+                                    <p className="text-[13px] text-slate-400 leading-relaxed max-w-[280px]">
+                                        India's #1 campus placement platform. Connecting students with top companies.
+                                    </p>
+                                    <div className="flex gap-2.5 mt-5">
+                                        {[
+                                            { label: 'f', bg: 'bg-blue-600' },
+                                            { label: 't', bg: 'bg-sky-500' },
+                                            { label: 'in', bg: 'bg-blue-700' },
+                                            { label: 'ig', bg: 'bg-pink-600' },
+                                        ].map(s => (
+                                            <div key={s.label} className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center text-white text-[12px] font-bold cursor-pointer hover:opacity-90 transition-opacity`}>
+                                                {s.label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                {/* Links */}
+                                {[
+                                    { heading: 'For Students', links: ['Browse Jobs', 'Resume Builder', 'Practice Tests', 'Career Guide', 'Interview Prep'] },
+                                    { heading: 'Courses', links: ['Full Stack Dev', 'Data Science', 'Cloud & DevOps', 'UI/UX Design', 'AI / ML'] },
+                                    { heading: 'Company', links: ['About ICL', 'Contact Us', 'Privacy Policy', 'Terms of Service', 'Help Center'] },
+                                ].map(col => (
+                                    <div key={col.heading} className="col-span-1">
+                                        <h4 className="text-[12px] font-bold text-slate-300 uppercase tracking-wider mb-4">{col.heading}</h4>
+                                        <div className="space-y-2.5">
+                                            {col.links.map(link => (
+                                                <button key={link} className="block text-[13px] text-slate-400 hover:text-blue-400 transition-colors text-left w-full">
+                                                    {link}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Bottom row */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 text-center sm:text-left">
+                                <p className="text-[13px] text-slate-500">© 2025 ICL Academy. All rights reserved.</p>
+                                <div className="flex flex-wrap justify-center gap-3">
+                                    <span className="text-[12px] text-slate-400 border border-slate-700 bg-slate-800/50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
+                                        <span className="text-slate-300">🔒</span> SSL Secured
+                                    </span>
+                                    <span className="text-[12px] text-slate-400 border border-slate-700 bg-slate-800/50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
+                                        <span className="text-emerald-400">✓</span> AICTE Approved
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
                 </div>
             </main>
 

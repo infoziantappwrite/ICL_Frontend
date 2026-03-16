@@ -1,7 +1,9 @@
 // src/pages/CollegeAdmin/StudentManagement.jsx
-// Redesigned to match SuperAdmin portal theme — blue/cyan gradient, portal modals, action cards
+// Upgraded: inline DB conflict detection in bulk upload (parity with SuperAdmin),
+// Excel download after single/multiple/bulk success, server-side validation inline.
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import * as XLSX from 'xlsx';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { useToast } from '../../context/ToastContext';
 import { collegeAdminStudentAPI } from '../../api/studentAPI';
@@ -9,10 +11,10 @@ import {
   GraduationCap, Search, SlidersHorizontal, Upload, RefreshCw,
   X, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle,
   AlertCircle, FileText, Download, CloudUpload, FileDown,
-  ClipboardCheck, Users, UserCheck, UserX, TrendingUp,
+  Users, UserCheck, UserX, TrendingUp,
   Layers, Info, Plus, Trash2, UserPlus, UsersRound,
   KeyRound, Mail, Hash, BookOpen, Star, Calendar, Phone,
-  Eye, ArrowLeft, UploadCloud, Building2,
+  Eye, ArrowLeft, UploadCloud, Check,
 } from 'lucide-react';
 
 const BRANCHES  = ['CSE','ECE','EEE','MECH','CIVIL','IT','AI/ML','DS','Other'];
@@ -48,24 +50,15 @@ const Tag = ({ children, variant = 'default' }) => {
 /* ── Portal Modal (renders to document.body → above sidebar) ── */
 const Modal = ({ children, onClose, size = 'lg' }) => {
   const w = { sm:'max-w-md', md:'max-w-xl', lg:'max-w-2xl', xl:'max-w-4xl', full:'max-w-6xl' }[size];
-
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
-
   return ReactDOM.createPortal(
-    <div
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: 9999 }}
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 9999 }} onClick={onClose}>
       <div className="absolute inset-0 bg-black/55 backdrop-blur-sm"/>
-      <div
-        className={`relative w-full ${w} max-h-[92vh] flex flex-col`}
-        onClick={e => e.stopPropagation()}
-      >
+      <div className={`relative w-full ${w} max-h-[92vh] flex flex-col`} onClick={e => e.stopPropagation()}>
         {children}
       </div>
     </div>,
@@ -87,8 +80,7 @@ const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-blue-700 via-
         </div>
       </div>
       {onClose && (
-        <button onClick={onClose}
-          className="w-8 h-8 bg-white/15 hover:bg-white/30 rounded-xl flex items-center justify-center text-white transition-colors">
+        <button onClick={onClose} className="w-8 h-8 bg-white/15 hover:bg-white/30 rounded-xl flex items-center justify-center text-white transition-colors">
           <X className="w-4 h-4"/>
         </button>
       )}
@@ -130,6 +122,60 @@ const I_PLAIN = `${BASE_INPUT} px-3`;
 const OK_CLS  = 'border-slate-200';
 const ERR_CLS = 'border-red-300 bg-red-50/40';
 
+/* ── Preview field ── */
+const PField = ({ label, value, full }) => (
+  <div className={full ? 'col-span-2' : ''}>
+    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">{label}</p>
+    <p className="text-sm font-semibold text-slate-800 break-all">
+      {value != null && value !== '' ? value : <span className="text-slate-300 italic text-xs">—</span>}
+    </p>
+  </div>
+);
+
+/* ── Download helper: generate Excel from result data ── */
+const downloadResultsAsExcel = (students, filename = 'students_created.xlsx') => {
+  const rows = students.map((s, i) => ({
+    '#':                  i + 1,
+    'Full Name':          s.fullName || '',
+    'Email':              s.email || '',
+    'Roll Number':        s.rollNumber || '',
+    'Branch':             s.branch || '',
+    'Batch':              s.batch || '',
+    'Phone':              s.phone || '',
+    'Temporary Password': s.temporaryPassword || '',
+    'Email Sent':         s.emailSent ? 'Yes' : 'No',
+    'First Login':        'Required',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:4},{wch:22},{wch:30},{wch:16},{wch:10},{wch:8},{wch:14},{wch:18},{wch:12},{wch:14},
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Created Students');
+  XLSX.writeFile(wb, filename);
+};
+
+/* ── Row validator ── */
+const validateRow = (row) => {
+  const e = {};
+  const name  = (row['name'] || row['full_name'] || '').trim();
+  const email = (row['email'] || '').trim().toLowerCase();
+  const roll  = (row['roll_number'] || row['rollnumber'] || row['roll_no'] || '').trim();
+  if (!name)  e['name']        = 'Name is required';
+  if (!email) e['email']       = 'Email is required';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e['email'] = 'Invalid email format';
+  if (!roll)  e['roll_number'] = 'Roll number is required';
+  const phone = (row['phone'] || '').trim();
+  if (phone && !/^[0-9]{10}$/.test(phone)) e['phone'] = 'Must be 10 digits';
+  const branch = (row['branch'] || '').trim().toUpperCase();
+  if (branch && !BRANCHES.map(b => b.toUpperCase()).includes(branch)) e['branch'] = `Must be: ${BRANCHES.join(', ')}`;
+  const sem = row['semester'];
+  if (sem && sem !== '' && (isNaN(sem) || +sem < 1 || +sem > 10)) e['semester'] = 'Must be 1–10';
+  const cgpa = row['cgpa'];
+  if (cgpa && cgpa !== '' && (isNaN(cgpa) || +cgpa < 0 || +cgpa > 10)) e['cgpa'] = 'Must be 0.0–10.0';
+  return e;
+};
+
 /* ══════════════════════════════════════════════════════════
    MODAL 1 — ADD SINGLE STUDENT
 ══════════════════════════════════════════════════════════ */
@@ -143,7 +189,7 @@ const EMPTY_STUDENT = {
 
 function AddSingleModal({ onClose, onDone }) {
   const toast = useToast();
-  const [step, setStep]           = useState('form'); // 'form' | 'preview' | 'success'
+  const [step, setStep]           = useState('form');
   const [form, setForm]           = useState(EMPTY_STUDENT);
   const [saving, setSaving]       = useState(false);
   const [errors, setErrors]       = useState({});
@@ -161,6 +207,7 @@ function AddSingleModal({ onClose, onDone }) {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email format';
     if (!form.rollNumber.trim()) e.rollNumber = 'Roll number is required';
     if (form.cgpa && (isNaN(form.cgpa) || +form.cgpa < 0 || +form.cgpa > 10)) e.cgpa = 'CGPA must be 0.0–10.0';
+    if (form.phone && !/^[0-9]{10}$/.test(form.phone)) e.phone = 'Must be 10 digits';
     return e;
   };
 
@@ -190,8 +237,9 @@ function AddSingleModal({ onClose, onDone }) {
         isEligibleForPlacements: form.isEligibleForPlacements,
       };
       const res = await collegeAdminStudentAPI.addStudent(payload);
-      setSuccess(res.data || { fullName: form.fullName, email: form.email });
+      setSuccess(res.data || { fullName: form.fullName, email: form.email, rollNumber: form.rollNumber });
       setStep('success');
+      toast.success('Student Added', res.message || 'Student created successfully.');
       onDone?.();
     } catch(err) {
       toast.error('Failed to add student', err.message);
@@ -229,12 +277,22 @@ function AddSingleModal({ onClose, onDone }) {
                   </code>
                   <button
                     onClick={() => { navigator.clipboard.writeText(successData.temporaryPassword); toast.success('Copied!'); }}
-                    className="text-xs px-3 py-1 bg-amber-200 text-amber-800 rounded-lg hover:bg-amber-300 transition font-bold"
-                  >Copy</button>
+                    className="text-xs px-3 py-1 bg-amber-200 text-amber-800 rounded-lg hover:bg-amber-300 transition font-bold">
+                    Copy
+                  </button>
                 </div>
                 <p className="text-xs text-amber-700 mt-2">Share with student. They'll be prompted to change on first login.</p>
               </div>
             )}
+            <div className={`flex items-center gap-2 text-sm p-3 rounded-xl ${successData.emailSent ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+              <Mail size={14} className="flex-shrink-0"/>
+              {successData.emailSent ? 'Welcome email with password delivered.' : 'Email delivery failed — share credentials manually.'}
+            </div>
+            <button
+              onClick={() => downloadResultsAsExcel([successData], `student_${successData.rollNumber || Date.now()}.xlsx`)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+              <Download size={14}/> Download Student Details (Excel)
+            </button>
             <div className="flex gap-3">
               <button onClick={() => { setSuccess(null); setForm(EMPTY_STUDENT); setStep('form'); }}
                 className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
@@ -253,53 +311,43 @@ function AddSingleModal({ onClose, onDone }) {
 
   /* ── Preview ── */
   if (step === 'preview') {
-    const rows = [
-      { label:'Full Name',    value: form.fullName,                    icon: UserPlus },
-      { label:'Email',        value: form.email,                       icon: Mail },
-      { label:'Roll Number',  value: form.rollNumber,                  icon: Hash },
-      { label:'Branch',       value: form.branch || '—',               icon: BookOpen },
-      { label:'Semester',     value: form.semester ? `Sem ${form.semester}` : '—', icon: Layers },
-      { label:'CGPA',         value: form.cgpa || '—',                 icon: Star },
-      { label:'Batch',        value: form.batch || '—',                icon: Calendar },
-      { label:'Phone',        value: form.phone || '—',                icon: Phone },
-    ];
     return (
       <Modal onClose={onClose} size="md">
         <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
           <MHead icon={Eye} title="Preview — Confirm Details" sub="Review before saving to database" onClose={onClose}/>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-5">
             <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
                 {form.fullName.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <p className="font-black text-slate-800">{form.fullName}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{form.email}</p>
+              <div className="min-w-0">
+                <p className="font-black text-slate-800 text-base">{form.fullName}</p>
+                <p className="text-slate-400 text-xs mt-0.5 truncate">{form.email}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {rows.map(r => (
-                <div key={r.label} className="flex items-center gap-2 py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
-                  <r.icon size={12} className="text-slate-400 flex-shrink-0"/>
-                  <div className="min-w-0">
-                    <p className="text-[9px] text-slate-400 uppercase tracking-wide font-semibold">{r.label}</p>
-                    <p className="text-xs font-bold text-slate-700 truncate">{r.value}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl">
+              <PField label="Roll Number" value={form.rollNumber}/>
+              <PField label="Phone"       value={form.phone}/>
+              <PField label="Branch"      value={form.branch}/>
+              <PField label="Batch"       value={form.batch}/>
+              <PField label="Semester"    value={form.semester}/>
+              <PField label="CGPA"        value={form.cgpa}/>
+              {form.tenthPercentage   && <PField label="10th %"   value={form.tenthPercentage}/>}
+              {form.twelfthPercentage && <PField label="12th %"   value={form.twelfthPercentage}/>}
+              {form.activeBacklogs    !== '' && <PField label="Active Backlogs" value={form.activeBacklogs}/>}
+              {form.totalBacklogs     !== '' && <PField label="Total Backlogs"  value={form.totalBacklogs}/>}
+              {form.gapYears          !== '' && <PField label="Gap Years"       value={form.gapYears}/>}
             </div>
-            <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700">
-              <KeyRound size={12} className="flex-shrink-0 mt-0.5"/>
-              A secure password is auto-generated — the student can reset it after first login.
+            <div className="flex items-center gap-2 text-xs text-amber-700 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <KeyRound size={13} className="flex-shrink-0"/>
+              A <strong>temporary password</strong> is auto-generated and emailed after confirmation.
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setStep('form')}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
-                <ArrowLeft size={13}/> Edit
+              <button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
+                <ArrowLeft size={14}/> Edit
               </button>
-              <button onClick={confirm} disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
-                {saving ? <><Spin size="sm" color="white"/>Saving…</> : <><CheckCircle size={14}/>Confirm & Add Student</>}
+              <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
+                {saving ? <><Spin size="sm" color="white"/>Saving…</> : <><Check size={14}/>Confirm & Add Student</>}
               </button>
             </div>
           </div>
@@ -313,62 +361,59 @@ function AddSingleModal({ onClose, onDone }) {
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
         <MHead icon={UserPlus} title="Add Single Student" sub="Fill details, preview, then confirm" onClose={onClose}/>
-
         <div className="mx-5 mt-4 flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl flex-shrink-0">
           <KeyRound size={13} className="text-amber-600 flex-shrink-0"/>
           <p className="text-xs text-amber-700">
             A <strong>secure password is auto-generated</strong> by the system. The student can reset it after first login.
           </p>
         </div>
-
         <div className="p-5 overflow-y-auto flex-1 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Full Name" required icon={UserPlus} error={errors.fullName}>
-              <input className={`${I_ICON} ${errors.fullName ? ERR_CLS : OK_CLS}`} placeholder="e.g. Ravi Kumar"
-                value={form.fullName} onChange={e => setF('fullName', e.target.value)}/>
-            </Field>
+            <div className="col-span-2">
+              <Field label="Full Name" required icon={UserPlus} error={errors.fullName}>
+                <input className={`${I_ICON} ${errors.fullName ? ERR_CLS : OK_CLS}`} placeholder="e.g. Ravi Kumar"
+                  value={form.fullName} onChange={e => setF('fullName', e.target.value)}/>
+              </Field>
+            </div>
             <Field label="Email Address" required icon={Mail} error={errors.email}>
               <input type="email" className={`${I_ICON} ${errors.email ? ERR_CLS : OK_CLS}`} placeholder="student@college.edu"
                 value={form.email} onChange={e => setF('email', e.target.value)}/>
             </Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Roll Number" required icon={Hash} error={errors.rollNumber} hint="Must be unique within this college">
               <input className={`${I_ICON} font-mono ${errors.rollNumber ? ERR_CLS : OK_CLS}`} placeholder="e.g. 21CSE001"
                 value={form.rollNumber} onChange={e => setF('rollNumber', e.target.value)}/>
             </Field>
-            <Field label="Phone Number" icon={Phone}>
-              <input type="tel" className={`${I_ICON} ${OK_CLS}`} placeholder="10-digit mobile number"
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Phone Number" icon={Phone} error={errors.phone}>
+              <input type="tel" className={`${I_ICON} ${errors.phone ? ERR_CLS : OK_CLS}`} placeholder="10-digit mobile number"
                 value={form.phone} onChange={e => setF('phone', e.target.value)}/>
             </Field>
-          </div>
-          <div className="h-px bg-slate-100"/>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Department / Branch" icon={BookOpen}>
               <select className={`${I_ICON} ${OK_CLS} appearance-none`} value={form.branch} onChange={e => setF('branch', e.target.value)}>
                 <option value="">Select department</option>
                 {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </Field>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Semester" icon={Layers}>
               <select className={`${I_ICON} ${OK_CLS} appearance-none`} value={form.semester} onChange={e => setF('semester', e.target.value)}>
                 <option value="">Select semester</option>
                 {SEMESTERS.map(s => <option key={s} value={s}>Semester {s}</option>)}
               </select>
             </Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CGPA" icon={Star} error={errors.cgpa} hint="Scale 0.0–10.0">
               <input type="number" step="0.01" min="0" max="10" className={`${I_ICON} ${errors.cgpa ? ERR_CLS : OK_CLS}`}
                 placeholder="e.g. 8.50" value={form.cgpa} onChange={e => setF('cgpa', e.target.value)}/>
             </Field>
-            <Field label="Batch (Graduation Year)" icon={Calendar}>
-              <input type="text" className={`${I_ICON} ${OK_CLS}`} placeholder="e.g. 2026"
-                value={form.batch} onChange={e => setF('batch', e.target.value)}/>
-            </Field>
           </div>
+          <Field label="Batch (Graduation Year)" icon={Calendar}>
+            <input type="text" className={`${I_ICON} ${OK_CLS}`} placeholder="e.g. 2026"
+              value={form.batch} onChange={e => setF('batch', e.target.value)}/>
+          </Field>
           <div className="h-px bg-slate-100"/>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Academic Records</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Academic Records <span className="font-normal normal-case text-slate-300">(optional)</span></p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="10th Percentage (%)" icon={BookOpen}>
               <input type="number" step="0.01" min="0" max="100" className={`${I_ICON} ${OK_CLS}`}
@@ -402,8 +447,7 @@ function AddSingleModal({ onClose, onDone }) {
             </label>
           </div>
         </div>
-
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-100 bg-blue-50/30 flex-shrink-0">
           <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors">Cancel</button>
           <button onClick={goPreview}
             className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity shadow-sm shadow-blue-500/20">
@@ -426,19 +470,19 @@ const EMPTY_ROW = () => ({
 
 function AddMultipleModal({ onClose, onDone }) {
   const toast = useToast();
-  const [step, setStep]         = useState('table'); // 'table' | 'preview' | 'success'
+  const [step, setStep]         = useState('table');
   const [rows, setRows]         = useState([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
   const [saving, setSaving]     = useState(false);
   const [rowErrors, setRowErr]  = useState({});
   const [result, setResult]     = useState(null);
   const [filledRows, setFilled] = useState([]);
 
-  const addRow = () => setRows(p => [...p, EMPTY_ROW()]);
+  const addRow    = () => setRows(p => [...p, EMPTY_ROW()]);
   const removeRow = (id) => setRows(p => p.filter(r => r.id !== id));
-  const setCell = (id, field, value) => {
+  const setCell = useCallback((id, field, value) => {
     setRows(p => p.map(r => r.id === id ? {...r, [field]: value} : r));
     setRowErr(p => { const n = {...p}; if (n[id]) delete n[id][field]; return n; });
-  };
+  }, []);
 
   const validate = () => {
     const errs = {};
@@ -456,6 +500,7 @@ function AddMultipleModal({ onClose, onDone }) {
       else if (rolls.has(r.rollNumber.toLowerCase())) e.rollNumber = 'Duplicate';
       else rolls.add(r.rollNumber.toLowerCase());
       if (r.cgpa && (isNaN(r.cgpa) || +r.cgpa < 0 || +r.cgpa > 10)) e.cgpa = '0–10';
+      if (r.phone && !/^[0-9]{10}$/.test(r.phone.trim())) e.phone = '10 digits';
       if (Object.keys(e).length) errs[r.id] = e;
     });
     return { errs, filled };
@@ -483,8 +528,9 @@ function AddMultipleModal({ onClose, onDone }) {
         ...(r.phone && { phone: r.phone.trim() }),
       }));
       const res = await collegeAdminStudentAPI.addStudents(students);
-      setResult({ count: res.totalCreated || res.data?.length || students.length, passwords: res.data || [] });
+      setResult({ count: res.totalCreated || res.data?.length || students.length, students: res.data || [] });
       setStep('success');
+      toast.success(`${students.length} Students Added`, res.message || '');
       onDone?.();
     } catch(err) {
       toast.error('Failed', err.message);
@@ -500,38 +546,30 @@ function AddMultipleModal({ onClose, onDone }) {
   if (step === 'success' && result) {
     return (
       <Modal onClose={onClose} size="lg">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
           <MHead icon={CheckCircle} title={`${result.count} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose}/>
-          <div className="overflow-y-auto flex-1 p-6">
-            {result.passwords.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                  <KeyRound size={12}/> Temporary Passwords
-                </p>
-                {result.passwords.map((s, i) => (
-                  <div key={s.id || i} className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-xl gap-3">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
-                        {s.fullName?.charAt(0)?.toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{s.fullName}</p>
-                        <p className="text-xs text-slate-500 truncate">{s.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <code className="text-sm font-mono font-bold text-amber-900 bg-amber-100 px-2 py-1 rounded-lg">
-                        {s.temporaryPassword}
-                      </code>
-                      <button onClick={() => navigator.clipboard.writeText(s.temporaryPassword)}
-                        className="text-xs px-2 py-1 bg-amber-200 text-amber-800 rounded-lg hover:bg-amber-300 transition font-bold">
-                        Copy
-                      </button>
-                    </div>
+          <div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
+            {result.students.length > 0 ? result.students.map((s, i) => (
+              <div key={s.id || i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                    {s.fullName?.charAt(0)?.toUpperCase()}
                   </div>
-                ))}
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 truncate">{s.fullName}</p>
+                    <p className="text-xs text-slate-400 truncate">{s.email} · {s.rollNumber}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {s.temporaryPassword && (
+                    <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded-lg border border-amber-200">{s.temporaryPassword}</span>
+                  )}
+                  {s.emailSent
+                    ? <CheckCircle size={14} className="text-green-500"/>
+                    : <AlertTriangle size={14} className="text-amber-500"/>}
+                </div>
               </div>
-            ) : (
+            )) : (
               <div className="text-center py-8">
                 <UsersRound size={32} className="text-blue-500 mx-auto mb-3"/>
                 <p className="text-2xl font-black text-slate-800">{result.count}</p>
@@ -539,9 +577,16 @@ function AddMultipleModal({ onClose, onDone }) {
               </div>
             )}
           </div>
-          <div className="flex justify-end px-6 pb-6 pt-4 border-t border-slate-100 flex-shrink-0">
+          <div className="p-5 border-t border-slate-100 space-y-2">
+            {result.students.length > 0 && (
+              <button
+                onClick={() => downloadResultsAsExcel(result.students, `students_${Date.now()}.xlsx`)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+                <Download size={14}/> Download All Students + Passwords (Excel)
+              </button>
+            )}
             <button onClick={() => { onDone?.(); onClose(); }}
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
+              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">
               Done
             </button>
           </div>
@@ -557,46 +602,38 @@ function AddMultipleModal({ onClose, onDone }) {
         <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
           <MHead icon={Eye} title={`Preview — ${filledRows.length} Students`} sub="Passwords auto-generated on confirm" onClose={onClose}/>
           <div className="overflow-auto flex-1">
-            <table className="w-full text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  {['#','Name','Email','Roll No','Branch','Batch','Sem','CGPA','Phone'].map(h => (
-                    <th key={h} className="py-2.5 px-3 text-left font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
+            <table className="w-full text-xs border-collapse">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-blue-700 text-white">
+                  {['#','Full Name','Email','Roll No.','Branch','Batch','Sem.','CGPA','Phone'].map(h => (
+                    <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-blue-500 last:border-r-0">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {filledRows.map((r, i) => (
-                  <tr key={r.id} className="hover:bg-blue-50/30 transition-colors">
-                    <td className="py-2 px-3 text-slate-300 font-mono">{i+1}</td>
-                    <td className="py-2 px-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-md flex items-center justify-center text-white font-black text-[10px] flex-shrink-0">
-                          {r.fullName.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="font-semibold text-slate-800">{r.fullName}</span>
-                      </div>
-                    </td>
-                    <td className="py-2 px-3 text-slate-500">{r.email}</td>
-                    <td className="py-2 px-3 font-mono text-blue-600">{r.rollNumber}</td>
-                    <td className="py-2 px-3">{r.branch || '—'}</td>
-                    <td className="py-2 px-3">{r.batch || '—'}</td>
-                    <td className="py-2 px-3 text-center">{r.semester || '—'}</td>
-                    <td className="py-2 px-3">{r.cgpa || '—'}</td>
-                    <td className="py-2 px-3">{r.phone || '—'}</td>
+                  <tr key={r.id} className={`border-b border-slate-100 ${i%2===0?'bg-white':'bg-slate-50/40'}`}>
+                    <td className="py-2.5 px-3 text-slate-400 font-mono">{i+1}</td>
+                    <td className="py-2.5 px-3 font-semibold text-slate-800">{r.fullName}</td>
+                    <td className="py-2.5 px-3 text-slate-600">{r.email}</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">{r.rollNumber}</td>
+                    {['branch','batch','semester','cgpa','phone'].map(f => (
+                      <td key={f} className="py-2.5 px-3 text-slate-500">{r[f] || <span className="text-slate-300">—</span>}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between gap-3 p-4 border-t border-slate-100 bg-slate-50 flex-shrink-0">
-            <button onClick={() => setStep('table')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
-              <ArrowLeft size={13}/> Edit Table
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 flex-shrink-0">
+            <Mail size={13} className="flex-shrink-0"/> Each student will receive a temporary password by email after confirmation.
+          </div>
+          <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0">
+            <button onClick={() => setStep('table')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">
+              <ArrowLeft size={14}/> Edit
             </button>
-            <button onClick={confirm} disabled={saving}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
-              {saving ? <><Spin size="sm" color="white"/>Adding Students…</> : <><CheckCircle size={14}/>Confirm & Add {filledRows.length} Students</>}
+            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
+              {saving ? <><Spin size="sm" color="white"/>Adding Students…</> : <><Check size={14}/>Confirm & Add {filledRows.length} Students</>}
             </button>
           </div>
         </div>
@@ -606,109 +643,90 @@ function AddMultipleModal({ onClose, onDone }) {
 
   /* ── Table ── */
   const cols = [
-    { key: 'fullName',   label: 'Full Name',  required: true,  width: 'w-36', placeholder: 'Ravi Kumar',   type: 'text' },
-    { key: 'email',      label: 'Email',       required: true,  width: 'w-44', placeholder: 'email@edu.in', type: 'email' },
-    { key: 'rollNumber', label: 'Roll Number', required: true,  width: 'w-28', placeholder: '21CSE001',     type: 'text' },
-    { key: 'branch',     label: 'Department',  required: false, width: 'w-28', type: 'select', options: BRANCHES },
-    { key: 'semester',   label: 'Semester',    required: false, width: 'w-24', type: 'select', options: SEMESTERS.map(s => ({ value: s, label: `Sem ${s}` })) },
-    { key: 'cgpa',       label: 'CGPA',        required: false, width: 'w-20', placeholder: '8.50',         type: 'number' },
-    { key: 'batch',      label: 'Batch',       required: false, width: 'w-20', placeholder: '2026',         type: 'text' },
-    { key: 'phone',      label: 'Phone',       required: false, width: 'w-28', placeholder: '9876543210',   type: 'tel' },
+    { key: 'fullName',   label: 'Full Name *',  width: 'min-w-[140px]', placeholder: 'Ravi Kumar',   type: 'text' },
+    { key: 'email',      label: 'Email *',       width: 'min-w-[160px]', placeholder: 'email@edu.in', type: 'email' },
+    { key: 'rollNumber', label: 'Roll No. *',    width: 'min-w-[110px]', placeholder: '21CSE001',     type: 'text' },
+    { key: 'branch',     label: 'Branch',        width: 'min-w-[95px]',  type: 'select', options: BRANCHES },
+    { key: 'semester',   label: 'Sem.',          width: 'min-w-[70px]',  type: 'select', options: SEMESTERS },
+    { key: 'cgpa',       label: 'CGPA',          width: 'min-w-[70px]',  placeholder: '8.50',         type: 'number' },
+    { key: 'batch',      label: 'Batch',         width: 'min-w-[80px]',  placeholder: '2026',         type: 'text' },
+    { key: 'phone',      label: 'Phone',         width: 'min-w-[110px]', placeholder: '9876543210',   type: 'tel' },
   ];
 
   return (
-    <Modal onClose={onClose} size="xl">
+    <Modal onClose={onClose} size="full">
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
-        <MHead icon={UsersRound} title="Add Multiple Students" gradient="from-violet-600 via-purple-600 to-violet-500"
+        <MHead icon={UsersRound} title="Add Multiple Students" gradient="from-blue-700 via-blue-600 to-cyan-500"
           sub="Fill the table, preview, then confirm — passwords auto-generated" onClose={onClose}/>
-
         <div className="mx-5 mt-4 flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl flex-shrink-0">
           <KeyRound size={13} className="text-amber-600 flex-shrink-0"/>
           <p className="text-xs text-amber-700 flex-1">
             <strong>Passwords are auto-generated</strong> — you only need Name, Email, and Roll Number per student.
-            Fields marked <span className="text-red-500 font-bold">*</span> are required.
           </p>
           <span className="text-xs font-bold text-amber-600 flex-shrink-0">{filledCount} filled</span>
         </div>
-
         <div className="flex-1 overflow-auto px-5 py-4">
-          <div className="rounded-xl border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="py-2.5 px-3 text-left font-bold text-slate-400 uppercase tracking-wide w-10">#</th>
-                    {cols.map(c => (
-                      <th key={c.key} className={`py-2.5 px-2 text-left font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap ${c.width}`}>
-                        {c.label}{c.required && <span className="text-red-500 ml-0.5">*</span>}
-                      </th>
-                    ))}
-                    <th className="py-2.5 px-2 w-8"/>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {rows.map((row, idx) => (
-                    <tr key={row.id} className={`group transition-colors ${rowErrors[row.id] ? 'bg-red-50/40' : 'hover:bg-slate-50/60'}`}>
-                      <td className="py-1.5 px-3 text-slate-300 font-mono text-xs w-10">{idx + 1}</td>
-                      {cols.map(col => {
-                        const err = rowErrors[row.id]?.[col.key];
-                        const base = `w-full text-xs border rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400 transition ${
-                          err ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white focus:border-blue-400'
-                        }`;
-                        return (
-                          <td key={col.key} className="py-1.5 px-2">
-                            {col.type === 'select' ? (
-                              <select className={`${base} appearance-none`} value={row[col.key]}
-                                onChange={e => setCell(row.id, col.key, e.target.value)}>
-                                <option value="">—</option>
-                                {col.options?.map(o => typeof o === 'string'
-                                  ? <option key={o} value={o}>{col.key === 'semester' ? `Sem ${o}` : o}</option>
-                                  : <option key={o.value} value={o.value}>{o.label}</option>
-                                )}
-                              </select>
-                            ) : (
-                              <input type={col.type} placeholder={col.placeholder}
-                                className={`${base} ${col.key === 'rollNumber' ? 'font-mono' : ''}`}
-                                value={row[col.key]} onChange={e => setCell(row.id, col.key, e.target.value)}/>
-                            )}
-                            {err && <p className="text-red-500 mt-0.5 text-xs leading-tight">{err}</p>}
-                          </td>
-                        );
-                      })}
-                      <td className="py-1.5 px-2">
-                        {rows.length > 1 && (
-                          <button onClick={() => removeRow(row.id)}
-                            className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all">
-                            <Trash2 size={11}/>
-                          </button>
-                        )}
+          <table className="w-full text-xs border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-blue-700 text-white">
+                <th className="py-2 px-2 text-left text-[11px] font-semibold w-8">#</th>
+                {cols.map(c => (
+                  <th key={c.key} className={`py-2 px-2 text-left text-[11px] font-semibold whitespace-nowrap ${c.width}`}>{c.label}</th>
+                ))}
+                <th className="py-2 px-2 w-8"/>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, idx) => (
+                <tr key={row.id} className={`border-b border-slate-100 ${rowErrors[row.id] ? 'bg-red-50/40' : idx%2===0 ? 'bg-white' : 'bg-slate-50/40'}`}>
+                  <td className="py-1 px-2 text-slate-400 font-mono text-center">{idx + 1}</td>
+                  {cols.map(col => {
+                    const err = rowErrors[row.id]?.[col.key];
+                    const cellBase = `w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${err ? 'border-red-400 bg-red-50' : 'border-slate-200'}`;
+                    return (
+                      <td key={col.key} className={`p-1 ${err ? 'bg-red-50' : ''}`} style={{minWidth: col.type==='select' ? 90 : 100}}>
+                        <div className="relative group">
+                          {col.type === 'select' ? (
+                            <select className={`${cellBase} appearance-none`} value={row[col.key]}
+                              onChange={e => setCell(row.id, col.key, e.target.value)}>
+                              <option value="">—</option>
+                              {col.options?.map(o => <option key={o} value={o}>{col.key==='semester' ? `Sem ${o}` : o}</option>)}
+                            </select>
+                          ) : (
+                            <input type={col.type} value={row[col.key]} placeholder={col.placeholder}
+                              onChange={e => setCell(row.id, col.key, e.target.value)}
+                              className={`${cellBase} ${col.key==='rollNumber' ? 'font-mono' : ''}`}/>
+                          )}
+                          {err && (
+                            <div className="absolute bottom-full left-0 mb-1 z-20 bg-red-700 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none shadow-lg">
+                              {err}
+                            </div>
+                          )}
+                        </div>
                       </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <button onClick={addRow}
-            className="mt-3 flex items-center gap-2 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors px-2">
-            <Plus size={13}/> Add another row
+                    );
+                  })}
+                  <td className="py-1 px-1">
+                    {rows.length > 1 && (
+                      <button onClick={() => removeRow(row.id)} className="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
+                        <Trash2 size={12}/>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button onClick={addRow} className="mt-3 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors border border-dashed border-blue-200">
+            <Plus size={13}/> Add Row
           </button>
         </div>
-
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-100 bg-slate-50 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setRows([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()])}
-              className="text-xs text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">
-              Reset rows
-            </button>
-            <span className="text-slate-200">|</span>
-            <span className="text-xs text-slate-400">{filledCount} student{filledCount !== 1 ? 's' : ''} ready</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors">Cancel</button>
-            <button onClick={goPreview} disabled={filledCount === 0}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-opacity">
-              <Eye size={14}/> Preview {filledCount > 0 ? filledCount : ''} Student{filledCount !== 1 ? 's' : ''}
+        <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
+          <span className="text-xs text-slate-400">{filledCount} filled row(s)</span>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
+            <button onClick={goPreview} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
+              <Eye size={14}/> Preview
             </button>
           </div>
         </div>
@@ -718,154 +736,288 @@ function AddMultipleModal({ onClose, onDone }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   MODAL 3 — BULK UPLOAD (Excel/CSV)
+   MODAL 3 — BULK EXCEL UPLOAD
+   Upgraded: inline DB conflict detection (same as SuperAdmin)
 ══════════════════════════════════════════════════════════ */
 function BulkUploadModal({ onClose, onDone }) {
   const toast   = useToast();
   const fileRef = useRef(null);
-  const [step, setStep]             = useState('drop'); // 'drop' | 'preview' | 'validating' | 'results' | 'uploading' | 'done'
-  const [file, setFile]             = useState(null);
-  const [dragOver, setDragOver]     = useState(false);
-  const [parsedRows, setParsed]     = useState(null);
-  const [headers, setHeaders]       = useState([]);
-  const [rowErrors, setRowErrors]   = useState({});
-  const [vr, setVr]                 = useState(null);
-  const [ur, setUr]                 = useState(null);
-  const [parseLoading, setParsing]  = useState(false);
-  const [tmpl, setTmpl]             = useState(false);
 
-  const errorCount = Object.values(rowErrors).filter(e => Object.keys(e).length > 0).length;
-  const validCount = parsedRows ? parsedRows.length - errorCount : 0;
+  const [step, setStep]               = useState('upload');
+  const [parsedRows, setParsedRows]   = useState([]);
+  const [headers, setHeaders]         = useState([]);
+  const [fileName, setFileName]       = useState('');
+  const [rowErrors, setRowErrors]     = useState({});
+  const [validating, setValidating]   = useState(false);
+  const [uploading, setUploading]     = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [dragOver, setDragOver]       = useState(false);
+  const [serverValidated, setServerValidated] = useState(false);
 
-  const parseFile = async (f) => {
-    setParsing(true);
-    try {
-      const XLSX = await import('xlsx');
-      const buffer = await f.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: 'array', raw: false });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rawRows = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
-      if (!rawRows.length) { toast.error('Empty file', 'No data rows found.'); return; }
-      const normalized = rawRows.map((row, idx) => {
-        const n = { _rowIndex: idx + 2 };
-        Object.keys(row).forEach(k => { n[k.trim().toLowerCase().replace(/\s+/g, '_')] = String(row[k] ?? '').trim(); });
-        return n;
-      });
-      const hdrs = Object.keys(normalized[0]).filter(k => !k.startsWith('_'));
-      setHeaders(hdrs);
-      // Client-side validation
-      const errs = {};
-      const emails = new Set(); const rolls = new Set();
-      normalized.forEach((row, i) => {
-        const e = {};
-        const name = row['name'] || row['full_name'] || row['fullname'] || '';
-        const email = row['email'] || '';
-        const roll = row['roll_number'] || row['rollnumber'] || row['roll_no'] || '';
-        if (!name.trim()) e['name'] = 'Required';
-        if (!email.trim()) e['email'] = 'Required';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e['email'] = 'Invalid email';
-        else if (emails.has(email.toLowerCase())) e['email'] = 'Duplicate in file';
-        else emails.add(email.toLowerCase());
-        if (!roll.trim()) e['roll_number'] = 'Required';
-        else if (rolls.has(roll.toLowerCase())) e['roll_number'] = 'Duplicate in file';
-        else rolls.add(roll.toLowerCase());
-        if (Object.keys(e).length) errs[i] = e;
-      });
-      setParsed(normalized);
-      setRowErrors(errs);
-      setFile(f);
-      setStep('preview');
-    } catch(e) {
-      toast.error('Parse error', e.message);
-    } finally {
-      setParsing(false);
-    }
+  const parseFile = (file) => {
+    setFileName(file.name);
+    setServerValidated(false);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const wb  = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const ws  = wb.Sheets[wb.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+        if (raw.length < 2) { toast.error('Empty file', 'No data rows found.'); return; }
+
+        const hdrs = raw[0].map(h => String(h).trim().toLowerCase().replace(/\s+/g, '_'));
+        setHeaders(hdrs);
+
+        const rows = [];
+        for (let i = 1; i < raw.length; i++) {
+          const row = raw[i];
+          if (row.every(c => c === '' || c == null)) continue;
+          const obj = { _rowIndex: i + 1 };
+          hdrs.forEach((h, idx) => { obj[h] = String(row[idx] || '').trim(); });
+          rows.push(obj);
+        }
+
+        // Client-side validation
+        const errs = {};
+        const emailsSeen = {}, rollsSeen = {};
+        rows.forEach((row, i) => {
+          const e = validateRow(row);
+          const em   = (row['email'] || '').toLowerCase().trim();
+          const roll = (row['roll_number'] || row['rollnumber'] || row['roll_no'] || '').trim();
+          if (em   && emailsSeen[em]   !== undefined) e['email']       = `Duplicate of row ${emailsSeen[em] + 2}`;
+          else if (em)   emailsSeen[em]   = i;
+          if (roll && rollsSeen[roll] !== undefined) e['roll_number'] = `Duplicate of row ${rollsSeen[roll] + 2}`;
+          else if (roll) rollsSeen[roll] = i;
+          if (Object.keys(e).length) errs[i] = e;
+        });
+
+        setParsedRows(rows);
+        setRowErrors(errs);
+        setStep('preview');
+      } catch(err) { toast.error('Parse failed', err.message); }
+    };
+    reader.readAsArrayBuffer(file);
   };
+
+  // Automatic server-side validation when preview is shown
+  const runServerValidation = useCallback(async (rows) => {
+    if (rows.length === 0) return;
+    setValidating(true);
+    try {
+      const normalized = rows.map((row, i) => ({
+        name:        row['name'] || row['full_name'] || row['fullname'] || '',
+        email:       row['email'] || '',
+        roll_number: row['roll_number'] || row['rollnumber'] || row['roll_no'] || '',
+        _rowIndex:   row._rowIndex || i + 2,
+      }));
+      const res  = await collegeAdminStudentAPI.validateBulkUploadJSON(normalized);
+      const data = (res && res.data) ? res.data : res;
+
+      const newErrs = {};
+
+      // Parse validationErrors (format errors from server)
+      if (Array.isArray(data.validationErrors) && data.validationErrors.length) {
+        data.validationErrors.forEach(msg => {
+          const rowMatch = msg.match(/^Row (\d+):/);
+          if (rowMatch) {
+            const rowNum = parseInt(rowMatch[1]);
+            const rowIdx = rowNum - 2;
+            if (rowIdx >= 0) {
+              newErrs[rowIdx] = newErrs[rowIdx] || {};
+              const lm = msg.toLowerCase();
+              if (lm.includes('email'))         newErrs[rowIdx]['email']       = msg.replace(/^Row \d+:\s*/, '');
+              else if (lm.includes('roll'))     newErrs[rowIdx]['roll_number'] = msg.replace(/^Row \d+:\s*/, '');
+              else if (lm.includes('phone'))    newErrs[rowIdx]['phone']       = msg.replace(/^Row \d+:\s*/, '');
+              else if (lm.includes('branch'))   newErrs[rowIdx]['branch']      = msg.replace(/^Row \d+:\s*/, '');
+              else if (lm.includes('cgpa'))     newErrs[rowIdx]['cgpa']        = msg.replace(/^Row \d+:\s*/, '');
+              else if (lm.includes('semester')) newErrs[rowIdx]['semester']    = msg.replace(/^Row \d+:\s*/, '');
+              else                              newErrs[rowIdx]['_general']    = msg.replace(/^Row \d+:\s*/, '');
+            }
+          }
+        });
+      }
+
+      // Parse warnings (DB conflicts — existing emails/rolls)
+      if (Array.isArray(data.warnings) && data.warnings.length) {
+        data.warnings.forEach(w => {
+          const lw = w.toLowerCase();
+          if (lw.includes('email')) {
+            const parts = w.split(':');
+            const emailPart = parts.slice(1).join(':').trim();
+            const conflictEmails = new Set(emailPart?.split(',').map(e => e.trim().toLowerCase()) || []);
+            rows.forEach((row, i) => {
+              const em = (row['email'] || '').toLowerCase().trim();
+              if (conflictEmails.has(em)) {
+                newErrs[i] = newErrs[i] || {};
+                newErrs[i]['email'] = '⚠ Email already registered in database';
+              }
+            });
+          }
+          if (lw.includes('roll')) {
+            const parts = w.split(':');
+            const rollPart = parts.slice(1).join(':').trim();
+            const conflictRolls = new Set(rollPart?.split(',').map(r => r.trim()) || []);
+            rows.forEach((row, i) => {
+              const roll = (row['roll_number'] || row['rollnumber'] || '').trim();
+              if (conflictRolls.has(roll)) {
+                newErrs[i] = newErrs[i] || {};
+                newErrs[i]['roll_number'] = '⚠ Roll number already registered in database';
+              }
+            });
+          }
+        });
+      }
+
+      setRowErrors(prev => {
+        const merged = { ...prev };
+        Object.entries(newErrs).forEach(([idx, errs]) => {
+          merged[idx] = { ...(merged[idx] || {}), ...errs };
+        });
+        return merged;
+      });
+      setServerValidated(true);
+
+      const totalNewErrs = Object.keys(newErrs).length;
+      if (totalNewErrs > 0) {
+        toast.error('DB Conflicts Found', `${totalNewErrs} row(s) conflict with existing records.`);
+      } else {
+        toast.success('Validation Passed', 'No conflicts found. Ready to upload!');
+      }
+    } catch(err) {
+      console.warn('Server validation failed:', err.message);
+      setServerValidated(true); // allow proceed even if validation endpoint fails
+    } finally {
+      setValidating(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (step === 'preview' && parsedRows.length > 0 && !serverValidated) {
+      runServerValidation(parsedRows);
+    }
+  }, [step, parsedRows, serverValidated, runServerValidation]);
 
   const handleDrop = (e) => {
     e.preventDefault(); setDragOver(false);
-    const f = e.dataTransfer.files[0];
-    if (f) accept(f);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) { toast.error('Wrong file type', 'Use .xlsx, .xls, or .csv'); return; }
+    parseFile(file);
   };
 
-  const accept = (f) => {
-    const ext = f.name.split('.').pop().toLowerCase();
-    if (!['xlsx','xls','csv'].includes(ext)) { toast.error('Invalid file', 'Only .xlsx, .xls, .csv files.'); return; }
-    parseFile(f);
-  };
-
-  const doValidate = async () => {
-    setStep('validating');
+  const confirmUpload = async () => {
+    if (Object.keys(rowErrors).length > 0) {
+      toast.error('Fix errors first', `${Object.keys(rowErrors).length} row(s) have errors. Fix the file and re-upload.`);
+      return;
+    }
+    setUploading(true);
     try {
-      const r = await collegeAdminStudentAPI.validateBulkUploadJSON(parsedRows);
-      setVr(r.data || r);
-      setStep('results');
-    } catch(e) { toast.error('Validation failed', e.message); setStep('preview'); }
-  };
-
-  const doUpload = async () => {
-    setStep('uploading');
-    try {
-      const r = await collegeAdminStudentAPI.bulkUploadJSON(parsedRows);
-      setUr(r.data || r);
+      const normalized = parsedRows.map((row, i) => ({
+        name:        row['name'] || row['full_name'] || row['fullname'] || '',
+        email:       row['email'] || '',
+        roll_number: row['roll_number'] || row['rollnumber'] || row['roll_no'] || '',
+        phone:       row['phone'] || '',
+        branch:      row['branch'] || '',
+        batch:       row['batch'] || '',
+        semester:    row['semester'] || '',
+        cgpa:        row['cgpa'] || '',
+        _rowIndex:   row._rowIndex || i + 2,
+      }));
+      const res = await collegeAdminStudentAPI.bulkUploadJSON(normalized);
+      const resultData = res.data || res;
+      setUploadResult(resultData);
       setStep('done');
+      toast.success('Upload Complete', res.message || 'Students created successfully.');
       onDone?.();
-    } catch(e) { toast.error('Upload failed', e.message); setStep('results'); }
+    } catch(err) {
+      toast.error('Upload Failed', err.message);
+      // Surface email conflicts back into the table
+      if (err.message && err.message.toLowerCase().includes('email')) {
+        const emailMatches = err.message.match(/[\w.+-]+@[\w.-]+\.\w+/g);
+        if (emailMatches) {
+          const conflictSet = new Set(emailMatches.map(e => e.toLowerCase()));
+          setRowErrors(prev => {
+            const updated = {...prev};
+            parsedRows.forEach((row, i) => {
+              const em = (row['email'] || '').toLowerCase();
+              if (conflictSet.has(em)) {
+                updated[i] = {...(updated[i] || {}), email: '⚠ Already registered in database'};
+              }
+            });
+            return updated;
+          });
+        }
+      }
+    } finally { setUploading(false); }
   };
 
-  const getTemplate = async () => {
-    setTmpl(true);
-    try { await collegeAdminStudentAPI.downloadTemplate(); toast.success('Downloaded!', 'Template saved.'); }
-    catch(e) { toast.error('Error', e.message); }
-    finally { setTmpl(false); }
+  const resetUpload = () => {
+    setStep('upload'); setParsedRows([]); setHeaders([]); setFileName('');
+    setRowErrors({}); setServerValidated(false);
   };
 
-  const reset = () => { setFile(null); setParsed(null); setHeaders([]); setRowErrors({}); setVr(null); setUr(null); setStep('drop'); };
+  const errorCount      = Object.keys(rowErrors).length;
+  const validCount      = parsedRows.length - errorCount;
+  const dbConflictCount = Object.values(rowErrors).filter(e => Object.values(e).some(msg => msg?.includes('⚠'))).length;
+  const canUpload       = errorCount === 0 && parsedRows.length > 0 && serverValidated;
 
   /* ── Done ── */
-  if (step === 'done' && ur) {
-    return (
-      <Modal onClose={onClose} size="lg">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-          <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose}/>
-          <div className="p-6 space-y-4">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-8 flex flex-col items-center text-center gap-2">
-              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
-                <CheckCircle size={28} className="text-emerald-500"/>
+  if (step === 'done') return (
+    <Modal onClose={onClose} size="md">
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose}/>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {l:'Total Rows', v:uploadResult?.totalRows || parsedRows.length, bg:'bg-blue-50',    text:'text-blue-700',    border:'border-blue-100'},
+              {l:'Inserted',   v:uploadResult?.inserted  || 0,                  bg:'bg-emerald-50', text:'text-emerald-700', border:'border-emerald-100'},
+              {l:'Updated',    v:uploadResult?.updated   || 0,                  bg:'bg-amber-50',   text:'text-amber-700',   border:'border-amber-100'},
+            ].map(s => (
+              <div key={s.l} className={`p-4 text-center rounded-xl ${s.bg} border ${s.border}`}>
+                <p className={`text-2xl font-black ${s.text}`}>{s.v}</p>
+                <p className={`text-xs ${s.text} font-semibold opacity-70 mt-0.5`}>{s.l}</p>
               </div>
-              <p className="text-lg font-black text-emerald-800">Upload Complete!</p>
-              <p className="text-sm text-emerald-600">{ur.inserted ?? 0} new · {ur.updated ?? 0} updated · {ur.successCount ?? 0} total</p>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              {[['New Students', ur.inserted ?? 0, 'text-emerald-600'], ['Updated', ur.updated ?? 0, 'text-blue-600'], ['Batches Run', ur.batchCount ?? 1, 'text-slate-600']].map(([l,v,c]) => (
-                <div key={l} className="bg-white rounded-xl border border-slate-100 py-3">
-                  <div className={`text-2xl font-black ${c}`}>{v}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{l}</div>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => { onDone?.(); onClose(); }}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
-              Done
-            </button>
+            ))}
           </div>
+          <div className="flex items-center gap-2 text-sm text-blue-700 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+            <Mail size={14} className="flex-shrink-0"/> Welcome emails with temporary passwords sent to all students.
+          </div>
+          <button
+            onClick={() => {
+              const rows = parsedRows.map(r => ({
+                fullName:          r['name'] || r['full_name'] || '',
+                email:             r['email'] || '',
+                rollNumber:        r['roll_number'] || r['rollnumber'] || '',
+                branch:            r['branch'] || '',
+                batch:             r['batch'] || '',
+                phone:             r['phone'] || '',
+                temporaryPassword: '(check email)',
+                emailSent:         true,
+              }));
+              downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+            <Download size={14}/> Download Uploaded Students List (Excel)
+          </button>
+          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
         </div>
-      </Modal>
-    );
-  }
+      </div>
+    </Modal>
+  );
 
-  /* ── Preview table ── */
-  if (step === 'preview' && parsedRows) {
+  /* ── Preview Table ── */
+  if (step === 'preview') {
     const displayHdrs = headers.filter(h => !h.startsWith('_'));
     return (
       <Modal onClose={onClose} size="full">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+          {/* Header */}
           <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-6 py-4 flex-shrink-0 rounded-t-2xl">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileText className="w-4 h-4 text-white"/></div>
                 <div>
-                  <h2 className="text-white font-black text-sm">{file?.name}</h2>
+                  <h2 className="text-white font-black text-sm">{fileName}</h2>
                   <p className="text-blue-200 text-[11px] mt-0.5">{parsedRows.length} rows · {errorCount} error(s) · {validCount} valid</p>
                 </div>
               </div>
@@ -879,50 +1031,90 @@ function BulkUploadModal({ onClose, onDone }) {
             </div>
           </div>
 
-          {errorCount > 0 && (
-            <div className="px-5 py-2.5 flex items-start gap-2 bg-red-50 border-b border-red-100 flex-shrink-0">
-              <AlertTriangle size={13} className="text-red-500 flex-shrink-0 mt-0.5"/>
-              <span className="text-xs text-red-700 font-medium">
-                <strong>{errorCount} row(s) have errors</strong> — highlighted in red. Fix the source file and re-upload.
+          {/* Validation status bar */}
+          <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-100 flex-shrink-0 flex items-center gap-3 flex-wrap">
+            {validating && (
+              <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Spin size="sm" color="slate"/> Checking database for conflicts…
               </span>
+            )}
+            {!validating && serverValidated && errorCount === 0 && (
+              <span className="flex items-center gap-1.5 text-xs text-green-700 font-semibold">
+                <CheckCircle size={12}/> Database check passed — ready to upload
+              </span>
+            )}
+            {!validating && serverValidated && errorCount > 0 && (
+              <span className="flex items-center gap-1.5 text-xs text-red-600 font-semibold">
+                <AlertCircle size={12}/> Fix errors before uploading
+              </span>
+            )}
+          </div>
+
+          {/* Error summary */}
+          {errorCount > 0 && (
+            <div className="px-5 py-2.5 flex flex-col gap-1 bg-red-50 border-b border-red-100 flex-shrink-0">
+              <div className="flex items-start gap-2">
+                <AlertTriangle size={13} className="text-red-500 flex-shrink-0 mt-0.5"/>
+                <span className="text-xs text-red-700 font-medium">
+                  <strong>{errorCount} row(s) have errors</strong> — highlighted below. Hover any red cell for details.
+                  {dbConflictCount > 0 && <span className="text-orange-600"> <strong>{dbConflictCount}</strong> row(s) conflict with existing DB records (orange).</span>}
+                </span>
+              </div>
+              <p className="text-xs text-red-600 ml-5">Fix the source file and re-upload. Confirm is disabled until all errors are resolved.</p>
             </div>
           )}
 
+          {/* Table */}
           <div className="overflow-auto flex-1">
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-slate-800 text-white">
-                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-slate-700">Row</th>
-                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-slate-700">✓</th>
+                <tr className="bg-blue-800 text-white">
+                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-blue-600">Row</th>
+                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-blue-600">✓</th>
                   {displayHdrs.map(h => (
-                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-slate-700 last:border-r-0 ${REQUIRED_COLS.includes(h) ? 'text-yellow-300' : ''}`}>
-                      {h.replace(/_/g,' ').toUpperCase()}{REQUIRED_COLS.includes(h) && <span className="ml-1 opacity-60">*</span>}
+                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-blue-600 last:border-r-0 ${REQUIRED_COLS.includes(h) ? 'text-yellow-300' : ''}`}>
+                      {h.replace(/_/g, ' ').toUpperCase()}{REQUIRED_COLS.includes(h) && <span className="ml-1 opacity-60">*</span>}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {parsedRows.map((row, i) => {
-                  const rowErr = rowErrors[i] || {};
-                  const hasErr = Object.keys(rowErr).length > 0;
+                  const rowErr  = rowErrors[i] || {};
+                  const hasErr  = Object.keys(rowErr).length > 0;
+                  const hasDbConflict = Object.values(rowErr).some(m => m?.includes('⚠'));
                   return (
-                    <tr key={i} className={`border-b ${hasErr ? 'border-red-100 bg-red-50/20' : 'border-slate-100 ' + (i%2===0 ? 'bg-white' : 'bg-slate-50/30')}`}>
+                    <tr key={i} className={`border-b ${
+                      hasErr
+                        ? (hasDbConflict ? 'border-orange-100 bg-orange-50/20' : 'border-red-100 bg-red-50/20')
+                        : 'border-slate-100 ' + (i%2===0 ? 'bg-white' : 'bg-slate-50/30')
+                    }`}>
                       <td className="py-2 px-3 text-slate-400 font-mono text-[11px] border-r border-slate-100">{row._rowIndex || i+2}</td>
                       <td className="py-2 px-2 text-center border-r border-slate-100">
                         {hasErr
-                          ? <AlertCircle size={12} className="text-red-500 mx-auto"/>
+                          ? (hasDbConflict
+                              ? <AlertTriangle size={12} className="text-orange-500 mx-auto"/>
+                              : <AlertCircle   size={12} className="text-red-500 mx-auto"/>)
                           : <CheckCircle size={12} className="text-green-500 mx-auto"/>}
                       </td>
                       {displayHdrs.map(h => {
-                        const cellErr = rowErr[h];
+                        const cellErr = rowErr[h]
+                          || (h === 'roll_number' && (rowErr['rollnumber'] || rowErr['roll_no']))
+                          || rowErr['_general'];
+                        const val = row[h] || '';
+                        const isDbConflict = cellErr?.includes('⚠');
                         return (
-                          <td key={h} className={`py-2 px-3 border-r border-slate-50 last:border-r-0 ${cellErr ? 'bg-red-100 border border-red-300' : ''}`}>
+                          <td key={h} className={`py-2 px-3 border-r border-slate-50 last:border-r-0 ${
+                            cellErr
+                              ? (isDbConflict ? 'bg-orange-100 border border-orange-300' : 'bg-red-100 border border-red-300')
+                              : ''
+                          }`}>
                             <div className="relative group">
-                              <span className={cellErr ? 'text-red-700 font-semibold' : 'text-slate-700'}>
-                                {row[h] || <span className="text-slate-300 text-[10px]">—</span>}
+                              <span className={cellErr ? (isDbConflict ? 'text-orange-800 font-semibold' : 'text-red-700 font-semibold') : 'text-slate-700'}>
+                                {val || <span className="text-slate-300 text-[10px]">—</span>}
                               </span>
                               {cellErr && (
-                                <div className="absolute bottom-full left-0 mb-1 z-30 bg-red-700 text-white text-[10px] px-2.5 py-1.5 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none shadow-xl transition-opacity">
+                                <div className={`absolute bottom-full left-0 mb-1 z-30 text-white text-[10px] px-2.5 py-1.5 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none shadow-xl transition-opacity max-w-xs ${isDbConflict ? 'bg-orange-700' : 'bg-red-700'}`}>
                                   {cellErr}
                                 </div>
                               )}
@@ -937,6 +1129,7 @@ function BulkUploadModal({ onClose, onDone }) {
             </table>
           </div>
 
+          {/* Footer */}
           <div className="flex items-center justify-between gap-3 p-4 border-t border-slate-100 flex-shrink-0 bg-slate-50">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 px-2.5 py-1 rounded-lg border border-green-200">
@@ -947,19 +1140,36 @@ function BulkUploadModal({ onClose, onDone }) {
                   <AlertCircle size={11}/>{errorCount} errors
                 </span>
               )}
+              {dbConflictCount > 0 && (
+                <span className="flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
+                  <AlertTriangle size={11}/>{dbConflictCount} DB conflicts
+                </span>
+              )}
               <span className="text-xs text-slate-400">{parsedRows.length} total</span>
             </div>
             <div className="flex gap-2">
-              <button onClick={reset} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
+              <button onClick={resetUpload} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
                 <ArrowLeft size={13}/> Re-upload
               </button>
-              <button onClick={doValidate} disabled={errorCount > 0}
+              <button
+                onClick={confirmUpload}
+                disabled={!canUpload || uploading}
+                title={
+                  !serverValidated ? 'Wait for database validation…'
+                  : errorCount > 0 ? 'Fix all errors before uploading'
+                  : ''
+                }
                 className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl transition-all ${
-                  errorCount === 0
+                  canUpload && !uploading
                     ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white shadow-md shadow-blue-500/20'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                 }`}>
-                <ClipboardCheck size={14}/> Validate {validCount} Rows
+                {uploading
+                  ? <><Spin size="sm"/>Uploading…</>
+                  : validating
+                  ? <><Spin size="sm" color="slate"/>Validating…</>
+                  : <><UploadCloud size={14}/>Confirm Upload ({validCount})</>
+                }
               </button>
             </div>
           </div>
@@ -968,70 +1178,11 @@ function BulkUploadModal({ onClose, onDone }) {
     );
   }
 
-  /* ── Validating/Uploading loader ── */
-  if (step === 'validating' || step === 'uploading') {
-    const msg = step === 'validating' ? 'Validating data…' : 'Uploading students…';
-    const sub = step === 'validating' ? `Checking all ${parsedRows?.length} rows` : 'Processing in batches';
-    return (
-      <Modal onClose={() => {}} size="md">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl p-10 flex flex-col items-center gap-4">
-          <Spin size="lg" color="blue"/>
-          <p className="text-sm font-bold text-slate-700">{msg}</p>
-          <p className="text-xs text-slate-400">{sub}</p>
-        </div>
-      </Modal>
-    );
-  }
-
-  /* ── Validation Results ── */
-  if (step === 'results' && vr) {
-    return (
-      <Modal onClose={onClose} size="md">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-          <MHead icon={ClipboardCheck} title="Validation Results" sub="Check errors before uploading" onClose={onClose}/>
-          <div className="p-6 space-y-4">
-            <div className={`rounded-xl p-4 border ${vr.canProceed ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-2 mb-3">
-                {vr.canProceed ? <CheckCircle size={15} className="text-emerald-500"/> : <AlertTriangle size={15} className="text-red-500"/>}
-                <p className={`text-sm font-bold ${vr.canProceed ? 'text-emerald-700' : 'text-red-700'}`}>{vr.message}</p>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                {[['Total', vr.totalRows ?? 0, 'slate'], ['Valid', vr.validRows ?? 0, 'emerald'], ['Errors', vr.errorRows ?? 0, 'red']].map(([l,v,c]) => (
-                  <div key={l} className="bg-white rounded-lg py-2 border">
-                    <div className={`text-xl font-black text-${c}-600`}>{v}</div>
-                    <div className="text-xs text-slate-500">{l}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {vr.validationErrors?.length > 0 && (
-              <div className="space-y-1 max-h-36 overflow-y-auto">
-                <p className="text-xs font-bold text-red-500 uppercase tracking-wide">Errors to fix:</p>
-                {vr.validationErrors.map((e, i) => (
-                  <div key={i} className="flex gap-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5 border border-red-100">
-                    <X size={10} className="flex-shrink-0 mt-0.5"/>{e}
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center justify-between pt-2">
-              <button onClick={() => setStep('preview')} className="text-sm text-slate-400 hover:text-slate-600 underline underline-offset-2">← Back to preview</button>
-              <button onClick={doUpload} disabled={!vr.canProceed}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-40 transition-opacity">
-                <Upload size={14}/> Upload {vr.validRows} Students
-              </button>
-            </div>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
-
-  /* ── Drop zone ── */
+  /* ── Drop Zone ── */
   return (
     <Modal onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
-        <MHead icon={CloudUpload} title="Bulk Excel Upload" sub="Client-side preview + validation before saving" onClose={onClose}/>
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        <MHead icon={CloudUpload} title="Bulk Excel Upload" sub="Client-side preview + DB conflict detection before saving" onClose={onClose}/>
         <div className="overflow-y-auto flex-1 p-6 space-y-4">
           <div
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -1041,16 +1192,14 @@ function BulkUploadModal({ onClose, onDone }) {
             className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center gap-4 cursor-pointer transition-all ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
           >
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
-              {parseLoading ? <Spin size="lg" color="blue"/> : <Upload size={28} className="text-blue-600"/>}
+              <Upload size={28} className="text-blue-600"/>
             </div>
             <div className="text-center">
-              <p className="font-bold text-slate-700">
-                {parseLoading ? 'Reading file…' : <>Drop your Excel file here, or <span className="text-blue-600">click to browse</span></>}
-              </p>
+              <p className="font-bold text-slate-700">Drop your Excel file here, or <span className="text-blue-600">click to browse</span></p>
               <p className="text-xs text-slate-400 mt-1.5">Supports .xlsx, .xls, .csv · Up to 5,000 students</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) accept(f); e.target.value = ''; }}/>
+              onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f); e.target.value = ''; }}/>
           </div>
 
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -1058,10 +1207,18 @@ function BulkUploadModal({ onClose, onDone }) {
               <p className="text-sm font-bold text-slate-700">Download Template</p>
               <p className="text-xs text-slate-400 mt-0.5">Excel with correct columns and sample rows</p>
             </div>
-            <button onClick={getTemplate} disabled={tmpl}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50">
-              {tmpl ? <Spin size="sm" color="white"/> : <Download size={13}/>} Template
+            <button onClick={() => collegeAdminStudentAPI.downloadTemplate()}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition-colors">
+              <Download size={13}/> Template
             </button>
+          </div>
+
+          <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-1.5 text-xs text-blue-700">
+            <p className="font-bold flex items-center gap-1.5"><Info size={12}/>How validation works:</p>
+            <p>1. File is parsed instantly in the browser — no upload needed to preview</p>
+            <p>2. Every cell is validated (format, required fields, duplicates within file)</p>
+            <p>3. Database is checked automatically for existing emails / roll numbers</p>
+            <p>4. <strong>Confirm Upload is only enabled when zero errors remain</strong></p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 p-4 bg-white border border-slate-100 rounded-xl text-xs">
@@ -1109,7 +1266,7 @@ function ExportModal({ onClose }) {
       setPrev(r.data || r);
     } catch(e) { toast.error('Preview failed', e.message); }
     finally { setPL(false); }
-  }, [f]);
+  }, [f, toast]);
 
   const doExport = async () => {
     setEx(true);
@@ -1124,7 +1281,7 @@ function ExportModal({ onClose }) {
   return (
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-emerald-600 to-teal-500" onClose={onClose}/>
+        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-blue-700 via-blue-600 to-cyan-500" onClose={onClose}/>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1155,9 +1312,9 @@ function ExportModal({ onClose }) {
             {prevLoad ? <Spin size="sm" color="slate"/> : <RefreshCw size={13}/>} Preview Count
           </button>
           {preview ? (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <p className="text-sm font-black text-emerald-700">{(preview.totalRecords || 0).toLocaleString()} records match</p>
-              <p className="text-xs text-emerald-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <p className="text-sm font-black text-blue-700">{(preview.totalRecords || 0).toLocaleString()} records match</p>
+              <p className="text-xs text-blue-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
             </div>
           ) : (
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs text-slate-400">
@@ -1167,7 +1324,7 @@ function ExportModal({ onClose }) {
           <div className="flex gap-3">
             <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
             <button onClick={doExport} disabled={exporting || prevLoad}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50">
               {exporting ? <><Spin size="sm"/>Downloading…</> : <><FileDown size={14}/>Export{preview?.totalRecords ? ` (${preview.totalRecords})` : ''}</>}
             </button>
           </div>
@@ -1241,7 +1398,7 @@ export default function StudentManagement() {
       toast.error('Load error', e.message);
       setStudents([]);
     } finally { setLoading(false); }
-  }, [page, filters]);
+  }, [page, filters, toast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -1257,19 +1414,19 @@ export default function StudentManagement() {
       action: () => setModal('single'), btnLabel: 'Add Single Student',
     },
     {
-      icon: UsersRound, gradient: 'from-violet-600 to-purple-500', border: 'border-violet-100',
-      light: 'from-violet-50 to-purple-50/50',
+      icon: UsersRound, gradient: 'from-blue-600 to-cyan-500', border: 'border-blue-100',
+      light: 'from-blue-50 to-cyan-50/50',
       title: 'Add Multiple Students',
       desc: 'Fill a spreadsheet-like table in the browser. Preview all rows before saving.',
       tips: ['Inline table — no file needed', 'Preview all rows before confirm', 'All students emailed passwords'],
       action: () => setModal('multiple'), btnLabel: 'Add Multiple Students',
     },
     {
-      icon: CloudUpload, gradient: 'from-indigo-600 to-blue-500', border: 'border-indigo-100',
-      light: 'from-indigo-50 to-blue-50/50',
+      icon: CloudUpload, gradient: 'from-blue-600 to-cyan-500', border: 'border-blue-100',
+      light: 'from-blue-50 to-cyan-50/50',
       title: 'Bulk Excel Upload',
-      desc: 'Upload .xlsx or .csv. Full preview with error highlighting before saving.',
-      tips: ['Instant client-side Excel parsing', 'Client-side error detection', 'Confirm only when all rows valid'],
+      desc: 'Upload .xlsx or .csv. Full preview with inline error highlighting + DB conflict detection.',
+      tips: ['Instant client-side Excel parsing', 'DB conflict detection before upload', 'Confirm only when all rows valid'],
       action: () => setModal('upload'), btnLabel: 'Bulk Upload',
     },
   ];
@@ -1279,11 +1436,9 @@ export default function StudentManagement() {
       <div className="w-full space-y-4">
 
         {/* ══ HERO BANNER ══ */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
+        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full"/>
-            <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full"/>
-            <div className="absolute inset-0 opacity-[0.04]"
+            <div className="absolute inset-0 opacity-[0.06]"
               style={{ backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize:'18px 18px'}}/>
           </div>
           <div className="relative flex items-center justify-between gap-4 flex-wrap">
@@ -1300,23 +1455,23 @@ export default function StudentManagement() {
             </div>
             <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
               <button onClick={load} disabled={loading}
-                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all disabled:opacity-50">
+                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all disabled:opacity-50">
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}/> Refresh
               </button>
               <button onClick={() => setModal('export')}
-                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
+                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                 <FileDown className="w-3.5 h-3.5"/> Export
               </button>
               <button onClick={() => setModal('single')}
-                className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-3 py-2 rounded-xl shadow-md hover:bg-blue-50 transition-all">
+                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                 <UserPlus className="w-3.5 h-3.5"/> Add Student
               </button>
               <button onClick={() => setModal('multiple')}
-                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
+                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                 <UsersRound className="w-3.5 h-3.5"/> Add Multiple
               </button>
               <button onClick={() => setModal('upload')}
-                className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-3 py-2 rounded-xl shadow-md hover:bg-blue-50 transition-all">
+                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                 <CloudUpload className="w-3.5 h-3.5"/> Bulk Upload
               </button>
             </div>
@@ -1327,10 +1482,10 @@ export default function StudentManagement() {
         <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { icon:Users,      label:'Total Students', value:pagination.total,  color:'bg-blue-50 border-blue-100 text-blue-600'      },
-              { icon:UserCheck,  label:'Placed',         value:placed,            color:'bg-emerald-50 border-emerald-100 text-emerald-600' },
-              { icon:Layers,     label:'This Page',      value:students.length,   color:'bg-cyan-50 border-cyan-100 text-cyan-600'       },
-              { icon:TrendingUp, label:'Total Pages',    value:pagination.pages,  color:'bg-indigo-50 border-indigo-100 text-indigo-600' },
+              { icon:Users,      label:'Total Students', value:pagination.total,  color:'bg-blue-50 border-blue-100 text-blue-600'    },
+              { icon:UserCheck,  label:'Placed',         value:placed,            color:'bg-green-50 border-green-100 text-green-600'  },
+              { icon:Layers,     label:'This Page',      value:students.length,   color:'bg-cyan-50 border-cyan-100 text-cyan-600'     },
+              { icon:TrendingUp, label:'Total Pages',    value:pagination.pages,  color:'bg-indigo-50 border-indigo-100 text-indigo-600'},
             ].map(({ icon:Icon, label, value, color }) => (
               <div key={label} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${color}`}>
                 <Icon className="w-4 h-4 flex-shrink-0 opacity-70"/>
@@ -1372,11 +1527,11 @@ export default function StudentManagement() {
 
         {/* ══ EXPORT CARD ══ */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-4 flex items-center gap-3">
+          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileDown size={18} className="text-white"/></div>
             <div>
               <h3 className="text-sm font-black text-white">Export Students</h3>
-              <p className="text-emerald-200 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
+              <p className="text-blue-100 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
             </div>
           </div>
           <div className="p-5 flex items-center gap-5 flex-wrap">
@@ -1389,7 +1544,7 @@ export default function StudentManagement() {
               </div>
             </div>
             <button onClick={() => setModal('export')}
-              className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20">
+              className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-500/20">
               <FileDown size={14}/> Open Export
             </button>
           </div>
@@ -1475,7 +1630,7 @@ export default function StudentManagement() {
                     <UserPlus className="w-3.5 h-3.5"/> Add Single Student
                   </button>
                   <button onClick={() => setModal('upload')}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl shadow-sm hover:scale-105 transition-all">
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-all">
                     <CloudUpload className="w-3.5 h-3.5"/> Bulk Upload
                   </button>
                 </div>
@@ -1499,7 +1654,6 @@ export default function StudentManagement() {
                   </tbody>
                 </table>
               </div>
-
               {/* Pagination */}
               <div className="px-4 py-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
                 <span className="text-[11px] text-gray-500">
@@ -1554,7 +1708,7 @@ export default function StudentManagement() {
             <AlertTriangle size={13} className="flex-shrink-0 mt-0.5"/>
             <span>
               <strong>No password column needed</strong> — passwords are auto-generated.
-              Existing emails and roll numbers are <strong>detected and blocked</strong> before upload is confirmed.
+              Existing emails and roll numbers are <strong>automatically detected and blocked</strong> before the Confirm button is enabled.
             </span>
           </div>
         </div>

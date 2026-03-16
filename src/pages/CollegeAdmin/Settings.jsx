@@ -352,7 +352,7 @@ const Settings = () => {
                 <div className="space-y-5">
                   <div>
                     <p className="text-xs font-bold text-gray-700 mb-3">Theme Mode</p>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[{ value:'light', icon:Sun, label:'Light' }, { value:'dark', icon:Moon, label:'Dark' }, { value:'auto', icon:Laptop, label:'Auto' }].map(({ value, icon:Icon, label }) => (
                         <button key={value} onClick={() => setThemeSettings(p => ({ ...p, mode:value }))}
                           className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${

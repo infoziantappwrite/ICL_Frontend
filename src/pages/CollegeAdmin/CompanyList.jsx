@@ -143,7 +143,7 @@ const CompanyList = () => {
 
       {/* Stats pills */}
       <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {[
             { icon: Building2,  label: 'Total Companies', value: stats.total,             color: 'bg-blue-50 border-blue-100 text-blue-600'   },
             { icon: CheckCircle, label: 'Active',         value: stats.active,            color: 'bg-green-50 border-green-100 text-green-600' },

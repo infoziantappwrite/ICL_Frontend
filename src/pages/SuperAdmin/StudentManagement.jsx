@@ -13,7 +13,7 @@ import {
   Upload, Building2, ChevronRight, UserPlus, UsersRound,
   Plus, Mail, Hash, BookOpen, Star, Calendar, Phone, Eye,
   Trash2, ArrowLeft, Check, UploadCloud, Loader2, Search,
-  ChevronLeft, Users, Filter, SortAsc, SortDesc,
+  ChevronLeft, Users, Filter, SortAsc, SortDesc, TrendingUp,
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════
@@ -263,7 +263,7 @@ function AddSingleModal({ colleges, onClose, onDone }) {
           </div>
           <button
             onClick={() => downloadResultsAsExcel([result], `student_${result?.rollNumber}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
           >
             <Download size={14}/> Download Student Details (Excel)
           </button>
@@ -372,7 +372,7 @@ function AddSingleModal({ colleges, onClose, onDone }) {
             Password is auto-generated and emailed to the student. They must change it on first login.
           </div>
         </div>
-        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-slate-50/60">
+        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
           <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">Cancel</button>
           <button onClick={goPreview} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity">
             <Eye size={14}/> Preview Details
@@ -384,10 +384,52 @@ function AddSingleModal({ colleges, onClose, onDone }) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   TC — TABLE CELL (moved outside, memoized)
+══════════════════════════════════════════════════════════ */
+const TC = React.memo(function TC({ id, field, value, placeholder, options, error, setCell }) {
+  return (
+<td className={`p-1 ${error ? 'bg-red-50' : ''}`} style={{ minWidth: options ? 90 : 100 }}>
+<div className="relative group">
+        {options ? (
+<select
+            value={value || ""}
+            onChange={e => setCell(id, field, e.target.value)}
+            className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+              error ? 'border-red-400' : 'border-slate-200'
+            }`}
+>
+<option value="">—</option>
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+</select>
+        ) : (
+<input
+            value={value || ""}
+            placeholder={placeholder}
+            onChange={e => setCell(id, field, e.target.value)}
+            className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${
+              error ? 'border-red-400' : 'border-slate-200'
+            }`}
+          />
+        )}
+        {error && (
+<div className="absolute bottom-full left-0 mb-1 z-20 bg-red-700 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none shadow-lg">
+            {error}
+</div>
+        )}
+</div>
+</td>
+  );
+});
+ 
+/* ══════════════════════════════════════════════════════════
    MODAL 2 — ADD MULTIPLE STUDENTS
 ══════════════════════════════════════════════════════════ */
-const newRow = () => ({ id: Date.now() + Math.random(), fullName:'', email:'', rollNumber:'', branch:'', batch:'', phone:'', cgpa:'', semester:'' });
-
+const newRow = () => ({
+  id: Date.now() + Math.random(),
+  fullName: '', email: '', rollNumber: '',
+  branch: '', batch: '', phone: '', cgpa: '', semester: ''
+});
+ 
 function AddMultipleModal({ colleges, onClose, onDone }) {
   const toast = useToast();
   const [step, setStep]           = useState('form');
@@ -397,16 +439,17 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
   const [topErr, setTopErr]       = useState('');
   const [saving, setSaving]       = useState(false);
   const [result, setResult]       = useState(null);
-
-  const addRow  = () => setRows(p=>[...p, newRow()]);
-  const delRow  = (id) => setRows(p=>p.filter(r=>r.id!==id));
-  const setCell = (id, k, v) => {
-    setRows(p=>p.map(r=>r.id===id?{...r,[k]:v}:r));
-    if(rowErrs[id]?.[k]) setRowErrs(p=>({...p,[id]:{...p[id],[k]:undefined}}));
-  };
-
-  const filledRows = rows.filter(r=>r.fullName||r.email||r.rollNumber);
-
+ 
+  const addRow = () => setRows(p => [...p, newRow()]);
+  const delRow = (id) => setRows(p => p.filter(r => r.id !== id));
+ 
+  const setCell = useCallback((id, k, v) => {
+    setRows(p => p.map(r => r.id === id ? { ...r, [k]: v } : r));
+    if (rowErrs[id]?.[k]) setRowErrs(p => ({ ...p, [id]: { ...p[id], [k]: undefined } }));
+  }, [rowErrs]);
+ 
+  const filledRows = rows.filter(r => r.fullName || r.email || r.rollNumber);
+ 
   const validateAll = () => {
     if (!collegeId) { setTopErr('Please select a college first.'); return false; }
     setTopErr('');
@@ -420,9 +463,9 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
       if (!r.email.trim())      e.email      = 'Required';
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) e.email = 'Invalid email';
       if (!r.rollNumber.trim()) e.rollNumber = 'Required';
-      if (r.phone    && !/^[0-9]{10}$/.test(r.phone.trim()))            e.phone    = '10 digits';
-      if (r.cgpa     && (isNaN(r.cgpa)    ||+r.cgpa<0    ||+r.cgpa>10)) e.cgpa    = '0–10';
-      if (r.semester && (isNaN(r.semester)||+r.semester<1||+r.semester>10)) e.semester = '1–10';
+      if (r.phone    && !/^[0-9]{10}$/.test(r.phone.trim()))               e.phone    = '10 digits';
+      if (r.cgpa     && (isNaN(r.cgpa)     || +r.cgpa < 0    || +r.cgpa > 10))    e.cgpa    = '0–10';
+      if (r.semester && (isNaN(r.semester) || +r.semester < 1 || +r.semester > 10)) e.semester = '1–10';
       const em   = r.email.trim().toLowerCase();
       const roll = r.rollNumber.trim();
       if (em   && emailsSeen[em]   !== undefined) e.email      = 'Duplicate email in list';
@@ -434,210 +477,199 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
     setRowErrs(errs);
     return ok;
   };
-
+ 
   const goPreview = () => { if (validateAll()) setStep('preview'); };
-
+ 
   const confirm = async () => {
     setSaving(true);
     try {
-      const payload = filledRows.map(r=>({
+      const payload = filledRows.map(r => ({
         fullName:   r.fullName.trim(),
         email:      r.email.trim().toLowerCase(),
         rollNumber: r.rollNumber.trim(),
-        ...(r.branch   && {branch:   r.branch}),
-        ...(r.batch    && {batch:    r.batch.trim()}),
-        ...(r.phone    && {phone:    r.phone.trim()}),
-        ...(r.semester && {semester: parseInt(r.semester)}),
-        ...(r.cgpa     && {cgpa:     parseFloat(r.cgpa)}),
+        ...(r.branch   && { branch:   r.branch }),
+        ...(r.batch    && { batch:    r.batch.trim() }),
+        ...(r.phone    && { phone:    r.phone.trim() }),
+        ...(r.semester && { semester: parseInt(r.semester) }),
+        ...(r.cgpa     && { cgpa:     parseFloat(r.cgpa) }),
       }));
       const res = await superAdminStudentAPI.addStudents(payload, collegeId);
       setResult(res.data); setStep('done');
       toast.success('Students Added', res.message);
       onDone?.();
-    } catch(e) { toast.error('Failed', e.message); }
+    } catch (e) { toast.error('Failed', e.message); }
     finally { setSaving(false); }
   };
-
-  const college = colleges.find(c=>c._id===collegeId);
-
-  /* DONE */
+ 
+  const college = colleges.find(c => c._id === collegeId);
+ 
+  /* ── DONE ─────────────────────────────────────────────── */
   if (step === 'done') return (
-    <Modal onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={CheckCircle} title={`${result?.length ?? 0} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose}/>
-        <div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
-          {result?.map((s,i) => (
-            <div key={i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+<Modal onClose={onClose} size="lg">
+<div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+<MHead icon={CheckCircle} title={`${result?.length ?? 0} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose} />
+<div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
+          {result?.map((s, i) => (
+<div key={i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+<div className="flex items-center gap-3 min-w-0">
+<div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
                   {s.fullName?.charAt(0)?.toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-800 truncate">{s.fullName}</p>
-                  <p className="text-xs text-slate-400 truncate">{s.email} · {s.rollNumber}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg border border-blue-100">{s.temporaryPassword}</span>
+</div>
+<div className="min-w-0">
+<p className="text-sm font-bold text-slate-800 truncate">{s.fullName}</p>
+<p className="text-xs text-slate-400 truncate">{s.email} · {s.rollNumber}</p>
+</div>
+</div>
+<div className="flex items-center gap-2 flex-shrink-0">
+<span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg border border-blue-100">{s.temporaryPassword}</span>
                 {s.emailSent
-                  ? <CheckCircle size={14} className="text-green-500"/>
-                  : <AlertTriangle size={14} className="text-amber-500"/>}
-              </div>
-            </div>
+                  ? <CheckCircle size={14} className="text-green-500" />
+                  : <AlertTriangle size={14} className="text-amber-500" />}
+</div>
+</div>
           ))}
-        </div>
-        <div className="p-5 border-t border-slate-100 space-y-2">
-          <button
+</div>
+<div className="p-5 border-t border-slate-100 space-y-2">
+<button
             onClick={() => downloadResultsAsExcel(result || [], `students_${Date.now()}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors"
-          >
-            <Download size={14}/> Download All Students + Passwords (Excel)
-          </button>
-          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
-        </div>
-      </div>
-    </Modal>
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
+>
+<Download size={14} /> Download All Students + Passwords (Excel)
+</button>
+<button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
+</div>
+</div>
+</Modal>
   );
-
-  /* PREVIEW */
+ 
+  /* ── PREVIEW ──────────────────────────────────────────── */
   if (step === 'preview') return (
-    <Modal onClose={onClose} size="xl">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={Eye} title={`Preview — ${filledRows.length} Students`} sub={`College: ${college?.name || '—'} · Passwords auto-generated on confirm`} onClose={onClose}/>
-        <div className="overflow-auto flex-1">
-          <table className="w-full text-xs border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-700 text-white">
-                {['#','Full Name','Email','Roll No.','Branch','Batch','Sem.','CGPA','Phone'].map(h=>(
-                  <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-slate-600 last:border-r-0">{h}</th>
+<Modal onClose={onClose} size="xl">
+<div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+<MHead icon={Eye} title={`Preview — ${filledRows.length} Students`} sub={`College: ${college?.name || '—'} · Passwords auto-generated on confirm`} onClose={onClose} />
+<div className="overflow-auto flex-1">
+<table className="w-full text-xs border-collapse">
+<thead className="sticky top-0 z-10">
+<tr className="bg-blue-700 text-white">
+                {['#', 'Full Name', 'Email', 'Roll No.', 'Branch', 'Batch', 'Sem.', 'CGPA', 'Phone'].map(h => (
+<th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-blue-500 last:border-r-0">{h}</th>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filledRows.map((r,i) => (
-                <tr key={r.id} className={`border-b border-slate-100 ${i%2===0?'bg-white':'bg-slate-50/40'}`}>
-                  <td className="py-2.5 px-3 text-slate-400 font-mono">{i+1}</td>
-                  <td className="py-2.5 px-3 font-semibold text-slate-800">{r.fullName}</td>
-                  <td className="py-2.5 px-3 text-slate-600">{r.email}</td>
-                  <td className="py-2.5 px-3 font-mono text-slate-700">{r.rollNumber}</td>
-                  {['branch','batch','semester','cgpa','phone'].map(f=>(
-                    <td key={f} className="py-2.5 px-3 text-slate-500">{r[f]||<span className="text-slate-300">—</span>}</td>
+</tr>
+</thead>
+<tbody>
+              {filledRows.map((r, i) => (
+<tr key={r.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
+<td className="py-2.5 px-3 text-slate-400 font-mono">{i + 1}</td>
+<td className="py-2.5 px-3 font-semibold text-slate-800">{r.fullName}</td>
+<td className="py-2.5 px-3 text-slate-600">{r.email}</td>
+<td className="py-2.5 px-3 font-mono text-slate-700">{r.rollNumber}</td>
+                  {['branch', 'batch', 'semester', 'cgpa', 'phone'].map(f => (
+<td key={f} className="py-2.5 px-3 text-slate-500">{r[f] || <span className="text-slate-300">—</span>}</td>
                   ))}
-                </tr>
+</tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 flex-shrink-0">
-          <Mail size={13} className="flex-shrink-0"/>Each student will receive a temporary password by email after confirmation.
-        </div>
-        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0">
-          <button onClick={()=>setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl"><ArrowLeft size={14}/> Edit</button>
-          <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
-            {saving?<><Spin size="sm"/>Adding…</>:<><Check size={14}/>Confirm & Add {filledRows.length} Students</>}
-          </button>
-        </div>
-      </div>
-    </Modal>
+</tbody>
+</table>
+</div>
+<div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 flex-shrink-0">
+<Mail size={13} className="flex-shrink-0" />Each student will receive a temporary password by email after confirmation.
+</div>
+<div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0">
+<button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">
+<ArrowLeft size={14} /> Edit
+</button>
+<button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
+            {saving ? <><Spin size="sm" />Adding…</> : <><Check size={14} />Confirm & Add {filledRows.length} Students</>}
+</button>
+</div>
+</div>
+</Modal>
   );
-
-  /* TABLE CELL */
-  const TC = ({ id, field, value, placeholder, options, error }) => (
-    <td className={`p-1 ${error?'bg-red-50':''}`} style={{minWidth: options?90:100}}>
-      <div className="relative group">
-        {options
-          ? <select value={value} onChange={e=>setCell(id,field,e.target.value)}
-              className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${error?'border-red-400':'border-slate-200'}`}>
-              <option value="">—</option>{options.map(o=><option key={o} value={o}>{o}</option>)}
-            </select>
-          : <input value={value} placeholder={placeholder} onChange={e=>setCell(id,field,e.target.value)}
-              className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${error?'border-red-400':'border-slate-200'}`}/>
-        }
-        {error && (
-          <div className="absolute bottom-full left-0 mb-1 z-20 bg-red-700 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none shadow-lg">
-            {error}
-          </div>
-        )}
-      </div>
-    </td>
-  );
-
-  /* FORM */
+ 
+  /* ── FORM ─────────────────────────────────────────────── */
   return (
-    <Modal onClose={onClose} size="full">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={UsersRound} title="Add Multiple Students" sub="Fill the table, preview, then confirm" onClose={onClose}/>
-        <div className="px-5 pt-4 pb-3 flex-shrink-0 flex items-end gap-4 flex-wrap border-b border-slate-100">
-          <div className="w-80">
-            <label className="text-xs font-bold text-slate-700 block mb-1">College <span className="text-red-500">*</span></label>
-            <div className="relative">
-              <Building2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
-              <select className={`${I_ICON} appearance-none ${!collegeId&&topErr?ERR_CLS:OK_CLS}`} value={collegeId} onChange={e=>{setCollegeId(e.target.value);setTopErr('');}}>
-                <option value="">Select college for all students…</option>
-                {colleges.map(c=><option key={c._id} value={c._id}>{c.name}</option>)}
-              </select>
-            </div>
-          </div>
-          {topErr && <p className="text-xs text-red-500 flex items-center gap-1 mb-0.5"><AlertCircle size={11}/>{topErr}</p>}
-        </div>
-        <div className="overflow-auto flex-1 px-5 py-3">
-          <table className="w-full border-collapse text-xs">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-slate-700 text-white">
-                <th className="py-2 px-2 text-left text-[11px] font-semibold w-8">#</th>
+<Modal onClose={onClose} size="full">
+<div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+<MHead icon={UsersRound} title="Add Multiple Students" sub="Fill the table, preview, then confirm" onClose={onClose} />
+<div className="px-5 pt-4 pb-3 flex-shrink-0 flex items-end gap-4 flex-wrap border-b border-slate-100">
+<div className="w-80">
+<label className="text-xs font-bold text-slate-700 block mb-1">College <span className="text-red-500">*</span></label>
+<div className="relative">
+<Building2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+<select
+                className={`${I_ICON} appearance-none ${!collegeId && topErr ? ERR_CLS : OK_CLS}`}
+                value={collegeId}
+                onChange={e => { setCollegeId(e.target.value); setTopErr(''); }}
+>
+<option value="">Select college for all students…</option>
+                {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+</select>
+</div>
+</div>
+          {topErr && (
+<p className="text-xs text-red-500 flex items-center gap-1 mb-0.5">
+<AlertCircle size={11} />{topErr}
+</p>
+          )}
+</div>
+<div className="overflow-auto flex-1 px-5 py-3">
+<table className="w-full border-collapse text-xs">
+<thead className="sticky top-0 z-10">
+<tr className="bg-blue-700 text-white">
+<th className="py-2 px-2 text-left text-[11px] font-semibold w-8">#</th>
                 {[
-                  {k:'fullName',   l:'Full Name *',  w:'min-w-[140px]'},
-                  {k:'email',      l:'Email *',       w:'min-w-[160px]'},
-                  {k:'rollNumber', l:'Roll No. *',    w:'min-w-[110px]'},
-                  {k:'branch',     l:'Branch',        w:'min-w-[95px]'},
-                  {k:'batch',      l:'Batch',         w:'min-w-[80px]'},
-                  {k:'semester',   l:'Sem.',          w:'min-w-[70px]'},
-                  {k:'cgpa',       l:'CGPA',          w:'min-w-[70px]'},
-                  {k:'phone',      l:'Phone',         w:'min-w-[110px]'},
-                ].map(h=>(
-                  <th key={h.k} className={`py-2 px-2 text-left text-[11px] font-semibold whitespace-nowrap ${h.w}`}>{h.l}</th>
+                  { k: 'fullName',   l: 'Full Name *', w: 'min-w-[140px]' },
+                  { k: 'email',      l: 'Email *',      w: 'min-w-[160px]' },
+                  { k: 'rollNumber', l: 'Roll No. *',   w: 'min-w-[110px]' },
+                  { k: 'branch',     l: 'Branch',       w: 'min-w-[95px]'  },
+                  { k: 'batch',      l: 'Batch',        w: 'min-w-[80px]'  },
+                  { k: 'semester',   l: 'Sem.',         w: 'min-w-[70px]'  },
+                  { k: 'cgpa',       l: 'CGPA',         w: 'min-w-[70px]'  },
+                  { k: 'phone',      l: 'Phone',        w: 'min-w-[110px]' },
+                ].map(h => (
+<th key={h.k} className={`py-2 px-2 text-left text-[11px] font-semibold whitespace-nowrap ${h.w}`}>{h.l}</th>
                 ))}
-                <th className="py-2 px-2 w-8"/>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r,i) => (
-                <tr key={r.id} className={`border-b border-slate-100 ${i%2===0?'bg-white':'bg-slate-50/40'}`}>
-                  <td className="py-1 px-2 text-slate-400 font-mono text-center">{i+1}</td>
-                  <TC id={r.id} field="fullName"   value={r.fullName}   placeholder="Full name"  error={rowErrs[r.id]?.fullName}/>
-                  <TC id={r.id} field="email"      value={r.email}      placeholder="email@…"    error={rowErrs[r.id]?.email}/>
-                  <TC id={r.id} field="rollNumber" value={r.rollNumber} placeholder="Roll no."   error={rowErrs[r.id]?.rollNumber}/>
-                  <TC id={r.id} field="branch"     value={r.branch}     options={BRANCHES}       error={rowErrs[r.id]?.branch}/>
-                  <TC id={r.id} field="batch"      value={r.batch}      placeholder="2026"       error={rowErrs[r.id]?.batch}/>
-                  <TC id={r.id} field="semester"   value={r.semester}   options={SEMESTERS}      error={rowErrs[r.id]?.semester}/>
-                  <TC id={r.id} field="cgpa"       value={r.cgpa}       placeholder="0–10"       error={rowErrs[r.id]?.cgpa}/>
-                  <TC id={r.id} field="phone"      value={r.phone}      placeholder="10 digits"  error={rowErrs[r.id]?.phone}/>
-                  <td className="py-1 px-1">
+<th className="py-2 px-2 w-8" />
+</tr>
+</thead>
+<tbody>
+              {rows.map((r, i) => (
+<tr key={r.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
+<td className="py-1 px-2 text-slate-400 font-mono text-center">{i + 1}</td>
+<TC id={r.id} field="fullName"   value={r.fullName}   placeholder="Full name"  setCell={setCell} error={rowErrs[r.id]?.fullName}   />
+<TC id={r.id} field="email"      value={r.email}      placeholder="email@…"    setCell={setCell} error={rowErrs[r.id]?.email}       />
+<TC id={r.id} field="rollNumber" value={r.rollNumber} placeholder="Roll no."   setCell={setCell} error={rowErrs[r.id]?.rollNumber}  />
+<TC id={r.id} field="branch"     value={r.branch}     options={BRANCHES}       setCell={setCell} error={rowErrs[r.id]?.branch}      />
+<TC id={r.id} field="batch"      value={r.batch}      placeholder="2026"       setCell={setCell} error={rowErrs[r.id]?.batch}       />
+<TC id={r.id} field="semester"   value={r.semester}   options={SEMESTERS}      setCell={setCell} error={rowErrs[r.id]?.semester}    />
+<TC id={r.id} field="cgpa"       value={r.cgpa}       placeholder="0–10"       setCell={setCell} error={rowErrs[r.id]?.cgpa}        />
+<TC id={r.id} field="phone"      value={r.phone}      placeholder="10 digits"  setCell={setCell} error={rowErrs[r.id]?.phone}       />
+<td className="py-1 px-1">
                     {rows.length > 1 && (
-                      <button onClick={()=>delRow(r.id)} className="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                        <Trash2 size={12}/>
-                      </button>
+<button onClick={() => delRow(r.id)} className="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
+<Trash2 size={12} />
+</button>
                     )}
-                  </td>
-                </tr>
+</td>
+</tr>
               ))}
-            </tbody>
-          </table>
-          <button onClick={addRow} className="mt-3 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors border border-dashed border-blue-200">
-            <Plus size={13}/> Add Row
-          </button>
-        </div>
-        <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-slate-50/60">
-          <span className="text-xs text-slate-400">{filledRows.length} filled row(s)</span>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
-            <button onClick={goPreview} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
-              <Eye size={14}/> Preview
-            </button>
-          </div>
-        </div>
-      </div>
-    </Modal>
+</tbody>
+</table>
+<button onClick={addRow} className="mt-3 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors border border-dashed border-blue-200">
+<Plus size={13} /> Add Row
+</button>
+</div>
+<div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
+<span className="text-xs text-slate-400">{filledRows.length} filled row(s)</span>
+<div className="flex gap-2">
+<button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
+<button onClick={goPreview} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
+<Eye size={14} /> Preview
+</button>
+</div>
+</div>
+</div>
+</Modal>
   );
 }
 
@@ -871,7 +903,7 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
         <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose}/>
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               {l:'Total Rows', v:uploadResult?.totalRows||parsedRows.length, bg:'bg-blue-50',    text:'text-blue-700',    border:'border-blue-100'},
               {l:'Inserted',   v:uploadResult?.inserted||0,                   bg:'bg-emerald-50', text:'text-emerald-700', border:'border-emerald-100'},
@@ -900,7 +932,7 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
               }));
               downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
           >
             <Download size={14}/> Download Uploaded Students List (Excel)
           </button>
@@ -979,11 +1011,11 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
           <div className="overflow-auto flex-1">
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-slate-800 text-white">
-                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-slate-700">Row</th>
-                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-slate-700">✓</th>
+                <tr className="bg-blue-800 text-white">
+                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-blue-600">Row</th>
+                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-blue-600">✓</th>
                   {displayHdrs.map(h=>(
-                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-slate-700 last:border-r-0 ${REQUIRED_COLS.includes(h)?'text-yellow-300':''}`}>
+                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-blue-600 last:border-r-0 ${REQUIRED_COLS.includes(h)?'text-yellow-300':''}`}>
                       {h.replace(/_/g,' ').toUpperCase()}{REQUIRED_COLS.includes(h)&&<span className="ml-1 opacity-60">*</span>}
                     </th>
                   ))}
@@ -1117,7 +1149,7 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
               <p className="text-sm font-bold text-slate-700">Download Template</p>
               <p className="text-xs text-slate-400 mt-0.5">Excel with correct columns and sample rows</p>
             </div>
-            <button onClick={()=>superAdminStudentAPI.downloadTemplate()} className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-colors">
+            <button onClick={()=>superAdminStudentAPI.downloadTemplate()} className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition-colors">
               <Download size={13}/> Template
             </button>
           </div>
@@ -1189,7 +1221,7 @@ function ExportModal({ colleges, onClose }) {
   return (
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-emerald-600 to-teal-500" onClose={onClose}/>
+        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-blue-700 via-blue-600 to-cyan-500" onClose={onClose}/>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -1224,9 +1256,9 @@ function ExportModal({ colleges, onClose }) {
             </div>
           </div>
           {preview && (
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <p className="text-sm font-black text-emerald-700">{(preview.totalRecords||0).toLocaleString()} records match</p>
-              <p className="text-xs text-emerald-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <p className="text-sm font-black text-blue-700">{(preview.totalRecords||0).toLocaleString()} records match</p>
+              <p className="text-xs text-blue-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
             </div>
           )}
           {!preview && (
@@ -1239,7 +1271,7 @@ function ExportModal({ colleges, onClose }) {
             <button
               onClick={doExport}
               disabled={exporting || prevLoad}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50"
             >
               {exporting?<><Spin size="sm"/>Downloading…</>:<><FileDown size={14}/>Export{preview?.totalRecords?` (${preview.totalRecords})`:''}</>}
             </button>
@@ -1315,14 +1347,14 @@ function StudentListSection({ colleges }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
       {/* Section header */}
-      <div className="bg-gradient-to-r from-slate-700 to-slate-600 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
             <Users size={18} className="text-white"/>
           </div>
           <div>
             <h3 className="text-sm font-black text-white">Student Directory</h3>
-            <p className="text-slate-300 text-[11px] mt-0.5">
+            <p className="text-blue-200 text-[11px] mt-0.5">
               {selectedCollege && total > 0 ? `${total.toLocaleString()} student${total!==1?'s':''} found` : 'Select a college to view students'}
             </p>
           </div>
@@ -1393,18 +1425,23 @@ function StudentListSection({ colleges }) {
 
       {/* Stats bar */}
       {collegeStats && (
-        <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100">
-          {[
-            { label: 'Total',    value: collegeStats.totalStudents,  color: 'text-slate-700' },
-            { label: 'Active',   value: collegeStats.totalActive,    color: 'text-green-600' },
-            { label: 'Placed',   value: collegeStats.totalPlaced,    color: 'text-blue-600'  },
-            { label: 'Rate',     value: `${collegeStats.placementRate}%`, color: 'text-violet-600' },
-          ].map(s => (
-            <div key={s.label} className="p-3 text-center">
-              <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
-              <p className="text-[10px] text-slate-400 font-semibold">{s.label}</p>
-            </div>
-          ))}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {[
+              { icon: Users,        label: 'Total',   value: collegeStats.totalStudents,       c: 'bg-blue-50 border-blue-100 text-blue-600'    },
+              { icon: CheckCircle,  label: 'Active',  value: collegeStats.totalActive,         c: 'bg-green-50 border-green-100 text-green-600'  },
+              { icon: GraduationCap,label: 'Placed',  value: collegeStats.totalPlaced,         c: 'bg-amber-50 border-amber-100 text-amber-600'  },
+              { icon: TrendingUp,   label: 'Rate',    value: `${collegeStats.placementRate}%`, c: 'bg-violet-50 border-violet-100 text-violet-600'},
+            ].map(({ icon: Icon, label, value, c }) => (
+              <div key={label} className={`flex items-center gap-2 px-3 py-2 border rounded-xl ${c}`}>
+                <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
+                <div className="min-w-0">
+                  <p className="text-sm font-black leading-none">{value}</p>
+                  <p className="text-[9px] font-medium opacity-60 mt-0.5 leading-none truncate">{label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1465,7 +1502,7 @@ function StudentListSection({ colleges }) {
                           {s.isActive ? 'Active' : 'Inactive'}
                         </span>
                         {si.isPlaced && (
-                          <span className="ml-1 px-1.5 py-0.5 bg-violet-50 text-violet-700 border border-violet-100 rounded text-[10px] font-semibold">Placed</span>
+                          <span className="ml-1 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold">Placed</span>
                         )}
                       </div>
                     </td>
@@ -1545,16 +1582,16 @@ export default function SuperAdminStudentManagement() {
       action:()=>setModal('single'), btnLabel:'Add Single Student',
     },
     {
-      icon: UsersRound, gradient:'from-violet-600 to-purple-500', border:'border-violet-100',
-      light:'from-violet-50 to-purple-50/50',
+      icon: UsersRound, gradient:'from-blue-600 to-cyan-500', border:'border-blue-100',
+      light:'from-blue-50 to-cyan-50/50',
       title:'Add Multiple Students',
       desc:'Fill a spreadsheet-like table in the browser. Preview all rows before saving.',
       tips:['Inline table — no file needed','Preview all rows before confirm','All students emailed passwords'],
       action:()=>setModal('multiple'), btnLabel:'Add Multiple Students',
     },
     {
-      icon: CloudUpload, gradient:'from-indigo-600 to-blue-500', border:'border-indigo-100',
-      light:'from-indigo-50 to-blue-50/50',
+      icon: CloudUpload, gradient:'from-blue-600 to-cyan-500', border:'border-blue-100',
+      light:'from-blue-50 to-cyan-50/50',
       title:'Bulk Excel Upload',
       desc:'Upload .xlsx or .csv. Full preview with error highlighting + DB conflict detection.',
       tips:['Instant client-side Excel parsing','DB conflict detection before upload','Confirm only when all rows valid'],
@@ -1568,10 +1605,8 @@ export default function SuperAdminStudentManagement() {
 
         {/* Hero */}
         <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-6 py-5 shadow-xl shadow-blue-500/25 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute -top-12 -right-12 w-52 h-52 bg-white/10 rounded-full"/>
-            <div className="absolute -bottom-10 left-1/3 w-36 h-36 bg-white/10 rounded-full"/>
-            <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.06]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
           </div>
           <div className="relative flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
@@ -1596,7 +1631,7 @@ export default function SuperAdminStudentManagement() {
               <button onClick={()=>setModal('multiple')} className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
                 <UsersRound size={13}/> Add Multiple
               </button>
-              <button onClick={()=>setModal('upload')} className="inline-flex items-center gap-1.5 bg-white text-blue-700 text-xs font-bold px-3 py-2 rounded-xl shadow-md hover:bg-blue-50 transition-all">
+              <button onClick={()=>setModal('upload')} className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                 <CloudUpload size={13}/> Bulk Upload
               </button>
             </div>
@@ -1658,11 +1693,11 @@ export default function SuperAdminStudentManagement() {
 
         {/* Export card */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-4 flex items-center gap-3">
+          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileDown size={18} className="text-white"/></div>
             <div>
               <h3 className="text-sm font-black text-white">Export Students</h3>
-              <p className="text-emerald-200 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
+              <p className="text-blue-100 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
             </div>
           </div>
           <div className="p-5 flex items-center gap-5 flex-wrap">
@@ -1674,7 +1709,7 @@ export default function SuperAdminStudentManagement() {
                 ))}
               </div>
             </div>
-            <button onClick={()=>setModal('export')} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-emerald-500/20">
+            <button onClick={()=>setModal('export')} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-500/20">
               <FileDown size={14}/> Open Export
             </button>
           </div>

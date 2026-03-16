@@ -3,10 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useFontSize } from '../../context/FontSizeContext';
 import {
   LayoutDashboard, Bell, Settings, LogOut, Menu, X,
   Building2, Users, GraduationCap, BookOpen, CreditCard,
-  ChevronLeft, ChevronRight, Crown, Search, Activity, ChevronDown, Landmark
+  ChevronLeft, ChevronRight, Crown, Search, Activity, ChevronDown,Landmark,
+  ALargeSmall,
 } from 'lucide-react';
 
 const MENU_GROUPS = [
@@ -42,17 +44,45 @@ const SuperAdminDashboardLayout = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const toast = useToast();
+  const { fontSize, zoom, label: fontLabel, setSize, SIZE_STEPS } = useFontSize();
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showMobile, setShowMobile] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchVal, setSearchVal] = useState('');
+  const [sidebarOpen,      setSidebarOpen]      = useState(true);
+  const [showMobile,       setShowMobile]        = useState(false);
+  const [showUserMenu,     setShowUserMenu]      = useState(false);
+  const [showFontMenu,     setShowFontMenu]      = useState(false);
+  const [searchVal,        setSearchVal]         = useState('');
+  const [isMobile,         setIsMobile]          = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
   const userMenuRef = useRef(null);
+  const fontMenuRef = useRef(null);
+
+  /* Track viewport width reactively */
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setShowMobile(false);   // close drawer when expanding to desktop
+        document.body.style.overflow = '';
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  /* Prevent body scroll when mobile drawer is open */
+  useEffect(() => {
+    document.body.style.overflow = (showMobile && isMobile) ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [showMobile, isMobile]);
 
   useEffect(() => {
     const h = (e) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target))
         setShowUserMenu(false);
+      if (fontMenuRef.current && !fontMenuRef.current.contains(e.target))
+        setShowFontMenu(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -95,10 +125,13 @@ const SuperAdminDashboardLayout = ({ children }) => {
     ? allItems.filter(i => i.label.toLowerCase().includes(searchVal.toLowerCase()))
     : [];
 
-  const SW = sidebarOpen ? 220 : 60;
+  const SW = isMobile ? 220 : (sidebarOpen ? 220 : 60);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 overflow-x-hidden">
+    <div
+      className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 overflow-x-hidden"
+      style={{ zoom }}
+    >
 
       {/* background blobs – same as login page */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -117,11 +150,12 @@ const SuperAdminDashboardLayout = ({ children }) => {
         className="fixed top-0 left-0 h-full z-50 flex flex-col bg-white/90 backdrop-blur-xl border-r border-white/60 shadow-lg transition-all duration-300"
         style={{
           width: `${SW}px`,
-          transform: showMobile ? 'translateX(0)' : undefined,
+          transform: isMobile
+            ? showMobile ? 'translateX(0)' : `translateX(-${SW}px)`
+            : 'translateX(0)',
         }}
       >
-        {/* hide on mobile unless showMobile */}
-        <div className={`flex flex-col h-full ${!showMobile ? 'hidden lg:flex' : 'flex'}`}>
+        <div className="flex flex-col h-full">
 
           {/* Logo */}
           <div className="flex items-center gap-2.5 px-3.5 py-3.5 border-b border-gray-100 flex-shrink-0">
@@ -251,7 +285,7 @@ const SuperAdminDashboardLayout = ({ children }) => {
       {/* ════════ MAIN ════════ */}
       <div
         className="flex flex-col min-h-screen relative z-10 transition-all duration-300"
-        style={{ paddingLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 ? `${SW}px` : 0 }}
+        style={{ paddingLeft: isMobile ? 0 : `${SW}px` }}
       >
         {/* Topbar */}
         <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/60 shadow-sm">
@@ -282,6 +316,44 @@ const SuperAdminDashboardLayout = ({ children }) => {
             </div>
 
             <div className="flex-1" />
+
+            {/* Font Size Picker */}
+            <div className="relative" ref={fontMenuRef}>
+              <button
+                onClick={() => setShowFontMenu(!showFontMenu)}
+                title="Adjust font size"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-200/70"
+              >
+                <ALargeSmall className="w-4 h-4" />
+                <span className="hidden sm:block text-xs font-medium">{fontLabel}</span>
+              </button>
+
+              {showFontMenu && (
+                <div className="absolute right-0 mt-2 w-44 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/10 border border-white/60 overflow-hidden z-50 animate-fadeIn">
+                  <div className="px-3 py-2 border-b border-gray-100">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Font Size</p>
+                  </div>
+                  {SIZE_STEPS.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => { setSize(size); setShowFontMenu(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${
+                        fontSize === size
+                          ? 'bg-blue-50 text-blue-700 font-semibold'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className={`font-medium ${size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : 'text-base'}`}>
+                        {size.charAt(0).toUpperCase() + size.slice(1)}
+                      </span>
+                      {fontSize === size && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Notifications */}
             <button
@@ -353,9 +425,41 @@ const SuperAdminDashboardLayout = ({ children }) => {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 p-4 sm:p-5">{children}</main>
+        {/* Page content — extra bottom padding on mobile so content isn't hidden behind bottom nav */}
+        <main className="flex-1 p-4 sm:p-5 pb-24 lg:pb-5">{children}</main>
       </div>
+
+      {/* ════════ MOBILE BOTTOM NAV ════════ */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200/80 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
+        <div className="flex items-center justify-around px-2 py-1.5">
+          {[
+            { icon: LayoutDashboard, label: 'Dashboard',  path: '/dashboard/super-admin' },
+            { icon: Building2,       label: 'Colleges',   path: '/dashboard/super-admin/colleges' },
+            { icon: Users,           label: 'Admins',     path: '/dashboard/super-admin/admins' },
+            { icon: BookOpen,        label: 'Courses',    path: '/dashboard/super-admin/courses' },
+            { icon: Settings,        label: 'Settings',   path: '/dashboard/super-admin/settings' },
+          ].map(item => {
+            const active = isActive(item.path);
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-[52px] ${
+                  active
+                    ? 'text-blue-600'
+                    : 'text-gray-400 hover:text-blue-500'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : ''}`} />
+                <span className={`text-[9px] font-semibold leading-none ${active ? 'text-blue-600' : ''}`}>
+                  {item.label}
+                </span>
+                {active && <span className="w-1 h-1 rounded-full bg-blue-600 mt-0.5" />}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       <style>{`
         .sidebar-scroll::-webkit-scrollbar { width: 3px; }

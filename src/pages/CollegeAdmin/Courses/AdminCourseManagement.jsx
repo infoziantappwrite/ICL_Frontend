@@ -207,7 +207,7 @@ const AdminCourseManagement = () => {
           <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
           <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
         </div>
-        <div className="relative flex items-center justify-between gap-3">
+        <div className="relative flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
               <BookOpen className="w-5 h-5 text-white" />

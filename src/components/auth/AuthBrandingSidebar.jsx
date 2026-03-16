@@ -102,7 +102,7 @@ const AuthBrandingSidebar = () => {
           <h2 className="text-5xl font-bold text-gray-900 leading-tight">
             Shape Your
             <span className="block bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Future Career
+              Future 
             </span>
           </h2>
           <p className="text-lg text-gray-700 leading-relaxed">

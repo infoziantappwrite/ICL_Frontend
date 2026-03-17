@@ -2,9 +2,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  BookOpen, Clock, Star, Target, TrendingUp,
-  PlayCircle, RefreshCw, AlertCircle, Calendar, Tag,
-  Search, Filter, X, ChevronRight, Award, Zap
+  BookOpen, Clock, Target, TrendingUp, RefreshCw, AlertCircle, 
+  Calendar, Search, Filter, X, ChevronRight, Award, Zap
 } from 'lucide-react';
 import StudentLayout from '../../../components/layout/StudentLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
@@ -44,7 +43,7 @@ const AssessmentCard = ({ assessment, onStart }) => {
           </div>
           <div>
             <h3 className="font-bold text-[16px] text-gray-900 leading-tight hover:text-blue-600 transition-colors line-clamp-2">
-              {assessment.skill_id?.name || 'Skill Assessment'}
+              {assessment.title || assessment.skill_id?.name || 'Skill Assessment'}
             </h3>
             <p className="text-[13px] text-gray-600 mt-1 flex items-center gap-1.5 line-clamp-1">
               {sourceLabel} Assessment
@@ -135,7 +134,11 @@ const AssessmentList = () => {
 
   const filteredAssessments = useMemo(() => {
     return allAssessments.filter(a => {
-      const matchSearch = searchTerm === '' || (a.skill_id?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      // HIDE COMPLETED ASSESSMENTS FROM THIS LIST
+      if (a.status !== 'active') return false; 
+      
+      const titleMatch = a.title || a.skill_id?.name || '';
+      const matchSearch = searchTerm === '' || titleMatch.toLowerCase().includes(searchTerm.toLowerCase());
       const matchLevel = levelFilter === '' || a.level === levelFilter;
       const matchSource = sourceFilter === '' || a.source_type === sourceFilter;
       return matchSearch && matchLevel && matchSource;
@@ -149,7 +152,6 @@ const AssessmentList = () => {
           
           {/* ─────── LEFT SIDEBAR: FILTERS (col-span-3) ─────── */}
           <div className="md:col-span-3 md:sticky md:top-[100px] self-start space-y-5">
-            {/* Mobile Filter Toggle */}
             <div className="md:hidden">
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -175,7 +177,7 @@ const AssessmentList = () => {
                       placeholder="Skill name..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
+                      className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-medium"
                     />
                   </div>
                 </div>
@@ -186,7 +188,7 @@ const AssessmentList = () => {
                     <select
                       value={levelFilter}
                       onChange={(e) => setLevelFilter(e.target.value)}
-                      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      className="w-full px-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
                     >
                       <option value="">All Levels</option>
                       <option value="Beginner">Beginner</option>
@@ -200,7 +202,7 @@ const AssessmentList = () => {
                     <select
                       value={sourceFilter}
                       onChange={(e) => setSourceFilter(e.target.value)}
-                      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      className="w-full px-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
                     >
                       <option value="">All Sources</option>
                       <option value="college_admin_manual">Admin Assigned</option>
@@ -220,7 +222,6 @@ const AssessmentList = () => {
                 )}
               </Card>
 
-              {/* Action Card */}
               <Card className="p-5 bg-gradient-to-br from-blue-600 to-cyan-600 border-none text-white">
                 <Target className="w-8 h-8 mb-3 text-blue-100" />
                 <h3 className="font-bold text-[16px] mb-2">Track Your Progress</h3>
@@ -237,8 +238,6 @@ const AssessmentList = () => {
 
           {/* ─────── RIGHT MAIN FEED (col-span-9) ─────── */}
           <div className="md:col-span-9 space-y-5 md:space-y-6">
-            
-            {/* Header & Stats */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <div>
                 <h1 className="text-[24px] md:text-[28px] font-bold text-gray-900 leading-tight">
@@ -262,7 +261,6 @@ const AssessmentList = () => {
               </div>
             </div>
 
-            {/* Error State */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -273,7 +271,6 @@ const AssessmentList = () => {
               </div>
             )}
 
-            {/* Loading State or Grid */}
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">
                 {[1, 2, 3, 4, 5, 6].map(i => (
@@ -300,12 +297,10 @@ const AssessmentList = () => {
               <Card className="text-center py-16">
                 <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-[18px] font-bold text-gray-900 mb-2">
-                  No matching assessments found
+                  No pending assessments right now!
                 </h3>
                 <p className="text-[14px] text-gray-500">
-                  {allAssessments.length === 0 
-                    ? 'Check back later — your college admin will publish assessments soon.' 
-                    : 'Try adjusting your filters or search terms.'}
+                  You have completed all your active assessments. Check the "My History" tab to view your past results.
                 </p>
                 {allAssessments.length > 0 && (
                   <button

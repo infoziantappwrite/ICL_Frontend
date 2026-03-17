@@ -802,9 +802,6 @@ const AIAssessmentGenerator = () => {
               <SectionHeader icon={Eye} iconBg="bg-gradient-to-br from-violet-100 to-blue-100"
                 iconColor="text-violet-600" title="Assessment Settings" subtitle="Visibility and behaviour options" />
               <div className="p-5 space-y-3">
-                <Toggle checked={showResults} onChange={setShowResults}
-                  label="Show Results to Students"
-                  desc="Students can view score and correct answers after submitting" />
                 <Toggle checked={shuffleQs} onChange={setShuffleQs}
                   label="Shuffle Questions"
                   desc="Questions appear in a different order for each student" />

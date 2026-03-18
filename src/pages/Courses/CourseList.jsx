@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpen, Search, Filter, Star, Clock, Users, Award, ChevronRight,
   Zap, RefreshCw, AlertCircle, PlayCircle, CheckCircle2,
-  BarChart3, Layers, Globe, Cpu, Shield, Smartphone, Database, X, BookMarked
+  BarChart3, Layers, Globe, Cpu, Shield, Smartphone, Database, X, BookMarked, SlidersHorizontal
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -47,7 +47,6 @@ const CourseCard = ({ course, onClick }) => {
   const CatIcon = CATEGORY_ICONS[course.category] || BookOpen;
   const price = course.price?.discounted || course.price?.original || 0;
 
-  // Coursera style card
   return (
     <div
       onClick={onClick}
@@ -59,54 +58,48 @@ const CourseCard = ({ course, onClick }) => {
           <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 group-hover:scale-105 transition-transform duration-500">
-            <CatIcon className="w-12 h-12 text-blue-200" />
+            <CatIcon className="w-8 h-8 md:w-12 md:h-12 text-blue-200" />
           </div>
         )}
-
-        {/* Top-right pills */}
         <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
           {price === 0 && (
-            <span className="bg-white text-gray-900 border border-gray-200 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)]">
+            <span className="bg-white text-gray-900 border border-gray-200 text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
               Free
             </span>
           )}
           {course.isRecommended && (
-            <span className="bg-white text-gray-900 border border-gray-200 text-[11px] font-bold px-2 py-0.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.05)] flex items-center gap-1">
-              <Zap className="w-3 h-3 text-blue-600" /> Recommended
+            <span className="bg-white text-gray-900 border border-gray-200 text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+              <Zap className="w-2.5 h-2.5 text-blue-600" /> Recommended
             </span>
           )}
         </div>
       </div>
 
       {/* Body */}
-      <div className="p-4 sm:p-5 flex flex-col flex-1 bg-white">
-        {/* Partner / Instructor */}
-        <div className="flex items-center gap-2 mb-2">
+      <div className="p-3 md:p-5 flex flex-col flex-1 bg-white">
+        <div className="flex items-center gap-2 mb-1.5">
           {course.instructor?.logo ? (
-            <img src={course.instructor.logo} alt="logo" className="w-4 h-4 object-contain rounded" />
+            <img src={course.instructor.logo} alt="logo" className="w-3.5 h-3.5 md:w-4 md:h-4 object-contain rounded" />
           ) : (
-            <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded text-blue-700 flex items-center justify-center text-[9px] font-bold">
+            <div className="w-3.5 h-3.5 md:w-4 md:h-4 bg-gray-100 border border-gray-200 rounded text-blue-700 flex items-center justify-center text-[8px] md:text-[9px] font-bold">
               {course.instructor?.name ? course.instructor.name.charAt(0).toUpperCase() : 'P'}
             </div>
           )}
-          <span className="text-[12px] text-gray-600 truncate">{course.instructor?.name || 'Partner Institute'}</span>
+          <span className="text-[11px] md:text-[12px] text-gray-600 truncate">{course.instructor?.name || 'Partner Institute'}</span>
         </div>
 
-        {/* Title */}
-        <h3 className="font-bold text-[16px] text-gray-900 leading-snug mb-1 group-hover:underline decoration-blue-600 decoration-2 underline-offset-2 line-clamp-2">
+        <h3 className="font-bold text-[13px] md:text-[15px] text-gray-900 leading-snug mb-1 group-hover:underline decoration-blue-600 decoration-2 underline-offset-2 line-clamp-2">
           {course.title}
         </h3>
 
-        {/* Course Type / Level */}
-        <p className="text-[12px] text-gray-500 mb-3">
+        <p className="text-[11px] md:text-[12px] text-gray-500 mb-2">
           {course.category} • {course.level}
         </p>
 
-        {/* Bottom info: rating + reviews */}
-        <div className="mt-auto flex items-center gap-1.5 text-[12px]">
+        <div className="mt-auto flex items-center gap-1 text-[11px] md:text-[12px]">
           <span className="font-bold text-gray-800">{course.rating?.average?.toFixed(1) || '4.5'}</span>
-          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-          <span className="text-gray-500">({course.rating?.count || Math.floor(Math.random() * 500) + 50} reviews)</span>
+          <Star className="w-3 h-3 md:w-3.5 md:h-3.5 text-yellow-500 fill-yellow-500" />
+          <span className="text-gray-500">({course.rating?.count || Math.floor(Math.random() * 500) + 50})</span>
         </div>
       </div>
     </div>
@@ -298,57 +291,56 @@ const CourseList = () => {
 
   return (
     <StudentLayout title="Course Library">
-      {/* Search Header Area (Coursera Style Hero) */}
-      <div className="bg-[#f5f7f8] border-b border-gray-200 py-10 px-4 sm:px-6 lg:px-8">
+      {/* Search Hero */}
+      <div className="bg-[#f5f7f8] border-b border-gray-200 py-5 md:py-10 px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="max-w-[1240px] mx-auto text-center">
-          <h1 className="text-3xl md:text-[36px] font-bold text-gray-900 mb-8 tracking-tight">
+          <h1 className="text-[20px] sm:text-[26px] md:text-[32px] font-bold text-gray-900 mb-4 md:mb-8 tracking-tight">
             What do you want to learn?
           </h1>
 
-          <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-center">
+          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-2 md:gap-4 items-center justify-center">
             {/* Search Input */}
-            <div className="relative w-full shadow-[0_4px_16px_rgba(0,0,0,0.06)] rounded-full bg-white flex items-center border border-gray-300 hover:border-blue-600 transition-colors">
+            <div className="relative w-full shadow-sm rounded-full bg-white flex items-center border border-gray-300 hover:border-blue-600 transition-colors">
               <input
                 type="text"
-                placeholder="Search for courses, skills, or certifications"
+                placeholder="Search courses, skills, certifications"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="w-full pl-6 pr-14 py-4 md:py-5 bg-transparent text-[16px] text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 rounded-full transition-all font-medium"
+                className="w-full pl-4 md:pl-6 pr-12 md:pr-14 py-3 md:py-5 bg-transparent text-[14px] md:text-[16px] text-gray-900 placeholder-gray-500 focus:outline-none rounded-full font-medium"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors shadow">
-                  <Search className="w-5 h-5" />
+                <button className="bg-blue-600 hover:bg-blue-700 text-white w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors shadow">
+                  <Search className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              onClick={() => setShowFilters(true)}
-              className="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-2 px-6 py-4 md:py-5 bg-white border border-gray-300 rounded-full text-gray-700 font-bold hover:border-gray-900 hover:bg-gray-50 transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex-shrink-0"
-            >
-              <Filter className="w-5 h-5" />
-              Filters
-              {hasActiveFilters && (
-                <span className="w-2.5 h-2.5 bg-blue-600 rounded-full ml-1" />
-              )}
-            </button>
+            {/* Filter + My Learning row */}
+            <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
+              <button
+                onClick={() => setShowFilters(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-5 bg-white border border-gray-300 rounded-full text-gray-700 font-bold hover:border-gray-900 hover:bg-gray-50 transition-colors shadow-sm text-[13px] md:text-[14px]"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filters
+                {hasActiveFilters && <span className="w-2 h-2 bg-blue-600 rounded-full ml-0.5" />}
+              </button>
 
-            {/* My Learning / My Courses Button */}
-            <button
-              onClick={() => navigate('/dashboard/student/my-courses')}
-              className="w-full md:w-auto mt-2 md:mt-0 flex items-center justify-center gap-2 px-6 py-4 md:py-5 bg-blue-600 border border-blue-600 rounded-full text-white font-bold hover:bg-blue-700 hover:border-blue-700 transition-colors shadow-[0_4px_16px_rgba(0,0,0,0.06)] flex-shrink-0"
-            >
-              <BookMarked className="w-5 h-5" />
-              My Learning
-            </button>
+              <button
+                onClick={() => navigate('/dashboard/student/my-courses')}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-5 bg-blue-600 border border-blue-600 rounded-full text-white font-bold hover:bg-blue-700 transition-colors shadow-sm text-[13px] md:text-[14px]"
+              >
+                <BookMarked className="w-4 h-4" />
+                My Learning
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="min-h-screen bg-white px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-[1240px] mx-auto space-y-16">
+      <div className="min-h-screen bg-white px-3 sm:px-4 md:px-6 lg:px-8 py-6 md:py-12">
+        <div className="max-w-[1240px] mx-auto space-y-8 md:space-y-16">
 
           {/* Error */}
           {error && (
@@ -362,8 +354,8 @@ const CourseList = () => {
           {/* Enrolled Courses / Resume Learning Section */}
           {!loading && isDiscoveryMode && enrolledCourses.length > 0 && (
             <div>
-              <h2 className="text-[22px] font-bold text-gray-900 mb-6 tracking-tight">Resume Learning</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+              <h2 className="text-[17px] md:text-[22px] font-bold text-gray-900 mb-4 md:mb-6 tracking-tight">Resume Learning</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-x-6 md:gap-y-8">
                 {enrolledCourses.slice(0, 4).map(course => (
                   <CourseCard
                     key={`enrolled-${course._id}`}
@@ -372,15 +364,15 @@ const CourseList = () => {
                   />
                 ))}
               </div>
-              <div className="h-px bg-gray-200 w-full mt-12"></div>
+              <div className="h-px bg-gray-200 w-full mt-8 md:mt-12"></div>
             </div>
           )}
 
           {/* Recommended / Hand-picked Section */}
           {!loading && isDiscoveryMode && recommended.length > 0 && (
             <div>
-              <h2 className="text-[22px] font-bold text-gray-900 mb-6 tracking-tight">Hand-picked for You</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+              <h2 className="text-[17px] md:text-[22px] font-bold text-gray-900 mb-4 md:mb-6 tracking-tight">Hand-picked for You</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-x-6 md:gap-y-8">
                 {recommended.slice(0, 4).map(course => (
                   <CourseCard
                     key={`rec-${course._id}`}
@@ -389,23 +381,23 @@ const CourseList = () => {
                   />
                 ))}
               </div>
-              <div className="h-px bg-gray-200 w-full mt-12"></div>
+              <div className="h-px bg-gray-200 w-full mt-8 md:mt-12"></div>
             </div>
           )}
 
           {/* Categorized Sections for Discovery */}
           {!loading && isDiscoveryMode && Object.keys(coursesByCategory).map(cat => (
             <div key={`cat-${cat}`}>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-[22px] font-bold text-gray-900 tracking-tight">Top Courses in {cat}</h2>
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <h2 className="text-[17px] md:text-[22px] font-bold text-gray-900 tracking-tight">Top Courses in {cat}</h2>
                 <button
                   onClick={() => { setCategory(cat); setPage(1); }}
-                  className="flex items-center gap-1 text-blue-600 font-bold hover:underline py-1 px-3 rounded-full hover:bg-blue-50 transition-colors text-[14px]"
+                  className="flex items-center gap-1 text-blue-600 font-bold hover:underline py-1 px-2 md:px-3 rounded-full hover:bg-blue-50 transition-colors text-[12px] md:text-[14px]"
                 >
-                  Explore {cat} <ChevronRight className="w-4 h-4" />
+                  Explore <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-x-6 md:gap-y-8">
                 {coursesByCategory[cat].slice(0, 4).map(course => (
                   <CourseCard
                     key={`cat-course-${course._id}`}
@@ -414,31 +406,30 @@ const CourseList = () => {
                   />
                 ))}
               </div>
-              <div className="h-px bg-gray-200 w-full mt-12"></div>
+              <div className="h-px bg-gray-200 w-full mt-8 md:mt-12"></div>
             </div>
           ))}
 
           {/* All Courses Grid (For search/filter) */}
           {!loading && !isDiscoveryMode && (
             <div>
-
-              <h2 className="text-[22px] font-bold text-gray-900 mb-6 tracking-tight">
-                {search ? `Search results for "${search}"` : 'Most Popular Certificates and Courses'}
+              <h2 className="text-[17px] md:text-[22px] font-bold text-gray-900 mb-4 md:mb-6 tracking-tight">
+                {search ? `Results for "${search}"` : 'Most Popular Courses'}
               </h2>
 
               {courses.length === 0 ? (
-                <div className="text-center py-20 bg-[#f5f7f8] rounded-2xl border border-gray-200 mt-4">
-                  <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-[18px] text-gray-900 font-bold">We couldn't find any courses</p>
-                  <p className="text-[15px] text-gray-500 mt-2 max-w-md mx-auto">Try adjusting your search terms or clearing some filters to find what you're looking for.</p>
+                <div className="text-center py-12 md:py-20 bg-[#f5f7f8] rounded-2xl border border-gray-200">
+                  <Search className="w-10 h-10 md:w-16 md:h-16 text-gray-300 mx-auto mb-3 md:mb-4" />
+                  <p className="text-[16px] md:text-[18px] text-gray-900 font-bold">No courses found</p>
+                  <p className="text-[13px] md:text-[15px] text-gray-500 mt-2 max-w-md mx-auto">Try adjusting filters or search terms.</p>
                   {hasActiveFilters && (
-                    <button onClick={handleClearFilters} className="mt-6 px-6 py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-full hover:bg-gray-50 transition-colors">
+                    <button onClick={handleClearFilters} className="mt-4 md:mt-6 px-5 md:px-6 py-2.5 md:py-3 border-2 border-gray-900 text-gray-900 font-bold rounded-full hover:bg-gray-50 transition-colors text-[13px]">
                       Clear all filters
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-x-6 md:gap-y-8">
                   {(search ? courses : (recommended.length > 0 ? regular : courses)).map(course => (
                     <CourseCard
                       key={course._id}
@@ -488,120 +479,115 @@ const CourseList = () => {
         </div>
       </div>
 
-      {/* Filter Overlay (Slide-out panel) */}
+      {/* Filter Drawer (JobList-style) */}
       {showFilters && (
         <div className="fixed inset-0 z-[100] flex">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-black/40"
             onClick={() => setShowFilters(false)}
           />
 
-          {/* Slide-out Panel */}
-          <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white">
-              <h2 className="text-xl font-bold text-gray-900 tracking-tight">Filters</h2>
+          {/* Slide-in Panel */}
+          <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-[340px] bg-white flex flex-col shadow-2xl filter-drawer-enter">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-blue-600" />
+                <h2 className="text-[16px] font-bold text-gray-900">Filters</h2>
+                {hasActiveFilters && (
+                  <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                    {[category !== 'All', level !== 'All', deliveryMode !== 'All', search !== ''].filter(Boolean).length}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setShowFilters(false)}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-10 bg-[#fbfbfb]">
+            {/* Filter Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
               {/* Category */}
               <div>
-                <h3 className="text-[15px] font-bold text-gray-900 uppercase tracking-wider mb-4">Category</h3>
-                <div className="space-y-3">
+                <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Category</label>
+                <select
+                  value={category}
+                  onChange={e => { setCategory(e.target.value); setPage(1); }}
+                  className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                >
                   {CATEGORIES.map(c => (
-                    <label key={c} className="flex items-center gap-3 cursor-pointer group">
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${category === c ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300 group-hover:border-gray-400'}`}>
-                        {category === c && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
-                      </div>
-                      <span className={`text-[15px] ${category === c ? 'text-gray-900 font-bold' : 'text-gray-700'}`}>
-                        {c}
-                      </span>
-                      {/* hidden actual radio input */}
-                      <input
-                        type="radio"
-                        name="category"
-                        checked={category === c}
-                        onChange={() => { setCategory(c); setPage(1); }}
-                        className="hidden"
-                      />
-                    </label>
+                    <option key={c} value={c}>{c}</option>
                   ))}
-                </div>
+                </select>
               </div>
 
               {/* Level */}
               <div>
-                <h3 className="text-[15px] font-bold text-gray-900 uppercase tracking-wider mb-4">Level</h3>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Level</label>
+                <select
+                  value={level}
+                  onChange={e => { setLevel(e.target.value); setPage(1); }}
+                  className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                >
                   {LEVELS.map(l => (
-                    <button
-                      key={l}
-                      onClick={() => { setLevel(l); setPage(1); }}
-                      className={`px-4 py-2 rounded-full text-[14px] font-bold transition-all border ${level === l
-                        ? 'bg-gray-900 border-gray-900 text-white shadow-sm'
-                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900'
-                        }`}
-                    >
-                      {l}
-                    </button>
+                    <option key={l} value={l}>{l}</option>
                   ))}
-                </div>
+                </select>
               </div>
 
               {/* Delivery Mode */}
               <div>
-                <h3 className="text-[15px] font-bold text-gray-900 uppercase tracking-wider mb-4">Delivery Mode</h3>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Delivery Mode</label>
+                <select
+                  value={deliveryMode}
+                  onChange={e => { setDeliveryMode(e.target.value); setPage(1); }}
+                  className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                >
                   {DELIVERY_MODES.map(m => (
-                    <button
-                      key={m}
-                      onClick={() => { setDeliveryMode(m); setPage(1); }}
-                      className={`px-4 py-2 rounded-full text-[14px] font-bold transition-all border ${deliveryMode === m
-                        ? 'bg-gray-900 border-gray-900 text-white shadow-sm'
-                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-900 hover:text-gray-900'
-                        }`}
-                    >
-                      {m}
-                    </button>
+                    <option key={m} value={m}>{m}</option>
                   ))}
-                </div>
+                </select>
               </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  onClick={() => { handleClearFilters(); }}
+                  className="w-full mt-2 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <X className="w-4 h-4" /> Clear filters
+                </button>
+              )}
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex items-center gap-4 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
-              <button
-                onClick={handleClearFilters}
-                className="flex-1 py-3.5 text-[15px] font-bold text-gray-700 border-2 border-gray-300 hover:border-gray-900 rounded-full transition-colors"
-              >
-                Clear all
-              </button>
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100">
               <button
                 onClick={() => setShowFilters(false)}
-                className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-[15px] font-bold rounded-full transition-colors shadow-lg shadow-blue-500/20"
+                className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl text-[14px] hover:bg-blue-700 transition-colors"
               >
-                Show results
+                Show Results
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Internal CSS for animation map */}
+      {/* CSS */}
       <style>{`
-        @keyframes slideInFromRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+        .filter-drawer-enter {
+          animation: slideInRight 0.28s cubic-bezier(0.16,1,0.3,1) forwards;
         }
-        .slide-in-from-right {
-          animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
         }
       `}</style>
+
 
     </StudentLayout>
   );

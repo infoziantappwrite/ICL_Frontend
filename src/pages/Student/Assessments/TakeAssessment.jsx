@@ -86,6 +86,7 @@ const TakeAssessment = () => {
   const [statuses, setStatuses] = useState({});
   const [flagged, setFlagged] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [submitConfirm, setSubmitConfirm] = useState(false);
@@ -95,6 +96,12 @@ const TakeAssessment = () => {
     assessmentAPI.getAssessmentDetails(assessmentId)
       .then(res => { if (res.success) setBriefingInfo(res.assessment); })
       .catch(() => {});
+
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [assessmentId]);
 
   const handleBegin = async () => {
@@ -163,6 +170,48 @@ const TakeAssessment = () => {
   const handleTimerExpire = useCallback(() => {
     if (phase === 'in_progress') handleSubmit();
   }, [phase, handleSubmit]);
+
+  // ── Desktop Restriction Overlay ──
+  if (!isDesktop) {
+    return (
+      <div className="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center p-8 text-center overflow-hidden">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full" />
+        
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-24 h-24 bg-gradient-to-tr from-blue-600/20 to-cyan-500/20 rounded-[2rem] flex items-center justify-center mb-8 border border-white/10 backdrop-blur-sm shadow-2xl">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
+              <AlertTriangle className="w-8 h-8 text-blue-400" />
+            </div>
+          </div>
+          
+          <h1 className="text-white text-3xl md:text-4xl font-black mb-4 tracking-tight">
+            Desktop Access Required
+          </h1>
+          
+          <div className="w-16 h-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full mb-8" />
+          
+          <p className="text-slate-400 max-w-md text-[15px] md:text-[16px] leading-relaxed mb-10 font-medium">
+            To ensure a fair and stable testing environment, skill assessments can only be attended on a 
+            <span className="text-blue-400 font-bold"> desktop or laptop device</span>. 
+            Mobile and tablet access is restricted.
+          </p>
+          
+          <button 
+            onClick={() => navigate('/dashboard/student/assessments')}
+            className="group px-8 py-4 bg-white text-[#0f172a] rounded-2xl font-extrabold hover:bg-blue-50 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 active:scale-95"
+          >
+            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" /> Back to Assessments
+          </button>
+          
+          <p className="mt-12 text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">
+            Controlled Testing Environment
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ── Loading phases ──
   if (phase === 'loading') return <FullLoader title="Starting Assessment" sub="Preparing your environment..." />;

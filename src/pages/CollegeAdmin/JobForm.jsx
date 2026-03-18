@@ -1,4 +1,5 @@
 // src/pages/CollegeAdmin/JobForm.jsx — redesigned to match SuperAdmin/CollegeAdmin theme
+import Select from "react-select";
 import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { jobAPI, companyAPI } from '../../api/Api';
+import { jobAPI, companyAPI, skillAPI } from '../../api/Api';
 
 /* ─── ChipInput ─────────────────────────── */
 const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
@@ -92,6 +93,12 @@ const TextArea = ({ label, required, ...props }) => (
   </div>
 );
 
+const getSkillName = (skill) => {
+  if (typeof skill === 'string') return skill.trim();
+  if (skill && typeof skill === 'object') return (skill.name || skill.label || skill.value || '').trim();
+  return '';
+};
+
 /* ══════════════════════════════════════════ */
 const JobForm = () => {
   const toast = useToast();
@@ -100,11 +107,12 @@ const JobForm = () => {
   const [searchParams] = useSearchParams();
   const isEditMode = !!jobId;
 
-  const [loading, setLoading]   = useState(false);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState(null);
-  const [success, setSuccess]   = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
   const [companies, setCompanies] = useState([]);
+  const [skills, setSkills] = useState([]);
 
   const defaultFormData = {
     jobCode: '', jobTitle: '', jobType: 'Full-Time', jobRole: 'Software Engineer', companyId: '',
@@ -120,12 +128,14 @@ const JobForm = () => {
 
   const [formData, setFormData] = useState(defaultFormData);
 
-  const branches    = ['CSE', 'IT', 'ECE', 'EEE', 'AI/ML', 'DS', 'MECH', 'CIVIL', 'Other'];
-  const batches     = ['2024', '2025', '2026', '2027', '2028'];
-  const roundTypes  = ['Online Test', 'Technical Interview', 'HR Interview', 'Group Discussion', 'Case Study', 'Other'];
+  const branches = ['CSE', 'IT', 'ECE', 'EEE', 'AI/ML', 'DS', 'MECH', 'CIVIL', 'Other'];
+  const batches = ['2024', '2025', '2026', '2027', '2028'];
+  const roundTypes = ['Online Test', 'Technical Interview', 'HR Interview', 'Group Discussion', 'Case Study', 'Other'];
 
   useEffect(() => {
     fetchCompanies();
+    fetchSkills();
+
     if (isEditMode) fetchJobDetails();
   }, [jobId]);
 
@@ -139,6 +149,38 @@ const JobForm = () => {
       }
     } catch (err) { console.error('Error fetching companies:', err); }
   };
+
+  const fetchSkills = async () => {
+    try {
+      const response = await skillAPI.getAllSkills();
+
+      if (response.success) {
+        setSkills(response.skills);
+      }
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+    }
+  };
+
+  const normalizedPreferredSkills = formData.preferredSkills
+    .map(getSkillName)
+    .filter(Boolean);
+
+  const skillOptions = [...new Set([
+    ...skills.map(getSkillName),
+    ...normalizedPreferredSkills,
+  ])]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map((skillName) => ({
+      value: skillName,
+      label: skillName,
+    }));
+
+  const selectedSkillOptions = normalizedPreferredSkills.map((skillName) => ({
+    value: skillName,
+    label: skillName,
+  }));
 
   const fetchJobDetails = async () => {
     try {
@@ -154,7 +196,7 @@ const JobForm = () => {
           locations: job.locations?.length > 0 ? job.locations : defaultFormData.locations,
           responsibilities: job.responsibilities?.length > 0 ? job.responsibilities : [''],
           requirements: job.requirements?.length > 0 ? job.requirements : [''],
-          preferredSkills: job.preferredSkills || [],
+          preferredSkills: (job.preferredSkills || []).map(getSkillName).filter(Boolean),
           tags: job.tags || [], notes: job.notes || '',
           selectionProcess: { rounds: job.selectionProcess?.rounds?.length > 0 ? job.selectionProcess.rounds : defaultFormData.selectionProcess.rounds, totalRounds: job.selectionProcess?.totalRounds || 1 },
           documentsRequired: { ...defaultFormData.documentsRequired, ...(job.documentsRequired || {}) },
@@ -182,15 +224,15 @@ const JobForm = () => {
   };
 
   /* ─── field helpers ─── */
-  const updateField = (field, value)                    => setFormData(p => ({ ...p, [field]: value }));
-  const updateNested = (parent, field, value)           => setFormData(p => ({ ...p, [parent]: { ...p[parent], [field]: value } }));
-  const updateDoubleNested = (parent, child, field, v)  => setFormData(p => ({ ...p, [parent]: { ...p[parent], [child]: { ...p[parent][child], [field]: v } } }));
-  const addArrayItem = (field, template)                => setFormData(p => ({ ...p, [field]: [...p[field], template] }));
-  const updateArrayItem = (field, idx, value)           => setFormData(p => { const a = [...p[field]]; a[idx] = value; return { ...p, [field]: a }; });
-  const removeArrayItem = (field, idx)                  => setFormData(p => ({ ...p, [field]: p[field].filter((_, i) => i !== idx) }));
+  const updateField = (field, value) => setFormData(p => ({ ...p, [field]: value }));
+  const updateNested = (parent, field, value) => setFormData(p => ({ ...p, [parent]: { ...p[parent], [field]: value } }));
+  const updateDoubleNested = (parent, child, field, v) => setFormData(p => ({ ...p, [parent]: { ...p[parent], [child]: { ...p[parent][child], [field]: v } } }));
+  const addArrayItem = (field, template) => setFormData(p => ({ ...p, [field]: [...p[field], template] }));
+  const updateArrayItem = (field, idx, value) => setFormData(p => { const a = [...p[field]]; a[idx] = value; return { ...p, [field]: a }; });
+  const removeArrayItem = (field, idx) => setFormData(p => ({ ...p, [field]: p[field].filter((_, i) => i !== idx) }));
   const toggleBranch = (branch) => updateNested('eligibility', 'branches', formData.eligibility.branches.includes(branch) ? formData.eligibility.branches.filter(b => b !== branch) : [...formData.eligibility.branches, branch]);
-  const toggleBatch  = (batch)  => updateNested('eligibility', 'batches',  formData.eligibility.batches.includes(batch)   ? formData.eligibility.batches.filter(b => b !== batch)   : [...formData.eligibility.batches,  batch]);
-  const addLocation  = ()        => addArrayItem('locations', { city: '', state: '', country: 'India', workMode: 'On-site' });
+  const toggleBatch = (batch) => updateNested('eligibility', 'batches', formData.eligibility.batches.includes(batch) ? formData.eligibility.batches.filter(b => b !== batch) : [...formData.eligibility.batches, batch]);
+  const addLocation = () => addArrayItem('locations', { city: '', state: '', country: 'India', workMode: 'On-site' });
   const updateLocation = (idx, field, value) => setFormData(p => { const locs = [...p.locations]; locs[idx] = { ...locs[idx], [field]: value }; return { ...p, locations: locs }; });
   const addSelectionRound = () => setFormData(p => ({ ...p, selectionProcess: { ...p.selectionProcess, rounds: [...p.selectionProcess.rounds, { name: 'Online Test', description: '', duration: '' }] } }));
   const updateSelectionRound = (idx, field, value) => setFormData(p => { const rounds = [...p.selectionProcess.rounds]; rounds[idx] = { ...rounds[idx], [field]: value }; return { ...p, selectionProcess: { ...p.selectionProcess, rounds } }; });
@@ -327,10 +369,36 @@ const JobForm = () => {
             </button>
           </div>
 
-          <ChipInput label="Preferred Skills"
-            hint="These skills are used for AI-powered student matching. Add each skill and press Enter or click Add."
-            values={formData.preferredSkills} onChange={(v) => updateField('preferredSkills', v)}
-            placeholder="e.g. React, Node.js, Python, SQL..." />
+          {/* Preferred Skills Dropdown */}
+          <div>
+            <FieldLabel>Preferred Skills</FieldLabel>
+
+            <Select
+              isMulti
+              isSearchable
+              closeMenuOnSelect
+              options={skillOptions}
+              placeholder="Search and select skills..."
+              value={selectedSkillOptions}
+              menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                menu: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              onChange={(selected) =>
+                updateField(
+                  "preferredSkills",
+                  selected ? selected.map((s) => s.value) : []
+                )
+              }
+              className="text-sm"
+            />
+
+            <p className="text-xs text-gray-400 mt-1">
+              Search and select multiple skills
+            </p>
+          </div>
         </Section>
 
         {/* Package Details */}
@@ -409,11 +477,10 @@ const JobForm = () => {
             <div className="flex flex-wrap gap-2">
               {branches.map(branch => (
                 <button key={branch} type="button" onClick={() => toggleBranch(branch)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${
-                    formData.eligibility.branches.includes(branch)
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
-                  }`}>
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${formData.eligibility.branches.includes(branch)
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                    : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
+                    }`}>
                   {branch}
                 </button>
               ))}
@@ -425,11 +492,10 @@ const JobForm = () => {
             <div className="flex flex-wrap gap-2">
               {batches.map(batch => (
                 <button key={batch} type="button" onClick={() => toggleBatch(batch)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${
-                    formData.eligibility.batches.includes(batch)
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
-                  }`}>
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${formData.eligibility.batches.includes(batch)
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                    : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
+                    }`}>
                   {batch}
                 </button>
               ))}
@@ -482,9 +548,9 @@ const JobForm = () => {
         <Section icon={FileText} title="Documents Required">
           <div className="space-y-2">
             {[
-              { key: 'resume',      label: 'Resume'       },
+              { key: 'resume', label: 'Resume' },
               { key: 'coverLetter', label: 'Cover Letter' },
-              { key: 'marksheets',  label: 'Marksheets'   },
+              { key: 'marksheets', label: 'Marksheets' },
               { key: 'certificates', label: 'Certificates' },
             ].map(({ key, label }) => (
               <label key={key} className="flex items-center gap-2.5 cursor-pointer">

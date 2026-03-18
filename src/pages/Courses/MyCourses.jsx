@@ -336,38 +336,56 @@ const MyCourses = () => {
 
       {/* 2-Column Layout */}
       <div className="relative bg-[#f8fafc] flex-1 min-h-screen">
-        {/* Dynamic Abstract Background Elements */}
         <div className="absolute inset-0 z-0 opacity-40 pointer-events-none overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/50"></div>
           <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-blue-100/50 blur-[100px] mix-blend-multiply opacity-70"></div>
         </div>
 
-        <div className="max-w-[1240px] mx-auto w-full px-4 sm:px-6 lg:px-8 pb-10 pt-4 relative z-10">
-          {/* Top Heading: Single Column */}
-          <div className="w-full mb-8">
-            <div className="flex flex-wrap items-center gap-3 mb-2">
-              <span className="bg-white/80 backdrop-blur-sm border border-gray-200 text-blue-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
+        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 pb-10 pt-3 md:pt-4 relative z-10">
+          {/* Top Heading */}
+          <div className="w-full mb-4 md:mb-8">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="bg-white/80 backdrop-blur-sm border border-gray-200 text-blue-700 text-[10px] md:text-[12px] font-bold uppercase tracking-wider px-2.5 md:px-3 py-1 md:py-1.5 rounded-full shadow-sm">
                 Student Dashboard
               </span>
-              <span className="bg-indigo-50/80 backdrop-blur-sm border border-indigo-200 text-indigo-700 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
+              <span className="bg-indigo-50/80 backdrop-blur-sm border border-indigo-200 text-indigo-700 text-[10px] md:text-[12px] font-bold uppercase tracking-wider px-2.5 md:px-3 py-1 md:py-1.5 rounded-full shadow-sm">
                 My Learning
               </span>
             </div>
 
-            <h1 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight mb-2">
+            <h1 className="text-[20px] sm:text-[24px] md:text-[32px] font-bold text-gray-900 leading-tight mb-1 md:mb-2">
               My Learning Journey
             </h1>
-            <p className="text-[15px] text-gray-600 max-w-3xl leading-relaxed">
+            <p className="text-[12px] md:text-[15px] text-gray-600 max-w-3xl leading-relaxed">
               Track your progress, review past courses, and earn your certificates all in one place.
             </p>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 relative">
+          {/* Mobile Stats Row (visible on < lg) */}
+          <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-3 hide-scrollbar">
+            {[
+              { label: 'Enrolled', value: enrollments.length, icon: BookOpen },
+              { label: 'In Progress', value: activeCount, icon: PlayCircle },
+              { label: 'Completed', value: completedCount, icon: CheckCircle2 },
+              { label: 'Certificates', value: certCount, icon: Award },
+            ].map(stat => (
+              <div key={stat.label} className="flex-shrink-0 bg-white border border-gray-200 rounded-xl px-3 py-2 flex items-center gap-2 shadow-sm">
+                <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <stat.icon className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-bold text-gray-900 leading-none">{stat.value}</p>
+                  <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mt-0.5">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
 
-            {/* Left Side: Stats (25%) */}
-            <div className="w-full lg:w-[25%] flex flex-col">
+          <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 relative">
+
+            {/* Left Side: Stats (desktop only) */}
+            <div className="hidden lg:flex lg:w-[25%] flex-col">
               <div className="sticky top-0 z-10 pt-5 pb-2 before:absolute before:inset-0 before:-z-10 before:backdrop-blur-md before:bg-[#f8fafc]/90 before:rounded-b-3xl before:-mx-4 before:shadow-[0_8px_30px_rgb(0,0,0,0.04)] before:border before:border-white/50">
-                {/* Stats (Vertical list on the left side) */}
                 <div className="flex flex-col gap-3 mb-6 relative z-10">
                   {[
                     { label: 'Total Enrolled', value: enrollments.length, icon: BookOpen },
@@ -386,7 +404,6 @@ const MyCourses = () => {
                     </div>
                   ))}
                 </div>
-
                 <button
                   onClick={() => navigate('/dashboard/student/courses')}
                   className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-[0_4px_20px_rgb(0,0,0,0.1)] transform hover:-translate-y-0.5 text-sm relative z-10"
@@ -396,12 +413,12 @@ const MyCourses = () => {
               </div>
             </div>
 
-            {/* Right Side: Courses (75%) */}
+            {/* Right Side: Courses */}
             <div className="w-full lg:w-[75%] flex flex-col">
 
               {/* Status Tabs */}
-              <div className="sticky top-0 z-20 bg-[#f8fafc]/90 backdrop-blur-md pt-6 pb-4 mb-4 -mx-3 px-3 rounded-b-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50">
-                <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              <div className="sticky top-0 z-20 bg-[#f8fafc]/90 backdrop-blur-md pt-3 md:pt-6 pb-3 md:pb-4 mb-3 md:mb-4 -mx-3 px-3 rounded-b-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50">
+                <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-1 hide-scrollbar">
                   {STATUS_TABS.map(tab => {
                     const count = tab.key
                       ? enrollments.filter(e => e.status === tab.key).length
@@ -410,14 +427,14 @@ const MyCourses = () => {
                       <button
                         key={tab.key}
                         onClick={() => setStatusFilter(tab.key)}
-                        className={`flex items-center gap-2 px-5 py-3 rounded-xl text-[14px] font-bold whitespace-nowrap transition-all ${statusFilter === tab.key
+                        className={`flex items-center gap-1.5 px-3 md:px-5 py-2 md:py-3 rounded-xl text-[12px] md:text-[14px] font-bold whitespace-nowrap transition-all ${statusFilter === tab.key
                           ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300 bg-opacity-70 backdrop-blur-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300'
                           }`}
                       >
-                        <tab.icon className="w-4 h-4" />
+                        <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         {tab.label}
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                        <span className={`text-[10px] md:text-[11px] px-1.5 py-0.5 rounded-full ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'}`}>
                           {count}
                         </span>
                       </button>
@@ -462,6 +479,10 @@ const MyCourses = () => {
           </div>
         </div>
       </div>
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </StudentLayout>
   );
 };

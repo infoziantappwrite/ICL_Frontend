@@ -323,48 +323,25 @@ const TakeAssessment = () => {
     );
   }
 
-  // ── Result ──
-  if (phase === 'done' && result) {
-    const pct = result.score_percentage ?? 0;
-    const passed = pct >= 70;
-    const IconEl = passed ? Award : pct >= 40 ? TrendingUp : RotateCcw;
-    
+  // ── Result (Scores Hidden Pending Publication) ──
+  if (phase === 'done') {
     return (
       <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
         <div className="w-full max-w-lg">
           <Card className="p-0 overflow-hidden text-center">
-            <div className={`py-12 px-8 ${passed ? 'bg-green-50' : pct >= 40 ? 'bg-blue-50' : 'bg-amber-50'} border-b ${passed ? 'border-green-100' : pct >= 40 ? 'border-blue-100' : 'border-amber-100'}`}>
+            <div className="py-12 px-8 bg-green-50 border-b border-green-100">
               <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                <IconEl className={`w-10 h-10 ${passed ? 'text-green-500' : pct >= 40 ? 'text-blue-500' : 'text-amber-500'}`} />
+                <CheckCircle2 className="w-10 h-10 text-green-500" />
               </div>
-              <div className={`text-6xl font-black mb-2 ${passed ? 'text-green-600' : pct >= 40 ? 'text-blue-600' : 'text-amber-600'}`}>
-                {pct}%
-              </div>
-              <h2 className="text-[20px] font-bold text-gray-900 mb-1">
-                {passed ? 'Assessment Passed!' : pct >= 40 ? 'Good Effort!' : 'Needs Improvement'}
+              <h2 className="text-[20px] font-bold text-gray-900 mb-2">
+                Assessment Submitted Successfully!
               </h2>
               <p className="text-[14px] text-gray-500">
-                {passed ? 'Excellent work demonstrating your skills.' : pct >= 40 ? 'You are getting there, keep practicing!' : 'Review the material and try again.'}
+                Your answers have been securely recorded. Your score and detailed results will be available once published by your college admin.
               </p>
             </div>
             
             <div className="p-8">
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                {[
-                  { label: 'Correct', value: result.correct_answers ?? 0, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-                  { label: 'Earned', value: result.earned_marks ?? 0, icon: Zap, color: 'text-blue-600', bg: 'bg-blue-50' },
-                  { label: 'Total', value: result.total_marks ?? 0, icon: Target, color: 'text-gray-600', bg: 'bg-gray-50' },
-                ].map((s, idx) => (
-                  <div key={idx} className="flex flex-col items-center p-4 border border-gray-100 rounded-xl">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${s.bg}`}>
-                      <s.icon className={`w-4 h-4 ${s.color}`} />
-                    </div>
-                    <div className="text-[20px] font-bold text-gray-900">{s.value}</div>
-                    <div className="text-[12px] font-bold text-gray-500 uppercase tracking-wide mt-1">{s.label}</div>
-                  </div>
-                ))}
-              </div>
-              
               <div className="flex gap-4">
                 <button 
                   onClick={() => navigate('/dashboard/student/assessments/history')} 

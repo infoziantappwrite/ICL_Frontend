@@ -369,12 +369,6 @@ const AssessmentForm = () => {
           <Section icon={Eye} title="Assessment Settings">
             <div className="space-y-3">
               <Toggle
-                checked={form.show_results_to_students}
-                onChange={v => set('show_results_to_students', v)}
-                label="Show Results to Students"
-                desc="Students can view their score and correct answers after submission"
-              />
-              <Toggle
                 checked={form.shuffle_questions}
                 onChange={v => set('shuffle_questions', v)}
                 label="Shuffle Questions"

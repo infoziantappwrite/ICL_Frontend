@@ -1167,6 +1167,19 @@ export const assessmentAttemptAPI = {
     const qs = new URLSearchParams(params).toString();
     return apiCall(`/assessment-attempt/admin/${assessmentId}${qs ? `?${qs}` : ''}`);
   },
+
+  // POST /api/assessment-attempt/admin/:assessmentId/publish-leaderboard
+  publishLeaderboard: async (assessmentId, data = {}) => {
+    return apiCall(`/assessment-attempt/admin/${assessmentId}/publish-leaderboard`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // GET /api/assessment-attempt/leaderboard/:assessmentId  (student)
+  getLeaderboard: async (assessmentId) => {
+    return apiCall(`/assessment-attempt/leaderboard/${assessmentId}`);
+  },
 };
 
 window.assessmentAPI = assessmentAPI;

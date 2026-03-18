@@ -224,8 +224,11 @@ const AssessmentList = () => {
 
   const filteredAssessments = useMemo(() => {
     return allAssessments.filter(a => {
-      const title = a.jd_id?.jobTitle || a.title || '';
-      const matchSearch = searchTerm === '' || title.toLowerCase().includes(searchTerm.toLowerCase());
+      // HIDE COMPLETED ASSESSMENTS FROM THIS LIST
+      if (a.status !== 'active') return false; 
+      
+      const titleMatch = a.title || a.skill_id?.name || '';
+      const matchSearch = searchTerm === '' || titleMatch.toLowerCase().includes(searchTerm.toLowerCase());
       const matchLevel = levelFilter === '' || a.level === levelFilter;
       const matchSource = sourceFilter === '' || a.source_type === sourceFilter;
       return matchSearch && matchLevel && matchSource;
@@ -234,40 +237,85 @@ const AssessmentList = () => {
 
   return (
     <StudentLayout title="Skill Assessments">
-      <div className="min-h-screen bg-[#f8f9fa] px-3 sm:px-4 md:px-6 lg:px-8 py-3 md:py-6">
-        <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+      <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
+        <div className="max-w-[1240px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6">
+          
+          {/* ─────── LEFT SIDEBAR: FILTERS (col-span-3) ─────── */}
+          <div className="md:col-span-3 md:sticky md:top-[100px] self-start space-y-5">
+            <div className="md:hidden">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-bold shadow-sm"
+              >
+                <Filter className="w-5 h-5" />
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </button>
+            </div>
 
-          {/* ─── LEFT SIDEBAR: FILTERS (desktop only, col-span-3) ─── */}
-          <div className="hidden md:block md:col-span-3 md:sticky md:top-[100px] self-start">
-            <Card className="p-4 md:p-5">
-              <h3 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
-                <Filter className="w-4 h-4 text-blue-600" /> All Filters
-              </h3>
-              <FilterContent
-                searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-                levelFilter={levelFilter} setLevelFilter={setLevelFilter}
-                sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
-                clearFilters={clearFilters}
-              />
-            </Card>
-          </div>
+            <div className={`space-y-5 ${showFilters ? 'block' : 'hidden md:block'}`}>
+              <Card className="p-5">
+                <h3 className="font-bold text-gray-900 text-[16px] mb-4 flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-blue-600" /> All Filters
+                </h3>
 
-          {/* ─── MAIN FEED (col-span-9) ─── */}
-          <div className="col-span-1 md:col-span-9 space-y-3 md:space-y-5">
+                <div className="mb-5">
+                  <label className="block text-[12px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Search</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Skill name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-medium"
+                    />
+                  </div>
+                </div>
 
-            {/* Header */}
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="text-[18px] sm:text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">
-                  Assessments
-                </h1>
-                <p className="text-[12px] md:text-[14px] text-gray-600 mt-0.5">
-                  {filteredAssessments.length} {filteredAssessments.length === 1 ? 'assessment' : 'assessments'} available
-                </p>
-              </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[12px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Level</label>
+                    <select
+                      value={levelFilter}
+                      onChange={(e) => setLevelFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                    >
+                      <option value="">All Levels</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
+                  </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Mobile filter button */}
+                  <div>
+                    <label className="block text-[12px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Source</label>
+                    <select
+                      value={sourceFilter}
+                      onChange={(e) => setSourceFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                    >
+                      <option value="">All Sources</option>
+                      <option value="college_admin_manual">Admin Assigned</option>
+                      <option value="college_admin_ai">AI Generated</option>
+                      <option value="student_skill_based">Skill-Based</option>
+                    </select>
+                  </div>
+                </div>
+
+                {(searchTerm || levelFilter || sourceFilter) && (
+                  <button
+                    onClick={clearFilters}
+                    className="w-full mt-6 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <X className="w-4 h-4" /> Clear filters
+                  </button>
+                )}
+              </Card>
+
+              <Card className="p-5 bg-gradient-to-br from-blue-600 to-cyan-600 border-none text-white">
+                <Target className="w-8 h-8 mb-3 text-blue-100" />
+                <h3 className="font-bold text-[16px] mb-2">Track Your Progress</h3>
+                <p className="text-[13px] text-blue-100 mb-4">View your past assessment scores and analytics to improve.</p>
                 <button
                   onClick={() => setShowFilterDrawer(true)}
                   className="md:hidden relative flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 text-[13px] font-semibold shadow-sm hover:border-blue-300 transition-colors"
@@ -281,7 +329,21 @@ const AssessmentList = () => {
                   )}
                 </button>
 
-                {/* Refresh */}
+          {/* ─────── RIGHT MAIN FEED (col-span-9) ─────── */}
+          <div className="md:col-span-9 space-y-5 md:space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <h1 className="text-[24px] md:text-[28px] font-bold text-gray-900 leading-tight">
+                  Skill Assessments
+                </h1>
+                <p className="text-[14px] text-gray-600 mt-1">
+                  Take assessments to verify your skills and improve your placement profile
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-[13px] font-medium text-gray-500 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm inline-flex w-fit">
+                  {filteredAssessments.length} {filteredAssessments.length === 1 ? 'assessment' : 'assessments'} available
+                </div>
                 <button
                   onClick={fetchAssessments}
                   className="bg-white border border-gray-200 text-gray-600 p-1.5 md:p-2 rounded-full hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
@@ -292,7 +354,6 @@ const AssessmentList = () => {
               </div>
             </div>
 
-            {/* Error State */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 md:p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -327,15 +388,13 @@ const AssessmentList = () => {
                 ))}
               </div>
             ) : filteredAssessments.length === 0 && !error ? (
-              <Card className="text-center py-10 md:py-16 p-4">
-                <Target className="w-10 h-10 md:w-12 md:h-12 text-gray-300 mx-auto mb-3 md:mb-4" />
-                <h3 className="text-[16px] md:text-[18px] font-bold text-gray-900 mb-2">
-                  No matching assessments found
+              <Card className="text-center py-16">
+                <Target className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-[18px] font-bold text-gray-900 mb-2">
+                  No pending assessments right now!
                 </h3>
-                <p className="text-[13px] md:text-[14px] text-gray-500">
-                  {allAssessments.length === 0
-                    ? 'Check back later — your college admin will publish assessments soon.'
-                    : 'Try adjusting your filters or search terms.'}
+                <p className="text-[14px] text-gray-500">
+                  You have completed all your active assessments. Check the "My History" tab to view your past results.
                 </p>
                 {allAssessments.length > 0 && (
                   <button

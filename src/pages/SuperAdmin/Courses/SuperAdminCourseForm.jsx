@@ -4,11 +4,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   BookOpen, ArrowLeft, Plus, Trash2, Save, AlertCircle,
   CheckCircle2, Layers, Target, Award, Clock, RefreshCw, X,
-  Globe, Video, Link,
+  Globe, Video, Link, Building2, CheckSquare, Square, Info,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { superAdminCourseAPI } from '../../../api/Api';
+import { superAdminStudentAPI } from '../../../api/studentAPI';
 
 const INITIAL_FORM = {
   title: '', description: '', shortDescription: '',
@@ -18,16 +19,24 @@ const INITIAL_FORM = {
   instructor: { name: '', bio: '', experience: 0 },
   curriculum: [], prerequisites: [], learningOutcomes: [],
   thumbnail: '', videoUrl: '', syllabusUrl: '',
-  status: 'Active', deliveryMode: 'ONLINE', language: 'English',
+  // Default status is Draft; workflow: Draft → Coming Soon → Active (auto) → Inactive
+  status: 'Draft', deliveryMode: 'ONLINE', language: 'English',
   tags: [], certificateProvided: true, maxEnrollments: '',
   startDate: '', endDate: '', registrationDeadline: '',
-  collegeId: '',
+  collegeIds: [], // empty = platform-wide
 };
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-200 hover:border-gray-300 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-xs text-gray-800 placeholder-gray-400 bg-white transition-all';
-const selectClass = `${inputClass}`;
+const selectClass = inputClass;
 
-/* ─── Section heading ─────────────────────── */
+// Status workflow rules for super_admin
+const STATUS_OPTIONS = [
+  { value: 'Draft', label: 'Draft', color: 'text-gray-500', hint: 'Not visible to students' },
+  { value: 'Coming Soon', label: 'Coming Soon', color: 'text-amber-600', hint: 'Visible but not yet enrollable' },
+  { value: 'Active', label: 'Active', color: 'text-green-600', hint: 'Auto-activated at start date; or set manually' },
+  { value: 'Inactive', label: 'Inactive', color: 'text-red-500', hint: 'Hidden from students' },
+];
+
 const SHead = ({ icon: Icon, title, sub }) => (
   <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
     <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -40,7 +49,6 @@ const SHead = ({ icon: Icon, title, sub }) => (
   </div>
 );
 
-/* ─── Form field wrapper ──────────────────── */
 const FormField = ({ label, required, hint, error, children }) => (
   <div>
     <label className="block text-xs font-bold text-gray-600 mb-1.5">
@@ -56,18 +64,15 @@ const FormField = ({ label, required, hint, error, children }) => (
   </div>
 );
 
-/* ─── SelectWithOther ─────────────────────── */
 const SelectWithOther = ({ value, onChange, options, className }) => {
   const isOther = value && !options.includes(value);
   const [showCustom, setShowCustom] = useState(isOther);
   const [customVal, setCustomVal] = useState(isOther ? value : '');
-
   const handleSelect = (e) => {
     if (e.target.value === '__other__') { setShowCustom(true); onChange(customVal || ''); }
     else { setShowCustom(false); onChange(e.target.value); }
   };
   const selectValue = showCustom ? '__other__' : (options.includes(value) ? value : (value ? '__other__' : options[0]));
-
   return (
     <div className="space-y-2">
       <select value={selectValue} onChange={handleSelect} className={className}>
@@ -83,7 +88,6 @@ const SelectWithOther = ({ value, onChange, options, className }) => {
   );
 };
 
-/* ─── Tag / list input ────────────────────── */
 const ListInput = ({ values, onChange, placeholder }) => {
   const [input, setInput] = useState('');
   const add = () => { if (!input.trim()) return; onChange([...values, input.trim()]); setInput(''); };
@@ -114,17 +118,14 @@ const ListInput = ({ values, onChange, placeholder }) => {
   );
 };
 
-/* ─── Module item ─────────────────────────── */
 const ModuleItem = ({ mod, index, onChange, onRemove }) => {
   const [topicInput, setTopicInput] = useState('');
   const [videoInput, setVideoInput] = useState({ title: '', url: '' });
-
   const addTopic = () => {
     if (!topicInput.trim()) return;
     onChange({ ...mod, topics: [...(mod.topics || []), topicInput.trim()] });
     setTopicInput('');
   };
-
   const addVideo = () => {
     if (!videoInput.url.trim()) return;
     onChange({ ...mod, videos: [...(mod.videos || []), { title: videoInput.title.trim(), url: videoInput.url.trim() }] });
@@ -138,7 +139,6 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
           <span className="text-[10px] font-black text-white">{index + 1}</span>
         </div>
         <div className="flex-1 space-y-3">
-          {/* Module name + hours */}
           <div className="flex gap-2">
             <input type="text" placeholder="Module name *" value={mod.module}
               onChange={e => onChange({ ...mod, module: e.target.value })} className={inputClass} />
@@ -146,8 +146,6 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
               onChange={e => onChange({ ...mod, duration: +e.target.value })}
               className={`${inputClass} w-20`} min="0" />
           </div>
-
-          {/* Topics */}
           <div>
             <p className="text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Topics</p>
             <div className="flex gap-2 mb-2">
@@ -165,27 +163,21 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
                   <span key={j} className="inline-flex items-center gap-1 bg-white text-gray-700 text-[10px] px-2 py-0.5 rounded-full border border-gray-200">
                     {t}
                     <button type="button" onClick={() => onChange({ ...mod, topics: mod.topics.filter((_, k) => k !== j) })}
-                      className="text-gray-400 hover:text-red-500">
-                      <X className="w-2.5 h-2.5" />
-                    </button>
+                      className="text-gray-400 hover:text-red-500"><X className="w-2.5 h-2.5" /></button>
                   </span>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Primary video URL */}
           <div>
             <p className="text-[10px] font-bold text-gray-500 mb-1.5 flex items-center gap-1 uppercase tracking-wider">
               <Video className="w-3 h-3 text-cyan-500" /> Primary Module Video URL
             </p>
-            <input type="url" placeholder="https://youtube.com/... or any video URL"
+            <input type="url" placeholder="https://youtube.com/watch?v=... or embed URL"
               value={mod.videoUrl || ''}
               onChange={e => onChange({ ...mod, videoUrl: e.target.value })}
               className={inputClass} />
           </div>
-
-          {/* Additional videos */}
           <div>
             <p className="text-[10px] font-bold text-gray-500 mb-1.5 flex items-center gap-1 uppercase tracking-wider">
               <Link className="w-3 h-3 text-indigo-500" /> Additional Videos
@@ -223,7 +215,6 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
             )}
           </div>
         </div>
-
         <button type="button" onClick={onRemove}
           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
           <Trash2 className="w-3.5 h-3.5" />
@@ -233,15 +224,113 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
   );
 };
 
-/* ─── Section card wrapper ────────────────── */
-const Section = ({ title, icon, sub, children }) => (
+const Section = ({ children, title, icon, sub }) => (
   <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
     <SHead icon={icon} title={title} sub={sub} />
     <div className="space-y-4">{children}</div>
   </div>
 );
 
-/* ══════════════════════════════════════════ */
+// ── Multi-College Picker ─────────────────────────────────────────────────────
+const CollegePicker = ({ selectedIds, onChange, colleges, loading }) => {
+  const [search, setSearch] = useState('');
+  const filtered = colleges.filter(c =>
+    !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()) || c.code?.toLowerCase().includes(search.toLowerCase())
+  );
+  const toggle = (id) => {
+    if (selectedIds.includes(id)) onChange(selectedIds.filter(x => x !== id));
+    else onChange([...selectedIds, id]);
+  };
+  const isPlatformWide = selectedIds.length === 0;
+
+  return (
+    <div className="space-y-3">
+      {/* Scope indicator */}
+      <div className={`flex items-start gap-2.5 p-3 rounded-xl border transition-all ${isPlatformWide ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
+        <Globe className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isPlatformWide ? 'text-green-600' : 'text-blue-500'}`} />
+        <div>
+          <p className={`text-xs font-bold ${isPlatformWide ? 'text-green-700' : 'text-blue-700'}`}>
+            {isPlatformWide ? '🌐 Platform-Wide Course' : `🏫 Restricted to ${selectedIds.length} College(s)`}
+          </p>
+          <p className={`text-[10px] mt-0.5 ${isPlatformWide ? 'text-green-600' : 'text-blue-600'}`}>
+            {isPlatformWide
+              ? 'All colleges can access this course. Individual student assignment will be disabled.'
+              : 'Only students from selected colleges can access this course. Individual assignment is enabled.'}
+          </p>
+        </div>
+      </div>
+
+      {/* Selected colleges chips */}
+      {selectedIds.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedIds.map(id => {
+            const col = colleges.find(c => c._id === id);
+            return col ? (
+              <span key={id} className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-800 border border-blue-200 text-[11px] px-2.5 py-1 rounded-full font-semibold">
+                <Building2 className="w-3 h-3" />{col.name}
+                <button type="button" onClick={() => toggle(id)} className="text-blue-400 hover:text-red-500 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ) : null;
+          })}
+        </div>
+      )}
+
+      {/* College search + list */}
+      {loading ? (
+        <div className="flex items-center gap-2 py-3 text-xs text-gray-400">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading colleges...
+        </div>
+      ) : (
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <div className="relative border-b border-gray-100">
+            <input
+              type="text"
+              placeholder="Search colleges..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full px-3 py-2 text-xs focus:outline-none bg-gray-50"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="py-4 text-center text-xs text-gray-400">No colleges found</div>
+            ) : filtered.map(col => {
+              const isSelected = selectedIds.includes(col._id);
+              return (
+                <button
+                  key={col._id}
+                  type="button"
+                  onClick={() => toggle(col._id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all border-b border-gray-50 last:border-0 hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                >
+                  <div className={`flex-shrink-0 transition-colors ${isSelected ? 'text-blue-600' : 'text-gray-300'}`}>
+                    {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-semibold truncate ${isSelected ? 'text-blue-700' : 'text-gray-800'}`}>{col.name}</p>
+                    {col.code && <p className="text-[10px] text-gray-400">{col.code}</p>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <p className="text-[10px] text-gray-400 flex items-center gap-1">
+        <Info className="w-3 h-3" /> Select no colleges for platform-wide access, or pick specific colleges to restrict access.
+      </p>
+    </div>
+  );
+};
+
+// ══════════════════════════════════════════
 const SuperAdminCourseForm = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -251,13 +340,27 @@ const SuperAdminCourseForm = () => {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
+  const [colleges, setColleges] = useState([]);
+  const [collegesLoading, setCollegesLoading] = useState(true);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
-  useEffect(() => { if (isEdit) fetchCourse(); }, [courseId]);
+  useEffect(() => {
+    fetchColleges();
+    if (isEdit) fetchCourse();
+  }, [courseId]);
+
+  const fetchColleges = async () => {
+    setCollegesLoading(true);
+    try {
+      const res = await superAdminStudentAPI.getColleges();
+      if (res?.success) setColleges(res.data || res.colleges || []);
+    } catch { }
+    finally { setCollegesLoading(false); }
+  };
 
   const fetchCourse = async () => {
     try {
@@ -273,16 +376,17 @@ const SuperAdminCourseForm = () => {
           curriculum: (c.curriculum || []).map(m => ({ ...m, videoUrl: m.videoUrl || '', videos: m.videos || [] })),
           prerequisites: c.prerequisites || [], learningOutcomes: c.learningOutcomes || [],
           thumbnail: c.thumbnail || '', videoUrl: c.videoUrl || '', syllabusUrl: c.syllabusUrl || '',
-          status: c.status || 'Active', deliveryMode: c.deliveryMode || 'ONLINE', language: c.language || 'English',
+          status: c.status || 'Draft', deliveryMode: c.deliveryMode || 'ONLINE', language: c.language || 'English',
           tags: c.tags || [], certificateProvided: c.certificateProvided !== false,
           maxEnrollments: c.maxEnrollments || '',
           startDate: c.startDate ? c.startDate.split('T')[0] : '',
           endDate: c.endDate ? c.endDate.split('T')[0] : '',
           registrationDeadline: c.registrationDeadline ? c.registrationDeadline.split('T')[0] : '',
-          collegeId: c.collegeId?._id || c.collegeId || '',
+          // Support both new collegeIds array and legacy collegeId
+          collegeIds: c.collegeIds?.map(col => col._id || col) || (c.collegeId ? [c.collegeId._id || c.collegeId] : []),
         });
       }
-    } catch (err) { showToast('Failed to load course data', 'error'); }
+    } catch { showToast('Failed to load course data', 'error'); }
     finally { setLoading(false); }
   };
 
@@ -306,7 +410,7 @@ const SuperAdminCourseForm = () => {
     try {
       const payload = {
         ...form,
-        collegeId: form.collegeId || null,
+        collegeIds: form.collegeIds,
         maxEnrollments: form.maxEnrollments ? +form.maxEnrollments : undefined,
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
@@ -328,16 +432,9 @@ const SuperAdminCourseForm = () => {
   return (
     <SuperAdminDashboardLayout>
 
-      {/* ── Toast ── */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold border backdrop-blur-xl ${
-          toast.type === 'error'
-            ? 'bg-red-50 text-red-700 border-red-200'
-            : 'bg-blue-50 text-blue-700 border-blue-200'
-        }`}>
-          {toast.type === 'error'
-            ? <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold border backdrop-blur-xl ${toast.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
           {toast.msg}
         </div>
       )}
@@ -347,8 +444,7 @@ const SuperAdminCourseForm = () => {
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
           <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
         </div>
         <div className="relative flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
@@ -356,48 +452,32 @@ const SuperAdminCourseForm = () => {
               <BookOpen className="w-5 h-5 text-white" />
             </div>
             <div>
-              <button
-                onClick={() => navigate('/dashboard/super-admin/courses')}
-                className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors"
-              >
+              <button onClick={() => navigate('/dashboard/super-admin/courses')}
+                className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors">
                 <ArrowLeft className="w-3 h-3" /> Back to Courses
               </button>
-              <h1 className="text-white font-black text-lg leading-tight">
-                {isEdit ? 'Edit Course' : 'Create New Course'}
-              </h1>
-              <p className="text-blue-200 text-[11px] mt-0.5">
-                {isEdit ? 'Update course content and settings' : 'Fill in details to publish a new course'}
-              </p>
+              <h1 className="text-white font-black text-lg leading-tight">{isEdit ? 'Edit Course' : 'Create New Course'}</h1>
+              <p className="text-blue-200 text-[11px] mt-0.5">{isEdit ? 'Update course content and settings' : 'Starts as Draft — publish when ready'}</p>
             </div>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="inline-flex items-center gap-2 bg-white text-blue-600 text-xs font-black px-4 py-2.5 rounded-xl shadow-sm hover:bg-blue-50 hover:scale-105 transition-all disabled:opacity-50 flex-shrink-0"
-          >
+          <button onClick={handleSubmit} disabled={saving}
+            className="inline-flex items-center gap-2 bg-white text-blue-600 text-xs font-black px-4 py-2.5 rounded-xl shadow-sm hover:bg-blue-50 hover:scale-105 transition-all disabled:opacity-50 flex-shrink-0">
             {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             {saving ? 'Saving…' : isEdit ? 'Update' : 'Create'}
           </button>
         </div>
       </div>
 
-      {/* ══ FORM ══ */}
       <form onSubmit={handleSubmit} className="space-y-4">
 
         {/* Platform Scope */}
-        <Section title="Platform Scope" icon={Globe} sub="Control which colleges can access this course">
-          <div className="flex items-start gap-3 p-3 bg-blue-50/60 border border-blue-100 rounded-xl">
-            <Globe className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-xs font-bold text-blue-800 mb-0.5">Course Visibility</p>
-              <p className="text-[10px] text-blue-600 mb-3 leading-relaxed">Leave College ID blank to make this course available to all colleges (platform-wide).</p>
-              <FormField label="College ID (optional)" hint="Leave blank for platform-wide visibility">
-                <input type="text" value={form.collegeId}
-                  onChange={e => set('collegeId', e.target.value)} className={inputClass}
-                  placeholder="MongoDB ObjectId of specific college, or leave blank" />
-              </FormField>
-            </div>
-          </div>
+        <Section title="Platform Scope" icon={Globe} sub="Select which colleges can access this course">
+          <CollegePicker
+            selectedIds={form.collegeIds}
+            onChange={ids => set('collegeIds', ids)}
+            colleges={colleges}
+            loading={collegesLoading}
+          />
         </Section>
 
         {/* Basic Info */}
@@ -425,11 +505,26 @@ const SuperAdminCourseForm = () => {
               <SelectWithOther value={form.level} onChange={v => set('level', v)}
                 options={['Beginner','Intermediate','Advanced']} className={selectClass} />
             </FormField>
-            <FormField label="Status">
+
+            {/* Status with workflow hints */}
+            <FormField label="Status" hint="Draft → Coming Soon → Active (auto at start date) → Inactive">
               <select value={form.status} onChange={e => set('status', e.target.value)} className={selectClass}>
-                {['Active','Inactive','Draft','Coming Soon'].map(s => <option key={s} value={s}>{s}</option>)}
+                {STATUS_OPTIONS.map(s => (
+                  <option key={s.value} value={s.value}>{s.label} — {s.hint}</option>
+                ))}
               </select>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                  form.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' :
+                  form.status === 'Draft' ? 'bg-gray-50 text-gray-500 border-gray-200' :
+                  form.status === 'Coming Soon' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                  'bg-red-50 text-red-600 border-red-200'
+                }`}>{form.status}</span>
+                {form.status === 'Coming Soon' && <span className="text-[10px] text-amber-600">Will auto-activate on start date</span>}
+                {form.status === 'Active' && <span className="text-[10px] text-green-600">Will auto-deactivate on end date</span>}
+              </div>
             </FormField>
+
             <FormField label="Delivery Mode">
               <SelectWithOther value={form.deliveryMode} onChange={v => set('deliveryMode', v)}
                 options={['ONLINE','OFFLINE','HYBRID']} className={selectClass} />
@@ -448,28 +543,22 @@ const SuperAdminCourseForm = () => {
         <Section title="Duration & Pricing" icon={Clock} sub="Time commitment and cost details">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FormField label="Duration (Hours)" required error={errors.hours}>
-              <input type="number" value={form.duration.hours}
-                onChange={e => setNested('duration','hours',+e.target.value)} className={inputClass} min="1" />
+              <input type="number" value={form.duration.hours} onChange={e => setNested('duration','hours',+e.target.value)} className={inputClass} min="1" />
             </FormField>
             <FormField label="Duration (Weeks)">
-              <input type="number" value={form.duration.weeks}
-                onChange={e => setNested('duration','weeks',+e.target.value)} className={inputClass} min="0" />
+              <input type="number" value={form.duration.weeks} onChange={e => setNested('duration','weeks',+e.target.value)} className={inputClass} min="0" />
             </FormField>
             <FormField label="Max Enrollments" hint="Blank = unlimited">
-              <input type="number" value={form.maxEnrollments}
-                onChange={e => set('maxEnrollments', e.target.value)} className={inputClass} min="0" placeholder="Unlimited" />
+              <input type="number" value={form.maxEnrollments} onChange={e => set('maxEnrollments', e.target.value)} className={inputClass} min="0" placeholder="Unlimited" />
             </FormField>
             <FormField label="Original Price (₹)">
-              <input type="number" value={form.price.original}
-                onChange={e => setNested('price','original',+e.target.value)} className={inputClass} min="0" />
+              <input type="number" value={form.price.original} onChange={e => setNested('price','original',+e.target.value)} className={inputClass} min="0" />
             </FormField>
             <FormField label="Discounted Price (₹)">
-              <input type="number" value={form.price.discounted}
-                onChange={e => setNested('price','discounted',+e.target.value)} className={inputClass} min="0" />
+              <input type="number" value={form.price.discounted} onChange={e => setNested('price','discounted',+e.target.value)} className={inputClass} min="0" />
             </FormField>
             <FormField label="Currency">
-              <select value={form.price.currency}
-                onChange={e => setNested('price','currency',e.target.value)} className={selectClass}>
+              <select value={form.price.currency} onChange={e => setNested('price','currency',e.target.value)} className={selectClass}>
                 <option value="INR">INR (₹)</option>
                 <option value="USD">USD ($)</option>
               </select>
@@ -481,17 +570,14 @@ const SuperAdminCourseForm = () => {
         <Section title="Instructor" icon={Target} sub="Details about the course instructor">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Instructor Name" required error={errors.instructorName}>
-              <input type="text" value={form.instructor.name}
-                onChange={e => setNested('instructor','name',e.target.value)} className={inputClass} placeholder="Full name" />
+              <input type="text" value={form.instructor.name} onChange={e => setNested('instructor','name',e.target.value)} className={inputClass} placeholder="Full name" />
             </FormField>
             <FormField label="Years of Experience">
-              <input type="number" value={form.instructor.experience}
-                onChange={e => setNested('instructor','experience',+e.target.value)} className={inputClass} min="0" />
+              <input type="number" value={form.instructor.experience} onChange={e => setNested('instructor','experience',+e.target.value)} className={inputClass} min="0" />
             </FormField>
             <div className="sm:col-span-2">
               <FormField label="Instructor Bio">
-                <textarea value={form.instructor.bio}
-                  onChange={e => setNested('instructor','bio',e.target.value)} className={inputClass} rows={3} />
+                <textarea value={form.instructor.bio} onChange={e => setNested('instructor','bio',e.target.value)} className={inputClass} rows={3} />
               </FormField>
             </div>
           </div>
@@ -499,7 +585,7 @@ const SuperAdminCourseForm = () => {
 
         {/* Curriculum */}
         <Section title="Course Curriculum" icon={Layers} sub="Modules, topics, and video resources">
-          <p className="text-[10px] text-gray-400 -mt-2">Each module supports a primary video URL and multiple additional videos.</p>
+          <p className="text-[10px] text-gray-400 -mt-2">Paste any YouTube URL (watch or share link) — the player handles conversion automatically.</p>
           <div className="space-y-3">
             {form.curriculum.map((mod, i) => (
               <ModuleItem key={i} mod={mod} index={i}
@@ -525,13 +611,13 @@ const SuperAdminCourseForm = () => {
         </Section>
 
         {/* Media */}
-        <Section title="Media & Resources" icon={BookOpen} sub="Thumbnails, videos, and syllabus links">
+        <Section title="Media & Resources" icon={BookOpen} sub="Thumbnails, preview video, and syllabus">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Thumbnail URL">
               <input type="url" value={form.thumbnail} onChange={e => set('thumbnail', e.target.value)} className={inputClass} placeholder="https://..." />
             </FormField>
-            <FormField label="Preview Video URL">
-              <input type="url" value={form.videoUrl} onChange={e => set('videoUrl', e.target.value)} className={inputClass} placeholder="YouTube embed URL" />
+            <FormField label="Preview Video URL" hint="YouTube watch/share links are accepted">
+              <input type="url" value={form.videoUrl} onChange={e => set('videoUrl', e.target.value)} className={inputClass} placeholder="https://youtube.com/watch?v=..." />
             </FormField>
             <FormField label="Syllabus PDF URL">
               <input type="url" value={form.syllabusUrl} onChange={e => set('syllabusUrl', e.target.value)} className={inputClass} placeholder="https://..." />
@@ -541,6 +627,10 @@ const SuperAdminCourseForm = () => {
 
         {/* Dates */}
         <Section title="Dates & Settings" icon={Award} sub="Scheduling and certificate options">
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-700 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <span><strong>Auto-transition:</strong> When status is "Coming Soon", the course automatically becomes <strong>Active</strong> on the start date. It becomes <strong>Inactive</strong> after the end date.</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FormField label="Start Date">
               <input type="date" value={form.startDate} onChange={e => set('startDate', e.target.value)} className={inputClass} />
@@ -552,24 +642,13 @@ const SuperAdminCourseForm = () => {
               <input type="date" value={form.registrationDeadline} onChange={e => set('registrationDeadline', e.target.value)} className={inputClass} />
             </FormField>
           </div>
-
-          {/* Certificate toggle */}
           <div
-            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-              form.certificateProvided ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-200'
-            }`}
-            onClick={() => set('certificateProvided', !form.certificateProvided)}
-          >
-            <div className={`relative w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200 ${
-              form.certificateProvided ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gray-300'
-            }`}>
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
-                form.certificateProvided ? 'translate-x-[18px]' : 'translate-x-0.5'
-              }`} />
-              <input id="cert" type="checkbox" checked={form.certificateProvided}
-                onChange={e => set('certificateProvided', e.target.checked)} className="sr-only" />
+            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${form.certificateProvided ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-200'}`}
+            onClick={() => set('certificateProvided', !form.certificateProvided)}>
+            <div className={`relative w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200 ${form.certificateProvided ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${form.certificateProvided ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
             </div>
-            <label htmlFor="cert" className={`text-xs font-bold cursor-pointer ${form.certificateProvided ? 'text-blue-700' : 'text-gray-600'}`}>
+            <label className={`text-xs font-bold cursor-pointer ${form.certificateProvided ? 'text-blue-700' : 'text-gray-600'}`}>
               Provide certificate upon completion
             </label>
           </div>
@@ -583,9 +662,7 @@ const SuperAdminCourseForm = () => {
           </button>
           <button type="submit" disabled={saving}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-            {saving
-              ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving…</>
-              : <><Save className="w-3.5 h-3.5" />{isEdit ? 'Update Course' : 'Create Course'}</>}
+            {saving ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving…</> : <><Save className="w-3.5 h-3.5" />{isEdit ? 'Update Course' : 'Create Course'}</>}
           </button>
         </div>
       </form>

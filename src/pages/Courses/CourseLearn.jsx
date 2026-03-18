@@ -52,8 +52,21 @@ const toYouTubeEmbed = (url) => {
 
 // ─── YouTube Player Component ──────────────────────────────────────────────────
 const YouTubePlayer = ({ url, playerId, onComplete, alreadyWatched }) => {
-  const playerRef = useRef(null);
+  const playerRef  = useRef(null);
   const intervalRef = useRef(null);
+  // embedBlocked = true when video owner has disabled embedding (YT error 101/150)
+  const [embedBlocked, setEmbedBlocked] = useState(false);
+  // openedOnYT = true once student clicks "Open on YouTube" — enables the confirm button
+  const [openedOnYT, setOpenedOnYT] = useState(false);
+
+  // Extract raw YouTube video ID for the direct watch link
+  const getYouTubeId = (u) => {
+    const m = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  };
+  const videoId      = getYouTubeId(url);
+  const watchUrl     = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
 
   useEffect(() => {
     if (alreadyWatched) return;
@@ -61,25 +74,28 @@ const YouTubePlayer = ({ url, playerId, onComplete, alreadyWatched }) => {
     if (!embedUrl.includes('enablejsapi')) return;
 
     onYTReady(() => {
-      // Small delay to ensure DOM element exists
       setTimeout(() => {
         try {
           playerRef.current = new window.YT.Player(playerId, {
             events: {
+              onError: (e) => {
+                // 101 & 150 = "embedding disabled by video owner"
+                if (e.data === 101 || e.data === 150) {
+                  setEmbedBlocked(true);
+                }
+              },
               onStateChange: (e) => {
-                // State 0 = ENDED
                 if (e.data === 0) {
                   onComplete();
                   clearInterval(intervalRef.current);
                 }
-                // State 1 = PLAYING — poll for 90% watched
                 if (e.data === 1) {
                   intervalRef.current = setInterval(() => {
                     try {
                       const p = playerRef.current;
                       if (!p?.getCurrentTime) return;
                       const curr = p.getCurrentTime();
-                      const dur = p.getDuration();
+                      const dur  = p.getDuration();
                       if (dur > 0 && curr / dur >= 0.9) {
                         onComplete();
                         clearInterval(intervalRef.current);
@@ -104,6 +120,63 @@ const YouTubePlayer = ({ url, playerId, onComplete, alreadyWatched }) => {
   }, [url, playerId, alreadyWatched]);
 
   const embedUrl = toYouTubeEmbed(url);
+
+  // ── Fallback: embedding disabled by video owner ──────────────────────────
+  if (embedBlocked) {
+    return (
+      <div className="aspect-video bg-gray-900 w-full rounded-xl overflow-hidden relative flex flex-col items-center justify-center gap-4 px-6 text-center">
+        {/* Blurred thumbnail as background */}
+        {thumbnailUrl && (
+          <img
+            src={thumbnailUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm"
+          />
+        )}
+        <div className="relative z-10 flex flex-col items-center gap-3">
+          <div className="w-14 h-14 bg-red-500/20 border border-red-400/40 rounded-2xl flex items-center justify-center">
+            <svg className="w-7 h-7 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.2 8.2 0 004.79 1.53V6.77a4.85 4.85 0 01-1.02-.08z"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-white font-bold text-sm">Embedding Disabled</p>
+            <p className="text-gray-300 text-xs mt-1 max-w-xs leading-relaxed">
+              The video owner has disabled playback on external websites. Watch it directly on YouTube to complete this module.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-3 mt-1 w-full max-w-xs">
+            <a
+              href={watchUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => !alreadyWatched && setOpenedOnYT(true)}
+              className="inline-flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors shadow-lg"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.2 8.2 0 004.79 1.53V6.77a4.85 4.85 0 01-1.02-.08z"/>
+              </svg>
+              Open on YouTube →
+            </a>
+            {/* Only show confirm button AFTER student has clicked "Open on YouTube" */}
+            {!alreadyWatched && openedOnYT && (
+              <button
+                onClick={onComplete}
+                className="inline-flex items-center justify-center gap-1.5 w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors"
+              >
+                ✓ I've watched it — mark complete
+              </button>
+            )}
+            {!alreadyWatched && !openedOnYT && (
+              <p className="text-[11px] text-gray-400 text-center">
+                Open the video on YouTube, watch it, then come back to mark it complete.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="aspect-video bg-black w-full">

@@ -1258,6 +1258,10 @@ export const collegeAdminCourseAPI = {
   // POST /api/college-admin/courses/assign-batch
   assignCourseToBatch: (data) =>
     apiCall('/college-admin/courses/assign-batch', { method: 'POST', body: JSON.stringify(data) }),
+
+  // GET /api/courses/:id/assignable-students (college admin — no collegeId needed)
+  getAssignableStudents: (courseId) =>
+    apiCall(`/courses/${courseId}/assignable-students`),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1278,9 +1282,9 @@ export const superAdminCourseAPI = {
   createCourse: (data) =>
     apiCall('/super-admin/courses', { method: 'POST', body: JSON.stringify(data) }),
 
-  // PUT  /api/super-admin/courses/:id
+  // PUT  /api/courses/:id  (uses shared route — super_admin auth enforced by backend)
   updateCourse: (id, data) =>
-    apiCall(`/super-admin/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    apiCall(`/courses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   // DELETE /api/super-admin/courses/:id
   deleteCourse: (id) =>
@@ -1299,6 +1303,10 @@ export const superAdminCourseAPI = {
   // POST /api/super-admin/courses/assign-batch
   assignCourseToBatch: (data) =>
     apiCall('/super-admin/courses/assign-batch', { method: 'POST', body: JSON.stringify(data) }),
+
+  // GET /api/courses/:id/assignable-students?collegeId=xxx
+  getAssignableStudents: (courseId, collegeId) =>
+    apiCall(`/courses/${courseId}/assignable-students?collegeId=${collegeId}`),
 };
 
 export default apiCall;

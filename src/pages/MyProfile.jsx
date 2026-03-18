@@ -1,19 +1,22 @@
 // src/pages/MyProfile.jsx — Full Naukri-style profile with all fields + inline editing
 import { useState, useEffect } from 'react';
+import Select from 'react-select';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import StudentLayout from '../components/layout/StudentLayout';
+import { skillAPI } from '../api/Api';
 import {
   Pencil, X, Check, MapPin, Phone, Mail,
   Briefcase, GraduationCap, Target,
   Upload, Download, Plus, Loader2,
-  CheckCircle, Clock, Code, BookOpen, FileText
+  CheckCircle, Clock, Code, BookOpen, FileText,
+  ChevronDown
 } from 'lucide-react';
 
 // ─── Card ──────────────────────────────────────────────────────────────────
 const Card = ({ children, id, className = '' }) => (
-  <div id={id} className={`bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>
+  <div id={id} className={`bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-gray-100 p-3 md:p-6 ${className}`}>
     {children}
   </div>
 );
@@ -121,6 +124,74 @@ const TagInput = ({ label, field, tags, color = 'blue', onAdd, onRemove }) => {
   );
 };
 
+const getSkillName = (skill) => {
+  if (typeof skill === 'string') return skill.trim();
+  if (skill && typeof skill === 'object') return (skill.name || skill.label || skill.value || '').trim();
+  return '';
+};
+
+const getSkillCategory = (skill) => {
+  if (skill && typeof skill === 'object') return (skill.category || '').trim().toLowerCase();
+  return '';
+};
+
+const SkillMultiSelect = ({ label, values, options, onChange, allowedCategories, excludedCategories = [], blockedValues = [] }) => {
+  const normalizedValues = values.map(getSkillName).filter(Boolean);
+  const normalizedAllowedCategories = (allowedCategories || []).map((category) => category.trim().toLowerCase());
+  const normalizedExcludedCategories = excludedCategories.map((category) => category.trim().toLowerCase());
+  const normalizedBlockedValues = blockedValues.map((value) => value.trim().toLowerCase());
+
+  const filteredOptions = options.filter((option) => {
+    const category = getSkillCategory(option);
+    const skillName = getSkillName(option).toLowerCase();
+
+    if (normalizedBlockedValues.includes(skillName)) return false;
+
+    if (normalizedAllowedCategories.length > 0) {
+      return normalizedAllowedCategories.includes(category);
+    }
+
+    return !normalizedExcludedCategories.includes(category);
+  });
+
+  const mergedOptions = [...new Set([
+    ...filteredOptions.map(getSkillName),
+    ...normalizedValues,
+  ])]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))
+    .map((skillName) => ({ value: skillName, label: skillName }));
+
+  return (
+    <div>
+      <label className={lCls}>{label}</label>
+      <Select
+        isMulti
+        isSearchable
+        closeMenuOnSelect
+        options={mergedOptions}
+        placeholder="Search and select skills..."
+        value={normalizedValues.map((skillName) => ({ value: skillName, label: skillName }))}
+        menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+        menuPosition="fixed"
+        styles={{
+          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+          menu: (base) => ({ ...base, zIndex: 9999 }),
+          control: (base, state) => ({
+            ...base,
+            minHeight: 44,
+            borderRadius: 12,
+            borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
+            boxShadow: state.isFocused ? '0 0 0 2px rgba(191, 219, 254, 1)' : 'none',
+            '&:hover': { borderColor: state.isFocused ? '#3b82f6' : '#d1d5db' },
+          }),
+        }}
+        onChange={(selected) => onChange(selected ? selected.map((item) => item.value) : [])}
+      />
+    </div>
+  );
+};
+
 // ─── Skeleton shimmer block ────────────────────────────────────────────────
 const Sk = ({ className = '' }) => (
   <div className={`bg-gray-200 rounded-xl animate-pulse ${className}`} />
@@ -187,10 +258,12 @@ const MyProfile = () => {
   const [draftPersonal, setDraftPersonal] = useState({});
   const [draftEducation, setDraftEducation] = useState({});
   const [draftProfessional, setDraftProfessional] = useState({});
-  const [draftSkills, setDraftSkills] = useState({ primary: [], secondary: [], langs: [], tools: [] });
+  const [draftSkills, setDraftSkills] = useState({ primary: [], secondary: [], langs: [] });
   const [draftCourses, setDraftCourses] = useState({});
   const [draftCareer, setDraftCareer] = useState({ careerObjective: '', preferredJobRole: '', targetCompanies: [] });
   const [newCompany, setNewCompany] = useState('');
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [skillsCatalog, setSkillsCatalog] = useState([]);
 
   // Sync all drafts when profile loads
   useEffect(() => {
@@ -235,7 +308,6 @@ const MyProfile = () => {
       primary: [...(profile.primarySkills || [])],
       secondary: [...(profile.secondarySkills || [])],
       langs: [...(profile.programmingLanguages || [])],
-      tools: [...(profile.toolsAndTechnologies || [])],
     });
     setDraftCourses({
       courseInterestedIn: profile.courseInterestedIn || '',
@@ -250,6 +322,19 @@ const MyProfile = () => {
       targetCompanies: Array.isArray(profile.targetCompanies) ? [...profile.targetCompanies] : [],
     });
   }, [profile, user]);
+
+  useEffect(() => {
+    const fetchSkillsCatalog = async () => {
+      try {
+        const response = await skillAPI.getAllSkills();
+        if (response?.success) setSkillsCatalog(response.skills || []);
+      } catch (error) {
+        console.error('Error fetching skills catalog:', error);
+      }
+    };
+
+    fetchSkillsCatalog();
+  }, []);
 
   const getName = () => profile?.fullName || user?.fullName || user?.name || 'User';
   const getInitials = () => {
@@ -313,7 +398,6 @@ const MyProfile = () => {
     primarySkills: draftSkills.primary,
     secondarySkills: draftSkills.secondary,
     programmingLanguages: draftSkills.langs,
-    toolsAndTechnologies: draftSkills.tools,
   });
   const saveCourses = () => saveSection({
     courseInterestedIn: draftCourses.courseInterestedIn,
@@ -373,62 +457,134 @@ const MyProfile = () => {
         <div className="max-w-[1240px] mx-auto space-y-5">
 
           {/* ══ HERO CARD — full width ══ */}
-          <Card className="p-6">
-            <div className="flex flex-col sm:flex-row gap-5">
-              <AvatarProgress initials={getInitials()} percent={percent} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h1 className="text-[22px] font-bold text-gray-900 leading-tight">{getName()}</h1>
-                      <EditBtn onClick={() => openEdit('header')} />
-                    </div>
-                    {profile?.currentRole && <p className="text-[14px] font-semibold text-gray-700 mt-0.5">{profile.currentRole}</p>}
+          <Card className="p-3 md:p-6 overflow-hidden">
+            {/* 📱 MOBILE HERO LAYOUT (Screenshot Style) */}
+            <div className="block sm:hidden">
+              <div className="flex items-start gap-4">
+                <div className="relative flex-shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-2 border-white shadow-md flex items-center justify-center">
+                    {profile?.avatarUrl ? (
+                      <img src={profile.avatarUrl} alt={getName()} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <span className="text-[22px] font-bold text-blue-700">{getInitials()}</span>
+                    )}
                   </div>
-                  {profile?.updatedAt && (
-                    <div className="hidden sm:block text-right shrink-0">
-                      <p className="text-[12px] text-gray-400">Profile last updated · {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                    </div>
+                  <button type="button" onClick={() => openEdit('header')}
+                    className="absolute bottom-0 right-0 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm">
+                    <Pencil className="w-3 h-3 text-gray-500" />
+                  </button>
+                </div>
+                <div className="flex-1 min-w-0 pt-0.5">
+                  <h1 className="text-[16px] md:text-[20px] font-bold text-gray-900 leading-tight">{getName()}</h1>
+                  {(profile?.highestQualification || profile?.specialization) && (
+                    <p className="text-[12px] md:text-[14px] text-gray-600 mt-0.5">
+                      {[profile.highestQualification, profile.specialization].filter(Boolean).join(' — ')}
+                    </p>
+                  )}
+                  {profile?.collegeName && (
+                    <p className="text-[11px] md:text-[13px] text-gray-500 mt-0.5">{profile.collegeName}</p>
                   )}
                 </div>
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6">
-                  {profile?.address?.city && (
-                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
-                      <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span>{[profile.address.city, profile.address.state, profile.address.country].filter(Boolean).join(', ')}</span>
+              </div>
+
+              {/* Progress bar (Mobile) */}
+              <div className="mt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${percent}%`, background: percent === 100 ? '#16a34a' : '#3b82f6' }}
+                    />
+                  </div>
+                  <span className={`text-[13px] font-bold flex-shrink-0 ${percent === 100 ? 'text-green-600' : 'text-blue-600'}`}>{percent}%</span>
+                </div>
+                {profile?.updatedAt && (
+                  <p className="text-[11px] text-gray-400 mt-1">Last updated {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                )}
+              </div>
+            </div>
+
+            {/* 💻 TABLET/DESKTOP HERO LAYOUT (Original Style) */}
+            <div className="hidden sm:block">
+              <div className="flex flex-col sm:flex-row gap-5">
+                <AvatarProgress initials={getInitials()} percent={percent} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-[22px] font-bold text-gray-900 leading-tight">{getName()}</h1>
+                        <EditBtn onClick={() => openEdit('header')} />
+                      </div>
+                      {profile?.currentRole && <p className="text-[14px] font-semibold text-gray-700 mt-0.5">{profile.currentRole}</p>}
                     </div>
-                  )}
-                  {profile?.currentStatus && (
-                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
-                      <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span>{profile.currentStatus}</span>
-                    </div>
-                  )}
-                  {profile?.availability && (
-                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
-                      <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span>{profile.availability.replace(/_/g, ' ')}</span>
-                    </div>
-                  )}
-                  {profile?.mobileNumber && (
-                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
-                      <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span>{profile.mobileNumber}</span>
-                      <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                    </div>
-                  )}
-                  {(profile?.email || user?.email) && (
-                    <div className="flex items-center gap-2 text-[13px] text-gray-600 min-w-0">
-                      <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="truncate">{profile?.email || user?.email}</span>
-                      <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                    </div>
-                  )}
+                    {profile?.updatedAt && (
+                      <div className="text-right shrink-0">
+                        <p className="text-[12px] text-gray-400">Profile last updated · {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2 gap-x-6">
+                    {profile?.address?.city && (
+                      <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                        <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span>{[profile.address.city, profile.address.state, profile.address.country].filter(Boolean).join(', ')}</span>
+                      </div>
+                    )}
+                    {profile?.currentStatus && (
+                      <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                        <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span>{profile.currentStatus}</span>
+                      </div>
+                    )}
+                    {profile?.availability && (
+                      <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                        <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span>{profile.availability.replace(/_/g, ' ')}</span>
+                      </div>
+                    )}
+                    {profile?.mobileNumber && (
+                      <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                        <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span>{profile.mobileNumber}</span>
+                        <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                      </div>
+                    )}
+                    {(profile?.email || user?.email) && (
+                      <div className="flex items-center gap-2 text-[13px] text-gray-600 min-w-0">
+                        <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="truncate">{profile?.email || user?.email}</span>
+                        <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Inline: header edit */}
+            {/* Common Info Row for Mobile (below the progress bar) */}
+            <div className="sm:hidden mt-4 flex flex-wrap gap-x-5 gap-y-1.5 pt-3 border-t border-gray-50">
+              {profile?.address?.city && (
+                <div className="flex items-center gap-1.5 text-[12px] text-gray-600">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{profile.address.city}</span>
+                </div>
+              )}
+              {profile?.currentStatus && (
+                <div className="flex items-center gap-1.5 text-[12px] text-gray-600">
+                  <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{profile.currentStatus}</span>
+                </div>
+              )}
+              {profile?.mobileNumber && (
+                <div className="flex items-center gap-1.5 text-[12px] text-gray-600">
+                  <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span>{profile.mobileNumber}</span>
+                  <CheckCircle className="w-3 h-3 text-green-500" />
+                </div>
+              )}
+            </div>
+
+            {/* Inline header edit form */}
             {editing === 'header' && (
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <div className={gridTwo}>
@@ -457,13 +613,25 @@ const MyProfile = () => {
           {/* ══ TWO-COLUMN: Quick Links + Sections ══ */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
 
-            {/* ── LEFT: Quick Links ── */}
-            <div className="md:col-span-3 md:sticky md:top-[15px] self-start">
-              <Card className="p-5">
-                <h3 className="font-bold text-gray-900 text-[16px] mb-4">Quick links</h3>
-                <div className="space-y-0.5">
+            {/* ── LEFT: Quick Links (tablet/desktop only) ── */}
+            <div className="hidden sm:block md:col-span-3 md:sticky md:top-[15px] self-start">
+              <Card className="p-0 md:p-5 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setSidebarExpanded(!sidebarExpanded)}
+                  className="w-full flex items-center justify-between p-3 md:p-0 text-left md:pointer-events-none md:mb-4"
+                >
+                  <h3 className="font-bold text-gray-900 text-[14px] md:text-[16px]">Quick links</h3>
+                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform md:hidden ${sidebarExpanded ? 'rotate-180' : ''}`} />
+                </button>
+
+                <div className={`px-5 pb-5 md:p-0 space-y-0.5 md:block ${sidebarExpanded ? 'block' : 'hidden'}`}>
                   {quickLinks.map(link => (
-                    <button key={link.id} type="button" onClick={() => scrollTo(link.id)}
+                    <button key={link.id} type="button"
+                      onClick={() => {
+                        scrollTo(link.id);
+                        if (window.innerWidth < 768) setSidebarExpanded(false);
+                      }}
                       className="w-full flex items-center justify-between py-2.5 px-2 text-[14px] text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-left font-medium">
                       <span>{link.label}</span>
                       {link.badge && <span className={`text-[11px] font-bold ${link.bc}`}>{link.badge}</span>}
@@ -477,8 +645,8 @@ const MyProfile = () => {
             <div className="md:col-span-9 space-y-4">
 
               {/* ── RESUME ── */}
-              <Card id="sec-resume" className="p-6">
-                <h2 className="font-bold text-[18px] text-gray-900 mb-4">Resume</h2>
+              <Card id="sec-resume">
+                <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900 mb-3">Resume</h2>
                 {resumeUrl ? (
                   <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl mb-4">
                     <div>
@@ -514,9 +682,9 @@ const MyProfile = () => {
               </Card>
 
               {/* ── RESUME HEADLINE ── */}
-              <Card id="sec-headline" className="p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold text-[18px] text-gray-900">Resume headline</h2>
+              <Card id="sec-headline">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Resume headline</h2>
                   <EditBtn onClick={() => openEdit('headline')} />
                 </div>
                 {editing === 'headline' ? (
@@ -536,22 +704,41 @@ const MyProfile = () => {
               </Card>
 
               {/* ── KEY SKILLS (primary + secondary + langs + tools merged) ── */}
-              <Card id="sec-skills" className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Key skills</h2>
+              <Card id="sec-skills">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Key skills</h2>
                   <EditBtn onClick={() => openEdit('skills')} />
                 </div>
                 {editing === 'skills' ? (
                   <div className="space-y-5">
-                    <TagInput label="Primary Skills" field="primary" tags={draftSkills.primary} color="blue" onAdd={addTag} onRemove={removeTag} />
-                    <TagInput label="Secondary Skills" field="secondary" tags={draftSkills.secondary} color="green" onAdd={addTag} onRemove={removeTag} />
-                    <TagInput label="Programming Languages" field="langs" tags={draftSkills.langs} color="purple" onAdd={addTag} onRemove={removeTag} />
-                    <TagInput label="Tools & Technologies" field="tools" tags={draftSkills.tools} color="orange" onAdd={addTag} onRemove={removeTag} />
+                    <SkillMultiSelect
+                      label="Primary Skills"
+                      values={draftSkills.primary}
+                      options={skillsCatalog}
+                      excludedCategories={['Programming Language']}
+                      blockedValues={draftSkills.secondary}
+                      onChange={(values) => setDraftSkills((p) => ({ ...p, primary: values }))}
+                    />
+                    <SkillMultiSelect
+                      label="Secondary Skills"
+                      values={draftSkills.secondary}
+                      options={skillsCatalog}
+                      excludedCategories={['Programming Language']}
+                      blockedValues={draftSkills.primary}
+                      onChange={(values) => setDraftSkills((p) => ({ ...p, secondary: values }))}
+                    />
+                    <SkillMultiSelect
+                      label="Programming Languages"
+                      values={draftSkills.langs}
+                      options={skillsCatalog}
+                      allowedCategories={['Programming Language']}
+                      onChange={(values) => setDraftSkills((p) => ({ ...p, langs: values }))}
+                    />
                     <ActionRow onSave={saveSkills} onCancel={closeEdit} saving={saving} />
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(profile?.primarySkills?.length > 0 || profile?.secondarySkills?.length > 0 || profile?.programmingLanguages?.length > 0 || profile?.toolsAndTechnologies?.length > 0) ? (
+                    {(profile?.primarySkills?.length > 0 || profile?.secondarySkills?.length > 0 || profile?.programmingLanguages?.length > 0) ? (
                       <div className="space-y-3">
                         {profile?.primarySkills?.length > 0 && (
                           <div>
@@ -571,12 +758,6 @@ const MyProfile = () => {
                             <div className="flex flex-wrap gap-1.5">{profile.programmingLanguages.map((s, i) => <SkillTag key={i} label={s} color="purple" />)}</div>
                           </div>
                         )}
-                        {profile?.toolsAndTechnologies?.length > 0 && (
-                          <div>
-                            <p className="text-[11px] font-bold text-gray-400 uppercase mb-2">Tools & Technologies</p>
-                            <div className="flex flex-wrap gap-1.5">{profile.toolsAndTechnologies.map((s, i) => <SkillTag key={i} label={s} color="orange" />)}</div>
-                          </div>
-                        )}
                       </div>
                     ) : <p className="text-[13px] text-gray-400">No skills added yet. Click ✏️ to add.</p>}
                   </div>
@@ -584,9 +765,9 @@ const MyProfile = () => {
               </Card>
 
               {/* ── EDUCATION ── */}
-              <Card id="sec-education" className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Education</h2>
+              <Card id="sec-education">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Education</h2>
                   <EditBtn onClick={() => openEdit('education')} />
                 </div>
                 {editing === 'education' ? (
@@ -651,9 +832,9 @@ const MyProfile = () => {
               </Card>
 
               {/* ── PROFESSIONAL DETAILS ── */}
-              <Card id="sec-professional" className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Professional details</h2>
+              <Card id="sec-professional">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Professional details</h2>
                   <EditBtn onClick={() => openEdit('professional')} />
                 </div>
                 {editing === 'professional' ? (
@@ -708,9 +889,9 @@ const MyProfile = () => {
               </Card>
 
               {/* ── COURSE PREFERENCES ── */}
-              <Card id="sec-courses" className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Course preferences</h2>
+              <Card id="sec-courses">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Course preferences</h2>
                   <EditBtn onClick={() => openEdit('courses')} />
                 </div>
                 {editing === 'courses' ? (
@@ -757,9 +938,9 @@ const MyProfile = () => {
               </Card>
 
               {/* ── CAREER GOALS ── */}
-              <Card id="sec-career" className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Career goals</h2>
+              <Card id="sec-career">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Career goals</h2>
                   <EditBtn onClick={() => openEdit('career')} />
                 </div>
                 {editing === 'career' ? (

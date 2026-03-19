@@ -49,8 +49,12 @@ const CourseCard = ({ course, onClick }) => {
 
   return (
     <div
-      onClick={onClick}
-      className="group bg-white rounded-xl border border-gray-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+      onClick={course.status === 'Coming Soon' ? undefined : onClick}
+      className={`group bg-white rounded-xl border transition-all duration-300 overflow-hidden flex flex-col h-full ${
+        course.status === 'Coming Soon'
+          ? 'border-violet-200 cursor-default opacity-90'
+          : 'border-gray-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] cursor-pointer'
+      }`}
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden flex-shrink-0 border-b border-gray-100">
@@ -61,13 +65,27 @@ const CourseCard = ({ course, onClick }) => {
             <CatIcon className="w-8 h-8 md:w-12 md:h-12 text-blue-200" />
           </div>
         )}
-        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-          {price === 0 && (
+        {/* Coming Soon overlay */}
+        {course.status === 'Coming Soon' && (
+          <div className="absolute inset-0 bg-violet-900/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-10">
+            <span className="bg-violet-500 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 animate-pulse">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Coming Soon
+            </span>
+            {course.startDate && (
+              <span className="text-white/80 text-[10px] font-semibold">
+                Starts {new Date(course.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            )}
+          </div>
+        )}
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end z-20">
+          {price === 0 && course.status !== 'Coming Soon' && (
             <span className="bg-white text-gray-900 border border-gray-200 text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
               Free
             </span>
           )}
-          {course.isRecommended && (
+          {course.isRecommended && course.status !== 'Coming Soon' && (
             <span className="bg-white text-gray-900 border border-gray-200 text-[10px] md:text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
               <Zap className="w-2.5 h-2.5 text-blue-600" /> Recommended
             </span>

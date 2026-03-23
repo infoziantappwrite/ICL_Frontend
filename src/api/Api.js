@@ -317,28 +317,22 @@ export const profileAPI = {
       // Step 1: Upload resume file if provided
       if (resumeFile) {
         console.log('\n📤 STEP 1: Uploading resume...');
-        const resumeFormData = new FormData();
-        resumeFormData.append('resume', resumeFile);
-
-        const resumeResponse = await fetch(`${API_URL}/upload/resume`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: resumeFormData,
-        });
-
-        console.log('📥 Resume upload response:', resumeResponse.status);
-
-        const resumeData = await resumeResponse.json();
-        if (!resumeResponse.ok) {
-          console.error('❌ Resume upload failed:', resumeData);
-          throw new Error(resumeData.message || 'Resume upload failed');
+        try {
+          const resumeData = await uploadAPI.uploadResume(resumeFile);
+          const resumeUrl = resumeData.file?.url || resumeData.url;
+          if (resumeUrl) {
+            profileData.resumeUrl = resumeUrl;
+            if (!profileData.documents) profileData.documents = {};
+            if (!profileData.documents.resume) profileData.documents.resume = {};
+            profileData.documents.resume.url = resumeUrl;
+            profileData.documents.resume.filename = resumeFile.name;
+            profileData.documents.resume.uploadedAt = new Date().toISOString();
+          }
+          console.log('✅ Resume uploaded:', resumeUrl);
+        } catch (uploadErr) {
+          console.error('❌ Resume upload failed:', uploadErr.message);
+          throw new Error(`Resume upload failed: ${uploadErr.message}`);
         }
-
-        // Update profile data with resume URL
-        profileData.resumeUrl = resumeData.file.url;
-        console.log('✅ Resume uploaded:', resumeData.file.url);
       } else {
         console.log('\n⏭️  STEP 1: No resume to upload');
       }
@@ -346,28 +340,22 @@ export const profileAPI = {
       // Step 2: Upload ID proof file if provided
       if (idProofFile) {
         console.log('\n📤 STEP 2: Uploading ID proof...');
-        const idProofFormData = new FormData();
-        idProofFormData.append('document', idProofFile);
-
-        const idProofResponse = await fetch(`${API_URL}/upload/document/id-proof`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: idProofFormData,
-        });
-
-        console.log('📥 ID proof upload response:', idProofResponse.status);
-
-        const idProofData = await idProofResponse.json();
-        if (!idProofResponse.ok) {
-          console.error('❌ ID proof upload failed:', idProofData);
-          throw new Error(idProofData.message || 'ID proof upload failed');
+        try {
+          const idProofData = await uploadAPI.uploadIdProof(idProofFile);
+          const idProofUrl = idProofData.file?.url || idProofData.url;
+          if (idProofUrl) {
+            profileData.idProofUrl = idProofUrl;
+            if (!profileData.documents) profileData.documents = {};
+            if (!profileData.documents.idProof) profileData.documents.idProof = {};
+            profileData.documents.idProof.url = idProofUrl;
+            profileData.documents.idProof.filename = idProofFile.name;
+            profileData.documents.idProof.uploadedAt = new Date().toISOString();
+          }
+          console.log('✅ ID proof uploaded:', idProofUrl);
+        } catch (uploadErr) {
+          console.error('❌ ID proof upload failed:', uploadErr.message);
+          throw new Error(`ID proof upload failed: ${uploadErr.message}`);
         }
-
-        // Update profile data with ID proof URL
-        profileData.idProofUrl = idProofData.file.url;
-        console.log('✅ ID proof uploaded:', idProofData.file.url);
       } else {
         console.log('\n⏭️  STEP 2: No ID proof to upload');
       }
@@ -585,6 +573,28 @@ export const uploadAPI = {
       throw new Error(data.message || 'Upload failed');
     }
     console.log('✅ Resume uploaded');
+    return data;
+  },
+
+  uploadIdProof: async (file) => {
+    console.log('🆔 Uploading ID proof...');
+    const formData = new FormData();
+    formData.append('document', file);
+
+    const token = tokenStore.get();
+    const response = await fetch(`${API_URL}/upload/id-proof`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      credentials: 'include',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('❌ ID proof upload failed:', data);
+      throw new Error(data.message || 'ID proof upload failed');
+    }
+    console.log('✅ ID proof uploaded:', data.file?.url);
     return data;
   },
 
@@ -1150,6 +1160,11 @@ export const assessmentAttemptAPI = {
   // GET /api/assessment-attempt/my-assessments
   getMyAssignedAssessments: async () => {
     return apiCall('/assessment-attempt/my-assessments');
+  },
+
+  // GET /api/assessment-attempt/my-history
+  getMyHistory: async () => {
+    return apiCall('/assessment-attempt/my-history');
   },
 
   // GET /api/assessment-attempt/my/:assessmentId/attempts

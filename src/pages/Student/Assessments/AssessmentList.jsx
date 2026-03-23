@@ -269,12 +269,13 @@ const AssessmentList = () => {
     setSourceFilter('');
   };
  
-  // Hide completed assessments (from your code) + all search/filter logic
+  // Hide attempted assessments (backend already filters, this is a safety net)
   const filteredAssessments = useMemo(() => {
     return allAssessments.filter(a => {
-      // Hide completed assessments — only show active ones
+      // Double-guard: hide if already attempted or not active
+      if (a.has_attempted) return false;
       if (a.status !== 'active') return false;
- 
+
       const title = a.jd_id?.jobTitle || a.title || a.skill_id?.name || '';
       const matchSearch = searchTerm === '' || title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchLevel  = levelFilter  === '' || a.level       === levelFilter;

@@ -411,10 +411,22 @@ const MyProfile = () => {
     preferredJobRole: draftCareer.preferredJobRole,
     targetCompanies: draftCareer.targetCompanies,
   });
-  const saveDocuments = () => saveSection(
-    { documents: { resume: resumeFile ? { filename: resumeFile.name } : undefined } },
-    { resume: resumeFile, idProof: idProofFile }
-  );
+  const saveDocuments = () => {
+    // Merge new files with existing profile.documents so the backend never receives
+    // undefined for fields we aren't changing (MongoDB rejects undefined nested objects)
+    const existing = profile?.documents || {};
+    const merged = {
+      resume     : existing.resume     || null,
+      idProof    : existing.idProof    || null,
+      profilePic : existing.profilePic || null,
+      certificates: existing.certificates || [],
+    };
+    // Overlay only what's changing
+    if (resumeFile)  merged.resume  = { filename: resumeFile.name,  url: existing.resume?.url  || '' };
+    if (idProofFile) merged.idProof = { filename: idProofFile.name, url: existing.idProof?.url || '' };
+
+    saveSection({ documents: merged }, { resume: resumeFile, idProof: idProofFile });
+  };
 
   // ── Tag helpers ──
   const addTag = (field, val) => setDraftSkills(p => ({ ...p, [field]: [...p[field], val] }));

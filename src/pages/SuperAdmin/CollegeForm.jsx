@@ -20,7 +20,6 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  TrendingUp,
   Hash,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
@@ -81,12 +80,6 @@ const CollegeForm = () => {
     accreditation: [],
     website: '',
     departments: [],
-    placementConfig: {
-      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-      minimumCGPA: 6.0,
-      allowBacklogs: true,
-      maxBacklogsAllowed: 3,
-    },
   });
 
   const [newDepartment, setNewDepartment] = useState({
@@ -188,7 +181,6 @@ const CollegeForm = () => {
 
     try {
       console.log('📤 Submitting college data:', formData);
-      console.log('📋 Placement Config:', formData.placementConfig);
 
       const endpoint = isEditMode
         ? `/super-admin/colleges/${collegeId}`
@@ -495,83 +487,6 @@ const CollegeForm = () => {
               <p className="text-xs font-medium text-gray-400">No departments added yet</p>
             </div>
           )}
-        </div>
-
-        {/* Placement Configuration */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-          <SHead icon={TrendingUp} title="Placement Configuration" sub="Eligibility criteria for student placements" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            <Field label="Academic Year">
-              <input
-                type="text" name="placementConfig.academicYear"
-                value={formData.placementConfig?.academicYear || ''} onChange={handleChange}
-                className={inputBase} placeholder="2024-2025"
-              />
-            </Field>
-
-            <Field label="Minimum CGPA" hint="Between 0 and 10">
-              <input
-                type="number" name="placementConfig.minimumCGPA"
-                value={formData.placementConfig?.minimumCGPA ?? 6.0} onChange={handleChange}
-                min="0" max="10" step="0.1"
-                className={inputBase}
-              />
-            </Field>
-
-            <div className="sm:col-span-2">
-              <div
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                  formData.placementConfig?.allowBacklogs ?? true
-                    ? 'bg-blue-50 border-blue-100'
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-                onClick={() => handleChange({
-                  target: {
-                    name: 'placementConfig.allowBacklogs',
-                    type: 'checkbox',
-                    checked: !(formData.placementConfig?.allowBacklogs ?? true),
-                  }
-                })}
-              >
-                <div className={`relative w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200 ${
-                  (formData.placementConfig?.allowBacklogs ?? true)
-                    ? 'bg-gradient-to-r from-blue-500 to-cyan-400'
-                    : 'bg-gray-300'
-                }`}>
-                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
-                    (formData.placementConfig?.allowBacklogs ?? true) ? 'translate-x-[18px]' : 'translate-x-0.5'
-                  }`} />
-                  <input
-                    type="checkbox" name="placementConfig.allowBacklogs"
-                    checked={formData.placementConfig?.allowBacklogs ?? true}
-                    onChange={handleChange} className="sr-only"
-                  />
-                </div>
-                <div>
-                  <p className={`text-xs font-bold ${(formData.placementConfig?.allowBacklogs ?? true) ? 'text-blue-700' : 'text-gray-600'}`}>
-                    Allow Backlogs
-                  </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    {(formData.placementConfig?.allowBacklogs ?? true)
-                      ? 'Students with backlogs can apply for placements'
-                      : 'Only backlog-free students can apply'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {formData.placementConfig?.allowBacklogs && (
-              <Field label="Max Backlogs Allowed" hint="Maximum number of active backlogs permitted">
-                <input
-                  type="number" name="placementConfig.maxBacklogsAllowed"
-                  value={formData.placementConfig?.maxBacklogsAllowed ?? 3} onChange={handleChange}
-                  min="0" max="10"
-                  className={inputBase}
-                />
-              </Field>
-            )}
-          </div>
         </div>
 
         {/* Submit Buttons */}

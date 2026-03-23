@@ -18,11 +18,13 @@ const INITIAL_FORM = {
   duration_minutes: 60,
   scheduled_date: '',
   start_time: '',
+  end_date: '',
   end_time: '',
   tags: '',
   jd_id: '',
-  total_marks: '',
   num_questions: '',
+  marks_per_question: '',
+  total_marks: '',       // auto-calculated: num_questions × marks_per_question
   show_results_to_students: false,
   shuffle_questions: false,
 };
@@ -79,8 +81,8 @@ const AssessmentForm = () => {
   // source_type comes from URL param when creating new
   const urlSourceType = searchParams.get('type') || 'college_admin_manual';
 
-  const [form, setForm]     = useState({ ...INITIAL_FORM, source_type: urlSourceType });
-  const [jobs, setJobs]     = useState([]);
+  const [form, setForm]       = useState({ ...INITIAL_FORM, source_type: urlSourceType });
+  const [jobs, setJobs]       = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving]   = useState(false);
   const [error, setError]     = useState('');
@@ -116,11 +118,15 @@ const AssessmentForm = () => {
             duration_minutes: a.duration_minutes || 60,
             scheduled_date: a.scheduled_date ? new Date(a.scheduled_date).toISOString().split('T')[0] : '',
             start_time: a.start_time || '',
+            end_date: a.end_date ? new Date(a.end_date).toISOString().split('T')[0] : '',
             end_time: a.end_time || '',
             tags: Array.isArray(a.tags) ? a.tags.join(', ') : '',
             jd_id: a.jd_id?._id || a.jd_id || '',
-            total_marks: a.total_marks || '',
             num_questions: a.num_questions || '',
+            marks_per_question: a.num_questions && a.total_marks
+              ? String(a.total_marks / a.num_questions)
+              : '',
+            total_marks: a.total_marks || '',
             show_results_to_students: a.show_results_to_students ?? false,
             shuffle_questions: a.shuffle_questions ?? false,
           });
@@ -136,34 +142,42 @@ const AssessmentForm = () => {
     load();
   }, [assessmentId, isEdit]);
 
-  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  // Auto-calculate total_marks whenever num_questions or marks_per_question changes
+  const set = (field, value) => setForm(prev => {
+    const updated = { ...prev, [field]: value };
+    const nq  = parseFloat(field === 'num_questions'      ? value : updated.num_questions)      || 0;
+    const mpq = parseFloat(field === 'marks_per_question' ? value : updated.marks_per_question) || 0;
+    if (nq > 0 && mpq > 0) updated.total_marks = String(nq * mpq);
+    return updated;
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
 
-    if (!form.title.trim()) { setError('Assessment title is required'); return; }
-    if (!form.level) { setError('Difficulty level is required'); return; }
-    if (!form.total_marks || Number(form.total_marks) < 1) { setError('Total marks is required'); return; }
+    if (!form.title.trim())                                  { setError('Assessment title is required'); return; }
+    if (!form.level)                                         { setError('Difficulty level is required'); return; }
+    if (!form.total_marks || Number(form.total_marks) < 1)  { setError('Total marks is required'); return; }
     if (!form.num_questions || Number(form.num_questions) < 1) { setError('Number of questions is required'); return; }
     if (!form.duration_minutes || Number(form.duration_minutes) < 1) {
       setError('Duration must be at least 1 minute'); return;
     }
 
     const payload = {
-      title: form.title.trim(),
-      level: form.level,
-      source_type: form.source_type,
-      duration_minutes: Number(form.duration_minutes),
-      scheduled_date: form.scheduled_date || null,
-      start_time: form.start_time || null,
-      end_time: form.end_time || null,
-      tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      jd_id: form.jd_id || null,
-      total_marks: Number(form.total_marks),
-      num_questions: Number(form.num_questions),
+      title:                    form.title.trim(),
+      level:                    form.level,
+      source_type:              form.source_type,
+      duration_minutes:         Number(form.duration_minutes),
+      scheduled_date:           form.scheduled_date || null,
+      start_time:               form.start_time     || null,
+      end_date:                 form.end_date        || null,
+      end_time:                 form.end_time        || null,
+      tags:                     form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      jd_id:                    form.jd_id || null,
+      total_marks:              Number(form.total_marks),
+      num_questions:            Number(form.num_questions),
       show_results_to_students: form.show_results_to_students,
-      shuffle_questions: form.shuffle_questions,
+      shuffle_questions:        form.shuffle_questions,
     };
 
     setSaving(true);
@@ -187,9 +201,13 @@ const AssessmentForm = () => {
     }
   };
 
+  // FIX: fullScreen={false} prevents the full-screen gradient box artifact
+  // inside CollegeAdminLayout
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24"><LoadingSpinner /></div>
+      <div className="flex items-center justify-center py-24">
+        <LoadingSpinner fullScreen={false} />
+      </div>
     </CollegeAdminLayout>
   );
 
@@ -298,18 +316,9 @@ const AssessmentForm = () => {
               </div>
             </Field>
 
-            {/* Total Marks + Questions count side by side */}
+            {/* Questions + Marks per question → auto total */}
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Total Marks" required hint="Maximum marks for this assessment">
-                <div className="relative">
-                  <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="number" min={1} value={form.total_marks}
-                    onChange={e => set('total_marks', e.target.value)}
-                    placeholder="e.g. 50"
-                    className={`${inp} pl-10`} />
-                </div>
-              </Field>
-              <Field label="No. of Questions" required hint="Max questions allowed in this assessment">
+              <Field label="No. of Questions" required hint="Total number of questions in the assessment">
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input type="number" min={1} value={form.num_questions}
@@ -318,6 +327,36 @@ const AssessmentForm = () => {
                     className={`${inp} pl-10`} />
                 </div>
               </Field>
+              <Field label="Marks per Question" required hint="Each question carries equal marks">
+                <div className="relative">
+                  <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input type="number" min={0.5} step={0.5} value={form.marks_per_question}
+                    onChange={e => set('marks_per_question', e.target.value)}
+                    placeholder="e.g. 5"
+                    className={`${inp} pl-10`} />
+                </div>
+              </Field>
+            </div>
+
+            {/* Auto-calculated Total Marks */}
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all
+              ${form.total_marks ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Award className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total Marks (Auto-calculated)</p>
+                <p className={`text-xl font-black ${form.total_marks ? 'text-blue-700' : 'text-gray-300'}`}>
+                  {form.total_marks
+                    ? `${form.total_marks} marks`
+                    : 'Enter questions & marks per question above'}
+                </p>
+                {form.num_questions && form.marks_per_question && (
+                  <p className="text-[11px] text-blue-500 font-medium mt-0.5">
+                    {form.num_questions} questions × {form.marks_per_question} marks = {form.total_marks}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Tags */}
@@ -340,27 +379,39 @@ const AssessmentForm = () => {
               </div>
             </Field>
 
-            <Field label="Scheduled Date" hint="The assessment auto-activates at start time and closes at end time">
-              <input type="date" value={form.scheduled_date}
-                onChange={e => set('scheduled_date', e.target.value)} className={inp} />
-            </Field>
+            {/* Start date + End date */}
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Start Date" hint="Assessment opens on this date">
+                <input type="date" value={form.scheduled_date}
+                  onChange={e => set('scheduled_date', e.target.value)} className={inp} />
+              </Field>
+              <Field label="End Date" hint="Assessment closes on this date">
+                <input type="date" value={form.end_date}
+                  min={form.scheduled_date || undefined}
+                  onChange={e => set('end_date', e.target.value)} className={inp} />
+              </Field>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Start Time" hint="Auto-activates at this time">
+              <Field label="Start Time" hint="Auto-activates at this time on start date">
                 <input type="time" value={form.start_time}
                   onChange={e => set('start_time', e.target.value)} className={inp} />
               </Field>
-              <Field label="End Time" hint="Assessment closes automatically">
+              <Field label="End Time" hint="Closes at this time on end date">
                 <input type="time" value={form.end_time}
                   onChange={e => set('end_time', e.target.value)} className={inp} />
               </Field>
             </div>
 
-            {form.scheduled_date && form.start_time && form.end_time && (
-              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
-                <Info className="w-3.5 h-3.5 shrink-0" />
-                Assessment will auto-activate on <strong className="mx-1">{new Date(form.scheduled_date).toDateString()}</strong>
-                at <strong className="mx-1">{form.start_time}</strong> and close at <strong className="mx-1">{form.end_time}</strong>.
+            {form.scheduled_date && form.start_time && (
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Starts: <strong>{new Date(form.scheduled_date).toDateString()}</strong> at <strong>{form.start_time}</strong>
+                  {form.end_date && form.end_time && (
+                    <> &nbsp;·&nbsp; Ends: <strong>{new Date(form.end_date).toDateString()}</strong> at <strong>{form.end_time}</strong></>
+                  )}
+                </span>
               </div>
             )}
           </Section>
@@ -392,9 +443,13 @@ const AssessmentForm = () => {
               className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-all bg-white/80">
               Cancel
             </button>
+            {/* FIX: replaced <LoadingSpinner size="sm" /> (unsupported prop, causes box artifact)
+                with an inline CSS spinner that stays contained within the button */}
             <button type="submit" disabled={saving}
               className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-60 shadow-md shadow-blue-500/20 transition-all">
-              {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
+              {saving
+                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Save className="w-4 h-4" />}
               {saving ? 'Saving…' : isEdit ? 'Update Assessment' : 'Save & Add Questions'}
             </button>
           </div>

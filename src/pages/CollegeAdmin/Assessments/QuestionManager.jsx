@@ -38,7 +38,6 @@ B. A CSS framework
 C. A database
 D. A server
 Answer: A
-Marks: 1
 Explanation: React is a JS library for building UIs
 
 2. Which hook is used for side effects?
@@ -47,7 +46,6 @@ B. useEffect
 C. useContext
 D. useRef
 Answer: B
-Marks: 1
 Explanation: useEffect handles side effects in React
 
 3. What does JSX stand for?
@@ -55,8 +53,7 @@ A. JavaScript Syntax Extension
 B. JavaScript XML
 C. Java Syntax XML
 D. None of the above
-Answer: B
-Marks: 1`;
+Answer: B`;
 
 const parseBulkText = (text) => {
   const questions = [];
@@ -69,7 +66,7 @@ const parseBulkText = (text) => {
     let valid = true;
 
     lines.forEach(line => {
-      const qMatch = line.match(/^\d+[\.\)]\s+(.+)$/);
+      const qMatch   = line.match(/^\d+[\.\)]\s+(.+)$/);
       const optMatch = line.match(/^([A-Da-d])[\.\):\s]\s*(.+)$/);
       const ansMatch = line.match(/^Answer:\s*([A-D,\s]+)$/i);
       const marksMatch = line.match(/^Marks:\s*(\d+(?:\.\d+)?)$/i);
@@ -88,9 +85,9 @@ const parseBulkText = (text) => {
     });
 
     const num = blockIdx + 1;
-    if (!q.question) { errors.push(`Q${num}: Missing question text`); valid = false; }
+    if (!q.question)             { errors.push(`Q${num}: Missing question text`); valid = false; }
     else if (q.options.length < 2) { errors.push(`Q${num}: Need at least 2 options (A. B. C. D.)`); valid = false; }
-    else if (!q.correct_answer) { errors.push(`Q${num}: Missing Answer line`); valid = false; }
+    else if (!q.correct_answer)  { errors.push(`Q${num}: Missing Answer line`); valid = false; }
 
     if (valid) {
       questions.push({
@@ -117,14 +114,13 @@ const CompletionChecklistModal = ({
   savedQs,
   onClose,
   onAssignStudents,
-  onProceedAnyway,  // only shown for non-blocking items
+  onProceedAnyway,
 }) => {
-  const hasQuestions     = savedQs.length > 0;
-  const meetsQLimit      = !assessment?.num_questions || savedQs.length >= assessment.num_questions;
-  const hasStudents      = (assessment?.eligible_students?.length || 0) > 0;
-  const hasSchedule      = !!(assessment?.scheduled_date && assessment?.start_time && assessment?.end_time);
+  const hasQuestions = savedQs.length > 0;
+  const meetsQLimit  = !assessment?.num_questions || savedQs.length >= assessment.num_questions;
+  const hasStudents  = (assessment?.eligible_students?.length || 0) > 0;
+  const hasSchedule  = !!(assessment?.scheduled_date && assessment?.start_time && assessment?.end_time);
 
-  // Students is the only HARD blocker — everything else is a warning
   const hardBlocked = !hasStudents;
 
   const items = [
@@ -144,9 +140,9 @@ const CompletionChecklistModal = ({
       label: 'Students assigned',
       detail: hasStudents
         ? `${assessment.eligible_students.length} student${assessment.eligible_students.length !== 1 ? 's' : ''} assigned`
-        : 'No students assigned — students won\'t see this assessment',
+        : "No students assigned — students won't see this assessment",
       done: hasStudents,
-      required: true,  // HARD BLOCKER
+      required: true,
     },
     {
       id: 'schedule',
@@ -159,12 +155,9 @@ const CompletionChecklistModal = ({
     },
   ];
 
-  const allDone = items.every(i => i.done);
-
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* Header */}
         <div className={`px-5 py-4 flex items-center gap-3 ${hardBlocked ? 'bg-red-50 border-b border-red-200' : 'bg-amber-50 border-b border-amber-200'}`}>
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${hardBlocked ? 'bg-red-100' : 'bg-amber-100'}`}>
             <ShieldAlert className={`w-5 h-5 ${hardBlocked ? 'text-red-600' : 'text-amber-600'}`} />
@@ -184,7 +177,6 @@ const CompletionChecklistModal = ({
           </button>
         </div>
 
-        {/* Checklist */}
         <div className="p-5 space-y-3">
           {items.map(item => (
             <div key={item.id}
@@ -219,7 +211,6 @@ const CompletionChecklistModal = ({
                   {item.warn ? item.warnMsg : item.detail}
                 </p>
               </div>
-              {/* Action button per item */}
               {!item.done && item.id === 'students' && (
                 <button
                   onClick={() => { onClose(); onAssignStudents(); }}
@@ -231,15 +222,13 @@ const CompletionChecklistModal = ({
           ))}
         </div>
 
-        {/* Footer actions */}
         <div className="px-5 pb-5 flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-all">
             Stay Here
           </button>
           {!hardBlocked ? (
-            <button
-              onClick={onProceedAnyway}
+            <button onClick={onProceedAnyway}
               className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-sm transition-all">
               Leave Anyway
             </button>
@@ -336,7 +325,7 @@ const QuestionModal = ({ question, onSave, onClose }) => {
   const [form, setForm] = useState(question ? questionToForm(question) : { ...BLANK_FORM });
   const setOpt = (idx, val) => setForm(prev => { const opts = [...prev.options]; opts[idx] = val; return { ...prev, options: opts }; });
   const isChoice = form.type === 'single_answer' || form.type === 'multiple_answer';
-  const isFill = form.type === 'fill_up';
+  const isFill   = form.type === 'fill_up';
   const toggleMulti = (label) => setForm(prev => {
     const cur = Array.isArray(prev.correct_answer) ? prev.correct_answer : [];
     return { ...prev, correct_answer: cur.includes(label) ? cur.filter(l => l !== label) : [...cur, label] };
@@ -391,14 +380,19 @@ const QuestionModal = ({ question, onSave, onClose }) => {
           </div>
           {isChoice && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Options <span className="text-red-500">*</span> <span className="text-xs text-gray-400 font-normal">({form.type === 'multiple_answer' ? 'check all correct' : 'click radio for correct'})</span></label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Options <span className="text-red-500">*</span>{' '}
+                <span className="text-xs text-gray-400 font-normal">({form.type === 'multiple_answer' ? 'check all correct' : 'click radio for correct'})</span>
+              </label>
               <div className="space-y-2">
                 {OPTION_LABELS.map((label, idx) => {
-                  const isCorrect = form.type === 'multiple_answer' ? (Array.isArray(form.correct_answer) ? form.correct_answer.includes(label) : false) : form.correct_answer === label;
+                  const isCorr = form.type === 'multiple_answer' ? (Array.isArray(form.correct_answer) ? form.correct_answer.includes(label) : false) : form.correct_answer === label;
                   return (
-                    <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isCorrect ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
-                      {form.type === 'multiple_answer' ? <input type="checkbox" checked={isCorrect} onChange={() => toggleMulti(label)} className="w-4 h-4 text-blue-600 rounded" /> : <input type="radio" name="correctAnswer" checked={isCorrect} onChange={() => setForm(prev => ({ ...prev, correct_answer: label }))} className="w-4 h-4 text-blue-600" />}
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCorrect ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{label}</span>
+                    <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isCorr ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
+                      {form.type === 'multiple_answer'
+                        ? <input type="checkbox" checked={isCorr} onChange={() => toggleMulti(label)} className="w-4 h-4 text-blue-600 rounded" />
+                        : <input type="radio" name="correctAnswer" checked={isCorr} onChange={() => setForm(prev => ({ ...prev, correct_answer: label }))} className="w-4 h-4 text-blue-600" />}
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCorr ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{label}</span>
                       <input type="text" value={form.options[idx]} onChange={e => setOpt(idx, e.target.value)} placeholder={`Option ${label}`} className="flex-1 bg-transparent text-sm focus:outline-none text-gray-700 placeholder-gray-400" />
                     </div>
                   );
@@ -412,20 +406,15 @@ const QuestionModal = ({ question, onSave, onClose }) => {
               <input type="text" value={typeof form.correct_answer === 'string' ? form.correct_answer : ''} onChange={e => setForm(prev => ({ ...prev, correct_answer: e.target.value }))} placeholder="Enter the exact correct answer" className={inp} />
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Marks</label>
-              <input type="number" min={0.25} step={0.25} value={form.marks} onChange={e => setForm(prev => ({ ...prev, marks: e.target.value }))} className={inp} />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Explanation (optional)</label>
-              <input type="text" value={form.explanation} onChange={e => setForm(prev => ({ ...prev, explanation: e.target.value }))} placeholder="Brief explanation…" className={inp} />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Explanation (optional)</label>
+            <input type="text" value={form.explanation} onChange={e => setForm(prev => ({ ...prev, explanation: e.target.value }))} placeholder="Brief explanation…" className={inp} />
           </div>
         </div>
         <div className="flex gap-3 p-5 pt-0">
           <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
-          <button onClick={handleSave} disabled={!canSave} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
+          <button onClick={handleSave} disabled={!canSave}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
             <Save className="w-4 h-4" />{question ? 'Update' : 'Stage Question'}
           </button>
         </div>
@@ -436,10 +425,10 @@ const QuestionModal = ({ question, onSave, onClose }) => {
 
 /* ─── Bulk Paste Modal ───────────────────────────────────────────────── */
 const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
-  const [text, setText] = useState('');
-  const [parsed, setParsed] = useState(null);
+  const [text, setText]       = useState('');
+  const [parsed, setParsed]   = useState(null);
   const [showFormat, setShowFormat] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]     = useState('');
 
   const handleParse = () => {
     setError('');
@@ -470,6 +459,10 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
           </button>
           {showFormat && (
             <div className="bg-gray-900 rounded-xl p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-52">
+              <div className="mb-2 flex items-center gap-2 text-amber-300 text-xs font-semibold">
+                <Award className="w-3.5 h-3.5" />
+                Marks are auto-assigned from assessment settings — no need to add Marks: field
+              </div>
               <pre className="whitespace-pre-wrap text-green-400">{BULK_FORMAT_EXAMPLE}</pre>
             </div>
           )}
@@ -482,7 +475,7 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Paste Questions Here</label>
                 <textarea rows={14} value={text} onChange={e => setText(e.target.value)}
-                  placeholder={`1. What is React?\nA. A JavaScript library\nB. A CSS framework\nC. A database\nD. A server\nAnswer: A\nMarks: 1\n\n2. Which hook handles side effects?\n...`}
+                  placeholder={`1. What is React?\nA. A JavaScript library\nB. A CSS framework\nC. A database\nD. A server\nAnswer: A\nExplanation: optional\n\n2. Which hook handles side effects?\n...`}
                   className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
               </div>
               {error && (
@@ -493,7 +486,8 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
               )}
               <div className="flex gap-3">
                 <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
-                <button onClick={handleParse} disabled={!text.trim()} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
+                <button onClick={handleParse} disabled={!text.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
                   <Eye className="w-4 h-4" /> Parse & Preview
                 </button>
               </div>
@@ -523,7 +517,8 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
-                <button onClick={() => onAdd(parsed.questions)} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-blue-500/20">
+                <button onClick={() => onAdd(parsed.questions)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-blue-500/20">
                   <Plus className="w-4 h-4" /> Add {parsed.questions.length} to Staging
                 </button>
               </div>
@@ -537,23 +532,22 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
 
 /* ─── Assign Students Modal — 3 tabs ─────────────────────────────────── */
 const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
-  const [tab, setTab] = useState('all');
+  const [tab, setTab]               = useState('all');
   const [allStudents, setAllStudents] = useState([]);
-  const [branches, setBranches] = useState([]);
-  const [selBranch, setSelBranch] = useState('');
-  const [searchAll, setSearchAll] = useState('');
-  const [selIds, setSelIds] = useState(new Set());
+  const [branches, setBranches]     = useState([]);
+  const [selBranch, setSelBranch]   = useState('');
+  const [searchAll, setSearchAll]   = useState('');
+  const [selIds, setSelIds]         = useState(new Set());
   const [loadingAll, setLoadingAll] = useState(false);
   const [jdStudents, setJdStudents] = useState([]);
-  const [loadingJD, setLoadingJD] = useState(false);
-  const [selJdIds, setSelJdIds] = useState(new Set());
-  const [jdFetched, setJdFetched] = useState(false);
+  const [loadingJD, setLoadingJD]   = useState(false);
+  const [selJdIds, setSelJdIds]     = useState(new Set());
+  const [jdFetched, setJdFetched]   = useState(false);
   const [manualEmails, setManualEmails] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [err, setErr] = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [result, setResult]         = useState(null);
+  const [err, setErr]               = useState('');
 
-  // Already-assigned student IDs (to filter them out)
   const alreadyAssignedIds = new Set(
     (assessment?.eligible_students || []).map(s =>
       typeof s === 'object' ? String(s._id || s) : String(s)
@@ -588,7 +582,6 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
     } catch {} finally { setLoadingJD(false); setJdFetched(true); }
   };
 
-  // Filter out already-assigned students from each list
   const filteredAll = allStudents.filter(s => {
     const notAssigned = !alreadyAssignedIds.has(String(s._id));
     if (!notAssigned) return false;
@@ -698,8 +691,11 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
                 </span>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
-                {loadingAll ? <div className="flex justify-center py-6"><LoadingSpinner /></div>
-                  : filteredAll.length === 0 ? <p className="text-center text-gray-400 text-sm py-8">No students found</p>
+                {/* FIX: fullScreen={false} prevents gradient box artifact inside the modal panel */}
+                {loadingAll
+                  ? <div className="flex justify-center py-6"><LoadingSpinner fullScreen={false} /></div>
+                  : filteredAll.length === 0
+                  ? <p className="text-center text-gray-400 text-sm py-8">No students found</p>
                   : filteredAll.map(s => <StudentRow key={s._id} s={s} checked={selIds.has(s._id)} onToggle={id => setSelIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}
               </div>
             </>
@@ -709,7 +705,11 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               {!assessment?.jd_id ? (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"><AlertCircle className="w-4 h-4 shrink-0" />No JD linked. Edit the assessment to link a JD first.</div>
               ) : loadingJD ? (
-                <div className="flex flex-col items-center py-8 gap-3"><LoadingSpinner /><p className="text-sm text-gray-500">Fetching eligible students from JD…</p></div>
+                // FIX: fullScreen={false} prevents gradient box artifact inside the modal
+                <div className="flex flex-col items-center py-8 gap-3">
+                  <LoadingSpinner fullScreen={false} />
+                  <p className="text-sm text-gray-500">Fetching eligible students from JD…</p>
+                </div>
               ) : filteredJD.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-3"><CheckCircle2 className="w-6 h-6 text-green-500" /></div>
@@ -747,14 +747,17 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               <p className="text-xs text-gray-400 mt-1">One per line or comma-separated</p>
             </div>
           )}
-          {err && <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><pre className="whitespace-pre-wrap font-sans">{err}</pre></div>}
+          {err    && <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><pre className="whitespace-pre-wrap font-sans">{err}</pre></div>}
           {result && <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl p-3"><CheckCircle2 className="w-4 h-4 shrink-0" />{result}</div>}
           <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold text-sm hover:bg-gray-50">Close</button>
             {!result && (
               <button onClick={handleAssign} disabled={loading || (tab === 'jd' && !assessment?.jd_id)}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
-                {loading ? <LoadingSpinner size="sm" /> : <UserPlus className="w-4 h-4" />}
+                {/* FIX: replaced <LoadingSpinner size="sm" /> with inline CSS spinner */}
+                {loading
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <UserPlus className="w-4 h-4" />}
                 {loading ? 'Assigning…' : tab === 'all' ? `Assign ${selIds.size} Student${selIds.size !== 1 ? 's' : ''}` : tab === 'jd' ? `Assign ${selJdIds.size} Student${selJdIds.size !== 1 ? 's' : ''}` : 'Assign'}
               </button>
             )}
@@ -768,12 +771,12 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
 /* ─── View Assigned Students Modal ───────────────────────────────────── */
 const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => {
   const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
+  const [page, setPage]         = useState(1);
   const [totalPgs, setTotalPgs] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState('');
+  const [total, setTotal]       = useState(0);
+  const [search, setSearch]     = useState('');
 
   useEffect(() => { fetchStudents(1); }, []);
   const fetchStudents = async (p = 1) => {
@@ -806,33 +809,37 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          {loading ? <div className="flex justify-center py-10"><LoadingSpinner /></div>
-          : error ? <div className="flex items-center gap-2 text-red-600 text-sm p-4"><AlertCircle className="w-4 h-4" />{error}</div>
-          : filtered.length === 0 ? (
-            <div className="flex flex-col items-center py-10 text-center">
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mb-3"><Users className="w-7 h-7 text-blue-400" /></div>
-              <p className="font-bold text-gray-700 mb-1">{search ? 'No match' : 'No students assigned yet'}</p>
-              <p className="text-gray-400 text-sm">{search ? 'Try different search' : 'Use Assign Students to add students'}</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filtered.map((s, idx) => (
-                <div key={s._id || idx} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50/60 rounded-xl border border-gray-100 hover:border-blue-200 transition-all">
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-xs">
-                    {(s.fullName || 'S').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{s.fullName || '—'}</p>
-                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      {s.email && <span className="flex items-center gap-1 text-xs text-gray-500"><Mail className="w-3 h-3" />{s.email}</span>}
-                      {s.mobileNumber && <span className="flex items-center gap-1 text-xs text-gray-500"><Phone className="w-3 h-3" />{s.mobileNumber}</span>}
+          {/* FIX: fullScreen={false} prevents gradient box artifact inside the modal */}
+          {loading
+            ? <div className="flex justify-center py-10"><LoadingSpinner fullScreen={false} /></div>
+            : error
+            ? <div className="flex items-center gap-2 text-red-600 text-sm p-4"><AlertCircle className="w-4 h-4" />{error}</div>
+            : filtered.length === 0
+            ? (
+              <div className="flex flex-col items-center py-10 text-center">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mb-3"><Users className="w-7 h-7 text-blue-400" /></div>
+                <p className="font-bold text-gray-700 mb-1">{search ? 'No match' : 'No students assigned yet'}</p>
+                <p className="text-gray-400 text-sm">{search ? 'Try different search' : 'Use Assign Students to add students'}</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filtered.map((s, idx) => (
+                  <div key={s._id || idx} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50/60 rounded-xl border border-gray-100 hover:border-blue-200 transition-all">
+                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-xs">
+                      {(s.fullName || 'S').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{s.fullName || '—'}</p>
+                      <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                        {s.email      && <span className="flex items-center gap-1 text-xs text-gray-500"><Mail  className="w-3 h-3" />{s.email}</span>}
+                        {s.mobileNumber && <span className="flex items-center gap-1 text-xs text-gray-500"><Phone className="w-3 h-3" />{s.mobileNumber}</span>}
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold rounded-full shrink-0">Assigned</span>
                   </div>
-                  <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold rounded-full shrink-0">Assigned</span>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
         </div>
         {!loading && !error && total > 10 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 shrink-0 text-xs text-gray-400">
@@ -856,17 +863,16 @@ const QuestionManager = () => {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // Only show "Create Assessment" when coming from the create form for the first time
   const isNewAssessment = searchParams.get('new') === '1';
 
-  const [assessment,   setAssessment]   = useState(null);
-  const [savedQs,      setSavedQs]      = useState([]);
-  const [stagedQs,     setStagedQs]     = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [submitting,   setSubmitting]   = useState(false);
-  const [error,        setError]        = useState('');
-  const [toast,        setToast]        = useState(null);
-  const [modal,        setModal]        = useState(null);
+  const [assessment,    setAssessment]    = useState(null);
+  const [savedQs,       setSavedQs]       = useState([]);
+  const [stagedQs,      setStagedQs]      = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [submitting,    setSubmitting]    = useState(false);
+  const [error,         setError]         = useState('');
+  const [toast,         setToast]         = useState(null);
+  const [modal,         setModal]         = useState(null);
   const [showChecklist, setShowChecklist] = useState(false);
 
   useEffect(() => { fetchData(); }, [assessmentId]);
@@ -887,23 +893,13 @@ const QuestionManager = () => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3500);
   };
 
-  // ── Guard: check if leaving is allowed ──────────────────────────────
   const handleTryLeave = () => {
-    const hasStudents = (assessment?.eligible_students?.length || 0) > 0;
+    const hasStudents  = (assessment?.eligible_students?.length || 0) > 0;
     const hasQuestions = savedQs.length > 0;
 
-    // If nothing done at all — let them leave freely
     if (!hasQuestions && stagedQs.length === 0) { navigate('/dashboard/college-admin/assessments'); return; }
-
-    // Show checklist — students not assigned is a hard block
     if (!hasStudents) { setShowChecklist(true); return; }
-
-    // If staged questions are unsaved — warn but don't block
-    if (stagedQs.length > 0) {
-      setShowChecklist(true); return;
-    }
-
-    // Everything complete — navigate freely
+    if (stagedQs.length > 0) { setShowChecklist(true); return; }
     navigate('/dashboard/college-admin/assessments');
   };
 
@@ -912,19 +908,29 @@ const QuestionManager = () => {
   const remaining  = limit > 0 ? Math.max(0, limit - totalCount) : Infinity;
   const atLimit    = limit > 0 && totalCount >= limit;
 
+  const marksPerQ = (() => {
+    if (!assessment) return 1;
+    const nq = assessment.num_questions || 0;
+    const tm = assessment.total_marks   || 0;
+    if (nq > 0 && tm > 0) return parseFloat((tm / nq).toFixed(2));
+    return 1;
+  })();
+
   const handleStageQuestion = (payload) => {
+    const withMarks = { ...payload, marks: marksPerQ };
     if (modal?.type === 'edit-staged') {
-      setStagedQs(prev => { const c = [...prev]; c[modal.idx] = payload; return c; });
+      setStagedQs(prev => { const c = [...prev]; c[modal.idx] = withMarks; return c; });
     } else {
-      setStagedQs(prev => [...prev, payload]);
+      setStagedQs(prev => [...prev, withMarks]);
     }
     setModal(null);
   };
 
   const handleBulkAdd = (questions) => {
-    setStagedQs(prev => [...prev, ...questions]);
+    const withMarks = questions.map(q => ({ ...q, marks: marksPerQ }));
+    setStagedQs(prev => [...prev, ...withMarks]);
     setModal(null);
-    showToast(`${questions.length} questions staged — review below and click Submit`);
+    showToast(`${questions.length} questions staged (${marksPerQ} mark${marksPerQ !== 1 ? 's' : ''} each) — review and click Submit`);
   };
 
   const handleSubmitAll = async () => {
@@ -933,17 +939,12 @@ const QuestionManager = () => {
     try {
       const res = await assessmentAPI.bulkAddQuestions(assessmentId, stagedQs);
       if (res.success) {
-        // ✅ Stay on page — do NOT navigate
         setStagedQs([]);
-        await fetchData(); // refresh saved questions
+        await fetchData();
         showToast(`✓ ${stagedQs.length} questions saved! Now assign students to the assessment.`);
-
-        // Show a nudge if students still not assigned
         const hasStudents = (assessment?.eligible_students?.length || 0) > 0;
         if (!hasStudents) {
-          setTimeout(() => {
-            showToast('⚠ Reminder: No students assigned yet — assign students before leaving!', 'warning');
-          }, 4000);
+          setTimeout(() => showToast('⚠ Reminder: No students assigned yet — assign students before leaving!', 'warning'), 4000);
         }
       } else {
         showToast(res.message || 'Submit failed', 'error');
@@ -956,9 +957,20 @@ const QuestionManager = () => {
   };
 
   const totalMarks = [...savedQs, ...stagedQs].reduce((s, q) => s + (Number(q.marks) || 0), 0);
+  const marksInfo  = assessment?.num_questions && assessment?.total_marks
+    ? `${(assessment.total_marks / assessment.num_questions).toFixed(assessment.total_marks % assessment.num_questions === 0 ? 0 : 2)} marks/question`
+    : null;
   const hasStudents = (assessment?.eligible_students?.length || 0) > 0;
 
-  if (loading) return <CollegeAdminLayout><div className="flex items-center justify-center py-24"><LoadingSpinner /></div></CollegeAdminLayout>;
+  // FIX: fullScreen={false} prevents the full-screen gradient box artifact
+  // inside CollegeAdminLayout during initial page load
+  if (loading) return (
+    <CollegeAdminLayout>
+      <div className="flex items-center justify-center py-24">
+        <LoadingSpinner fullScreen={false} />
+      </div>
+    </CollegeAdminLayout>
+  );
 
   return (
     <CollegeAdminLayout>
@@ -968,12 +980,14 @@ const QuestionManager = () => {
         {toast && (
           <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold max-w-sm
             ${toast.type === 'error' ? 'bg-red-600 text-white' : toast.type === 'warning' ? 'bg-amber-500 text-white' : 'bg-green-600 text-white'}`}>
-            {toast.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0" /> : toast.type === 'warning' ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+            {toast.type === 'error' || toast.type === 'warning'
+              ? <AlertCircle className="w-4 h-4 shrink-0" />
+              : <CheckCircle2 className="w-4 h-4 shrink-0" />}
             <span className="leading-snug">{toast.msg}</span>
           </div>
         )}
 
-        {/* Back — now guarded */}
+        {/* Back — guarded */}
         <button onClick={handleTryLeave}
           className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-medium transition-colors group">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
@@ -991,8 +1005,7 @@ const QuestionManager = () => {
                 <p className="text-xs text-red-600 mt-0.5">Students won't see this assessment until you assign them. This is required before leaving.</p>
               </div>
             </div>
-            <button
-              onClick={() => setModal('assign')}
+            <button onClick={() => setModal('assign')}
               className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl whitespace-nowrap transition-colors shrink-0">
               <Users className="w-3.5 h-3.5" /> Assign Now
             </button>
@@ -1070,7 +1083,7 @@ const QuestionManager = () => {
                 style={{ width: `${Math.min((totalCount / limit) * 100, 100)}%` }} />
             </div>
             <div className="flex items-center justify-between mt-1.5 text-xs text-gray-400">
-              <span>{savedQs.length} saved · {stagedQs.length} staged</span>
+              <span>{savedQs.length} saved · {stagedQs.length} staged{marksInfo ? ` · ${marksInfo}` : ''}</span>
               <span>{atLimit ? '✓ Limit reached' : `${remaining} slot${remaining !== 1 ? 's' : ''} remaining`}</span>
             </div>
           </div>
@@ -1102,9 +1115,12 @@ const QuestionManager = () => {
                 <p className="font-bold text-amber-800 text-sm">{stagedQs.length} Question{stagedQs.length !== 1 ? 's' : ''} Staged — Preview</p>
                 <span className="text-xs text-amber-500">Not saved to DB yet</span>
               </div>
+              {/* FIX: replaced <LoadingSpinner size="sm" /> with inline CSS spinner */}
               <button onClick={handleSubmitAll} disabled={submitting}
                 className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-xs font-bold disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
-                {submitting ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" />}
+                {submitting
+                  ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Send className="w-3.5 h-3.5" />}
                 {submitting ? 'Saving…' : `Submit ${stagedQs.length}`}
               </button>
             </div>
@@ -1123,7 +1139,13 @@ const QuestionManager = () => {
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-12 text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><BookOpen className="w-8 h-8 text-blue-400" /></div>
             <h3 className="text-lg font-bold text-gray-700 mb-2">No Questions Yet</h3>
-            <p className="text-gray-400 text-sm mb-6">Add questions one by one or paste in bulk.</p>
+            <p className="text-gray-400 text-sm mb-4">Add questions one by one or paste in bulk.</p>
+            {marksInfo && (
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-sm text-blue-700 font-semibold mb-5">
+                <Award className="w-4 h-4" />
+                Marks auto-assigned: <strong className="ml-1">{marksInfo}</strong>
+              </div>
+            )}
             <div className="flex items-center justify-center gap-3 flex-wrap">
               <button onClick={() => setModal('bulk')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50"><ClipboardPaste className="w-4 h-4" /> Bulk Paste</button>
               <button onClick={() => setModal('add')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90"><Plus className="w-4 h-4" /> Add Question</button>
@@ -1145,7 +1167,7 @@ const QuestionManager = () => {
           </div>
         )}
 
-        {/* Finalize: show once questions saved AND students assigned AND this is new creation */}
+        {/* Finalize: show once questions saved AND students assigned AND new creation */}
         {isNewAssessment && savedQs.length > 0 && stagedQs.length === 0 && hasStudents && (
           <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -1160,10 +1182,7 @@ const QuestionManager = () => {
               </div>
             </div>
             <button
-              onClick={() => {
-                showToast('Assessment created successfully!');
-                setTimeout(() => navigate('/dashboard/college-admin/assessments'), 1200);
-              }}
+              onClick={() => { showToast('Assessment created successfully!'); setTimeout(() => navigate('/dashboard/college-admin/assessments'), 1200); }}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90 transition-opacity whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg,#1d4ed8,#0284c7,#0891b2)' }}>
               <CheckCircle2 className="w-4 h-4" /> Create Assessment
@@ -1174,10 +1193,13 @@ const QuestionManager = () => {
         {/* Sticky submit */}
         {stagedQs.length > 0 && (
           <div className="sticky bottom-4">
+            {/* FIX: replaced <LoadingSpinner size="sm" /> with inline CSS spinner */}
             <button onClick={handleSubmitAll} disabled={submitting}
               className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl text-white font-bold text-sm shadow-xl shadow-blue-500/30 disabled:opacity-60 transition-opacity hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#1e40af,#0284c7,#0891b2)' }}>
-              {submitting ? <LoadingSpinner size="sm" /> : <Send className="w-5 h-5" />}
+              {submitting
+                ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Send className="w-5 h-5" />}
               {submitting ? 'Saving to database…' : `Submit ${stagedQs.length} Question${stagedQs.length !== 1 ? 's' : ''} to Assessment`}
             </button>
           </div>
@@ -1204,7 +1226,6 @@ const QuestionManager = () => {
           level={assessment?.level} onClose={() => setModal(null)} />
       )}
 
-      {/* Completion Checklist Guard Modal */}
       {showChecklist && (
         <CompletionChecklistModal
           assessment={assessment}

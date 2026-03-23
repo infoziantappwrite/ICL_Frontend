@@ -11,11 +11,31 @@ import {
   ChevronLeft, Users, AlertCircle, RefreshCw, Download, CheckCircle2,
   BarChart2, ChevronRight, ClipboardList, Clock,
   X, ChevronDown, ChevronUp, Check, FileText,
-  Eye, Trophy, Send,
+  Eye, Trophy, Send, ShieldAlert, ShieldCheck, Shield,
+  AlertTriangle, Flag, Monitor,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { assessmentAPI, assessmentAttemptAPI } from '../../../api/Api';
+import apiCall from '../../../api/Api';
+
+// ── Proctoring helpers ─────────────────────────────────────────────────────
+const VIOLATION_LABELS = {
+  FULLSCREEN_EXIT   : 'Fullscreen Exit',
+  TAB_SWITCH        : 'Tab Switch',
+  WINDOW_BLUR       : 'Window Blur',
+  COPY_ATTEMPT      : 'Copy Attempt',
+  PASTE_ATTEMPT     : 'Paste Attempt',
+  CUT_ATTEMPT       : 'Cut Attempt',
+  CONTEXT_MENU      : 'Right-click',
+  DEVTOOLS_OPEN     : 'DevTools',
+  KEYBOARD_SHORTCUT : 'Key Shortcut',
+  PRINT_ATTEMPT     : 'Print Attempt',
+};
+const CRITICAL_TYPES = new Set(['FULLSCREEN_EXIT','TAB_SWITCH','WINDOW_BLUR','DEVTOOLS_OPEN']);
+
+const fetchViolations = (submissionId) =>
+  apiCall(`/proctoring/violations/${submissionId}`);
 
 const ScoreBar = ({ pct }) => {
   const color = pct >= 50 ? 'from-green-500 to-emerald-400' : pct >= 35 ? 'from-blue-400 to-blue-500' : 'from-red-400 to-red-500';
@@ -35,6 +55,90 @@ const fmtTime = (secs) => {
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
+};
+
+
+// ── Proctoring Panel (inline in the attempt row) ──────────────────────────
+const ProctoringPanel = ({ attempt }) => {
+  const [violations, setViolations] = useState(null);
+  const [loading, setLoading]       = useState(false);
+  const [open, setOpen]             = useState(false);
+
+  const load = async () => {
+    if (violations !== null) { setOpen(v => !v); return; }
+    setLoading(true);
+    try {
+      const res = await fetchViolations(attempt._id);
+      setViolations(res.violations || []);
+      setOpen(true);
+    } catch {
+      setViolations([]);
+      setOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const flagged  = attempt.proctoring_flagged;
+  const count    = attempt.proctoring_violations_count || 0;
+  const critical = violations?.filter(v => CRITICAL_TYPES.has(v.event_type)).length ?? 0;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={load}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all
+          ${flagged
+            ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
+            : count > 0
+            ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
+            : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'}`}
+      >
+        {loading ? (
+          <RefreshCw className="w-3 h-3 animate-spin" />
+        ) : flagged ? (
+          <ShieldAlert className="w-3 h-3" />
+        ) : count > 0 ? (
+          <AlertTriangle className="w-3 h-3" />
+        ) : (
+          <ShieldCheck className="w-3 h-3" />
+        )}
+        {flagged ? 'Flagged' : count > 0 ? `${count} violation${count !== 1 ? 's' : ''}` : 'Clean'}
+        {open ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
+      </button>
+
+      {open && violations !== null && (
+        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
+          {violations.length === 0 ? (
+            <div className="flex items-center gap-2 px-3 py-2 text-xs text-green-600 font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5" /> No violations recorded
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              <div className="px-3 py-2 flex items-center justify-between">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                  {violations.length} event{violations.length !== 1 ? 's' : ''} · {critical} critical
+                </span>
+              </div>
+              {violations.map((v, i) => (
+                <div key={i} className="px-3 py-2 flex items-center gap-2">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${CRITICAL_TYPES.has(v.event_type) ? 'bg-red-500' : 'bg-amber-400'}`} />
+                  <span className={`text-[10px] font-bold ${CRITICAL_TYPES.has(v.event_type) ? 'text-red-700' : 'text-amber-700'}`}>
+                    {VIOLATION_LABELS[v.event_type] || v.event_type}
+                  </span>
+                  <span className="text-[10px] text-gray-400 ml-auto flex-shrink-0">
+                    {v.client_timestamp
+                      ? new Date(v.client_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                      : new Date(v.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
@@ -66,7 +170,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
         <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
           <div>
             <h2 className="font-black text-gray-900">Answer Sheet</h2>
@@ -79,7 +183,8 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
           </button>
         </div>
         <div className="p-5">
-          {loading && <div className="flex justify-center py-10"><LoadingSpinner /></div>}
+          {/* FIX: fullScreen={false} prevents gradient box artifact inside modal */}
+          {loading && <div className="flex justify-center py-10"><LoadingSpinner fullScreen={false} /></div>}
           {error && (
             <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
               <AlertCircle className="w-4 h-4" /> {error}
@@ -290,6 +395,7 @@ const AssessmentAttempts = () => {
     avg: attempts.length > 0 ? Math.round(attempts.reduce((s, a) => s + (a.score_percentage || 0), 0) / attempts.length) : 0,
     passed: attempts.filter(a => (a.score_percentage || 0) >= 50).length,
     topScore: attempts.length > 0 ? Math.max(...attempts.map(a => a.score_percentage || 0)) : 0,
+    flagged: attempts.filter(a => a.proctoring_flagged).length,
   };
 
   const isCompleted = assessment?.status === 'completed';
@@ -297,7 +403,7 @@ const AssessmentAttempts = () => {
   const isJD = !!assessment?.jd_id;
 
   const handleExportCSV = () => {
-    const headers = ['Rank', 'Name', 'Email', 'Score(%)', 'Correct', 'Total Qs', 'Earned Marks', 'Total Marks', 'Time Taken', 'Submitted'];
+    const headers = ['Rank', 'Name', 'Email', 'Score(%)', 'Correct', 'Total Qs', 'Earned Marks', 'Total Marks', 'Time Taken', 'Submitted', 'Violations', 'Flagged'];
     const rows = sortedAttempts.map((a, i) => [
       i + 1,
       a.student_id?.fullName || '—',
@@ -309,6 +415,8 @@ const AssessmentAttempts = () => {
       a.total_marks ?? 0,
       fmtTime(a.time_taken_seconds),
       a.submitted_at ? new Date(a.submitted_at).toLocaleString() : '—',
+      a.proctoring_violations_count ?? 0,
+      a.proctoring_flagged ? 'Yes' : 'No',
     ]);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -366,9 +474,13 @@ const AssessmentAttempts = () => {
     }
   };
 
+  // FIX: fullScreen={false} prevents the full-screen gradient box artifact
+  // inside CollegeAdminLayout during initial page load
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24"><LoadingSpinner /></div>
+      <div className="flex items-center justify-center py-24">
+        <LoadingSpinner fullScreen={false} />
+      </div>
     </CollegeAdminLayout>
   );
 
@@ -376,7 +488,7 @@ const AssessmentAttempts = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="max-w-5xl mx-auto space-y-5">
+      <div className="w-full space-y-4">
 
         {/* Back */}
         <button onClick={() => navigate('/dashboard/college-admin/assessments')}
@@ -426,15 +538,18 @@ const AssessmentAttempts = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
-            { label: 'Total Attempts', value: stats.total,         color: 'bg-blue-50 border-blue-100 text-blue-700' },
-            { label: 'Avg Score',      value: `${stats.avg}%`,     color: 'bg-cyan-50 border-cyan-100 text-cyan-700' },
-            { label: 'Passed (≥50%)',  value: stats.passed,        color: 'bg-green-50 border-green-100 text-green-700' },
-            { label: 'Top Score',      value: `${stats.topScore}%`,color: 'bg-indigo-50 border-indigo-100 text-indigo-700' },
+            { label: 'Total Attempts', value: stats.total,      color: 'bg-blue-50 border-blue-100 text-blue-700' },
+            { label: 'Avg Score',      value: `${stats.avg}%`,  color: 'bg-cyan-50 border-cyan-100 text-cyan-700' },
+            { label: 'Passed (≥50%)',  value: stats.passed,     color: 'bg-green-50 border-green-100 text-green-700' },
+            { label: 'Top Score',      value: `${stats.topScore}%`, color: 'bg-indigo-50 border-indigo-100 text-indigo-700' },
+            { label: 'Flagged', value: stats.flagged, icon: true, color: stats.flagged > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-100 text-gray-400' },
           ].map(s => (
             <div key={s.label} className={`px-4 py-3 rounded-xl border ${s.color} text-center`}>
-              <p className="text-2xl font-black tabular-nums">{s.value}</p>
+              {s.icon && s.value > 0
+                ? <div className="flex items-center justify-center gap-1"><ShieldAlert className="w-5 h-5" /><p className="text-2xl font-black tabular-nums">{s.value}</p></div>
+                : <p className="text-2xl font-black tabular-nums">{s.value}</p>}
               <p className="text-[10px] font-semibold opacity-60 mt-0.5">{s.label}</p>
             </div>
           ))}
@@ -474,8 +589,8 @@ const AssessmentAttempts = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/40">
-                    {['Rank', 'Student', 'Score %', 'Marks Earned', 'Correct Answers', 'Time Taken', 'Submitted', 'Actions'].map(h => (
-                      <th key={h} className="text-left text-[9px] font-black text-gray-400 uppercase tracking-wider px-4 py-3 last:text-right last:pr-5">{h}</th>
+                    {['Rank', 'Student', 'Score %', 'Marks', 'Correct', 'Time', 'Submitted', 'Proctoring', 'Actions'].map(h => (
+                      <th key={h} className="text-left text-[9px] font-black text-gray-400 uppercase tracking-wider px-3 py-3 last:text-right last:pr-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -484,13 +599,13 @@ const AssessmentAttempts = () => {
                     const isTopN = isJD && assessment?.leaderboard_top_n && idx < assessment.leaderboard_top_n;
                     return (
                       <tr key={a._id} className={`hover:bg-blue-50/20 transition-colors group ${isTopN ? 'bg-amber-50/30' : ''}`}>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black
                             ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-100 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'}`}>
                             {idx + 1}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3">
                           <p className="font-bold text-gray-900 text-sm">{a.student_id?.fullName || '—'}</p>
                           <p className="text-[10px] text-gray-400">{a.student_id?.email || '—'}</p>
                         </td>
@@ -509,13 +624,16 @@ const AssessmentAttempts = () => {
                             {fmtTime(a.time_taken_seconds)}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-400">
+                        <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
                           {a.submitted_at ? new Date(a.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-3 py-3">
+                          <ProctoringPanel attempt={a} />
+                        </td>
+                        <td className="px-4 py-3 text-right">
                           <button onClick={() => setSelectedAttempt(a)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all opacity-60 group-hover:opacity-100">
-                            <Eye className="w-3 h-3" /> View Answers
+                            <Eye className="w-3 h-3" /> Answers
                           </button>
                         </td>
                       </tr>
@@ -565,7 +683,7 @@ const AssessmentAttempts = () => {
                       ? 'Available once the assessment status is Completed.'
                       : isJD
                         ? 'Select top-N students to shortlist and publish results to students.'
-                        : 'Publish to release each student\'s individual result to them.'}
+                        : "Publish to release each student's individual result to them."}
                   </p>
                 )}
               </div>

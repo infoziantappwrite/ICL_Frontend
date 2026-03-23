@@ -210,7 +210,30 @@ const JobForm = () => {
     e.preventDefault();
     setSaving(true); setError(null); setSuccess(false);
     try {
-      const submitData = { ...formData, status: saveAs || formData.status, selectionProcess: { ...formData.selectionProcess, totalRounds: formData.selectionProcess.rounds.length } };
+      const submitData = {
+        ...formData,
+        status: saveAs || formData.status,
+        selectionProcess: { ...formData.selectionProcess, totalRounds: formData.selectionProcess.rounds.length },
+        package: {
+          ...formData.package,
+          ctc: {
+            min: formData.package.ctc.min !== '' ? parseFloat(formData.package.ctc.min) : undefined,
+            max: formData.package.ctc.max !== '' ? parseFloat(formData.package.ctc.max) : undefined,
+          },
+          fixedPay: formData.package.fixedPay !== '' ? parseFloat(formData.package.fixedPay) : undefined,
+          variablePay: formData.package.variablePay !== '' ? parseFloat(formData.package.variablePay) : undefined,
+          joiningBonus: formData.package.joiningBonus !== '' ? parseFloat(formData.package.joiningBonus) : undefined,
+          relocationAllowance: formData.package.relocationAllowance !== '' ? parseFloat(formData.package.relocationAllowance) : undefined,
+        },
+        eligibility: {
+          ...formData.eligibility,
+          minCGPA: formData.eligibility.minCGPA !== '' ? parseFloat(formData.eligibility.minCGPA) : 0,
+          maxBacklogs: formData.eligibility.maxBacklogs !== '' ? parseInt(formData.eligibility.maxBacklogs) : 0,
+          maxGapYears: formData.eligibility.maxGapYears !== '' ? parseInt(formData.eligibility.maxGapYears) : 0,
+          tenthPercentage: formData.eligibility.tenthPercentage !== '' ? parseFloat(formData.eligibility.tenthPercentage) : undefined,
+          twelfthPercentage: formData.eligibility.twelfthPercentage !== '' ? parseFloat(formData.eligibility.twelfthPercentage) : undefined,
+        },
+      };
       const response = isEditMode ? await jobAPI.updateJob(jobId, submitData) : await jobAPI.createJob(submitData);
       if (response.success) {
         setSuccess(true);
@@ -307,13 +330,10 @@ const JobForm = () => {
             </div>
             <SelectInput label="Job Type" required value={formData.jobType} onChange={e => updateField('jobType', e.target.value)}
               options={[
-                { value: 'Full-Time', label: 'Full-Time' }, { value: 'Part-Time', label: 'Part-Time' },
-                { value: 'Internship', label: 'Internship' }, { value: 'Contract', label: 'Contract' }, { value: 'Other', label: 'Other' },
+                { value: 'Full-Time', label: 'Full-Time' },
+                { value: 'Internship', label: 'Internship' },
+                { value: 'Internship + FTE', label: 'Internship + FTE' },
               ]} />
-            {formData.jobType === 'Other' && (
-              <TextInput placeholder="Specify job type..." value={formData.jobTypeOther || ''}
-                onChange={e => updateField('jobTypeOther', e.target.value)} />
-            )}
             <SelectInput label="Job Role" required value={formData.jobRole} onChange={e => updateField('jobRole', e.target.value)}
               options={[
                 { value: 'Software Engineer', label: 'Software Engineer' }, { value: 'Data Analyst', label: 'Data Analyst' },
@@ -404,7 +424,7 @@ const JobForm = () => {
         {/* Package Details */}
         <Section icon={DollarSign} title="Package Details">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TextInput label="Minimum CTC (LPA)" required type="number" step="0.1" placeholder="5.0"
+            <TextInput label="Minimum CTC (LPA)" required type="number" step="0.1" min="0" placeholder="5.0"
               value={formData.package.ctc.min} onChange={e => updateDoubleNested('package', 'ctc', 'min', e.target.value)} />
             <TextInput label="Maximum CTC (LPA)" type="number" step="0.1" placeholder="8.0"
               value={formData.package.ctc.max} onChange={e => updateDoubleNested('package', 'ctc', 'max', e.target.value)} />

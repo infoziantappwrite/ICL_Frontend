@@ -125,11 +125,7 @@ const ProfileEdit = () => {
     declarationSignature: ''
   });
 
-  // File state for document uploads
-  const [files, setFiles] = useState({
-    resumeFile: null,
-    idProofFile: null,
-  });
+  // File state no longer needed here — uploads happen inside DocumentsForm directly
 
   // Temporary input states for adding skills and companies
   const [newPrimarySkill, setNewPrimarySkill] = useState('');
@@ -237,17 +233,6 @@ const ProfileEdit = () => {
     }));
   };
 
-  // File change handler
-  const handleFileChange = (e) => {
-    const { name, files: selectedFiles } = e.target;
-    if (selectedFiles && selectedFiles[0]) {
-      setFiles((prev) => ({
-        ...prev,
-        [name]: selectedFiles[0],
-      }));
-    }
-  };
-
   // Skill management functions
   const addSkill = (type, value, setValue) => {
     if (value.trim()) {
@@ -284,6 +269,26 @@ const ProfileEdit = () => {
     }));
   };
 
+  // Called by DocumentsForm when a file is successfully uploaded (or removed)
+  const handleDocumentUploaded = (docType, url, filename) => {
+    setFormData(prev => ({
+      ...prev,
+      // Update the nested documents object
+      documents: {
+        ...prev.documents,
+        [docType]: {
+          ...prev.documents[docType],
+          url: url || '',
+          filename: filename || '',
+          uploadedAt: url ? new Date().toISOString() : null,
+        },
+      },
+      // Keep legacy flat fields in sync
+      ...(docType === 'resume' ? { resumeUrl: url || '' } : {}),
+      ...(docType === 'idProof' ? { idProofUrl: url || '' } : {}),
+    }));
+  };
+
   // ⚠️ REMOVED: validateDocuments() - No longer required
   // ⚠️ REMOVED: Primary skills validation - No longer required
   
@@ -294,22 +299,21 @@ const ProfileEdit = () => {
     setErrorMessage('');
 
     try {
-      const formDataToSend = new FormData();
-
-      // Prepare documents structure
+      // Files are already uploaded via DocumentsForm — just send the profile JSON
       const documentsData = {
         resume: {
-          url: formData.resumeUrl || formData.documents.resume.url || undefined,
-          filename: files.resumeFile?.name || formData.documents.resume.filename || undefined
+          url: formData.documents?.resume?.url || formData.resumeUrl || undefined,
+          filename: formData.documents?.resume?.filename || undefined,
+          uploadedAt: formData.documents?.resume?.uploadedAt || undefined,
         },
         idProof: {
-          url: formData.idProofUrl || formData.documents.idProof.url || undefined,
-          filename: files.idProofFile?.name || formData.documents.idProof.filename || undefined
+          url: formData.documents?.idProof?.url || formData.idProofUrl || undefined,
+          filename: formData.documents?.idProof?.filename || undefined,
+          uploadedAt: formData.documents?.idProof?.uploadedAt || undefined,
         },
-        certificates: formData.documents.certificates || []
+        certificates: formData.documents?.certificates || [],
       };
 
-      // Add all form fields (all optional now)
       const profileData = {
         fullName: formData.fullName || undefined,
         email: formData.email || user?.email,
@@ -322,7 +326,7 @@ const ProfileEdit = () => {
           city: formData.city || undefined,
           state: formData.state || undefined,
           country: formData.country || undefined,
-          pincode: formData.pincode || undefined
+          pincode: formData.pincode || undefined,
         },
         highestQualification: formData.highestQualification || undefined,
         specialization: formData.specialization || undefined,
@@ -359,20 +363,12 @@ const ProfileEdit = () => {
           isCorrect: formData.declarationIsCorrect,
           acceptTerms: formData.declarationAcceptTerms,
           consentDataUsage: formData.declarationConsentDataUsage,
-          signature: formData.declarationSignature || undefined
-        }
+          signature: formData.declarationSignature || undefined,
+        },
       };
 
-      formDataToSend.append('profileData', JSON.stringify(profileData));
-
-      if (files.resumeFile) {
-        formDataToSend.append('resumeFile', files.resumeFile);
-      }
-      if (files.idProofFile) {
-        formDataToSend.append('idProofFile', files.idProofFile);
-      }
-
-      const response = await updateProfile(formDataToSend);
+      // Send as plain JSON — no files to attach (already uploaded)
+      const response = await updateProfile(profileData);
 
       if (response.success) {
         if (redirectToDashboard) {
@@ -566,8 +562,7 @@ const ProfileEdit = () => {
                 <DocumentsForm
                   formData={formData}
                   handleChange={handleChange}
-                  files={files}
-                  handleFileChange={handleFileChange}
+                  onDocumentUploaded={handleDocumentUploaded}
                 />
               )}
 

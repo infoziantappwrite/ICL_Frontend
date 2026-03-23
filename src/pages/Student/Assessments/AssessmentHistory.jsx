@@ -7,8 +7,32 @@ import {
   CheckCircle2, XCircle
 } from 'lucide-react';
 import StudentLayout from '../../../components/layout/StudentLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { assessmentAttemptAPI } from '../../../api/Api';
+
+// ── Skeleton loader that mimics AttemptRow cards ──────────────────────────────
+const SkeletonCard = () => (
+  <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center animate-pulse">
+    <div className="flex-1 w-full">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <div className="h-4 w-36 bg-gray-200 rounded mb-2" />
+          <div className="h-3 w-24 bg-gray-100 rounded" />
+        </div>
+        <div className="h-5 w-20 bg-gray-100 rounded-full" />
+      </div>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-md" />
+        <div className="h-4 w-10 bg-gray-100 rounded" />
+      </div>
+      <div className="flex gap-4">
+        <div className="h-3 w-20 bg-gray-100 rounded" />
+        <div className="h-3 w-20 bg-gray-100 rounded" />
+        <div className="h-3 w-16 bg-gray-100 rounded" />
+      </div>
+    </div>
+    <div className="h-9 w-28 bg-gray-100 rounded-xl shrink-0" />
+  </div>
+);
 
 const LEVEL_CONFIG = {
   Beginner:     { label: 'Beginner',     color: 'bg-green-100 text-green-700' },
@@ -174,25 +198,11 @@ const AssessmentHistory = () => {
     setError('');
     setJdLeaderboards({});
     try {
-      const assRes = await assessmentAttemptAPI.getMyAssignedAssessments();
-      if (!assRes.success) { setError(assRes.message || 'Failed to load'); return; }
+      // Direct call — returns ALL submitted attempts regardless of assessment status
+      const histRes = await assessmentAttemptAPI.getMyHistory();
+      if (!histRes.success) { setError(histRes.message || 'Failed to load'); return; }
 
-      const assessmentList = assRes.assessments || [];
-
-      // Fetch attempts for each assessment in parallel
-      const attemptResults = await Promise.allSettled(
-        assessmentList.map(a =>
-          assessmentAttemptAPI.getMyAttempts(a._id).catch(() => ({ success: false, attempts: [] }))
-        )
-      );
-
-      const allAttempts = attemptResults
-        .filter(r => r.status === 'fulfilled' && r.value?.success)
-        .flatMap(r => r.value.attempts || []);
-
-      // Sort by newest first
-      allAttempts.sort((a, b) => new Date(b.submitted_at || b.createdAt) - new Date(a.submitted_at || a.createdAt));
-
+      const allAttempts = histRes.attempts || [];
       setAttempts(allAttempts);
 
       // For each published JD-based attempt, fetch leaderboard to determine eligibility
@@ -301,8 +311,9 @@ const AssessmentHistory = () => {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <LoadingSpinner />
+          <div className="space-y-4">
+            <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
+            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700 font-medium">

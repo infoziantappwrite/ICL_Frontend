@@ -7,7 +7,7 @@ import {
   ChevronRight, Star,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { AnalyticsSkeleton } from '../../components/common/SkeletonLoader';
 import { collegeAdminAPI, jobAPI, applicationAPI } from '../../api/Api';
 
 /* ─── helpers ─────────────────────────────── */
@@ -161,7 +161,7 @@ const Analytics = () => {
   useEffect(() => { fetchAllData(); }, [timeRange]);
 
   if (loading) {
-    return <LoadingSpinner message="Loading Analytics..." submessage="Fetching live placement data" icon={BarChart3} />;
+    return <AnalyticsSkeleton layout={CollegeAdminLayout} />;
   }
 
   const placementRate = overviewStats.placementPercentage ?? pct(overviewStats.placedStudents ?? 0, overviewStats.totalStudents ?? 0);

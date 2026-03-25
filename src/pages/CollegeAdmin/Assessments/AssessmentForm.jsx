@@ -8,7 +8,7 @@ import {
   Award,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI } from '../../../api/Api';
 
 const INITIAL_FORM = {
@@ -206,7 +206,7 @@ const AssessmentForm = () => {
   if (loading) return (
     <CollegeAdminLayout>
       <div className="flex items-center justify-center py-24">
-        <LoadingSpinner fullScreen={false} />
+        <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
   );

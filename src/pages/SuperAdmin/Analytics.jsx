@@ -8,7 +8,7 @@ import {
   ChevronRight, Star, Zap,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { AnalyticsSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ── helpers ── */
 const fmt  = (n) => n == null ? '0' : n >= 1000 ? `${(n/1000).toFixed(1)}k` : String(n);
@@ -103,7 +103,7 @@ const Analytics = () => {
 
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
 
-  if (loading && !stats) return <LoadingSpinner message="Loading Analytics…" submessage="Fetching live platform data" />;
+  if (loading && !stats) return <AnalyticsSkeleton layout={SuperAdminDashboardLayout} />;
 
   /* derived */
   const totalColleges   = stats?.totalColleges   ?? colleges.length;

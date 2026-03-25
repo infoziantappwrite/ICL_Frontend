@@ -9,7 +9,7 @@ import {
   SlidersHorizontal, Briefcase
 } from 'lucide-react';
 import StudentLayout from '../../../components/layout/StudentLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { AssessmentListSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAttemptAPI } from '../../../api/Api';
  
 // ─── Constants ────────────────────────────────────────────────────────────────

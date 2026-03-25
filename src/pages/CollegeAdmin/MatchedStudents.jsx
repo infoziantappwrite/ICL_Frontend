@@ -7,7 +7,7 @@ import {
   Filter, ChevronDown, ChevronUp, Award, Briefcase,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { jobAPI } from '../../api/Api';
 
 /* ─── helpers ─────────────────────────────── */
@@ -238,7 +238,7 @@ const MatchedStudents = () => {
     a.click();
   };
 
-  if (loading) return <LoadingSpinner message="Calculating skill matches..." />;
+  if (loading) return <TableSkeleton layout={CollegeAdminLayout} />;
 
   const companyName = typeof job?.companyId === 'object' ? job?.companyId?.name : '—';
 

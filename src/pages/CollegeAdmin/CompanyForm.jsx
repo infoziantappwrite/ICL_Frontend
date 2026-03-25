@@ -6,7 +6,7 @@ import {
   Building2, Save, X, MapPin, Globe, Mail, Phone, Briefcase, FileText, ArrowLeft,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 import { companyAPI, collegeAdminAPI } from '../../api/Api';
 
 /* ─── Form field helpers ─────────────────────── */
@@ -146,7 +146,7 @@ const CompanyForm = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner message={`Loading ${isEditMode ? 'Company Details' : 'Form'}...`} />;
+  if (loading) return <DetailSkeleton layout={CollegeAdminLayout} />;
 
   return (
     <CollegeAdminLayout>

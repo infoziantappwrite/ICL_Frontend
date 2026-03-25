@@ -7,7 +7,7 @@ import {
   ChevronLeft, Globe, Info, Lock,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../../components/common/SkeletonLoader';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
 const AssignCourseBatch = () => {
@@ -125,7 +125,7 @@ const AssignCourseBatch = () => {
   const selectedCourseObj   = courses.find(c => c._id === selectedCourse);
   const courseIsPlatformWide = selectedCourseObj ? isPlatformWide(selectedCourseObj) : false;
 
-  if (loading) return <LoadingSpinner message="Loading..." submessage="Fetching courses" icon={Send} />;
+  if (loading) return <DetailSkeleton layout={CollegeAdminLayout} />;
 
   return (
     <CollegeAdminLayout>

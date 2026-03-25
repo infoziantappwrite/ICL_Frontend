@@ -10,7 +10,7 @@ import {
   CalendarCheck, Eye, Hash, Award,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI } from '../../../api/Api';
 
 /* ─── Status config with the new lifecycle ───────────────────────────── */
@@ -321,7 +321,7 @@ const AssessmentManagement = () => {
 
         {/* ── Table ── */}
         {loading ? (
-          <div className="flex items-center justify-center py-20"><LoadingSpinner fullScreen={false} /></div>
+          <InlineSkeleton rows={6} className="py-20" />
         ) : filtered.length === 0 ? (
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-16 text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">

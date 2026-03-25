@@ -7,7 +7,7 @@ import {
   CheckCircle, Filter, ChevronLeft, ChevronRight, AlertCircle,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { companyAPI } from '../../api/Api';
 
 const PAGE_SIZE = 12;
@@ -98,7 +98,7 @@ const CompanyList = () => {
   const totalPages = Math.ceil(filteredCompanies.length / PAGE_SIZE);
   const paginated  = filteredCompanies.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  if (loading) return <LoadingSpinner message="Loading Companies..." />;
+  if (loading) return <TableSkeleton layout={CollegeAdminLayout} />;
 
   return (
     <CollegeAdminLayout>

@@ -23,7 +23,7 @@ import {
   Hash,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ─── Section heading ─────────────────────── */
 const SHead = ({ icon: Icon, title, sub }) => (
@@ -210,10 +210,7 @@ const CollegeForm = () => {
 
   if (loading) {
     return (
-      <LoadingSpinner
-        message={isEditMode ? 'Loading College Data...' : 'Preparing Form...'}
-        submessage="Please wait"
-      />
+      <DetailSkeleton layout={SuperAdminDashboardLayout} />
     );
   }
 

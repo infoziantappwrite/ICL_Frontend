@@ -8,7 +8,7 @@ import {
   MapPin, Calendar, Users, GraduationCap, FileText, AlertCircle, CheckCircle, Tag,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 import { jobAPI, companyAPI, skillAPI } from '../../api/Api';
 
 /* ─── ChipInput ─────────────────────────── */
@@ -261,7 +261,7 @@ const JobForm = () => {
   const updateSelectionRound = (idx, field, value) => setFormData(p => { const rounds = [...p.selectionProcess.rounds]; rounds[idx] = { ...rounds[idx], [field]: value }; return { ...p, selectionProcess: { ...p.selectionProcess, rounds } }; });
   const removeSelectionRound = (idx) => setFormData(p => ({ ...p, selectionProcess: { ...p.selectionProcess, rounds: p.selectionProcess.rounds.filter((_, i) => i !== idx) } }));
 
-  if (loading) return <LoadingSpinner message={isEditMode ? 'Loading Job Details...' : 'Loading Form...'} />;
+  if (loading) return <DetailSkeleton layout={CollegeAdminLayout} />;
 
   return (
     <CollegeAdminLayout>

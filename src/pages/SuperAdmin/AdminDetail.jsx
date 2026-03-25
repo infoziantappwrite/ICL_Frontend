@@ -24,7 +24,7 @@ import {
   Clock,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ─── Section heading ─────────────────────── */
 const SHead = ({ icon: Icon, title, sub }) => (
@@ -115,7 +115,7 @@ const AdminDetail = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading Admin Details..." />;
+    return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
   }
 
   if (!admin) {

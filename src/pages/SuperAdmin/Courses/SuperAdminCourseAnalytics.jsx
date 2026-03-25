@@ -6,7 +6,7 @@ import {
   AlertCircle, BookOpen, Activity, Target, ArrowLeft, Layers,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { AnalyticsSkeleton } from '../../../components/common/SkeletonLoader';
 import { superAdminCourseAPI } from '../../../api/Api';
 
 /* ─── Section heading ─────────────────────── */
@@ -87,7 +87,7 @@ const SuperAdminCourseAnalytics = () => {
     finally { setLoading(false); }
   };
 
-  if (loading) return <LoadingSpinner message="Loading Analytics..." submessage="Calculating performance" icon={BarChart3} />;
+  if (loading) return <AnalyticsSkeleton layout={SuperAdminDashboardLayout} />;
 
   if (error || !analytics) return (
     <SuperAdminDashboardLayout>

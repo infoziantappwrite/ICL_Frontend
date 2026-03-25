@@ -8,7 +8,7 @@ import {
   ChevronLeft, ChevronRight, RefreshCw, Filter, X, TrendingUp,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { collegeAdminAPI, jobAPI } from '../../api/Api';
 
 const PAGE_SIZE = 10;
@@ -187,7 +187,7 @@ const JobManagement = () => {
   const topTypes = Object.entries(typeMap).sort((a,b) => b[1]-a[1]).slice(0, 4);
   const maxType  = topTypes[0]?.[1] || 1;
 
-  if (loading) return <LoadingSpinner message="Loading Job Descriptions…" />;
+  if (loading) return <TableSkeleton layout={CollegeAdminLayout} />;
 
   return (
     <CollegeAdminLayout>

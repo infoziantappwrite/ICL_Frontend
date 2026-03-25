@@ -7,7 +7,7 @@ import {
   AlertCircle, RefreshCw, ChevronRight, BarChart3, Target, Zap, Home
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { CardGridSkeleton } from '../../components/common/SkeletonLoader';
 import { courseAPI } from '../../api/Api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

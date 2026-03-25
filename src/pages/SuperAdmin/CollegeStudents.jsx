@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { useToast } from '../../context/ToastContext';
 import apiCall, { tokenStore } from '../../api/Api';
 import {
@@ -300,7 +300,7 @@ const CollegeStudents = () => {
   const hasFilters = search || branch || batch || isPlaced !== '' || isActive !== '';
 
   if (loading && !college) {
-    return <LoadingSpinner message="Loading Students..." submessage="Fetching student records" />;
+    return <TableSkeleton layout={SuperAdminDashboardLayout} />;
   }
 
   /* Pagination pages */

@@ -9,34 +9,84 @@ import {
 import StudentLayout from '../../../components/layout/StudentLayout';
 import { assessmentAttemptAPI } from '../../../api/Api';
 
-// ── Skeleton loader that mimics AttemptRow cards ──────────────────────────────
+// ── Skeleton: mimics a single AttemptRow card ─────────────────────────────────
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center animate-pulse">
     <div className="flex-1 w-full">
+      {/* title row */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <div className="h-4 w-36 bg-gray-200 rounded mb-2" />
+          <div className="h-4 w-40 bg-gray-200 rounded mb-2" />
           <div className="h-3 w-24 bg-gray-100 rounded" />
         </div>
         <div className="h-5 w-20 bg-gray-100 rounded-full" />
       </div>
+      {/* progress bar row */}
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-md" />
         <div className="h-4 w-10 bg-gray-100 rounded" />
       </div>
+      {/* meta pills */}
       <div className="flex gap-4">
-        <div className="h-3 w-20 bg-gray-100 rounded" />
+        <div className="h-3 w-24 bg-gray-100 rounded" />
         <div className="h-3 w-20 bg-gray-100 rounded" />
         <div className="h-3 w-16 bg-gray-100 rounded" />
+        <div className="h-3 w-20 bg-gray-100 rounded" />
       </div>
     </div>
+    {/* CTA button */}
     <div className="h-9 w-28 bg-gray-100 rounded-xl shrink-0" />
   </div>
 );
 
+// ── Skeleton: mimics the top-scores grid ──────────────────────────────────────
+const SkeletonScoreGrid = () => (
+  <div>
+    <div className="h-3 w-28 bg-gray-200 rounded mb-3 animate-pulse" />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center animate-pulse">
+          <div className="h-3 w-20 bg-gray-100 rounded mx-auto mb-2" />
+          <div className="h-8 w-16 bg-gray-200 rounded mx-auto mb-2" />
+          <div className="h-4 w-14 bg-gray-100 rounded-full mx-auto" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// ── Skeleton: full page loading state ─────────────────────────────────────────
+const AssessmentHistorySkeleton = () => (
+  <StudentLayout title="Assessment History">
+    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0 py-6">
+      {/* header row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="animate-pulse">
+          <div className="h-7 w-56 bg-gray-200 rounded mb-2" />
+          <div className="h-4 w-48 bg-gray-100 rounded" />
+        </div>
+        <div className="flex gap-3 animate-pulse">
+          <div className="h-9 w-24 bg-gray-100 rounded-xl" />
+          <div className="h-9 w-36 bg-gray-200 rounded-xl" />
+        </div>
+      </div>
+
+      {/* top scores grid skeleton */}
+      <SkeletonScoreGrid />
+
+      {/* attempts label */}
+      <div className="h-3 w-20 bg-gray-100 rounded animate-pulse" />
+
+      {/* attempt cards */}
+      {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+    </div>
+  </StudentLayout>
+);
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 const LEVEL_CONFIG = {
-  Beginner:     { label: 'Beginner',     color: 'bg-green-100 text-green-700' },
-  Intermediate: { label: 'Intermediate', color: 'bg-blue-100 text-blue-700'  },
+  Beginner:     { label: 'Beginner',     color: 'bg-green-100 text-green-700'   },
+  Intermediate: { label: 'Intermediate', color: 'bg-blue-100 text-blue-700'    },
   Advanced:     { label: 'Advanced',     color: 'bg-purple-100 text-purple-700' },
 };
 
@@ -202,7 +252,10 @@ const AssessmentHistory = () => {
       const histRes = await assessmentAttemptAPI.getMyHistory();
       if (!histRes.success) { setError(histRes.message || 'Failed to load'); return; }
 
-      const allAttempts = histRes.attempts || [];
+      // Filter out attempts linked to cancelled assessments — they should not appear in history
+      const allAttempts = (histRes.attempts || []).filter(
+        a => a.assessment_id?.status !== 'cancelled'
+      );
       setAttempts(allAttempts);
 
       // For each published JD-based attempt, fetch leaderboard to determine eligibility
@@ -240,6 +293,9 @@ const AssessmentHistory = () => {
     }
   };
 
+  // ── Full-page skeleton while loading ─────────────────────────────────────
+  if (loading) return <AssessmentHistorySkeleton />;
+
   // Best score summary — strictly only non-JD published attempts
   const skillSummary = {};
   attempts.forEach(a => {
@@ -263,6 +319,7 @@ const AssessmentHistory = () => {
   return (
     <StudentLayout title="Assessment History">
       <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0 py-6">
+        {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-gray-900">My Assessment History</h1>
@@ -286,7 +343,7 @@ const AssessmentHistory = () => {
           </div>
         </div>
 
-        {/* Top scores — non-JD only */}
+        {/* ── Top scores — non-JD published only ── */}
         {Object.keys(skillSummary).length > 0 && (
           <div>
             <h2 className="text-xs font-black text-gray-400 mb-3 uppercase tracking-wider">Top Published Scores</h2>
@@ -310,17 +367,14 @@ const AssessmentHistory = () => {
           </div>
         )}
 
-        {loading ? (
-          <div className="space-y-4">
-            <div className="h-4 w-24 bg-gray-100 rounded animate-pulse" />
-            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
-          </div>
-        ) : error ? (
+        {/* ── Error state ── */}
+        {error ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-700 font-medium">
             <AlertCircle className="w-8 h-8 mx-auto mb-2 text-red-500" />
             {error}
           </div>
         ) : attempts.length === 0 ? (
+          /* ── Empty state ── */
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
             <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100">
               <TrendingUp className="w-8 h-8 text-gray-400" />
@@ -337,6 +391,7 @@ const AssessmentHistory = () => {
             </button>
           </div>
         ) : (
+          /* ── Attempts list ── */
           <div className="space-y-4">
             <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
               {attempts.length} attempt{attempts.length !== 1 ? 's' : ''}

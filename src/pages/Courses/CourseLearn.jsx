@@ -8,7 +8,7 @@ import {
   Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare, Home, Menu, X
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { CourseLearnSkeleton } from '../../components/common/SkeletonLoader';
 import { courseAPI } from '../../api/Api';
 
 // ─── YouTube IFrame API singleton loader ───────────────────────────────────────
@@ -498,7 +498,7 @@ const CourseLearn = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading Course..." submessage="Preparing your learning interface" icon={BookOpen} />;
+    return <CourseLearnSkeleton />;
   }
 
   if (error || !course) {

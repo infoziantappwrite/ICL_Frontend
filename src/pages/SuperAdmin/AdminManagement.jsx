@@ -9,7 +9,7 @@ import {
   RefreshCw, Filter, X, TrendingUp, Building2,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
  
 const PAGE_SIZE = 10;
  
@@ -99,7 +99,7 @@ const AdminManagement = () => {
   const topColleges = Object.entries(collegeMap).sort((a,b)=>b[1]-a[1]).slice(0,2);
   const maxCol = topColleges[0]?.[1] || 1;
  
-  if (loading) return <LoadingSpinner message="Loading Admins…" />;
+  if (loading) return <TableSkeleton layout={SuperAdminDashboardLayout} />;
  
   return (
     <SuperAdminDashboardLayout>

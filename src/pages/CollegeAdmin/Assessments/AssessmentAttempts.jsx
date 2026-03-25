@@ -31,8 +31,26 @@ const VIOLATION_LABELS = {
   DEVTOOLS_OPEN     : 'DevTools',
   KEYBOARD_SHORTCUT : 'Key Shortcut',
   PRINT_ATTEMPT     : 'Print Attempt',
+  // camera — original
+  NO_FACE_DETECTED  : 'No Face Detected',
+  MULTIPLE_FACES    : 'Multiple Faces',
+  FACE_TURNED_AWAY  : 'Face Turned Away',
+  FACE_LOOKING_DOWN : 'Looking Down',
+  EYES_CLOSED       : 'Eyes Closed',
+  FACE_TOO_SMALL    : 'Face Too Small',
+  CAMERA_DARK       : 'Camera Too Dark',
+  FACE_OBSCURED     : 'Face Obscured',
+  // camera — v3.0 new
+  NO_FACE_WARNING   : 'No Face — Warning',
+  GAZE_AWAY         : 'Eyes Not on Screen',
+  CAMERA_COVERED    : 'Camera Covered/Blocked',
+  MOBILE_DETECTED   : 'Mobile Device Detected',
 };
-const CRITICAL_TYPES = new Set(['FULLSCREEN_EXIT','TAB_SWITCH','WINDOW_BLUR','DEVTOOLS_OPEN']);
+const CRITICAL_TYPES = new Set([
+  'FULLSCREEN_EXIT','TAB_SWITCH','WINDOW_BLUR','DEVTOOLS_OPEN',
+  // v3.0 camera critical
+  'NO_FACE_DETECTED','MULTIPLE_FACES','CAMERA_DARK','CAMERA_COVERED','MOBILE_DETECTED',
+]);
 
 const fetchViolations = (submissionId) =>
   apiCall(`/proctoring/violations/${submissionId}`);

@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { assessmentAPI, assessmentAttemptAPI } from '../../../api/Api';
 import useProctoringGuard from '../../../hooks/useProctoringGuard';
+import useCameraProctoring from '../../../hooks/useCameraProctoring';
+import CameraOverlay from '../../../components/proctoring/CameraOverlay';
 
 const LEVEL_CONFIG = {
   Beginner:     { label: 'Beginner',     color: 'bg-green-50 text-green-700 border-green-200',   dot: 'bg-green-500' },
@@ -19,7 +21,7 @@ const LEVEL_CONFIG = {
 
 // ── Shared Card Wrapper ────────────────────────────────────────────
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 ${className}`}>
     {children}
   </div>
 );
@@ -150,19 +152,59 @@ const BlockedOverlay = () => (
   </div>
 );
 
+// ── Camera Violation Modal ─────────────────────────────────────────
+const CameraViolationModal = ({ violationCount, max, onDismiss }) => (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9997] flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <ShieldAlert className="w-8 h-8 text-red-500" />
+      </div>
+      <h3 className="font-bold text-[18px] text-gray-900 mb-2">Camera Violation Detected</h3>
+      <p className="text-[13px] text-gray-500 mb-4 leading-relaxed">
+        A camera proctoring violation has been recorded. Ensure your face is clearly visible and no other devices are in frame.
+      </p>
+      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5">
+        <p className="text-[12px] font-bold text-red-600">
+          Violation #{violationCount} of {max} — {max - violationCount} remaining before auto-submit.
+        </p>
+        <div className="flex justify-center gap-1.5 mt-2">
+          {Array.from({ length: max }).map((_, i) => (
+            <span
+              key={i}
+              className={`w-3 h-3 rounded-full border ${i < violationCount ? 'bg-red-500 border-red-600' : 'bg-gray-100 border-gray-300'}`}
+            />
+          ))}
+        </div>
+      </div>
+      <button
+        onClick={onDismiss}
+        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-[14px] hover:bg-blue-700 shadow-sm transition-colors"
+      >
+        I Understand — Continue Assessment
+      </button>
+    </div>
+  </div>
+);
+
 // ── Proctoring Status Badge ────────────────────────────────────────
-const ProctoringBadge = ({ isFullscreen, warningCount, max }) => {
-  const safe = warningCount === 0;
-  const warn = warningCount > 0 && warningCount < max;
+const ProctoringBadge = ({ isFullscreen, warningCount, max, camViolationCount, camMax }) => {
+  const safe = warningCount === 0 && camViolationCount === 0;
+  const critical = warningCount >= max || camViolationCount >= camMax;
   return (
     <div
       className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border
         ${safe ? 'bg-green-50 text-green-700 border-green-200'
-               : warn ? 'bg-amber-50 text-amber-700 border-amber-200'
-               : 'bg-red-50 text-red-700 border-red-200'}`}
+               : critical ? 'bg-red-50 text-red-700 border-red-200'
+               : 'bg-amber-50 text-amber-700 border-amber-200'}`}
     >
       {safe ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-      {safe ? 'Secured' : `${warningCount}/${max} warnings`}
+      {safe ? 'Secured' : (
+        <span className="flex items-center gap-1.5">
+          <span title="Browser violations">🖥 {warningCount}/{max}</span>
+          <span className="opacity-40">·</span>
+          <span title="Camera violations">📷 {camViolationCount}/{camMax}</span>
+        </span>
+      )}
     </div>
   );
 };
@@ -189,9 +231,18 @@ const TakeAssessment = () => {
   const [fetchProgress, setFetchProgress] = useState({ loaded: 0, total: 0 });
   const [submissionId, setSubmissionId] = useState(null);
   const [showWarningToast, setShowWarningToast] = useState(false);
+  const [cameraLastViolation, setCameraLastViolation] = useState(null);
+  const [camViolationCount, setCamViolationCount] = useState(0);
+  const [showCamViolationModal, setShowCamViolationModal] = useState(false);
+  const CAM_MAX_VIOLATIONS = 5;
+  // Camera permission is requested on the briefing screen, BEFORE fullscreen,
+  // so the permission dialog never conflicts with fullscreen mode.
+  const [cameraPermStatus, setCameraPermStatus] = useState('idle'); // 'idle'|'requesting'|'granted'|'denied'|'error'
 
   const proctoringActive = phase === 'in_progress';
   const autoSubmitRef = useRef(null);
+  // Tracks whether we've already started camera for this session
+  const cameraInitializedRef = useRef(false);
 
   const guard = useProctoringGuard({
     submissionId,
@@ -199,9 +250,65 @@ const TakeAssessment = () => {
     enabled: proctoringActive,
   });
 
-  // Show toast on new violation
+  // ── Camera proctoring (face-api.js, client-side AI) ──────────────────────────
+  const camera = useCameraProctoring({
+    submissionId,
+    enabled: true,
+    debugMode: false,
+    onViolation: (event) => {
+      setShowWarningToast(true);
+      setCameraLastViolation(event);
+      const t = setTimeout(() => setShowWarningToast(false), 5000);
+      return () => clearTimeout(t);
+    },
+    onCriticalViolation: (event) => {
+      // Camera has its own independent 5-violation counter.
+      // Do NOT forward to guard — browser and camera are tracked separately.
+      setCamViolationCount(prev => {
+        const next = prev + 1;
+        setShowCamViolationModal(true);
+        if (next >= CAM_MAX_VIOLATIONS) {
+          // Camera hit 5 violations — auto-submit
+          autoSubmitRef.current?.('camera_proctoring_violation');
+        }
+        return next;
+      });
+    },
+    // v3.0 — soft warning callback (no-face warning 1 & 2, does NOT count as violation)
+    onWarning: (event) => {
+      setCameraLastViolation(event);
+      // Toast is shown by CameraOverlay's WarningToast internally for NO_FACE_WARNING;
+      // for other WARNING-severity events we still surface the existing toast.
+      if (event.type !== 'NO_FACE_WARNING') {
+        setShowWarningToast(true);
+        const t = setTimeout(() => setShowWarningToast(false), 4000);
+        return () => clearTimeout(t);
+      }
+    },
+  });
+
+
+  // ── Start camera + fullscreen AFTER CameraOverlay has mounted ────────────────
+  // CRITICAL FIX: camera.startCamera() must run AFTER React has re-rendered with
+  // phase='in_progress', because only then does CameraOverlay mount and set
+  // videoRef.current. Calling startCamera() synchronously after setPhase('in_progress')
+  // means videoRef.current is still null → video.srcObject is never set → all
+  // runScan() calls see videoWidth===0 and return immediately → no detection ever runs.
+  useEffect(() => {
+    if (phase === 'in_progress' && !cameraInitializedRef.current) {
+      cameraInitializedRef.current = true;
+      camera.startCamera()
+        .then(() => guard.requestFullscreen())
+        .catch(err => {
+          if (import.meta.env.DEV) console.error('[TakeAssessment] Camera/fullscreen start error:', err);
+        });
+    }
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show toast on new browser-behaviour violation
   useEffect(() => {
     if (guard.lastViolation) {
+      setCameraLastViolation(null); // clear camera violation so guard violation shows
       setShowWarningToast(true);
       const t = setTimeout(() => setShowWarningToast(false), 4000);
       return () => clearTimeout(t);
@@ -228,6 +335,12 @@ const TakeAssessment = () => {
   }, [assessmentId]);
 
   const handleBegin = async () => {
+    // Guard: camera permission must be granted before we can start
+    if (cameraPermStatus !== 'granted') {
+      setError('Please allow camera access before starting the assessment.');
+      return;
+    }
+
     setPhase('loading');
     setError('');
     try {
@@ -255,8 +368,8 @@ const TakeAssessment = () => {
       setStatuses(init);
       setPhase('in_progress');
 
-      // 🔒 Enter fullscreen as soon as assessment starts
-      await guard.requestFullscreen();
+      // Camera + fullscreen are now started by the useEffect below, which fires
+      // AFTER this render commits — ensuring videoRef.current is valid.
     } catch (e) {
       setError(e.message);
       setPhase('briefing');
@@ -283,6 +396,7 @@ const TakeAssessment = () => {
     setSubmitConfirm(false);
     setPhase('submitting');
     guard.exitFullscreen();
+    camera.stopCamera();
     try {
       const res = await assessmentAttemptAPI.submitAssessment(assessmentId,
         questions.map(q => ({ question_id: q.question_id, selected_answer: answers[q.question_id] ?? null }))
@@ -402,6 +516,70 @@ const TakeAssessment = () => {
                 </div>
               )}
 
+              {/* ── Step 1: Camera permission — must be done BEFORE fullscreen ── */}
+              <div className={`mb-6 rounded-xl p-4 border transition-all ${
+                cameraPermStatus === 'granted'
+                  ? 'bg-green-50 border-green-200'
+                  : cameraPermStatus === 'denied' || cameraPermStatus === 'error'
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-amber-50 border-amber-200'
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {cameraPermStatus === 'granted'
+                    ? <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    : <AlertTriangle className="w-4 h-4 text-amber-600" />}
+                  <h4 className={`text-[13px] font-bold ${
+                    cameraPermStatus === 'granted' ? 'text-green-800'
+                    : cameraPermStatus === 'denied' || cameraPermStatus === 'error' ? 'text-red-800'
+                    : 'text-amber-800'
+                  }`}>
+                    Step 1 — Camera Access Required
+                  </h4>
+                </div>
+                {cameraPermStatus === 'granted' ? (
+                  <p className="text-[12px] text-green-700 font-medium">✓ Camera permission granted. You are ready to begin.</p>
+                ) : cameraPermStatus === 'denied' ? (
+                  <div>
+                    <p className="text-[12px] text-red-700 font-medium mb-2">Camera access was denied. Please allow camera access in your browser settings and reload this page.</p>
+                    <p className="text-[11px] text-red-600">Click the camera icon in your browser address bar → Allow → Reload page.</p>
+                  </div>
+                ) : cameraPermStatus === 'error' ? (
+                  <div>
+                    <p className="text-[12px] text-red-700 font-medium mb-2">Camera error. Another app (e.g. Microsoft Teams) may be blocking it.</p>
+                    <p className="text-[11px] text-red-600">Close Teams or any app using your camera, then click Allow Camera Access again.</p>
+                    <button
+                      onClick={async () => {
+                        setCameraPermStatus('requesting');
+                        const result = await camera.requestPermission();
+                        setCameraPermStatus(result === 'granted' ? 'granted' : result);
+                      }}
+                      className="mt-2 px-3 py-1.5 bg-red-600 text-white text-[12px] font-bold rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Retry Camera Access
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[12px] text-amber-700 font-medium mb-3">
+                      You must allow camera access <strong>before</strong> starting. This prevents the permission dialog from appearing during the fullscreen exam (which would count as a violation).
+                    </p>
+                    <button
+                      disabled={cameraPermStatus === 'requesting'}
+                      onClick={async () => {
+                        setCameraPermStatus('requesting');
+                        const result = await camera.requestPermission();
+                        setCameraPermStatus(result === 'granted' ? 'granted' : result);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-[13px] font-bold rounded-xl hover:bg-amber-700 disabled:opacity-60 transition-colors"
+                    >
+                      {cameraPermStatus === 'requesting'
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Requesting…</>
+                        : <><Shield className="w-4 h-4" /> Allow Camera Access</>}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Proctoring notice */}
               <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -413,6 +591,7 @@ const TakeAssessment = () => {
                   <p>• <strong>Tab switching, window minimising</strong>, and focus loss are monitored and logged.</p>
                   <p>• <strong>Copy, paste, right-click</strong> and browser shortcuts (F12, Ctrl+Shift+I) are disabled.</p>
                   <p>• After <strong>5 critical violations</strong> the assessment will auto-submit and be flagged.</p>
+                  <p>• <strong>Your webcam will be activated</strong> for AI-powered face monitoring. No video is recorded or uploaded — only violation events are logged.</p>
                   <p>• All activity is recorded in real-time and reviewed by your institution.</p>
                 </div>
               </div>
@@ -443,7 +622,8 @@ const TakeAssessment = () => {
                 </button>
                 <button
                   onClick={handleBegin}
-                  className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-[14px] hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center justify-center gap-2"
+                  disabled={cameraPermStatus !== 'granted'}
+                  className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-[14px] hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   <Lock className="w-4 h-4" /> Begin Secured Assessment <ChevronRight className="w-4 h-4" />
                 </button>
@@ -469,11 +649,18 @@ const TakeAssessment = () => {
               <p className="text-[14px] text-gray-500">
                 Your answers have been securely recorded. Your score and detailed results will be available once published by your college admin.
               </p>
-              {guard.violations.length > 0 && (
-                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  <p className="text-[12px] font-bold text-amber-700">
-                    {guard.violations.length} proctoring event{guard.violations.length !== 1 ? 's were' : ' was'} recorded during this session.
-                  </p>
+              {(guard.violations.length > 0 || camViolationCount > 0) && (
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1">
+                  {guard.violations.length > 0 && (
+                    <p className="text-[12px] font-bold text-amber-700">
+                      🖥 {guard.violations.length} browser proctoring event{guard.violations.length !== 1 ? 's were' : ' was'} recorded.
+                    </p>
+                  )}
+                  {camViolationCount > 0 && (
+                    <p className="text-[12px] font-bold text-amber-700">
+                      📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's were' : ' was'} recorded.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -522,13 +709,39 @@ const TakeAssessment = () => {
         />
       )}
 
-      {showWarningToast && guard.lastViolation && (
+      {!guard.isBlocked && showCamViolationModal && (
+        <CameraViolationModal
+          violationCount={camViolationCount}
+          max={CAM_MAX_VIOLATIONS}
+          onDismiss={() => setShowCamViolationModal(false)}
+        />
+      )}
+
+      {showWarningToast && (guard.lastViolation || cameraLastViolation) && (
         <ProctoringWarningToast
-          violation={guard.lastViolation}
+          violation={guard.lastViolation || cameraLastViolation}
           remaining={guard.criticalViolationsRemaining}
           onDismiss={() => setShowWarningToast(false)}
         />
       )}
+
+      {/* ── Camera Proctoring Overlay (bottom-right PiP) ── */}
+      <CameraOverlay
+        videoRef={camera.videoRef}
+        canvasRef={camera.canvasRef}
+        overlayRef={camera.overlayRef}
+        status={camera.status}
+        faceStatus={camera.faceStatus}
+        isActive={camera.isActive}
+        violationCount={camera.violationCount}
+        streak={camera.streak}
+        brightness={camera.brightness}
+        faceConfidence={camera.faceConfidence}
+        lastEvent={camera.lastEvent}
+        noFaceWarningCount={camera.noFaceWarningCount}
+        noFaceWarningsRemaining={camera.noFaceWarningsRemaining}
+        gazeStatus={camera.gazeStatus}
+      />
 
       {/* ── Top bar ── */}
       <header className="bg-white border-b border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] sticky top-0 z-40">
@@ -554,7 +767,14 @@ const TakeAssessment = () => {
               isFullscreen={guard.isFullscreen}
               warningCount={guard.warningCount}
               max={guard.MAX_VIOLATIONS}
+              camViolationCount={camViolationCount}
+              camMax={CAM_MAX_VIOLATIONS}
             />
+            {!guard.isOnline && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Offline
+              </div>
+            )}
             <div className="hidden sm:block">
               <Timer totalSeconds={(briefingInfo?.duration_minutes || 60) * 60} onExpire={handleTimerExpire} />
             </div>
@@ -753,18 +973,22 @@ const TakeAssessment = () => {
               </div>
             </div>
 
-            {guard.warningCount > 0 && (
+            {(guard.warningCount > 0 || camViolationCount > 0) && (
               <div className="mx-5 mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
                   <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Proctoring Alerts</p>
                 </div>
-                <p className="text-[12px] text-amber-700">
-                  {guard.warningCount} violation{guard.warningCount !== 1 ? 's' : ''} recorded.{' '}
-                  {guard.criticalViolationsRemaining > 0
-                    ? `${guard.criticalViolationsRemaining} more before auto-submit.`
-                    : 'Submitting now.'}
-                </p>
+                {guard.warningCount > 0 && (
+                  <p className="text-[12px] text-amber-700">
+                    🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} ({guard.criticalViolationsRemaining} remaining).
+                  </p>
+                )}
+                {camViolationCount > 0 && (
+                  <p className="text-[12px] text-amber-700 mt-0.5">
+                    📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} ({CAM_MAX_VIOLATIONS - camViolationCount} remaining).
+                  </p>
+                )}
               </div>
             )}
 
@@ -803,8 +1027,13 @@ const TakeAssessment = () => {
               </div>
             )}
             {guard.warningCount > 0 && (
+              <div className="bg-amber-50 text-amber-700 font-medium text-[12px] py-2 px-3 rounded-lg mb-2 border border-amber-200">
+                🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} will be included in your report.
+              </div>
+            )}
+            {camViolationCount > 0 && (
               <div className="bg-amber-50 text-amber-700 font-medium text-[12px] py-2 px-3 rounded-lg mb-4 border border-amber-200">
-                {guard.warningCount} proctoring violation{guard.warningCount !== 1 ? 's' : ''} will be included in your report.
+                📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} will be included in your report.
               </div>
             )}
             <div className="flex gap-3 mt-4">

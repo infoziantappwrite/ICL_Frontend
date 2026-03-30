@@ -8,7 +8,7 @@ import {
   RefreshCw, Globe, Briefcase, Filter, X, TrendingUp,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { collegeAdminAPI } from '../../api/Api';
 
 const PAGE_SIZE = 10;
@@ -161,7 +161,7 @@ const CompanyManagement = () => {
   const topIndustries = Object.entries(indMap).sort((a,b) => b[1]-a[1]).slice(0, 4);
   const maxInd = topIndustries[0]?.[1] || 1;
 
-  if (loading) return <LoadingSpinner message="Loading Companies…" />;
+  if (loading) return <TableSkeleton layout={CollegeAdminLayout} />;
 
   return (
     <CollegeAdminLayout>

@@ -9,7 +9,7 @@ import {
   FileEdit, Hourglass, CheckCircle2, XCircle,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../../components/common/SkeletonLoader';
 import { superAdminCourseAPI } from '../../../api/Api';
 
 const CATEGORIES = [
@@ -407,7 +407,7 @@ const SuperAdminCourseManagement = () => {
   const paginated  = courses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   if (loading && courses.length === 0)
-    return <LoadingSpinner message="Loading Courses..." submessage="Fetching all course data" icon={BookOpen} />;
+    return <TableSkeleton layout={SuperAdminDashboardLayout} />;
 
   return (
     <SuperAdminDashboardLayout>

@@ -7,7 +7,7 @@ import {
   Award, BarChart3, BookOpen, X,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../../components/common/SkeletonLoader';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
 const STATUS_CONFIG = {
@@ -85,7 +85,7 @@ const CourseEnrollments = () => {
   };
 
   if (loading && enrollments.length === 0) {
-    return <LoadingSpinner message="Loading Enrollments..." submessage="Fetching student data" icon={Users} />;
+    return <TableSkeleton layout={CollegeAdminLayout} />;
   }
 
   return (

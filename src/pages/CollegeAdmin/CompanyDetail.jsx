@@ -8,7 +8,7 @@ import {
   Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, GraduationCap, Plus,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 import { companyAPI, collegeAdminAPI } from '../../api/Api';
 
 const JD_STATUS_CONFIG = {
@@ -134,7 +134,7 @@ const CompanyDetail = () => {
     } catch (error) { toast.error('Error', 'Failed to update status: ' + error.message); }
   };
 
-  if (loading) return <LoadingSpinner message="Loading Company Details..." />;
+  if (loading) return <DetailSkeleton layout={CollegeAdminLayout} />;
 
   if (!company) {
     return (

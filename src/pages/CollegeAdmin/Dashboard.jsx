@@ -11,7 +11,7 @@ import {
   MapPin, Award,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DashboardSkeleton } from '../../components/common/SkeletonLoader';
 import { collegeAdminAPI, collegeAdminCourseAPI, assessmentAPI } from '../../api/Api';
 
 /* ─── helpers ─────────────────────────────── */
@@ -201,7 +201,7 @@ const CollegeAdminDashboard = () => {
   }, [fetchData]);
 
   if (loading && !Object.keys(stats).length) {
-    return <LoadingSpinner message="Loading Dashboard…" submessage="Fetching placement data" icon={GraduationCap} />;
+    return <DashboardSkeleton layout={CollegeAdminLayout} />;
   }
 
   const placementRate = stats.placementPercentage ?? pct(stats.placedStudents ?? 0, stats.totalStudents ?? 0);

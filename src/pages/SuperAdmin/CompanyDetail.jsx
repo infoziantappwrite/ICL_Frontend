@@ -9,7 +9,7 @@ import {
   TrendingUp, Shield, BarChart3,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 import { companyAPI, jobAPI } from '../../api/Api';
 
 const JD_STATUS_CONFIG = {
@@ -148,7 +148,7 @@ const CompanyDetail = () => {
     }
   };
 
-  if (loading) return <LoadingSpinner message="Loading Company Details..." />;
+  if (loading) return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
 
   if (!company) {
     return (

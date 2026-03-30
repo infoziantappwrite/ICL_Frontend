@@ -313,9 +313,9 @@ function AddSingleModal({ onClose, onDone }) {
   if (step === 'preview') {
     return (
       <Modal onClose={onClose} size="md">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
           <MHead icon={Eye} title="Preview — Confirm Details" sub="Review before saving to database" onClose={onClose}/>
-          <div className="p-6 space-y-5">
+          <div className="overflow-y-auto flex-1 p-6 space-y-5">
             <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
                 {form.fullName.charAt(0).toUpperCase()}
@@ -342,14 +342,14 @@ function AddSingleModal({ onClose, onDone }) {
               <KeyRound size={13} className="flex-shrink-0"/>
               A <strong>temporary password</strong> is auto-generated and emailed after confirmation.
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
-                <ArrowLeft size={14}/> Edit
-              </button>
-              <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
-                {saving ? <><Spin size="sm" color="white"/>Saving…</> : <><Check size={14}/>Confirm & Add Student</>}
-              </button>
-            </div>
+          </div>
+          <div className="flex gap-3 p-5 border-t border-slate-100 bg-blue-50/30 flex-shrink-0">
+            <button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
+              <ArrowLeft size={14}/> Edit
+            </button>
+            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
+              {saving ? <><Spin size="sm" color="white"/>Saving…</> : <><Check size={14}/>Confirm & Add Student</>}
+            </button>
           </div>
         </div>
       </Modal>
@@ -984,20 +984,23 @@ function BulkUploadModal({ onClose, onDone }) {
           </div>
           <button
             onClick={() => {
-              const rows = parsedRows.map(r => ({
-                fullName:          r['name'] || r['full_name'] || '',
-                email:             r['email'] || '',
-                rollNumber:        r['roll_number'] || r['rollnumber'] || '',
-                branch:            r['branch'] || '',
-                batch:             r['batch'] || '',
-                phone:             r['phone'] || '',
-                temporaryPassword: '(check email)',
-                emailSent:         true,
-              }));
+              // Use actual temporary passwords returned by the server if available
+              const rows = (uploadResult?.students && uploadResult.students.length > 0)
+                ? uploadResult.students
+                : parsedRows.map(r => ({
+                    fullName:          r['name'] || r['full_name'] || '',
+                    email:             r['email'] || '',
+                    rollNumber:        r['roll_number'] || r['rollnumber'] || '',
+                    branch:            r['branch'] || '',
+                    batch:             r['batch'] || '',
+                    phone:             r['phone'] || '',
+                    temporaryPassword: '(check email)',
+                    emailSent:         true,
+                  }));
               downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
             }}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
-            <Download size={14}/> Download Uploaded Students List (Excel)
+            <Download size={14}/> Download Uploaded Students + Passwords (Excel)
           </button>
           <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
         </div>

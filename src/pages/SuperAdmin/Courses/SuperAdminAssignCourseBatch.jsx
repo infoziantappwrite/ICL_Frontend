@@ -7,7 +7,7 @@ import {
   ArrowLeft, Globe, Info, Lock,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../../components/common/SkeletonLoader';
 import { superAdminCourseAPI } from '../../../api/Api';
 import { superAdminStudentAPI } from '../../../api/studentAPI';
 
@@ -162,7 +162,7 @@ const SuperAdminAssignCourseBatch = () => {
       })
     : colleges;
 
-  if (loading) return <LoadingSpinner message="Loading..." icon={Send} />;
+  if (loading) return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
 
   return (
     <SuperAdminDashboardLayout>

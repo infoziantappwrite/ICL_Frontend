@@ -13,7 +13,7 @@ import {
   Upload, Building2, ChevronRight, UserPlus, UsersRound,
   Plus, Mail, Hash, BookOpen, Star, Calendar, Phone, Eye,
   Trash2, ArrowLeft, Check, UploadCloud, Loader2, Search,
-  ChevronLeft, Users, Filter, SortAsc, SortDesc, TrendingUp,
+  ChevronLeft, Users, Filter, SortAsc, SortDesc, TrendingUp, KeyRound,
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════
@@ -244,30 +244,48 @@ function AddSingleModal({ colleges, onClose, onDone }) {
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
         <MHead icon={CheckCircle} title="Student Created!" sub="Temporary password sent to student's email" onClose={onClose}/>
         <div className="p-6 space-y-4">
+          {/* Student identity card */}
           <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
               {result?.fullName?.charAt(0)?.toUpperCase()}
             </div>
             <div className="min-w-0">
               <p className="font-black text-slate-800">{result?.fullName}</p>
-              <p className="text-xs text-slate-400 mt-0.5 truncate">{result?.email}</p>
+              <p className="text-xs text-slate-500 mt-0.5 truncate">{result?.email}</p>
+              {result?.rollNumber && <p className="text-xs text-blue-600 font-mono mt-0.5">{result?.rollNumber}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-xl">
-            <PField label="Roll Number"        value={result?.rollNumber}/>
-            <PField label="Temporary Password" value={result?.temporaryPassword}/>
-          </div>
+          {/* Temporary password amber box with copy button */}
+          {result?.temporaryPassword && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <KeyRound size={12}/> Temporary Password
+              </p>
+              <div className="flex items-center justify-between gap-2">
+                <code className="text-lg font-mono font-black text-amber-900 tracking-widest">
+                  {result.temporaryPassword}
+                </code>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(result.temporaryPassword); toast.success('Copied!'); }}
+                  className="text-xs px-3 py-1 bg-amber-200 text-amber-800 rounded-lg hover:bg-amber-300 transition font-bold flex-shrink-0">
+                  Copy
+                </button>
+              </div>
+              <p className="text-xs text-amber-700 mt-2">Share with student. They'll be prompted to change on first login.</p>
+            </div>
+          )}
+          {/* Email delivery status */}
           <div className={`flex items-center gap-2 text-sm p-3 rounded-xl ${result?.emailSent?'bg-blue-50 text-blue-700':'bg-amber-50 text-amber-700'}`}>
             <Mail size={14} className="flex-shrink-0"/>
             {result?.emailSent ? 'Welcome email with password delivered.' : 'Email delivery failed — share credentials manually.'}
           </div>
+          {/* Download Excel */}
           <button
-            onClick={() => downloadResultsAsExcel([result], `student_${result?.rollNumber}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
-          >
+            onClick={() => downloadResultsAsExcel([result], `student_${result?.rollNumber || Date.now()}.xlsx`)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
             <Download size={14}/> Download Student Details (Excel)
           </button>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button onClick={()=>{setForm(EMPTY_FORM);setResult(null);setStep('form');}} className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">Add Another</button>
             <button onClick={onClose} className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
           </div>
@@ -279,9 +297,9 @@ function AddSingleModal({ colleges, onClose, onDone }) {
   /* PREVIEW */
   if (step === 'preview') return (
     <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         <MHead icon={Eye} title="Preview — Confirm Details" sub="Review before saving to database" onClose={onClose}/>
-        <div className="p-6 space-y-5">
+        <div className="overflow-y-auto flex-1 p-6 space-y-5">
           <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
               {form.fullName.charAt(0).toUpperCase()}
@@ -304,14 +322,14 @@ function AddSingleModal({ colleges, onClose, onDone }) {
             <Mail size={13} className="flex-shrink-0"/>
             A <strong>temporary password</strong> is auto-generated and emailed after confirmation.
           </div>
-          <div className="flex gap-3">
-            <button onClick={()=>setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
-              <ArrowLeft size={14}/> Edit
-            </button>
-            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
-              {saving ? <><Spin size="sm"/>Saving…</> : <><Check size={14}/>Confirm & Add Student</>}
-            </button>
-          </div>
+        </div>
+        <div className="flex gap-3 p-5 border-t border-slate-100 bg-blue-50/30 flex-shrink-0">
+          <button onClick={()=>setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
+            <ArrowLeft size={14}/> Edit
+          </button>
+          <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
+            {saving ? <><Spin size="sm"/>Saving…</> : <><Check size={14}/>Confirm & Add Student</>}
+          </button>
         </div>
       </div>
     </Modal>
@@ -505,41 +523,42 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
  
   /* ── DONE ─────────────────────────────────────────────── */
   if (step === 'done') return (
-<Modal onClose={onClose} size="lg">
-<div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-<MHead icon={CheckCircle} title={`${result?.length ?? 0} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose} />
-<div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
+    <Modal onClose={onClose} size="lg">
+      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <MHead icon={CheckCircle} title={`${result?.length ?? 0} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose}/>
+        <div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
           {result?.map((s, i) => (
-<div key={i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-<div className="flex items-center gap-3 min-w-0">
-<div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+            <div key={i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
                   {s.fullName?.charAt(0)?.toUpperCase()}
-</div>
-<div className="min-w-0">
-<p className="text-sm font-bold text-slate-800 truncate">{s.fullName}</p>
-<p className="text-xs text-slate-400 truncate">{s.email} · {s.rollNumber}</p>
-</div>
-</div>
-<div className="flex items-center gap-2 flex-shrink-0">
-<span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg border border-blue-100">{s.temporaryPassword}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate">{s.fullName}</p>
+                  <p className="text-xs text-slate-400 truncate">{s.email} · {s.rollNumber}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {s.temporaryPassword && (
+                  <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded-lg border border-amber-200">{s.temporaryPassword}</span>
+                )}
                 {s.emailSent
-                  ? <CheckCircle size={14} className="text-green-500" />
-                  : <AlertTriangle size={14} className="text-amber-500" />}
-</div>
-</div>
+                  ? <CheckCircle size={14} className="text-green-500"/>
+                  : <AlertTriangle size={14} className="text-amber-500"/>}
+              </div>
+            </div>
           ))}
-</div>
-<div className="p-5 border-t border-slate-100 space-y-2">
-<button
+        </div>
+        <div className="p-5 border-t border-slate-100 space-y-2">
+          <button
             onClick={() => downloadResultsAsExcel(result || [], `students_${Date.now()}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
->
-<Download size={14} /> Download All Students + Passwords (Excel)
-</button>
-<button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
-</div>
-</div>
-</Modal>
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+            <Download size={14}/> Download All Students + Passwords (Excel)
+          </button>
+          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
+        </div>
+      </div>
+    </Modal>
   );
  
   /* ── PREVIEW ──────────────────────────────────────────── */
@@ -920,21 +939,24 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
           </div>
           <button
             onClick={() => {
-              const rows = parsedRows.map(r => ({
-                fullName:          r['name']||r['full_name']||'',
-                email:             r['email']||'',
-                rollNumber:        r['roll_number']||r['rollnumber']||'',
-                branch:            r['branch']||'',
-                batch:             r['batch']||'',
-                phone:             r['phone']||'',
-                temporaryPassword: '(check email)',
-                emailSent:         true,
-              }));
+              // Use actual temporary passwords returned by the server if available
+              const rows = (uploadResult?.students && uploadResult.students.length > 0)
+                ? uploadResult.students
+                : parsedRows.map(r => ({
+                    fullName:          r['name']||r['full_name']||'',
+                    email:             r['email']||'',
+                    rollNumber:        r['roll_number']||r['rollnumber']||'',
+                    branch:            r['branch']||'',
+                    batch:             r['batch']||'',
+                    phone:             r['phone']||'',
+                    temporaryPassword: '(check email)',
+                    emailSent:         true,
+                  }));
               downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
             }}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
           >
-            <Download size={14}/> Download Uploaded Students List (Excel)
+            <Download size={14}/> Download Uploaded Students + Passwords (Excel)
           </button>
           <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
         </div>
@@ -1568,8 +1590,9 @@ export default function SuperAdminStudentManagement() {
   useEffect(()=>{ loadColleges(); },[loadColleges]);
 
   const handleDone = () => {
-    setModal(null);
-    setRefresh(n => n + 1); // trigger student list refresh
+    // DO NOT close modal here — let user see the success card first.
+    // The modal closes only when user clicks "Done" or "Add Another" (via onClose).
+    setRefresh(n => n + 1); // refresh student list in background
   };
 
   const CARDS = [

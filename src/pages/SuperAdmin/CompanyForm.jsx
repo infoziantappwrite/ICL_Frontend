@@ -21,7 +21,7 @@ import {
   Shield,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 import { companyAPI } from '../../api/Api';
 
 /* ─── Section heading ─────────────────────── */
@@ -230,7 +230,7 @@ const CompanyForm = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading Company Data..." />;
+    return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
   }
 
   return (

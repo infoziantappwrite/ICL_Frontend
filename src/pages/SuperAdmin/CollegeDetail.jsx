@@ -9,7 +9,7 @@ import {
   TrendingUp, Shield,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 import apiCall from '../../api/Api';
 
 /* ─── Section heading ─────────────────────── */
@@ -131,7 +131,7 @@ const CollegeDetail = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading College Details..." submessage="Fetching information" />;
+    return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
   }
 
   if (!college) {

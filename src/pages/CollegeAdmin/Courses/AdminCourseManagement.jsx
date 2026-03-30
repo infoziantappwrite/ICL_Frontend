@@ -8,7 +8,7 @@ import {
   Star, ChevronLeft, ChevronRight, Send,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../../components/common/SkeletonLoader';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
 const CATEGORIES = [
@@ -195,7 +195,7 @@ const AdminCourseManagement = () => {
   };
 
   if (loading && courses.length === 0) {
-    return <LoadingSpinner message="Loading Courses..." submessage="Fetching all course data" icon={BookOpen} />;
+    return <TableSkeleton layout={CollegeAdminLayout} />;
   }
 
   return (

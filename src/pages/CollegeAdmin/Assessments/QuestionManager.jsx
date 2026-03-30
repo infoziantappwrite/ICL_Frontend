@@ -11,7 +11,7 @@ import {
   CircleDot, Circle, ArrowRight,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI, collegeAdminAPI } from '../../../api/Api';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -693,7 +693,7 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
                 {/* FIX: fullScreen={false} prevents gradient box artifact inside the modal panel */}
                 {loadingAll
-                  ? <div className="flex justify-center py-6"><LoadingSpinner fullScreen={false} /></div>
+                  ? <InlineSkeleton rows={3} className="py-6" />
                   : filteredAll.length === 0
                   ? <p className="text-center text-gray-400 text-sm py-8">No students found</p>
                   : filteredAll.map(s => <StudentRow key={s._id} s={s} checked={selIds.has(s._id)} onToggle={id => setSelIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}
@@ -707,7 +707,7 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               ) : loadingJD ? (
                 // FIX: fullScreen={false} prevents gradient box artifact inside the modal
                 <div className="flex flex-col items-center py-8 gap-3">
-                  <LoadingSpinner fullScreen={false} />
+                  <InlineSkeleton rows={4} />
                   <p className="text-sm text-gray-500">Fetching eligible students from JD…</p>
                 </div>
               ) : filteredJD.length === 0 ? (
@@ -811,7 +811,7 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
         <div className="flex-1 overflow-y-auto p-4">
           {/* FIX: fullScreen={false} prevents gradient box artifact inside the modal */}
           {loading
-            ? <div className="flex justify-center py-10"><LoadingSpinner fullScreen={false} /></div>
+            ? <InlineSkeleton rows={4} className="py-10" />
             : error
             ? <div className="flex items-center gap-2 text-red-600 text-sm p-4"><AlertCircle className="w-4 h-4" />{error}</div>
             : filtered.length === 0
@@ -967,7 +967,7 @@ const QuestionManager = () => {
   if (loading) return (
     <CollegeAdminLayout>
       <div className="flex items-center justify-center py-24">
-        <LoadingSpinner fullScreen={false} />
+        <InlineSkeleton rows={4} />
       </div>
     </CollegeAdminLayout>
   );

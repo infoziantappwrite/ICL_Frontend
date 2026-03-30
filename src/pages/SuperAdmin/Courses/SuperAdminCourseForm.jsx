@@ -7,7 +7,7 @@ import {
   Globe, Video, Link, Building2, CheckSquare, Square, Info,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../../components/common/SkeletonLoader';
 import { superAdminCourseAPI } from '../../../api/Api';
 import { superAdminStudentAPI } from '../../../api/studentAPI';
 
@@ -427,7 +427,7 @@ const SuperAdminCourseForm = () => {
     finally { setSaving(false); }
   };
 
-  if (loading) return <LoadingSpinner message="Loading..." submessage="Fetching course data" icon={BookOpen} />;
+  if (loading) return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
 
   return (
     <SuperAdminDashboardLayout>

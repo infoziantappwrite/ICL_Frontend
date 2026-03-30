@@ -8,7 +8,7 @@ import {
   BarChart3, Layers, Globe, Cpu, Shield, Smartphone, Database, X, BookMarked, SlidersHorizontal
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+// LoadingSpinner replaced with inline CourseListSkeleton
 import { courseAPI } from '../../api/Api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

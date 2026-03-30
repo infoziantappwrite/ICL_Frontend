@@ -7,7 +7,7 @@ import {
   ChevronLeft, AlertCircle, BookOpen, Target, Activity
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { AnalyticsSkeleton } from '../../../components/common/SkeletonLoader';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
 const StatCard = ({ icon: Icon, label, value, subtext, gradient }) => (
@@ -65,7 +65,7 @@ const CourseAnalytics = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading Analytics..." submessage="Calculating course performance" icon={BarChart3} />;
+    return <AnalyticsSkeleton layout={CollegeAdminLayout} />;
   }
 
   if (error || !analytics) {

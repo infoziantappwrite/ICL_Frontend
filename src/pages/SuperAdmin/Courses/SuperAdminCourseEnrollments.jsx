@@ -7,7 +7,7 @@ import {
   RefreshCw, X, CheckSquare, Square, Building2, ChevronDown, ArrowLeft,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../../components/common/SkeletonLoader';
 import { superAdminCourseAPI } from '../../../api/Api';
 import { superAdminStudentAPI } from '../../../api/studentAPI';
 import apiCall from '../../../api/Api';
@@ -143,7 +143,7 @@ const SuperAdminCourseEnrollments = () => {
 
   const selectedCourseObj = courses.find(c => c._id === selectedCourse);
 
-  if (loading) return <LoadingSpinner message="Loading..." icon={Send} />;
+  if (loading) return <TableSkeleton layout={SuperAdminDashboardLayout} />;
 
   return (
     <SuperAdminDashboardLayout>

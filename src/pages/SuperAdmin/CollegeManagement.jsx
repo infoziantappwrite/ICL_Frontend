@@ -9,7 +9,7 @@ import {
   GraduationCap, ChevronLeft, ChevronRight, Filter, X,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ── Toggle ── */
 const Toggle = ({ checked, onToggle }) => (
@@ -142,7 +142,7 @@ const CollegeManagement = () => {
   const activeCount    = colleges.filter(c => c.isActive).length;
 
   if (loading && colleges.length === 0)
-    return <LoadingSpinner message="Loading Colleges…" submessage="Fetching college data" />;
+    return <TableSkeleton layout={SuperAdminDashboardLayout} />;
 
   return (
     <SuperAdminDashboardLayout>

@@ -15,7 +15,7 @@ import {
   AlertTriangle, Flag, Monitor,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, assessmentAttemptAPI } from '../../../api/Api';
 import apiCall from '../../../api/Api';
 
@@ -184,7 +184,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
         </div>
         <div className="p-5">
           {/* FIX: fullScreen={false} prevents gradient box artifact inside modal */}
-          {loading && <div className="flex justify-center py-10"><LoadingSpinner fullScreen={false} /></div>}
+          {loading && <InlineSkeleton rows={4} className="py-10" />}
           {error && (
             <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
               <AlertCircle className="w-4 h-4" /> {error}
@@ -479,7 +479,7 @@ const AssessmentAttempts = () => {
   if (loading) return (
     <CollegeAdminLayout>
       <div className="flex items-center justify-center py-24">
-        <LoadingSpinner fullScreen={false} />
+        <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
   );

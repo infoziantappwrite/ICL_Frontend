@@ -7,7 +7,7 @@ import {
   User, Tag, Calendar, BarChart3, Zap, FileText, ArrowRight, Lock,
   RefreshCw, MousePointerClick, MessageSquare, ThumbsUp, Home
 } from 'lucide-react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { courseAPI } from '../../api/Api';
 import StudentLayout from '../../components/layout/StudentLayout';
 

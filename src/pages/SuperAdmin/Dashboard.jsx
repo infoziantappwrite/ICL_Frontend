@@ -10,7 +10,7 @@ import {
   Star, Target, Globe, Shield,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DashboardSkeleton } from '../../components/common/SkeletonLoader';
 import apiCall, { superAdminCourseAPI } from '../../api/Api';
 
 /* ─── helpers ─────────────────────────────── */
@@ -177,7 +177,7 @@ const SuperAdminDashboard = () => {
   }, [fetchData]);
 
   if (loading && !Object.keys(stats).length) {
-    return <LoadingSpinner message="Loading Dashboard…" submessage="Fetching platform data" />;
+    return <DashboardSkeleton layout={SuperAdminDashboardLayout} />;
   }
 
   const activeRate  = pct(stats.activeColleges ?? 0, stats.totalColleges ?? 0);

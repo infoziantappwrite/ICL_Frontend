@@ -19,7 +19,7 @@ import {
   Lock,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ─── Section heading ─────────────────────── */
 const SHead = ({ icon: Icon, title, sub }) => (
@@ -248,7 +248,7 @@ const AdminForm = () => {
   };
 
   if (loading || loadingColleges) {
-    return <LoadingSpinner message={isEditMode ? 'Loading Admin...' : 'Loading Form...'} />;
+    return <DetailSkeleton layout={SuperAdminDashboardLayout} />;
   }
 
   return (

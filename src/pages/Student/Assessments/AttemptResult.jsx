@@ -9,7 +9,7 @@ import {
   Award, ChevronLeft, AlertCircle, TrendingUp, Trophy, Lock
 } from 'lucide-react';
 import StudentLayout from '../../../components/layout/StudentLayout';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAttemptAPI } from '../../../api/Api';
 
 const LEVEL_CONFIG = {
@@ -58,7 +58,7 @@ const AttemptResult = () => {
 
   if (loading) return (
     <StudentLayout>
-      <div className="flex items-center justify-center py-24"><LoadingSpinner /></div>
+      <InlineSkeleton rows={6} className="py-24" />
     </StudentLayout>
   );
 
@@ -116,8 +116,7 @@ const AttemptResult = () => {
         </button>
 
         {lbLoading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex justify-center">
-            <LoadingSpinner />
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex justify-center"> <InlineSkeleton rows={5} />
           </div>
         ) : !lbPublished ? (
           /* Results not published yet */

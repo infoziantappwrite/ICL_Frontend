@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import VerifyOtp from './pages/VerifyOtp';
 import ChangePassword from './pages/ChangePassword';
 import ProfileCompletion from './pages/ProfileCompletion';
@@ -60,6 +61,7 @@ import CollegeAdminNotifications from './pages/CollegeAdmin/Notification';
 import CollegeAdminSettings from './pages/CollegeAdmin/Settings';
 import GroupManagement from './pages/CollegeAdmin/GroupManagement';
 import StudentManagement from './pages/CollegeAdmin/StudentManagement';
+import StudentReport from './pages/CollegeAdmin/StudentReport';
 
 // ==================== COLLEGE ADMIN ASSESSMENT PAGES ====================
 import AssessmentManagement from './pages/CollegeAdmin/Assessments/AssessmentManagement';
@@ -150,6 +152,7 @@ function App() {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="/reset-password/:token" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             <Route path="/verify-otp" element={<PublicRoute><VerifyOtp /></PublicRoute>} />
 
             {/* ===== FIRST LOGIN FLOW ===== */}
@@ -184,6 +187,7 @@ function App() {
 
             {/* Students */}
             <Route path="/dashboard/college-admin/students" element={<ProtectedRoute><StudentManagement /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/students/:studentId/report" element={<ProtectedRoute><StudentReport /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/groups" element={<ProtectedRoute><GroupManagement /></ProtectedRoute>} />
 
             {/* Jobs */}

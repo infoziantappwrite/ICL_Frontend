@@ -1324,4 +1324,45 @@ export const superAdminCourseAPI = {
     apiCall(`/courses/${courseId}/assignable-students?collegeId=${collegeId}`),
 };
 
+// ==========================================
+// CODE API — /api/code/*
+// Coding-question run, submit, history, admin view
+// ==========================================
+export const codeAPI = {
+  // GET /api/code/languages — list supported languages
+  getLanguages: () => apiCall('/code/languages'),
+
+  // POST /api/code/run — run against visible test cases only (no score impact)
+  // Body: { assessment_id, question_id, code, language }
+  runCode: (data) =>
+    apiCall('/code/run', { method: 'POST', body: JSON.stringify(data) }),
+
+  // POST /api/code/submit — run against ALL test cases, upserts CodeSubmission
+  // Body: { assessment_id, question_id, code, language }
+  submitCode: (data) =>
+    apiCall('/code/submit', { method: 'POST', body: JSON.stringify(data) }),
+
+  // GET /api/code/history?assessment_id=&question_id=
+  getHistory: (assessmentId, questionId) =>
+    apiCall(`/code/history?assessment_id=${assessmentId}&question_id=${questionId}`),
+
+  // GET /api/code/admin/submission?assessment_id=&question_id=&student_id=
+  getAdminSubmission: (assessmentId, questionId, studentId) =>
+    apiCall(`/code/admin/submission?assessment_id=${assessmentId}&question_id=${questionId}&student_id=${studentId}`),
+};
+
+window.codeAPI = codeAPI;
+
+// ==========================================
+// REPORT API — /api/report/*
+// Student report for college admin / super admin
+// ==========================================
+export const reportAPI = {
+  // GET /api/report/student-report?student_id=<id>
+  getStudentReport: (studentId) =>
+    apiCall(`/report/student-report?student_id=${studentId}`),
+};
+
+window.reportAPI = reportAPI;
+
 export default apiCall;

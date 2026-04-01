@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { useToast } from '../../context/ToastContext';
 import { collegeAdminStudentAPI } from '../../api/studentAPI';
@@ -1340,7 +1341,7 @@ function ExportModal({ onClose }) {
 /* ══════════════════════════════════════════════════════════
    STUDENT TABLE ROW
 ══════════════════════════════════════════════════════════ */
-function StudentRow({ s, n }) {
+function StudentRow({ s, n, onViewReport }) {
   const si = s.studentInfo || {};
   const initial = (s.fullName || '?').charAt(0).toUpperCase();
   return (
@@ -1367,6 +1368,15 @@ function StudentRow({ s, n }) {
           ? <Tag variant="green"><UserCheck size={9}/>Placed</Tag>
           : <Tag variant="slate"><UserX size={9}/>Unplaced</Tag>}
       </td>
+      <td className="px-3 py-3">
+        <button
+          onClick={() => onViewReport(s._id)}
+          title="View Student Report"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors whitespace-nowrap"
+        >
+          <Eye size={11}/> Report
+        </button>
+      </td>
     </tr>
   );
 }
@@ -1376,6 +1386,7 @@ function StudentRow({ s, n }) {
 ══════════════════════════════════════════════════════════ */
 export default function StudentManagement() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [students,   setStudents]   = useState([]);
   const [pagination, setPagination] = useState({ total:0, page:1, pages:1 });
   const [loading,    setLoading]    = useState(false);
@@ -1645,14 +1656,14 @@ export default function StudentManagement() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
-                      {['#','Student','Roll No','Branch','Batch','Sem','CGPA','Placement'].map(h => (
+                      {['#','Student','Roll No','Branch','Batch','Sem','CGPA','Placement','Report'].map(h => (
                         <th key={h} className={`py-2.5 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap ${h==='#' ? 'pl-4 pr-3 w-10' : 'px-3'}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {students.map((s, i) => (
-                      <StudentRow key={s._id} s={s} n={(page-1)*PER_PAGE + i + 1}/>
+                      <StudentRow key={s._id} s={s} n={(page-1)*PER_PAGE + i + 1} onViewReport={(id) => navigate(`/dashboard/college-admin/students/${id}/report`)}/>
                     ))}
                   </tbody>
                 </table>

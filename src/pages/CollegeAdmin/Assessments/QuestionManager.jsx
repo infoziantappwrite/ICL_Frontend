@@ -8,7 +8,7 @@ import {
   Target, Clock, Hash, Award, ClipboardPaste, Send,
   FileText, Check, ChevronDown, ChevronUp, Filter,
   UserCheck, Layers, RefreshCw, Star, ShieldAlert,
-  CircleDot, Circle, ArrowRight,
+  CircleDot, Circle, ArrowRight, Tag, Zap,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -25,11 +25,31 @@ const questionToForm = (q) => ({
   correct_answer: Array.isArray(q.correct_answer) ? q.correct_answer : (q.correct_answer || 'A'),
   explanation: q.explanation || '',
   marks: q.marks || 1,
+  // ── coding-specific fields ──────────────────────────────
+  problem_description:  q.problem_description  || q.description || '',
+  input_format:         q.input_format         || '',
+  output_format:        q.output_format        || '',
+  constraints:          q.constraints          || '',
+  algorithm_tags:       q.algorithm_tags       || [],
+  boilerplate_code:     q.boilerplate_code     || q.starter_code || '',
+  test_cases: q.test_cases?.length
+    ? q.test_cases.map(tc => ({
+        input:           tc.input           || '',
+        expected_output: tc.expected_output || '',
+        is_hidden:       tc.is_hidden       ?? false,
+        marks_weightage: tc.marks_weightage ?? 1,
+        time_limit_ms:   tc.time_limit_ms   ?? 2000,
+        explanation:     tc.explanation     || '',
+      }))
+    : [{ input: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' }],
 });
 
+const BLANK_TC  = { input: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' };
 const BLANK_FORM = {
   question: '', type: 'single_answer', level: 'Beginner',
   options: ['', '', '', ''], correct_answer: 'A', explanation: '', marks: 1,
+  problem_description: '', input_format: '', output_format: '', constraints: '',
+  algorithm_tags: [], boilerplate_code: '', test_cases: [{ ...BLANK_TC }],
 };
 
 const BULK_FORMAT_EXAMPLE = `1. What is React?
@@ -300,6 +320,23 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false }) => {
                 ✓ {q.correct_answer}
               </p>
             )}
+            {q.type === 'coding' && (
+              <div className="mt-2 space-y-1.5">
+                {q.test_cases?.length > 0 && (
+                  <p className="text-xs text-purple-700 bg-purple-50 border border-purple-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                    {q.test_cases.filter(tc => !tc.is_hidden).length} visible · {q.test_cases.filter(tc => tc.is_hidden).length} hidden test cases
+                  </p>
+                )}
+                {q.algorithm_tags?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {q.algorithm_tags.map(t => (
+                      <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[10px] font-medium">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {q.explanation && <p className="mt-1.5 text-xs text-gray-400 italic">💡 {q.explanation}</p>}
           </div>
           <div className="flex gap-1 shrink-0">
@@ -321,19 +358,56 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false }) => {
 };
 
 /* ─── Add / Edit Modal ───────────────────────────────────────────────── */
-const QuestionModal = ({ question, onSave, onClose }) => {
-  const [form, setForm] = useState(question ? questionToForm(question) : { ...BLANK_FORM });
+const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
+  const [form, setForm] = useState(
+    question ? questionToForm(question) : { ...BLANK_FORM, marks: defaultMarks }
+  );
+  const [tagInput, setTagInput] = useState('');
+
   const setOpt = (idx, val) => setForm(prev => { const opts = [...prev.options]; opts[idx] = val; return { ...prev, options: opts }; });
   const isChoice = form.type === 'single_answer' || form.type === 'multiple_answer';
   const isFill   = form.type === 'fill_up';
+  const isCoding = form.type === 'coding';
+
   const toggleMulti = (label) => setForm(prev => {
     const cur = Array.isArray(prev.correct_answer) ? prev.correct_answer : [];
     return { ...prev, correct_answer: cur.includes(label) ? cur.filter(l => l !== label) : [...cur, label] };
   });
+
+  // ── test case helpers ────────────────────────────────────────────
+  const setTC  = (idx, field, val) => setForm(prev => ({ ...prev, test_cases: prev.test_cases.map((tc, i) => i === idx ? { ...tc, [field]: val } : tc) }));
+  const addTC  = () => setForm(prev => ({ ...prev, test_cases: [...prev.test_cases, { ...BLANK_TC }] }));
+  const rmTC   = (idx) => setForm(prev => ({ ...prev, test_cases: prev.test_cases.filter((_, i) => i !== idx) }));
+
+  // ── algorithm tags ───────────────────────────────────────────────
+  const addTag = () => {
+    const t = tagInput.trim().toLowerCase();
+    if (t && !form.algorithm_tags.includes(t)) {
+      setForm(prev => ({ ...prev, algorithm_tags: [...prev.algorithm_tags, t] }));
+    }
+    setTagInput('');
+  };
+  const rmTag = (tag) => setForm(prev => ({ ...prev, algorithm_tags: prev.algorithm_tags.filter(t => t !== tag) }));
+
+  // ── auto-compute marks per hidden test case ──────────────────────
+  const hiddenTCCount = form.test_cases.filter(tc => tc.is_hidden).length;
+  const marksPerHiddenTC = hiddenTCCount > 0
+    ? parseFloat((Number(form.marks) / hiddenTCCount).toFixed(2))
+    : 0;
+
+  // ── build save payload ───────────────────────────────────────────
   const handleSave = () => {
     if (!form.question.trim()) return;
     if (isChoice && form.options.some(o => !o.trim())) return;
-    const payload = { question: form.question.trim(), type: form.type, level: form.level, marks: Number(form.marks) || 1, explanation: form.explanation || undefined };
+
+    const payload = {
+      question:    form.question.trim(),
+      type:        form.type,
+      level:       form.level,
+      marks:       Number(form.marks) || 1,
+      explanation: form.explanation || undefined,
+    };
+
     if (isChoice) {
       payload.options = form.options.map((text, i) => ({ label: OPTION_LABELS[i], text: text.trim() }));
       payload.correct_answer = form.type === 'multiple_answer'
@@ -341,13 +415,37 @@ const QuestionModal = ({ question, onSave, onClose }) => {
         : (typeof form.correct_answer === 'string' ? form.correct_answer : 'A');
     }
     if (isFill) payload.correct_answer = typeof form.correct_answer === 'string' ? form.correct_answer : '';
+
+    if (isCoding) {
+      if (form.problem_description)  payload.problem_description  = form.problem_description.trim();
+      if (form.input_format)         payload.input_format         = form.input_format.trim();
+      if (form.output_format)        payload.output_format        = form.output_format.trim();
+      if (form.constraints)          payload.constraints          = form.constraints.trim();
+      if (form.algorithm_tags?.length) payload.algorithm_tags     = form.algorithm_tags;
+      if (form.boilerplate_code)     payload.boilerplate_code     = form.boilerplate_code.trim();
+      payload.test_cases = form.test_cases
+        .filter(tc => tc.input.trim() || tc.expected_output.trim())
+        .map(tc => ({
+          input:           tc.input.trim(),
+          expected_output: tc.expected_output.trim(),
+          is_hidden:       tc.is_hidden,
+          marks_weightage: tc.is_hidden ? marksPerHiddenTC : 0,
+          ...(tc.is_hidden ? { time_limit_ms: Number(tc.time_limit_ms) || 2000 } : {}),
+          explanation:     tc.explanation?.trim() || undefined,
+        }));
+    }
     onSave(payload);
   };
-  const canSave = form.question.trim() && (!isChoice || form.options.every(o => o.trim())) && (!isFill || (typeof form.correct_answer === 'string' && form.correct_answer.trim()));
+
+  const canSave = form.question.trim()
+    && (!isChoice || form.options.every(o => o.trim()))
+    && (!isFill   || (typeof form.correct_answer === 'string' && form.correct_answer.trim()))
+    && (!isCoding || form.test_cases.some(tc => tc.input.trim() && tc.expected_output.trim()));
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 max-w-xl w-full my-8">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 max-w-2xl w-full my-8">
+        {/* Header */}
         <div className="px-5 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -357,18 +455,24 @@ const QuestionModal = ({ question, onSave, onClose }) => {
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
         </div>
-        <div className="p-5 space-y-4">
+
+        <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
+
+          {/* Question text */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Question <span className="text-red-500">*</span></label>
             <textarea rows={3} value={form.question} onChange={e => setForm(prev => ({ ...prev, question: e.target.value }))} placeholder="Enter the question..." className={`${inp} resize-none`} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {/* Type / Level / Marks */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Type</label>
               <select value={form.type} onChange={e => setForm(prev => ({ ...prev, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))} className={inp}>
                 <option value="single_answer">Single Answer (MCQ)</option>
                 <option value="multiple_answer">Multiple Answer</option>
                 <option value="fill_up">Fill in the Blank</option>
+                <option value="coding">Coding</option>
               </select>
             </div>
             <div>
@@ -377,7 +481,16 @@ const QuestionModal = ({ question, onSave, onClose }) => {
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Marks</label>
+              <input type="number" min={1} value={form.marks} readOnly
+                className={`${inp} bg-gray-50 cursor-not-allowed text-gray-500`}
+                title="Marks are auto-assigned based on assessment settings" />
+              <p className="text-[10px] text-gray-400 mt-1">Auto-assigned from assessment</p>
+            </div>
           </div>
+
+          {/* MCQ options */}
           {isChoice && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -400,18 +513,224 @@ const QuestionModal = ({ question, onSave, onClose }) => {
               </div>
             </div>
           )}
+
+          {/* Fill up answer */}
           {isFill && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
               <input type="text" value={typeof form.correct_answer === 'string' ? form.correct_answer : ''} onChange={e => setForm(prev => ({ ...prev, correct_answer: e.target.value }))} placeholder="Enter the exact correct answer" className={inp} />
             </div>
           )}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Explanation (optional)</label>
-            <input type="text" value={form.explanation} onChange={e => setForm(prev => ({ ...prev, explanation: e.target.value }))} placeholder="Brief explanation…" className={inp} />
-          </div>
+
+          {/* ══════════════════ CODING FIELDS ══════════════════ */}
+          {isCoding && (
+            <>
+              {/* Problem Description */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Problem Description <span className="text-xs font-normal text-gray-400">(shown to student)</span>
+                </label>
+                <textarea rows={4} value={form.problem_description}
+                  onChange={e => setForm(prev => ({ ...prev, problem_description: e.target.value }))}
+                  placeholder="Describe the problem in detail. Include background context, what the student needs to do, and any clarifications..."
+                  className={`${inp} resize-none`} />
+              </div>
+
+              {/* Input / Output Format */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Input Format <span className="text-xs font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <textarea rows={3} value={form.input_format}
+                    onChange={e => setForm(prev => ({ ...prev, input_format: e.target.value }))}
+                    placeholder={"e.g.\nFirst line: integer N\nNext N lines: integers"}
+                    className={`${inp} resize-none text-xs`} />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Output Format <span className="text-xs font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <textarea rows={3} value={form.output_format}
+                    onChange={e => setForm(prev => ({ ...prev, output_format: e.target.value }))}
+                    placeholder={"e.g.\nPrint a single integer — the sum"}
+                    className={`${inp} resize-none text-xs`} />
+                </div>
+              </div>
+
+              {/* Constraints */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Constraints <span className="text-xs font-normal text-gray-400">(optional)</span>
+                </label>
+                <textarea rows={2} value={form.constraints}
+                  onChange={e => setForm(prev => ({ ...prev, constraints: e.target.value }))}
+                  placeholder={"e.g. 1 ≤ N ≤ 10^5 · Time limit: 1s · Memory: 256MB"}
+                  className={`${inp} resize-none text-xs`} />
+              </div>
+
+              {/* Algorithm Tags */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Algorithm Tags <span className="text-xs font-normal text-gray-400">(optional)</span>
+                </label>
+                <div className="flex gap-2">
+                  <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                    placeholder="e.g. arrays, sorting, dp…" className={`${inp} flex-1`} />
+                  <button type="button" onClick={addTag}
+                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-xl border border-blue-200 transition-colors whitespace-nowrap">
+                    + Add
+                  </button>
+                </div>
+                {form.algorithm_tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {form.algorithm_tags.map(t => (
+                      <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 text-purple-700 ring-1 ring-purple-200 rounded-full text-xs font-semibold">
+                        <Tag className="w-3 h-3" />{t}
+                        <button type="button" onClick={() => rmTag(t)} className="ml-0.5 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Boilerplate / Starter Code */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Boilerplate / Starter Code <span className="text-xs font-normal text-gray-400">(optional — pre-filled in editor)</span>
+                </label>
+                <textarea rows={5} value={form.boilerplate_code}
+                  onChange={e => setForm(prev => ({ ...prev, boilerplate_code: e.target.value }))}
+                  placeholder={"def solution(n):\n    # write your code here\n    pass\n\nprint(solution(int(input())))"}
+                  className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
+              </div>
+
+              {/* Test Cases */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Test Cases <span className="text-red-500">*</span>
+                    <span className="text-xs font-normal text-gray-400 ml-1">(at least 1 visible + 1 hidden recommended)</span>
+                  </label>
+                  <button onClick={addTC} type="button"
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
+                    <Plus className="w-3 h-3" /> Add Case
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {form.test_cases.map((tc, idx) => (
+                    <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-gray-50/50'}`}>
+                      {/* Case header row */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                          {tc.is_hidden
+                            ? <><span className="w-2 h-2 rounded-full bg-purple-400 inline-block" />Hidden Test {idx + 1}</>
+                            : <><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />Visible Test {idx + 1}</>}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 cursor-pointer select-none">
+                            <input type="checkbox" checked={tc.is_hidden} onChange={e => setTC(idx, 'is_hidden', e.target.checked)} className="w-3.5 h-3.5 rounded text-purple-600" />
+                            Hidden
+                          </label>
+                          {form.test_cases.length > 1 && (
+                            <button onClick={() => rmTC(idx)} type="button" className="text-red-400 hover:text-red-600 transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Input / Output */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Input (stdin)</label>
+                          <textarea rows={3} value={tc.input} onChange={e => setTC(idx, 'input', e.target.value)} placeholder="5 3" className={`${inp} font-mono text-xs resize-none`} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Expected Output (stdout)</label>
+                          <textarea rows={3} value={tc.expected_output} onChange={e => setTC(idx, 'expected_output', e.target.value)} placeholder="8" className={`${inp} font-mono text-xs resize-none`} />
+                        </div>
+                      </div>
+
+
+                      {/* Marks weightage + Time limit — only for hidden test cases */}
+                      {tc.is_hidden ? (
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Marks Weightage
+                            </label>
+                            <input type="number" readOnly value={marksPerHiddenTC}
+                              className={`${inp} text-xs bg-purple-50 cursor-not-allowed text-purple-700 font-semibold`}
+                              title={`Auto: ${form.marks} marks ÷ ${hiddenTCCount} hidden cases`} />
+                            <p className="text-[9px] text-purple-400 mt-0.5">Auto ({form.marks}÷{hiddenTCCount})</p>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Time Limit (ms)
+                            </label>
+                            <input type="number" min={500} step={500} value={tc.time_limit_ms}
+                              onChange={e => setTC(idx, 'time_limit_ms', e.target.value)}
+                              className={`${inp} text-xs`} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Explanation <span className="normal-case font-normal">(visible)</span>
+                            </label>
+                            <input type="text" value={tc.explanation}
+                              onChange={e => setTC(idx, 'explanation', e.target.value)}
+                              placeholder="Why this output?"
+                              className={`${inp} text-xs`} />
+                          </div>
+                        </div>
+                      ) : (
+                        /* Visible test cases — only explanation */
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                            Explanation <span className="normal-case font-normal">(visible)</span>
+                          </label>
+                          <input type="text" value={tc.explanation}
+                            onChange={e => setTC(idx, 'explanation', e.target.value)}
+                            placeholder="Why this output?"
+                            className={`${inp} text-xs`} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Marks summary */}
+                {form.test_cases.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
+                    <Zap className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span>
+                      {hiddenTCCount > 0 ? (
+                        <>
+                          <strong className="text-blue-700">{hiddenTCCount}</strong> hidden case{hiddenTCCount !== 1 ? 's' : ''} ·{' '}
+                          <strong className="text-purple-700">{marksPerHiddenTC}</strong> marks each ·{' '}
+                          Total: <strong className="text-blue-700">{form.marks} marks</strong>
+                        </>
+                      ) : (
+                        <>No hidden test cases — add hidden cases to enable scoring</>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Explanation for non-coding */}
+          {!isCoding && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Explanation (optional)</label>
+              <input type="text" value={form.explanation} onChange={e => setForm(prev => ({ ...prev, explanation: e.target.value }))} placeholder="Brief explanation…" className={inp} />
+            </div>
+          )}
         </div>
-        <div className="flex gap-3 p-5 pt-0">
+
+        <div className="flex gap-3 p-5 border-t border-gray-100">
           <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
           <button onClick={handleSave} disabled={!canSave}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
@@ -1207,11 +1526,12 @@ const QuestionManager = () => {
       </div>
 
       {/* Modals */}
-      {modal === 'add' && <QuestionModal onSave={handleStageQuestion} onClose={() => setModal(null)} />}
+      {modal === 'add' && <QuestionModal onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />}
       {modal === 'bulk' && <BulkPasteModal onAdd={handleBulkAdd} onClose={() => setModal(null)} remaining={remaining === Infinity ? 9999 : remaining} />}
-      {modal?.type === 'edit-staged' && <QuestionModal question={stagedQs[modal.idx]} onSave={handleStageQuestion} onClose={() => setModal(null)} />}
+      {modal?.type === 'edit-staged' && <QuestionModal question={stagedQs[modal.idx]} onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />}
       {modal?.type === 'edit-saved' && (
         <QuestionModal question={modal.question}
+          defaultMarks={marksPerQ}
           onSave={async (payload) => {
             const res = await assessmentAPI.updateQuestion(modal.question._id, payload);
             if (res.success) { showToast('Updated'); fetchData(); setModal(null); }

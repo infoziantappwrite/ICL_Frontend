@@ -12,6 +12,7 @@ import { assessmentAPI, assessmentAttemptAPI } from '../../../api/Api';
 import useProctoringGuard from '../../../hooks/useProctoringGuard';
 import useCameraProctoring from '../../../hooks/useCameraProctoring';
 import CameraOverlay from '../../../components/proctoring/CameraOverlay';
+import CodeEditor from '../../../components/assessment/CodeEditor';
 
 const LEVEL_CONFIG = {
   Beginner:     { label: 'Beginner',     color: 'bg-green-50 text-green-700 border-green-200',   dot: 'bg-green-500' },
@@ -234,7 +235,7 @@ const TakeAssessment = () => {
   const [cameraLastViolation, setCameraLastViolation] = useState(null);
   const [camViolationCount, setCamViolationCount] = useState(0);
   const [showCamViolationModal, setShowCamViolationModal] = useState(false);
-  const CAM_MAX_VIOLATIONS = 5;
+  const CAM_MAX_VIOLATIONS = Number(import.meta.env.VITE_PROCTORING_MAX_CAMERA_VIOLATIONS) || 5;
   // Camera permission is requested on the briefing screen, BEFORE fullscreen,
   // so the permission dialog never conflicts with fullscreen mode.
   const [cameraPermStatus, setCameraPermStatus] = useState('idle'); // 'idle'|'requesting'|'granted'|'denied'|'error'
@@ -892,6 +893,91 @@ const TakeAssessment = () => {
                     className="w-full border-2 border-gray-200 rounded-xl px-4 py-4 text-[14px] font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all bg-gray-50 focus:bg-white"
                     autoComplete="off"
                     spellCheck="false"
+                  />
+                </div>
+              )}
+
+              {q.type === 'coding' && (
+                <div className="px-6 pb-8">
+                  <div className="mb-3 flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200">
+                      Coding Question
+                    </span>
+                    {q.marks && (
+                      <span className="text-xs text-gray-500 font-medium">{q.marks} mark{q.marks !== 1 ? 's' : ''}</span>
+                    )}
+                    {q.algorithm_tags?.length > 0 && q.algorithm_tags.map(t => (
+                      <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[10px] font-medium">{t}</span>
+                    ))}
+                  </div>
+
+                  {/* Problem description */}
+                  {q.problem_description && (
+                    <div className="mb-4 p-4 bg-blue-50/60 border border-blue-100 rounded-xl">
+                      <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1.5">Problem Description</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{q.problem_description}</p>
+                    </div>
+                  )}
+
+                  {/* Input / Output Format */}
+                  {(q.input_format || q.output_format) && (
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {q.input_format && (
+                        <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Input Format</p>
+                          <p className="text-xs text-gray-700 whitespace-pre-wrap font-mono">{q.input_format}</p>
+                        </div>
+                      )}
+                      {q.output_format && (
+                        <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Output Format</p>
+                          <p className="text-xs text-gray-700 whitespace-pre-wrap font-mono">{q.output_format}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Constraints */}
+                  {q.constraints && (
+                    <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                      <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Constraints</p>
+                      <p className="text-xs text-gray-700 whitespace-pre-wrap">{q.constraints}</p>
+                    </div>
+                  )}
+
+                  {/* Visible sample test cases */}
+                  {q.test_cases?.filter(tc => !tc.is_hidden).length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sample Test Cases</p>
+                      <div className="space-y-2">
+                        {q.test_cases.filter(tc => !tc.is_hidden).map((tc, i) => (
+                          <div key={i} className="grid grid-cols-2 gap-2">
+                            <div className="p-2.5 bg-gray-900 rounded-lg">
+                              <p className="text-[10px] text-gray-500 font-bold mb-1">Input</p>
+                              <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap">{tc.input}</pre>
+                            </div>
+                            <div className="p-2.5 bg-gray-900 rounded-lg">
+                              <p className="text-[10px] text-gray-500 font-bold mb-1">Expected Output</p>
+                              <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap">{tc.expected_output}</pre>
+                            </div>
+                            {tc.explanation && (
+                              <div className="col-span-2 text-xs text-gray-500 italic">💡 {tc.explanation}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <CodeEditor
+                    assessmentId={assessmentId}
+                    questionId={qid}
+                    questionText={q.question}
+                    marks={q.marks}
+                    boilerplateCode={q.boilerplate_code || q.starter_code}
+                    onCodeSubmitted={({ passedCount, totalCount }) => {
+                      setAnswer(qid, `[Code submitted: ${passedCount}/${totalCount} tests passed]`);
+                    }}
                   />
                 </div>
               )}

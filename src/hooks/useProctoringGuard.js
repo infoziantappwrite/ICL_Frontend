@@ -37,7 +37,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { logEvent } from '../services/proctoringService';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const MAX_VIOLATIONS          = 5;
+const MAX_VIOLATIONS = Number(import.meta.env.VITE_PROCTORING_MAX_BROWSER_VIOLATIONS) || 5;
 const DEVTOOLS_THRESHOLD      = 160;    // px delta that indicates devtools panel
 const HEARTBEAT_INTERVAL      = 10_000; // ms
 const SCREENSHOT_BLUR_MS      = 350;    // blur < this → Win+PrtScr heuristic

@@ -1,11 +1,11 @@
 // src/pages/MyProfile.jsx — Full Naukri-style profile with all fields + inline editing
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Select from 'react-select';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import StudentLayout from '../components/layout/StudentLayout';
-import { skillAPI } from '../api/Api';
+import { skillAPI, tokenStore } from '../api/Api';
 import {
   Pencil, X, Check, MapPin, Phone, Mail,
   Briefcase, GraduationCap, Target,
@@ -56,7 +56,7 @@ const ActionRow = ({ onSave, onCancel, saving }) => (
     <button type="button" onClick={onSave} disabled={saving}
       className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-60">
       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-      {saving ? 'Saving…' : 'Save'}
+      {saving ? 'Uploading…' : 'Save'}
     </button>
     <button type="button" onClick={onCancel} disabled={saving}
       className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:bg-gray-50 transition">
@@ -243,6 +243,88 @@ const ProfileSkeleton = () => (
   </div>
 );
 
+// ─── CDN Chunked Upload Helper ─────────────────────────────────────────────
+// Splits file into chunks, uploads each to /api/upload/upload-file,
+// then calls /api/upload/merge. Returns the Cloudinary URL.
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB per chunk
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+
+const uploadFileInChunks = async (file, fileType, onProgress) => {
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const fileId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  // Upload each chunk
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const fd = new FormData();
+    fd.append('chunk', chunk, file.name);
+    fd.append('fileId', fileId);
+    fd.append('chunkIndex', String(i));
+    fd.append('totalChunks', String(totalChunks));
+
+    const token = tokenStore.get();
+    const res = await fetch(`${BASE_URL}/upload/upload-file`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      body: fd,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Chunk ${i} upload failed`);
+    }
+
+    if (onProgress) onProgress(Math.round(((i + 1) / totalChunks) * 80));
+  }
+
+  // Merge chunks on the backend → Cloudinary upload
+  const mergeToken = tokenStore.get();
+  const mergeRes = await fetch(`${BASE_URL}/upload/merge`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(mergeToken ? { 'Authorization': `Bearer ${mergeToken}` } : {}),
+    },
+    body: JSON.stringify({ fileId, totalChunks, fileType, fileName: file.name }),
+  });
+
+  if (!mergeRes.ok) {
+    const err = await mergeRes.json().catch(() => ({}));
+    throw new Error(err.message || 'Merge failed');
+  }
+
+  const data = await mergeRes.json();
+  if (onProgress) onProgress(100);
+
+  // Return the Cloudinary URL + filename from merge response
+  return {
+    url: data.url || data.fileUrl || data.data?.url,
+    filename: file.name,
+    fileId: data.fileId || data.data?.fileId,
+  };
+};
+
+// ─── Upload progress bar ───────────────────────────────────────────────────
+const UploadProgress = ({ progress, label }) => (
+  <div className="mt-2">
+    <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+      <span>{label}</span>
+      <span>{progress}%</span>
+    </div>
+    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div
+        className="h-full bg-blue-500 rounded-full transition-all duration-300"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  </div>
+);
+
 // ─── Main Component ────────────────────────────────────────────────────────
 const MyProfile = () => {
   const { user } = useAuth();
@@ -252,6 +334,12 @@ const MyProfile = () => {
   const [saving, setSaving] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
   const [idProofFile, setIdProofFile] = useState(null);
+
+  // Upload progress states
+  const [resumeProgress, setResumeProgress] = useState(0);
+  const [idProofProgress, setIdProofProgress] = useState(0);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [idProofUploading, setIdProofUploading] = useState(false);
 
   // ── Draft states per section ──
   const [draftHeader, setDraftHeader] = useState({});
@@ -344,16 +432,20 @@ const MyProfile = () => {
   const percent = profile?.profileCompletionPercentage || 0;
 
   const openEdit = s => setEditing(s);
-  const closeEdit = () => { setEditing(null); setResumeFile(null); setIdProofFile(null); };
+  const closeEdit = () => {
+    setEditing(null);
+    setResumeFile(null);
+    setIdProofFile(null);
+    setResumeProgress(0);
+    setIdProofProgress(0);
+  };
 
-  // ── Generic save ──
-  const saveSection = async (data, opts = {}) => {
+  // ── Generic save for non-file sections ──
+  const saveSection = async (data) => {
     setSaving(true);
     try {
       const fd = new FormData();
       fd.append('profileData', JSON.stringify(data));
-      if (opts.resume) fd.append('resumeFile', opts.resume);
-      if (opts.idProof) fd.append('idProofFile', opts.idProof);
       const res = await updateProfile(fd);
       if (res?.success) {
         toast.success('Saved!', 'Section updated.');
@@ -362,6 +454,50 @@ const MyProfile = () => {
       } else toast.error('Error', res?.message || 'Failed to save.');
     } catch (e) { toast.error('Error', e.message || 'Failed to save.'); }
     finally { setSaving(false); }
+  };
+
+  // ── CDN chunked upload for documents ──
+  // mergeChunksController already saves the Cloudinary URL to MongoDB via
+  // updateCanditateDocumentData — so we just refresh the profile after upload.
+  // No second updateProfile call needed.
+  const saveDocuments = async () => {
+    if (!resumeFile && !idProofFile) {
+      toast.error('No file selected', 'Please choose a file to upload.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // Upload resume via chunked CDN flow
+      if (resumeFile) {
+        setResumeUploading(true);
+        try {
+          await uploadFileInChunks(resumeFile, 'resume', setResumeProgress);
+        } finally {
+          setResumeUploading(false);
+        }
+      }
+
+      // Upload ID proof via chunked CDN flow
+      if (idProofFile) {
+        setIdProofUploading(true);
+        try {
+          await uploadFileInChunks(idProofFile, 'id_proof', setIdProofProgress);
+        } finally {
+          setIdProofUploading(false);
+        }
+      }
+
+      // Backend already saved URL to DB — just refresh the profile
+      toast.success('Uploaded!', 'Documents saved successfully.');
+      await fetchProfile();
+      closeEdit();
+    } catch (e) {
+      toast.error('Upload failed', e.message || 'Something went wrong during upload.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const saveHeader = () => saveSection({
@@ -411,22 +547,6 @@ const MyProfile = () => {
     preferredJobRole: draftCareer.preferredJobRole,
     targetCompanies: draftCareer.targetCompanies,
   });
-  const saveDocuments = () => {
-    // Merge new files with existing profile.documents so the backend never receives
-    // undefined for fields we aren't changing (MongoDB rejects undefined nested objects)
-    const existing = profile?.documents || {};
-    const merged = {
-      resume     : existing.resume     || null,
-      idProof    : existing.idProof    || null,
-      profilePic : existing.profilePic || null,
-      certificates: existing.certificates || [],
-    };
-    // Overlay only what's changing
-    if (resumeFile)  merged.resume  = { filename: resumeFile.name,  url: existing.resume?.url  || '' };
-    if (idProofFile) merged.idProof = { filename: idProofFile.name, url: existing.idProof?.url || '' };
-
-    saveSection({ documents: merged }, { resume: resumeFile, idProof: idProofFile });
-  };
 
   // ── Tag helpers ──
   const addTag = (field, val) => setDraftSkills(p => ({ ...p, [field]: [...p[field], val] }));
@@ -674,14 +794,23 @@ const MyProfile = () => {
                 {editing === 'resume' ? (
                   <div>
                     <label className="block mb-1 text-[12px] font-bold text-gray-500 uppercase">Resume file</label>
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-blue-300 transition mb-1">
+                    <div className={`border-2 border-dashed rounded-xl p-6 text-center transition mb-1 ${resumeFile ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
                       <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
                       <label className="cursor-pointer">
-                        <span className="text-[13px] font-bold text-blue-600 hover:underline">{resumeFile ? resumeFile.name : 'Choose file'}</span>
-                        <input type="file" accept=".pdf,.doc,.docx,.rtf" className="hidden" onChange={e => setResumeFile(e.target.files[0] || null)} />
+                        <span className="text-[13px] font-bold text-blue-600 hover:underline">
+                          {resumeFile ? resumeFile.name : 'Choose file'}
+                        </span>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.rtf"
+                          className="hidden"
+                          onChange={e => { setResumeFile(e.target.files[0] || null); setResumeProgress(0); }}
+                        />
                       </label>
-                      <p className="text-[11px] text-gray-400 mt-1">Supported: doc, docx, rtf, pdf · Max 2 MB</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Supported: doc, docx, rtf, pdf · Max 10 MB</p>
+                      {resumeFile && <p className="text-[11px] text-blue-500 mt-1 font-medium">{(resumeFile.size / 1024 / 1024).toFixed(2)} MB selected</p>}
                     </div>
+                    {resumeUploading && <UploadProgress progress={resumeProgress} label="Uploading resume…" />}
                     <ActionRow onSave={saveDocuments} onCancel={closeEdit} saving={saving} />
                   </div>
                 ) : (
@@ -1082,28 +1211,50 @@ const MyProfile = () => {
                 </div>
                 {editing === 'documents' ? (
                   <div className="space-y-5">
+                    {/* Resume upload */}
                     <div>
                       <label className={lCls}>Resume / CV</label>
-                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center hover:border-blue-300 transition">
+                      <div className={`border-2 border-dashed rounded-xl p-5 text-center transition ${resumeFile ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
                         <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1.5" />
                         <label className="cursor-pointer">
-                          <span className="text-[13px] font-bold text-blue-600 hover:underline">{resumeFile ? resumeFile.name : 'Choose resume file'}</span>
-                          <input type="file" accept=".pdf,.doc,.docx,.rtf" className="hidden" onChange={e => setResumeFile(e.target.files[0] || null)} />
+                          <span className="text-[13px] font-bold text-blue-600 hover:underline">
+                            {resumeFile ? resumeFile.name : 'Choose resume file'}
+                          </span>
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.rtf"
+                            className="hidden"
+                            onChange={e => { setResumeFile(e.target.files[0] || null); setResumeProgress(0); }}
+                          />
                         </label>
-                        <p className="text-[11px] text-gray-400 mt-1">doc, docx, rtf, pdf · Max 2 MB</p>
+                        <p className="text-[11px] text-gray-400 mt-1">doc, docx, rtf, pdf · Max 10 MB</p>
+                        {resumeFile && <p className="text-[11px] text-blue-500 mt-1 font-medium">{(resumeFile.size / 1024 / 1024).toFixed(2)} MB selected</p>}
                       </div>
+                      {resumeUploading && <UploadProgress progress={resumeProgress} label="Uploading resume…" />}
                     </div>
+
+                    {/* ID Proof upload */}
                     <div>
                       <label className={lCls}>ID Proof</label>
-                      <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center hover:border-blue-300 transition">
+                      <div className={`border-2 border-dashed rounded-xl p-5 text-center transition ${idProofFile ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
                         <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1.5" />
                         <label className="cursor-pointer">
-                          <span className="text-[13px] font-bold text-blue-600 hover:underline">{idProofFile ? idProofFile.name : 'Choose ID proof'}</span>
-                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setIdProofFile(e.target.files[0] || null)} />
+                          <span className="text-[13px] font-bold text-blue-600 hover:underline">
+                            {idProofFile ? idProofFile.name : 'Choose ID proof'}
+                          </span>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="hidden"
+                            onChange={e => { setIdProofFile(e.target.files[0] || null); setIdProofProgress(0); }}
+                          />
                         </label>
-                        <p className="text-[11px] text-gray-400 mt-1">pdf, jpg, png · Max 2 MB</p>
+                        <p className="text-[11px] text-gray-400 mt-1">pdf, jpg, png · Max 10 MB</p>
+                        {idProofFile && <p className="text-[11px] text-blue-500 mt-1 font-medium">{(idProofFile.size / 1024 / 1024).toFixed(2)} MB selected</p>}
                       </div>
+                      {idProofUploading && <UploadProgress progress={idProofProgress} label="Uploading ID proof…" />}
                     </div>
+
                     <ActionRow onSave={saveDocuments} onCancel={closeEdit} saving={saving} />
                   </div>
                 ) : (

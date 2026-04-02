@@ -11,7 +11,7 @@ import {
   Briefcase, GraduationCap, Target,
   Upload, Download, Plus, Loader2,
   CheckCircle, Clock, Code, BookOpen, FileText,
-  ChevronDown
+  ChevronDown, Trash2
 } from 'lucide-react';
 
 // ─── Card ──────────────────────────────────────────────────────────────────
@@ -325,6 +325,28 @@ const UploadProgress = ({ progress, label }) => (
   </div>
 );
 
+// ─── Download URL Formatter ────────────────────────────────────────────────
+const getDownloadUrl = (url, originalFileName) => {
+  if (!url || !url.includes('/upload/')) return url;
+  let safeName = 'download';
+  if (originalFileName) {
+    safeName = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+    safeName = encodeURIComponent(safeName.replace(/[^a-zA-Z0-9_-]/g, '_'));
+  }
+  return url.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
+};
+
+// ─── Document Viewer Helper ────────────────────────────────────────────────
+const viewPdf = (url) => {
+  if (!url) return;
+  if (url.toLowerCase().endsWith('.pdf')) {
+    const streamUrl = `${BASE_URL}/upload/stream-pdf?fileUrl=${encodeURIComponent(url)}`;
+    window.open(streamUrl, '_blank');
+  } else {
+    window.open(url, '_blank');
+  }
+};
+
 // ─── Main Component ────────────────────────────────────────────────────────
 const MyProfile = () => {
   const { user } = useAuth();
@@ -456,6 +478,33 @@ const MyProfile = () => {
     finally { setSaving(false); }
   };
 
+  // ── Remote CDN Document Deletion ──
+  const deleteDocument = async (fileType, fileId) => {
+    if (!fileId) return;
+    if (!window.confirm("Are you sure you want to delete this document?")) return;
+    setSaving(true);
+    try {
+      const token = tokenStore.get();
+      const res = await fetch(`${BASE_URL}/upload/file`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ fileType, fileId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to delete Document.');
+      toast.success('Deleted', 'Document deleted successfully.');
+      await fetchProfile();
+    } catch (e) {
+      toast.error('Error', e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ── CDN chunked upload for documents ──
   // mergeChunksController already saves the Cloudinary URL to MongoDB via
   // updateCanditateDocumentData — so we just refresh the profile after upload.
@@ -560,6 +609,8 @@ const MyProfile = () => {
   const resumeFilename = profile?.documents?.resume?.filename || 'Resume.pdf';
   const resumeUploadedAt = profile?.documents?.resume?.uploadedAt;
   const idProofUrl = profile?.documents?.idProof?.url || profile?.idProofUrl;
+  const resumeFileId = profile?.documents?.resume?.fileId || profile?.documents?.resume?.filename;
+  const idProofFileId = profile?.documents?.idProof?.fileId || profile?.documents?.idProof?.filename;
 
   // Quick links
   const quickLinks = [
@@ -782,12 +833,17 @@ const MyProfile = () => {
                 {resumeUrl ? (
                   <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl mb-4">
                     <div>
-                      <p className="text-[14px] font-bold text-gray-800">{resumeFilename}</p>
+                      <button type="button" onClick={() => viewPdf(resumeUrl)} className="text-[14px] font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors text-left">{resumeFilename}</button>
                       {resumeUploadedAt && <p className="text-[12px] text-gray-400 mt-0.5">Uploaded on {new Date(resumeUploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
                     </div>
-                    <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                      <Download className="w-4 h-4" />
-                    </a>
+                    <div className="flex items-center">
+                      <a href={getDownloadUrl(resumeUrl, resumeFilename)} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" download title="Download">
+                        <Download className="w-4 h-4" />
+                      </a>
+                      <button type="button" onClick={() => deleteDocument('resume', resumeFileId)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ) : <p className="text-[13px] text-gray-400 mb-4">No resume uploaded yet.</p>}
 
@@ -1264,20 +1320,26 @@ const MyProfile = () => {
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-blue-500" />
                           <div>
-                            <p className="text-[13px] font-bold text-gray-800">{resumeFilename}</p>
+                            <button type="button" onClick={() => viewPdf(resumeUrl)} className="text-[13px] font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors text-left">{resumeFilename}</button>
                             {resumeUploadedAt && <p className="text-[11px] text-gray-400">Uploaded {new Date(resumeUploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
                           </div>
                         </div>
-                        <a href={resumeUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition"><Download className="w-4 h-4" /></a>
+                        <div className="flex items-center">
+                          <a href={getDownloadUrl(resumeUrl, resumeFilename)} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition" download title="Download"><Download className="w-4 h-4" /></a>
+                          <button type="button" onClick={() => deleteDocument('resume', resumeFileId)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                        </div>
                       </div>
                     ) : <p className="text-[13px] text-gray-400">No resume uploaded.</p>}
                     {idProofUrl ? (
                       <div className="flex items-center justify-between p-3 border border-gray-100 rounded-xl">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-green-500" />
-                          <p className="text-[13px] font-bold text-gray-800">ID Proof</p>
+                          <button type="button" onClick={() => viewPdf(idProofUrl)} className="text-[13px] font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors text-left">ID Proof</button>
                         </div>
-                        <a href={idProofUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition"><Download className="w-4 h-4" /></a>
+                        <div className="flex items-center">
+                          <a href={getDownloadUrl(idProofUrl, 'ID_Proof')} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition" download title="Download"><Download className="w-4 h-4" /></a>
+                          <button type="button" onClick={() => deleteDocument('id_proof', idProofFileId)} className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                        </div>
                       </div>
                     ) : <p className="text-[13px] text-gray-400">No ID proof uploaded.</p>}
                   </div>

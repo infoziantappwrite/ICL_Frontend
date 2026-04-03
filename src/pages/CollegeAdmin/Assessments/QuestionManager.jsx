@@ -8,7 +8,7 @@ import {
   Target, Clock, Hash, Award, ClipboardPaste, Send,
   FileText, Check, ChevronDown, ChevronUp, Filter,
   UserCheck, Layers, RefreshCw, Star, ShieldAlert,
-  CircleDot, Circle, ArrowRight, Tag, Zap,
+  CircleDot, Circle, ArrowRight, Tag, Zap, Code2,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -52,6 +52,7 @@ const BLANK_FORM = {
   algorithm_tags: [], boilerplate_code: '', test_cases: [{ ...BLANK_TC }],
 };
 
+// ─── MCQ Bulk Paste format example ────────────────────────────────
 const BULK_FORMAT_EXAMPLE = `1. What is React?
 A. A JavaScript library
 B. A CSS framework
@@ -75,6 +76,52 @@ C. Java Syntax XML
 D. None of the above
 Answer: B`;
 
+// ─── Coding Bulk Paste format example ─────────────────────────────
+const BULK_CODING_FORMAT_EXAMPLE = `1. Sum of Two Numbers
+Description: Given two integers A and B, compute and print their sum.
+Input Format: Two space-separated integers A and B on a single line.
+Output Format: Print a single integer — the sum of A and B.
+Constraints: 1 <= A, B <= 10^9
+Level: Beginner
+Tags: math, implementation
+Boilerplate:
+a, b = map(int, input().split())
+# Write your solution here
+TestCase:
+Input: 5 3
+Output: 8
+Hidden: false
+TestCase:
+Input: 100 200
+Output: 300
+Hidden: true
+TimeLimit: 2000
+
+2. Find Maximum Element
+Description: Given an array of N integers, find the maximum element.
+Input Format: First line contains N. Second line contains N space-separated integers.
+Output Format: Print the maximum element.
+Constraints: 1 <= N <= 10^5 · -10^9 <= arr[i] <= 10^9
+Level: Intermediate
+Tags: arrays
+Boilerplate:
+n = int(input())
+arr = list(map(int, input().split()))
+# Write your solution here
+TestCase:
+Input:
+5
+3 1 4 1 5
+Output: 5
+Hidden: false
+TestCase:
+Input:
+4
+-3 -1 -4 -2
+Output: -1
+Hidden: true`;
+
+// ─── MCQ Bulk Parser ──────────────────────────────────────────────
 const parseBulkText = (text) => {
   const questions = [];
   const errors = [];
@@ -119,6 +166,179 @@ const parseBulkText = (text) => {
         marks: q.marks || 1,
         explanation: q.explanation || '',
       });
+    }
+  });
+
+  return { questions, errors };
+};
+
+// ─── Coding Bulk Parser ───────────────────────────────────────────
+const parseBulkCodingText = (text) => {
+  const questions = [];
+  const errors = [];
+
+  // Split into question blocks by lines that start with a number followed by . or )
+  const blocks = text.split(/\n(?=\d+[\.\)]\s)/).map(b => b.trim()).filter(Boolean);
+
+  blocks.forEach((block, blockIdx) => {
+    const lines = block.split('\n');
+    const q = {
+      question: '',
+      type: 'coding',
+      level: 'Beginner',
+      problem_description: '',
+      input_format: '',
+      output_format: '',
+      constraints: '',
+      algorithm_tags: [],
+      boilerplate_code: '',
+      test_cases: [],
+    };
+
+    // State machine: track which field we're accumulating content for
+    let currentField = null; // 'description' | 'input_format' | 'output_format' | 'constraints' | 'boilerplate' | 'tc_input' | 'tc_output' | null
+    let currentTC = null;   // current test case being built
+    let fieldBuffer = [];   // lines accumulated for the current multi-line field
+
+    const flushBuffer = () => {
+      if (!currentField || fieldBuffer.length === 0) { fieldBuffer = []; return; }
+      const val = fieldBuffer.join('\n').trim();
+      if (currentField === 'description')  q.problem_description = val;
+      else if (currentField === 'input_format')  q.input_format = val;
+      else if (currentField === 'output_format') q.output_format = val;
+      else if (currentField === 'constraints')   q.constraints = val;
+      else if (currentField === 'boilerplate')   q.boilerplate_code = val;
+      else if (currentField === 'tc_input'  && currentTC) currentTC.input = val;
+      else if (currentField === 'tc_output' && currentTC) currentTC.expected_output = val;
+      fieldBuffer = [];
+    };
+
+    const flushTC = () => {
+      if (currentTC !== null) {
+        // Only push if has at least input or output
+        if (currentTC.input.trim() || currentTC.expected_output.trim()) {
+          q.test_cases.push({ ...currentTC });
+        }
+        currentTC = null;
+      }
+    };
+
+    // Keywords that signal a new field (case-insensitive)
+    const FIELD_PATTERNS = [
+      { re: /^Description:\s*(.*)$/i,          field: 'description' },
+      { re: /^Input\s*Format:\s*(.*)$/i,        field: 'input_format' },
+      { re: /^Output\s*Format:\s*(.*)$/i,       field: 'output_format' },
+      { re: /^Constraints:\s*(.*)$/i,           field: 'constraints' },
+      { re: /^Boilerplate:\s*(.*)$/i,           field: 'boilerplate' },
+    ];
+    const SINGLE_PATTERNS = [
+      { re: /^Level:\s*(.+)$/i,                 key: 'level' },
+      { re: /^Tags:\s*(.+)$/i,                  key: 'tags' },
+    ];
+    const TC_PATTERNS = [
+      { re: /^TestCase:\s*$/i,                  key: 'tc_start' },
+      { re: /^Input:\s*(.*)$/i,                 key: 'tc_input' },
+      { re: /^Output:\s*(.*)$/i,                key: 'tc_output' },
+      { re: /^Hidden:\s*(true|false)$/i,        key: 'tc_hidden' },
+      { re: /^TimeLimit:\s*(\d+)$/i,            key: 'tc_timelimit' },
+      { re: /^Explanation:\s*(.*)$/i,           key: 'tc_explanation' },
+    ];
+
+    lines.forEach((rawLine, lineIdx) => {
+      const trimmed = rawLine.trim();
+
+      // ── Question title (first line) ──────────────────────────
+      if (lineIdx === 0) {
+        const m = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
+        if (m) { q.question = m[1].trim(); return; }
+      }
+
+      // ── Check for TestCase patterns first (before other patterns) ──
+      let matched = false;
+      for (const { re, key } of TC_PATTERNS) {
+        const m = trimmed.match(re);
+        if (m) {
+          if (key === 'tc_start') {
+            flushBuffer(); currentField = null;
+            flushTC();
+            currentTC = { input: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' };
+          } else if (key === 'tc_input') {
+            flushBuffer();
+            currentField = 'tc_input';
+            if (m[1].trim()) fieldBuffer.push(m[1].trim());
+          } else if (key === 'tc_output') {
+            flushBuffer();
+            currentField = 'tc_output';
+            if (m[1].trim()) fieldBuffer.push(m[1].trim());
+          } else if (key === 'tc_hidden' && currentTC) {
+            flushBuffer(); currentField = null;
+            currentTC.is_hidden = m[1].toLowerCase() === 'true';
+          } else if (key === 'tc_timelimit' && currentTC) {
+            flushBuffer(); currentField = null;
+            currentTC.time_limit_ms = parseInt(m[1], 10);
+          } else if (key === 'tc_explanation' && currentTC) {
+            flushBuffer(); currentField = null;
+            currentTC.explanation = m[1].trim();
+          }
+          matched = true;
+          break;
+        }
+      }
+      if (matched) return;
+
+      // ── Multi-line field patterns ────────────────────────────
+      for (const { re, field } of FIELD_PATTERNS) {
+        const m = trimmed.match(re);
+        if (m) {
+          flushBuffer(); flushTC();
+          currentField = field;
+          if (m[1].trim()) fieldBuffer.push(m[1].trim());
+          matched = true;
+          break;
+        }
+      }
+      if (matched) return;
+
+      // ── Single-line patterns ─────────────────────────────────
+      for (const { re, key } of SINGLE_PATTERNS) {
+        const m = trimmed.match(re);
+        if (m) {
+          flushBuffer(); flushTC(); currentField = null;
+          if (key === 'level') {
+            const lv = m[1].trim();
+            if (['Beginner', 'Intermediate', 'Advanced'].includes(lv)) q.level = lv;
+          } else if (key === 'tags') {
+            q.algorithm_tags = m[1].split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+          }
+          matched = true;
+          break;
+        }
+      }
+      if (matched) return;
+
+      // ── Continuation line for current multi-line field ───────
+      if (currentField) {
+        // Preserve indentation for boilerplate code
+        if (currentField === 'boilerplate') {
+          fieldBuffer.push(rawLine.replace(/^\t/, '  ')); // normalize tabs to spaces
+        } else if (trimmed) {
+          fieldBuffer.push(trimmed);
+        }
+      }
+    });
+
+    // Flush any remaining buffer & test case
+    flushBuffer();
+    flushTC();
+
+    // ── Validate ──────────────────────────────────────────────
+    const num = blockIdx + 1;
+    if (!q.question) {
+      errors.push(`Q${num}: Missing problem title (line must start with "N. Title")`);
+    } else if (q.test_cases.length === 0) {
+      errors.push(`Q${num}: "${q.question}" — No test cases found. Add at least one TestCase: block.`);
+    } else {
+      questions.push(q);
     }
   });
 
@@ -421,7 +641,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
       if (form.input_format)         payload.input_format         = form.input_format.trim();
       if (form.output_format)        payload.output_format        = form.output_format.trim();
       if (form.constraints)          payload.constraints          = form.constraints.trim();
-      if (form.algorithm_tags?.length) payload.algorithm_tags     = form.algorithm_tags;
+      if (form.algorithm_tags?.length) payload.algorithm_tags      = form.algorithm_tags;
       if (form.boilerplate_code)     payload.boilerplate_code     = form.boilerplate_code.trim();
       payload.test_cases = form.test_cases
         .filter(tc => tc.input.trim() || tc.expected_output.trim())
@@ -742,7 +962,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
   );
 };
 
-/* ─── Bulk Paste Modal ───────────────────────────────────────────────── */
+/* ─── MCQ Bulk Paste Modal ───────────────────────────────────────────────── */
 const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
   const [text, setText]       = useState('');
   const [parsed, setParsed]   = useState(null);
@@ -765,7 +985,7 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"><ClipboardPaste className="w-4 h-4 text-white" /></div>
             <div>
-              <h3 className="font-bold text-white">Bulk Paste Questions</h3>
+              <h3 className="font-bold text-white">Bulk Paste MCQ Questions</h3>
               <p className="text-blue-200 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
             </div>
           </div>
@@ -838,6 +1058,192 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
                 <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
                 <button onClick={() => onAdd(parsed.questions)}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-blue-500/20">
+                  <Plus className="w-4 h-4" /> Add {parsed.questions.length} to Staging
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Coding Bulk Paste Modal ─────────────────────────────────────────── */
+const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
+  const [text, setText]             = useState('');
+  const [parsed, setParsed]         = useState(null);
+  const [showFormat, setShowFormat] = useState(false);
+  const [error, setError]           = useState('');
+
+  const handleParse = () => {
+    setError('');
+    if (!text.trim()) { setError('Paste your coding problems first'); return; }
+    const result = parseBulkCodingText(text);
+    if (result.questions.length === 0) {
+      setError(result.errors.length > 0 ? result.errors.join('\n') : 'No valid coding problems found. Check the format.');
+      return;
+    }
+    if (result.questions.length > remaining) {
+      setError(`Only ${remaining} more question${remaining !== 1 ? 's' : ''} allowed. Parsed ${result.questions.length} — please reduce.`);
+      return;
+    }
+    setParsed(result);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-purple-500/20 border border-white/60 max-w-2xl w-full my-8">
+
+        {/* Header */}
+        <div className="px-5 py-4 bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-500 rounded-t-2xl flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <Code2 className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white">Bulk Paste Coding Problems</h3>
+              <p className="text-purple-200 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+
+          {/* Format guide toggle */}
+          <button
+            onClick={() => setShowFormat(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-all">
+            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Paste Format Guide</span>
+            {showFormat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {showFormat && (
+            <div className="bg-gray-900 rounded-xl p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-72">
+              <div className="mb-3 space-y-1 text-purple-300 text-xs font-semibold font-sans">
+                <p className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 shrink-0" /> Marks are auto-assigned from assessment settings</p>
+                <p className="flex items-center gap-1.5"><Code2 className="w-3.5 h-3.5 shrink-0" /> Each problem needs at least one TestCase: block</p>
+              </div>
+              <div className="text-gray-400 text-[10px] font-sans mb-2 space-y-0.5">
+                <p><span className="text-yellow-300 font-semibold">N. Title</span> — required, starts each problem</p>
+                <p><span className="text-cyan-300 font-semibold">Description:</span> — problem statement (multi-line OK)</p>
+                <p><span className="text-cyan-300 font-semibold">Input Format:</span> / <span className="text-cyan-300 font-semibold">Output Format:</span> / <span className="text-cyan-300 font-semibold">Constraints:</span> — optional</p>
+                <p><span className="text-cyan-300 font-semibold">Level:</span> Beginner | Intermediate | Advanced</p>
+                <p><span className="text-cyan-300 font-semibold">Tags:</span> comma,separated,tags</p>
+                <p><span className="text-cyan-300 font-semibold">Boilerplate:</span> — optional starter code (multi-line)</p>
+                <p><span className="text-green-300 font-semibold">TestCase:</span> — starts a test case block</p>
+                <p className="pl-3"><span className="text-green-300">Input:</span> value (or multi-line below)</p>
+                <p className="pl-3"><span className="text-green-300">Output:</span> value</p>
+                <p className="pl-3"><span className="text-green-300">Hidden:</span> true | false</p>
+                <p className="pl-3"><span className="text-green-300">TimeLimit:</span> ms (optional, default 2000)</p>
+              </div>
+              <pre className="whitespace-pre-wrap text-green-400">{BULK_CODING_FORMAT_EXAMPLE}</pre>
+            </div>
+          )}
+
+          {/* Tip banner */}
+          <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-800">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Each problem starts with <code className="bg-purple-100 px-1 rounded font-mono">1. Title</code>.
+              Use <code className="bg-purple-100 px-1 rounded font-mono">TestCase:</code> blocks for I/O.
+              Mark hidden tests with <code className="bg-purple-100 px-1 rounded font-mono">Hidden: true</code> — they're used for scoring.
+            </span>
+          </div>
+
+          {!parsed ? (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Paste Coding Problems Here</label>
+                <textarea
+                  rows={16}
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  placeholder={`1. Sum of Two Numbers\nDescription: Given two integers A and B, compute their sum.\nInput Format: Two space-separated integers.\nOutput Format: Print the sum.\nConstraints: 1 <= A, B <= 10^9\nLevel: Beginner\nTags: math\nBoilerplate:\na, b = map(int, input().split())\nTestCase:\nInput: 5 3\nOutput: 8\nHidden: false\nTestCase:\nInput: 100 200\nOutput: 300\nHidden: true\n\n2. Next problem...\n...`}
+                  className={`${inp} resize-none font-mono text-xs leading-relaxed`}
+                />
+              </div>
+              {error && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-xs">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <pre className="whitespace-pre-wrap font-sans">{error}</pre>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleParse}
+                  disabled={!text.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-purple-500/20">
+                  <Eye className="w-4 h-4" /> Parse & Preview
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Success banner */}
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>
+                  <strong>{parsed.questions.length}</strong> coding problem{parsed.questions.length !== 1 ? 's' : ''} parsed successfully
+                  {parsed.errors.length > 0 && ` · ${parsed.errors.length} skipped`}
+                </span>
+              </div>
+
+              {/* Skipped errors */}
+              {parsed.errors.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                  <p className="font-bold mb-1">Skipped:</p>
+                  <pre className="whitespace-pre-wrap font-sans">{parsed.errors.join('\n')}</pre>
+                </div>
+              )}
+
+              {/* Preview list */}
+              <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
+                {parsed.questions.map((q, idx) => {
+                  const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
+                  const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
+                  return (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-200">
+                      <span className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full font-semibold">
+                            {q.level}
+                          </span>
+                          <span className="text-[10px] text-gray-500">
+                            {visibleTC} visible · {hiddenTC} hidden test case{q.test_cases.length !== 1 ? 's' : ''}
+                          </span>
+                          {q.algorithm_tags?.length > 0 && (
+                            <span className="text-[10px] text-gray-400">
+                              Tags: {q.algorithm_tags.join(', ')}
+                            </span>
+                          )}
+                        </div>
+                        {q.problem_description && (
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">
+                  ← Re-edit
+                </button>
+                <button
+                  onClick={() => onAdd(parsed.questions)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-purple-500/20">
                   <Plus className="w-4 h-4" /> Add {parsed.questions.length} to Staging
                 </button>
               </div>
@@ -1010,7 +1416,6 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
                 </span>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
-                {/* FIX: fullScreen={false} prevents gradient box artifact inside the modal panel */}
                 {loadingAll
                   ? <InlineSkeleton rows={3} className="py-6" />
                   : filteredAll.length === 0
@@ -1024,7 +1429,6 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               {!assessment?.jd_id ? (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"><AlertCircle className="w-4 h-4 shrink-0" />No JD linked. Edit the assessment to link a JD first.</div>
               ) : loadingJD ? (
-                // FIX: fullScreen={false} prevents gradient box artifact inside the modal
                 <div className="flex flex-col items-center py-8 gap-3">
                   <InlineSkeleton rows={4} />
                   <p className="text-sm text-gray-500">Fetching eligible students from JD…</p>
@@ -1073,7 +1477,6 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
             {!result && (
               <button onClick={handleAssign} disabled={loading || (tab === 'jd' && !assessment?.jd_id)}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
-                {/* FIX: replaced <LoadingSpinner size="sm" /> with inline CSS spinner */}
                 {loading
                   ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   : <UserPlus className="w-4 h-4" />}
@@ -1128,7 +1531,6 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          {/* FIX: fullScreen={false} prevents gradient box artifact inside the modal */}
           {loading
             ? <InlineSkeleton rows={4} className="py-10" />
             : error
@@ -1252,6 +1654,13 @@ const QuestionManager = () => {
     showToast(`${questions.length} questions staged (${marksPerQ} mark${marksPerQ !== 1 ? 's' : ''} each) — review and click Submit`);
   };
 
+  const handleBulkCodingAdd = (questions) => {
+    const withMarks = questions.map(q => ({ ...q, marks: marksPerQ }));
+    setStagedQs(prev => [...prev, ...withMarks]);
+    setModal(null);
+    showToast(`${questions.length} coding problem${questions.length !== 1 ? 's' : ''} staged (${marksPerQ} mark${marksPerQ !== 1 ? 's' : ''} each) — review and click Submit`);
+  };
+
   const handleSubmitAll = async () => {
     if (stagedQs.length === 0) return;
     setSubmitting(true);
@@ -1281,8 +1690,6 @@ const QuestionManager = () => {
     : null;
   const hasStudents = (assessment?.eligible_students?.length || 0) > 0;
 
-  // FIX: fullScreen={false} prevents the full-screen gradient box artifact
-  // inside CollegeAdminLayout during initial page load
   if (loading) return (
     <CollegeAdminLayout>
       <div className="flex items-center justify-center py-24">
@@ -1378,10 +1785,22 @@ const QuestionManager = () => {
               </button>
               {!atLimit && (
                 <>
-                  <button onClick={() => setModal('bulk')} className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
-                    <ClipboardPaste className="w-3.5 h-3.5" /> Bulk Paste
+                  {/* MCQ Bulk Paste */}
+                  <button
+                    onClick={() => setModal('bulk')}
+                    className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
+                    <ClipboardPaste className="w-3.5 h-3.5" /> Bulk Paste MCQ
                   </button>
-                  <button onClick={() => setModal('add')} className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
+                  {/* Coding Bulk Paste — NEW */}
+                  <button
+                    onClick={() => setModal('bulk-coding')}
+                    className="inline-flex items-center gap-1.5 bg-purple-500/50 hover:bg-purple-500/70 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-purple-300/50 transition-all">
+                    <Code2 className="w-3.5 h-3.5" /> Bulk Paste Coding
+                  </button>
+                  {/* Manual Add */}
+                  <button
+                    onClick={() => setModal('add')}
+                    className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
                     <Plus className="w-3.5 h-3.5" /> Add Question
                   </button>
                 </>
@@ -1434,7 +1853,6 @@ const QuestionManager = () => {
                 <p className="font-bold text-amber-800 text-sm">{stagedQs.length} Question{stagedQs.length !== 1 ? 's' : ''} Staged — Preview</p>
                 <span className="text-xs text-amber-500">Not saved to DB yet</span>
               </div>
-              {/* FIX: replaced <LoadingSpinner size="sm" /> with inline CSS spinner */}
               <button onClick={handleSubmitAll} disabled={submitting}
                 className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-xs font-bold disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
                 {submitting
@@ -1466,8 +1884,15 @@ const QuestionManager = () => {
               </div>
             )}
             <div className="flex items-center justify-center gap-3 flex-wrap">
-              <button onClick={() => setModal('bulk')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50"><ClipboardPaste className="w-4 h-4" /> Bulk Paste</button>
-              <button onClick={() => setModal('add')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90"><Plus className="w-4 h-4" /> Add Question</button>
+              <button onClick={() => setModal('bulk')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50">
+                <ClipboardPaste className="w-4 h-4" /> Bulk Paste MCQ
+              </button>
+              <button onClick={() => setModal('bulk-coding')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-purple-200 text-purple-600 rounded-xl font-semibold text-sm hover:bg-purple-50">
+                <Code2 className="w-4 h-4" /> Bulk Paste Coding
+              </button>
+              <button onClick={() => setModal('add')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90">
+                <Plus className="w-4 h-4" /> Add Question
+              </button>
             </div>
           </div>
         ) : savedQs.length > 0 && (
@@ -1512,7 +1937,6 @@ const QuestionManager = () => {
         {/* Sticky submit */}
         {stagedQs.length > 0 && (
           <div className="sticky bottom-4">
-            {/* FIX: replaced <LoadingSpinner size="sm" /> with inline CSS spinner */}
             <button onClick={handleSubmitAll} disabled={submitting}
               className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl text-white font-bold text-sm shadow-xl shadow-blue-500/30 disabled:opacity-60 transition-opacity hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#1e40af,#0284c7,#0891b2)' }}>
@@ -1525,10 +1949,20 @@ const QuestionManager = () => {
         )}
       </div>
 
-      {/* Modals */}
-      {modal === 'add' && <QuestionModal onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />}
-      {modal === 'bulk' && <BulkPasteModal onAdd={handleBulkAdd} onClose={() => setModal(null)} remaining={remaining === Infinity ? 9999 : remaining} />}
-      {modal?.type === 'edit-staged' && <QuestionModal question={stagedQs[modal.idx]} onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />}
+      {/* ─── Modals ─────────────────────────────────────────────────── */}
+      {modal === 'add' && (
+        <QuestionModal onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />
+      )}
+      {modal === 'bulk' && (
+        <BulkPasteModal onAdd={handleBulkAdd} onClose={() => setModal(null)} remaining={remaining === Infinity ? 9999 : remaining} />
+      )}
+      {/* ── NEW: Coding Bulk Paste Modal ─────────────────────────── */}
+      {modal === 'bulk-coding' && (
+        <BulkPasteCodingModal onAdd={handleBulkCodingAdd} onClose={() => setModal(null)} remaining={remaining === Infinity ? 9999 : remaining} />
+      )}
+      {modal?.type === 'edit-staged' && (
+        <QuestionModal question={stagedQs[modal.idx]} onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />
+      )}
       {modal?.type === 'edit-saved' && (
         <QuestionModal question={modal.question}
           defaultMarks={marksPerQ}
@@ -1539,7 +1973,9 @@ const QuestionManager = () => {
           }}
           onClose={() => setModal(null)} />
       )}
-      {modal === 'assign' && <AssignStudentsModal assessmentId={assessmentId} assessment={assessment} onClose={() => { setModal(null); fetchData(); }} />}
+      {modal === 'assign' && (
+        <AssignStudentsModal assessmentId={assessmentId} assessment={assessment} onClose={() => { setModal(null); fetchData(); }} />
+      )}
       {modal === 'view-students' && (
         <ViewAssignedModal assessmentId={assessmentId}
           assessmentName={assessment?.title || assessment?.skill_id?.name || 'Assessment'}

@@ -5,7 +5,7 @@ import {
   ChevronLeft, Save, BookOpen, AlertCircle, CheckCircle2,
   Clock, Calendar, Tag, Info, Link2, ClipboardList,
   Sparkles, SquarePen, Type, Hash, Eye, Shuffle,
-  Award,
+  Award, Code2,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -27,6 +27,7 @@ const INITIAL_FORM = {
   total_marks: '',       // auto-calculated: num_questions × marks_per_question
   show_results_to_students: false,
   shuffle_questions: false,
+  default_coding_language: 'python',  // college admin sets default; students can override
 };
 
 const inp = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 backdrop-blur transition-all";
@@ -129,6 +130,7 @@ const AssessmentForm = () => {
             total_marks: a.total_marks || '',
             show_results_to_students: a.show_results_to_students ?? false,
             shuffle_questions: a.shuffle_questions ?? false,
+            default_coding_language: a.default_coding_language || 'python',
           });
         } else {
           setError(res.message || 'Failed to load assessment');
@@ -178,6 +180,7 @@ const AssessmentForm = () => {
       num_questions:            Number(form.num_questions),
       show_results_to_students: form.show_results_to_students,
       shuffle_questions:        form.shuffle_questions,
+      default_coding_language:  form.default_coding_language || 'python',
     };
 
     setSaving(true);
@@ -426,6 +429,27 @@ const AssessmentForm = () => {
                 desc="Questions appear in a different random order for each student"
               />
             </div>
+
+            {/* Default coding language */}
+            <Field
+              label="Default Coding Language"
+              hint="Students start with this language pre-selected in the code editor. They can still switch to any other language during the assessment."
+            >
+              <div className="relative">
+                <Code2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <select
+                  value={form.default_coding_language}
+                  onChange={e => set('default_coding_language', e.target.value)}
+                  className={`${inp} pl-10`}
+                >
+                  <option value="python">Python 3</option>
+                  <option value="javascript">JavaScript (Node.js)</option>
+                  <option value="java">Java</option>
+                  <option value="cpp">C++ (GCC)</option>
+                  <option value="c">C (GCC)</option>
+                </select>
+              </div>
+            </Field>
           </Section>
 
           {/* Info tip */}

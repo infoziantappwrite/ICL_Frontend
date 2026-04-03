@@ -236,11 +236,16 @@ const TakeAssessment = () => {
   const [camViolationCount, setCamViolationCount] = useState(0);
   const [showCamViolationModal, setShowCamViolationModal] = useState(false);
   const CAM_MAX_VIOLATIONS = Number(import.meta.env.VITE_PROCTORING_MAX_CAMERA_VIOLATIONS) || 5;
+
+  // ── Proctoring master switch ─────────────────────────────────────────────────
+  // Controlled by VITE_PROCTORING_ENABLED in .env (dev=false) / .env.production (prod=true)
+  const PROCTORING_ENABLED = import.meta.env.VITE_PROCTORING_ENABLED !== 'false';
+
   // Camera permission is requested on the briefing screen, BEFORE fullscreen,
   // so the permission dialog never conflicts with fullscreen mode.
   const [cameraPermStatus, setCameraPermStatus] = useState('idle'); // 'idle'|'requesting'|'granted'|'denied'|'error'
 
-  const proctoringActive = phase === 'in_progress';
+  const proctoringActive = phase === 'in_progress' && PROCTORING_ENABLED;
   const autoSubmitRef = useRef(null);
   // Tracks whether we've already started camera for this session
   const cameraInitializedRef = useRef(false);
@@ -254,7 +259,7 @@ const TakeAssessment = () => {
   // ── Camera proctoring (face-api.js, client-side AI) ──────────────────────────
   const camera = useCameraProctoring({
     submissionId,
-    enabled: true,
+    enabled: PROCTORING_ENABLED,
     debugMode: false,
     onViolation: (event) => {
       setShowWarningToast(true);
@@ -296,7 +301,7 @@ const TakeAssessment = () => {
   // means videoRef.current is still null → video.srcObject is never set → all
   // runScan() calls see videoWidth===0 and return immediately → no detection ever runs.
   useEffect(() => {
-    if (phase === 'in_progress' && !cameraInitializedRef.current) {
+    if (phase === 'in_progress' && PROCTORING_ENABLED && !cameraInitializedRef.current) {
       cameraInitializedRef.current = true;
       camera.startCamera()
         .then(() => guard.requestFullscreen())
@@ -336,8 +341,8 @@ const TakeAssessment = () => {
   }, [assessmentId]);
 
   const handleBegin = async () => {
-    // Guard: camera permission must be granted before we can start
-    if (cameraPermStatus !== 'granted') {
+    // Guard: camera permission must be granted before we can start (only when proctoring is on)
+    if (PROCTORING_ENABLED && cameraPermStatus !== 'granted') {
       setError('Please allow camera access before starting the assessment.');
       return;
     }
@@ -517,85 +522,103 @@ const TakeAssessment = () => {
                 </div>
               )}
 
-              {/* ── Step 1: Camera permission — must be done BEFORE fullscreen ── */}
-              <div className={`mb-6 rounded-xl p-4 border transition-all ${
-                cameraPermStatus === 'granted'
-                  ? 'bg-green-50 border-green-200'
-                  : cameraPermStatus === 'denied' || cameraPermStatus === 'error'
-                    ? 'bg-red-50 border-red-200'
-                    : 'bg-amber-50 border-amber-200'
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  {cameraPermStatus === 'granted'
-                    ? <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    : <AlertTriangle className="w-4 h-4 text-amber-600" />}
-                  <h4 className={`text-[13px] font-bold ${
-                    cameraPermStatus === 'granted' ? 'text-green-800'
-                    : cameraPermStatus === 'denied' || cameraPermStatus === 'error' ? 'text-red-800'
-                    : 'text-amber-800'
+              {/* ── Camera permission + Proctoring notice — only when proctoring is ON ── */}
+              {PROCTORING_ENABLED ? (
+                <>
+                  {/* Step 1: Camera permission */}
+                  <div className={`mb-6 rounded-xl p-4 border transition-all ${
+                    cameraPermStatus === 'granted'
+                      ? 'bg-green-50 border-green-200'
+                      : cameraPermStatus === 'denied' || cameraPermStatus === 'error'
+                        ? 'bg-red-50 border-red-200'
+                        : 'bg-amber-50 border-amber-200'
                   }`}>
-                    Step 1 — Camera Access Required
-                  </h4>
-                </div>
-                {cameraPermStatus === 'granted' ? (
-                  <p className="text-[12px] text-green-700 font-medium">✓ Camera permission granted. You are ready to begin.</p>
-                ) : cameraPermStatus === 'denied' ? (
-                  <div>
-                    <p className="text-[12px] text-red-700 font-medium mb-2">Camera access was denied. Please allow camera access in your browser settings and reload this page.</p>
-                    <p className="text-[11px] text-red-600">Click the camera icon in your browser address bar → Allow → Reload page.</p>
+                    <div className="flex items-center gap-2 mb-2">
+                      {cameraPermStatus === 'granted'
+                        ? <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        : <AlertTriangle className="w-4 h-4 text-amber-600" />}
+                      <h4 className={`text-[13px] font-bold ${
+                        cameraPermStatus === 'granted' ? 'text-green-800'
+                        : cameraPermStatus === 'denied' || cameraPermStatus === 'error' ? 'text-red-800'
+                        : 'text-amber-800'
+                      }`}>
+                        Step 1 — Camera Access Required
+                      </h4>
+                    </div>
+                    {cameraPermStatus === 'granted' ? (
+                      <p className="text-[12px] text-green-700 font-medium">✓ Camera permission granted. You are ready to begin.</p>
+                    ) : cameraPermStatus === 'denied' ? (
+                      <div>
+                        <p className="text-[12px] text-red-700 font-medium mb-2">Camera access was denied. Please allow camera access in your browser settings and reload this page.</p>
+                        <p className="text-[11px] text-red-600">Click the camera icon in your browser address bar → Allow → Reload page.</p>
+                      </div>
+                    ) : cameraPermStatus === 'error' ? (
+                      <div>
+                        <p className="text-[12px] text-red-700 font-medium mb-2">Camera error. Another app (e.g. Microsoft Teams) may be blocking it.</p>
+                        <p className="text-[11px] text-red-600">Close Teams or any app using your camera, then click Allow Camera Access again.</p>
+                        <button
+                          onClick={async () => {
+                            setCameraPermStatus('requesting');
+                            const result = await camera.requestPermission();
+                            setCameraPermStatus(result === 'granted' ? 'granted' : result);
+                          }}
+                          className="mt-2 px-3 py-1.5 bg-red-600 text-white text-[12px] font-bold rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                          Retry Camera Access
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[12px] text-amber-700 font-medium mb-3">
+                          You must allow camera access <strong>before</strong> starting. This prevents the permission dialog from appearing during the fullscreen exam (which would count as a violation).
+                        </p>
+                        <button
+                          disabled={cameraPermStatus === 'requesting'}
+                          onClick={async () => {
+                            setCameraPermStatus('requesting');
+                            const result = await camera.requestPermission();
+                            setCameraPermStatus(result === 'granted' ? 'granted' : result);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-[13px] font-bold rounded-xl hover:bg-amber-700 disabled:opacity-60 transition-colors"
+                        >
+                          {cameraPermStatus === 'requesting'
+                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Requesting…</>
+                            : <><Shield className="w-4 h-4" /> Allow Camera Access</>}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ) : cameraPermStatus === 'error' ? (
-                  <div>
-                    <p className="text-[12px] text-red-700 font-medium mb-2">Camera error. Another app (e.g. Microsoft Teams) may be blocking it.</p>
-                    <p className="text-[11px] text-red-600">Close Teams or any app using your camera, then click Allow Camera Access again.</p>
-                    <button
-                      onClick={async () => {
-                        setCameraPermStatus('requesting');
-                        const result = await camera.requestPermission();
-                        setCameraPermStatus(result === 'granted' ? 'granted' : result);
-                      }}
-                      className="mt-2 px-3 py-1.5 bg-red-600 text-white text-[12px] font-bold rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Retry Camera Access
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-[12px] text-amber-700 font-medium mb-3">
-                      You must allow camera access <strong>before</strong> starting. This prevents the permission dialog from appearing during the fullscreen exam (which would count as a violation).
-                    </p>
-                    <button
-                      disabled={cameraPermStatus === 'requesting'}
-                      onClick={async () => {
-                        setCameraPermStatus('requesting');
-                        const result = await camera.requestPermission();
-                        setCameraPermStatus(result === 'granted' ? 'granted' : result);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-[13px] font-bold rounded-xl hover:bg-amber-700 disabled:opacity-60 transition-colors"
-                    >
-                      {cameraPermStatus === 'requesting'
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Requesting…</>
-                        : <><Shield className="w-4 h-4" /> Allow Camera Access</>}
-                    </button>
-                  </div>
-                )}
-              </div>
 
-              {/* Proctoring notice */}
-              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Shield className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-[13px] font-bold text-blue-800">Proctoring & Security Notice</h4>
+                  {/* Proctoring notice */}
+                  <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="w-4 h-4 text-blue-600" />
+                      <h4 className="text-[13px] font-bold text-blue-800">Proctoring & Security Notice</h4>
+                    </div>
+                    <div className="space-y-1.5 text-[12px] text-blue-700 font-medium">
+                      <p>• This assessment runs in <strong>locked fullscreen mode</strong>. Exiting fullscreen is a violation.</p>
+                      <p>• <strong>Tab switching, window minimising</strong>, and focus loss are monitored and logged.</p>
+                      <p>• <strong>Copy, paste, right-click</strong> and browser shortcuts (F12, Ctrl+Shift+I) are disabled.</p>
+                      <p>• After <strong>5 critical violations</strong> the assessment will auto-submit and be flagged.</p>
+                      <p>• <strong>Your webcam will be activated</strong> for AI-powered face monitoring. No video is recorded or uploaded — only violation events are logged.</p>
+                      <p>• All activity is recorded in real-time and reviewed by your institution.</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Development mode — proctoring fully off */
+                <div className="mb-6 bg-yellow-50 border border-yellow-300 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <h4 className="text-[13px] font-bold text-yellow-800">Development Mode — Proctoring Disabled</h4>
+                  </div>
+                  <p className="text-[12px] text-yellow-700 font-medium">
+                    Camera, fullscreen lock, and tab monitoring are <strong>OFF</strong>.
+                    Set <code className="bg-yellow-100 px-1 rounded">VITE_PROCTORING_ENABLED=true</code> in{' '}
+                    <code className="bg-yellow-100 px-1 rounded">.env.production</code> before deploying.
+                  </p>
                 </div>
-                <div className="space-y-1.5 text-[12px] text-blue-700 font-medium">
-                  <p>• This assessment runs in <strong>locked fullscreen mode</strong>. Exiting fullscreen is a violation.</p>
-                  <p>• <strong>Tab switching, window minimising</strong>, and focus loss are monitored and logged.</p>
-                  <p>• <strong>Copy, paste, right-click</strong> and browser shortcuts (F12, Ctrl+Shift+I) are disabled.</p>
-                  <p>• After <strong>5 critical violations</strong> the assessment will auto-submit and be flagged.</p>
-                  <p>• <strong>Your webcam will be activated</strong> for AI-powered face monitoring. No video is recorded or uploaded — only violation events are logged.</p>
-                  <p>• All activity is recorded in real-time and reviewed by your institution.</p>
-                </div>
-              </div>
+              )}
 
               <div className="mb-8">
                 <h3 className="text-[14px] font-bold text-gray-900 mb-4 uppercase tracking-wide">Assessment Instructions</h3>
@@ -623,7 +646,7 @@ const TakeAssessment = () => {
                 </button>
                 <button
                   onClick={handleBegin}
-                  disabled={cameraPermStatus !== 'granted'}
+                  disabled={PROCTORING_ENABLED && cameraPermStatus !== 'granted'}
                   className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-[14px] hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   <Lock className="w-4 h-4" /> Begin Secured Assessment <ChevronRight className="w-4 h-4" />
@@ -975,6 +998,7 @@ const TakeAssessment = () => {
                     questionText={q.question}
                     marks={q.marks}
                     boilerplateCode={q.boilerplate_code || q.starter_code}
+                    defaultLanguage={briefingInfo?.default_coding_language || 'python'}
                     onCodeSubmitted={({ passedCount, totalCount }) => {
                       setAnswer(qid, `[Code submitted: ${passedCount}/${totalCount} tests passed]`);
                     }}

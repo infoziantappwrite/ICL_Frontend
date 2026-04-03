@@ -1337,6 +1337,11 @@ export const codeAPI = {
   runCode: (data) =>
     apiCall('/code/run', { method: 'POST', body: JSON.stringify(data) }),
 
+  // POST /api/code/run-custom — run with student's own custom stdin (no test cases, raw output)
+  // Body: { code, language, custom_input }
+  runCustom: (data) =>
+    apiCall('/code/run-custom', { method: 'POST', body: JSON.stringify(data) }),
+
   // POST /api/code/submit — run against ALL test cases, upserts CodeSubmission
   // Body: { assessment_id, question_id, code, language }
   submitCode: (data) =>

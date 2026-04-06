@@ -235,18 +235,159 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 leading-snug">{ans.question_text}</p>
                           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ans.is_correct ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                              {ans.is_correct ? `+${ans.marks_earned} marks` : '0 marks'}
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              ans.marks_earned > 0
+                                ? ans.is_correct ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                : 'bg-red-100 text-red-600'
+                            }`}>
+                              {ans.marks_earned > 0 ? `+${ans.marks_earned} marks` : '0 marks'}
+                              {ans.question_type === 'coding' && ` (${ans.passed_count ?? 0}/${ans.total_count ?? 0} tests)`}
                             </span>
-                            <span className="text-[10px] text-gray-400">Student: <strong className="text-gray-700">{formatAnswer(ans.student_answer)}</strong></span>
-                            {!ans.is_correct && (<span className="text-[10px] text-gray-400">Correct: <strong className="text-green-700">{formatAnswer(ans.correct_answer)}</strong></span>)}
+                            {ans.question_type !== 'coding' && (
+                              <span className="text-[10px] text-gray-400">Student: <strong className="text-gray-700">{formatAnswer(ans.student_answer)}</strong></span>
+                            )}
+                            {ans.question_type === 'coding' && (
+                              <span className="text-[10px] text-gray-400">
+                                Code: <strong className="text-gray-700">{ans.student_code ? `${ans.code_language || 'submitted'}` : 'not submitted'}</strong>
+                              </span>
+                            )}
+                            {ans.question_type !== 'coding' && !ans.is_correct && (
+                              <span className="text-[10px] text-gray-400">Correct: <strong className="text-green-700">{formatAnswer(ans.correct_answer)}</strong></span>
+                            )}
                           </div>
                         </div>
                         <div className="shrink-0 text-gray-400 mt-1">{isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</div>
                       </button>
                       {isOpen && (
                         <div className="px-4 pb-4 space-y-3">
-                          {ans.options?.length > 0 && (
+                          {/* ── Coding question: submitted code + test results ── */}
+                          {ans.question_type === 'coding' && (
+                            <div className="space-y-3">
+                              {/* Summary bar */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-semibold text-gray-600">
+                                  Tests passed:&nbsp;
+                                  <strong className={ans.passed_count === ans.total_count && ans.total_count > 0 ? 'text-green-700' : 'text-amber-700'}>
+                                    {ans.passed_count ?? 0}/{ans.total_count ?? 0}
+                                  </strong>
+                                </span>
+                                {ans.code_language && (
+                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px] font-bold uppercase">
+                                    {ans.code_language}
+                                  </span>
+                                )}
+                                {ans.execution_status && ans.execution_status !== 'success' && (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-[10px] font-bold uppercase">
+                                    ⚠ {ans.execution_status.replace(/_/g, ' ')}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Overall error message (compile error / first runtime error) */}
+                              {ans.error_message && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+                                  <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-1">
+                                    {ans.execution_status === 'compile_error' ? 'Compilation Error' : 'Runtime Error'}
+                                  </p>
+                                  <pre className="text-xs text-red-800 font-mono whitespace-pre-wrap leading-relaxed">
+                                    {ans.error_message}
+                                  </pre>
+                                </div>
+                              )}
+
+                              {/* Submitted code */}
+                              {ans.student_code ? (
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Submitted Code</p>
+                                  <pre className="text-xs bg-gray-900 text-green-300 font-mono rounded-xl px-4 py-3 overflow-x-auto whitespace-pre-wrap max-h-64 border border-gray-700 leading-relaxed">
+                                    {ans.student_code}
+                                  </pre>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-400 italic bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                                  No code submitted for this question
+                                </p>
+                              )}
+
+                              {/* Test case breakdown */}
+                              {ans.test_results?.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Test Case Results</p>
+                                  <div className="space-y-1.5">
+                                    {ans.test_results.map((tc, ti) => {
+                                      const hasError = tc.stderr && tc.stderr.trim();
+                                      const isRuntimeErr = (tc.judge0_status_id ?? 0) >= 7;
+                                      const isTLE        = tc.judge0_status_id === 5;
+                                      const isCompileErr = tc.judge0_status_id === 6;
+                                      return (
+                                        <div key={ti} className={`rounded-xl border text-xs overflow-hidden ${
+                                          tc.passed ? 'border-green-200' : hasError ? 'border-red-200' : 'border-orange-200'
+                                        }`}>
+                                          {/* Test header */}
+                                          <div className={`flex items-center gap-2 px-3 py-2 ${
+                                            tc.passed ? 'bg-green-50' : hasError ? 'bg-red-50' : 'bg-orange-50'
+                                          }`}>
+                                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0 ${tc.passed ? 'bg-green-500' : hasError ? 'bg-red-500' : 'bg-orange-400'}`}>
+                                              {ti + 1}
+                                            </span>
+                                            <span className={`font-bold text-[10px] flex-1 ${tc.passed ? 'text-green-700' : hasError ? 'text-red-700' : 'text-orange-700'}`}>
+                                              {tc.passed ? '✓ Passed'
+                                                : isCompileErr ? '✗ Compilation Error'
+                                                : isRuntimeErr ? '✗ Runtime Error'
+                                                : isTLE        ? '✗ Time Limit Exceeded'
+                                                : '✗ Wrong Answer'}
+                                            </span>
+                                            <span className="text-[9px] text-gray-400 px-1.5 py-0.5 bg-white/70 rounded-full border border-gray-200">
+                                              {tc.is_hidden ? '🔒 Hidden' : '👁 Visible'}
+                                            </span>
+                                            {tc.execution_time && (
+                                              <span className="text-[9px] text-gray-400">⏱ {tc.execution_time}s</span>
+                                            )}
+                                          </div>
+                                          {/* Test body */}
+                                          <div className="px-3 py-2 space-y-1.5 bg-white">
+                                            {!tc.is_hidden && tc.input != null && (
+                                              <div className="flex gap-2 items-start">
+                                                <span className="text-[10px] text-gray-400 w-16 shrink-0 pt-0.5">Input</span>
+                                                <code className="text-gray-800 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded font-mono text-[11px] whitespace-pre-wrap">{tc.input || '(empty)'}</code>
+                                              </div>
+                                            )}
+                                            <div className="flex gap-2 items-start">
+                                              <span className="text-[10px] text-gray-400 w-16 shrink-0 pt-0.5">Expected</span>
+                                              <code className="text-gray-700 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded font-mono text-[11px]">{tc.expected_output}</code>
+                                            </div>
+                                            <div className="flex gap-2 items-start">
+                                              <span className="text-[10px] text-gray-400 w-16 shrink-0 pt-0.5">Got</span>
+                                              <code className={`px-2 py-0.5 rounded font-mono text-[11px] border ${
+                                                tc.passed
+                                                  ? 'text-green-800 bg-green-50 border-green-200'
+                                                  : tc.actual_output
+                                                  ? 'text-red-800 bg-red-50 border-red-200'
+                                                  : 'text-gray-400 bg-gray-50 border-gray-200 italic'
+                                              }`}>
+                                                {tc.actual_output ?? '(no output)'}
+                                              </code>
+                                            </div>
+                                            {hasError && (
+                                              <div className="flex gap-2 items-start">
+                                                <span className="text-[10px] text-red-400 w-16 shrink-0 pt-0.5 font-bold">Error</span>
+                                                <pre className="text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded font-mono text-[10px] whitespace-pre-wrap flex-1 leading-relaxed">
+                                                  {tc.stderr}
+                                                </pre>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ── MCQ / fill-up: options grid ── */}
+                          {ans.question_type !== 'coding' && ans.options?.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {ans.options.map(opt => {
                                 const isCorrectOpt = Array.isArray(ans.correct_answer) ? ans.correct_answer.includes(opt.label) : ans.correct_answer === opt.label;

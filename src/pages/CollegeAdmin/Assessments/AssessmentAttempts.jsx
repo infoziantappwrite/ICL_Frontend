@@ -12,7 +12,7 @@ import {
   BarChart2, ChevronRight, ClipboardList, Clock,
   X, ChevronDown, ChevronUp, Check, FileText,
   Eye, Trophy, Send, ShieldAlert, ShieldCheck, Shield,
-  AlertTriangle, Flag, Monitor,
+  AlertTriangle, Flag, Monitor, Loader,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -504,11 +504,92 @@ const PublishModal = ({ assessment, onClose, onPublished }) => {
 };
 
 /* ══════════════════════════════════════════════════════════════════════ */
+/* ─── Live elapsed timer (re-renders every second) ──────────────────── */
+const ElapsedTimer = ({ startedAt }) => {
+  const [elapsed, setElapsed] = useState(() =>
+    startedAt ? Math.floor((Date.now() - new Date(startedAt)) / 1000) : 0
+  );
+  useEffect(() => {
+    if (!startedAt) return;
+    const id = setInterval(() =>
+      setElapsed(Math.floor((Date.now() - new Date(startedAt)) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [startedAt]);
+  return <span>{fmtTime(elapsed)}</span>;
+};
+
+/* ─── In-Progress students panel ─────────────────────────────────────── */
+const InProgressSection = ({ students }) => {
+  if (!students || students.length === 0) return null;
+  return (
+    <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center gap-2">
+        <div className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center">
+          <Loader className="w-3.5 h-3.5 text-white animate-spin" />
+        </div>
+        <p className="font-bold text-amber-800 text-sm">
+          {students.length} Student{students.length !== 1 ? 's' : ''} Currently Taking Assessment
+        </p>
+        <span className="ml-auto flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block" />
+          LIVE
+        </span>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-amber-100 bg-amber-50/40">
+              {['#', 'Student', 'Email', 'Started At', 'Elapsed Time', 'Proctoring'].map(h => (
+                <th key={h} className="text-left text-[9px] font-black text-amber-500 uppercase tracking-wider px-4 py-2.5">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-amber-50">
+            {students.map((a, idx) => (
+              <tr key={a._id} className="hover:bg-amber-50/30 transition-colors">
+                <td className="px-4 py-3">
+                  <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-black flex items-center justify-center">
+                    {idx + 1}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <p className="font-bold text-gray-900 text-sm">{a.student_id?.fullName || '—'}</p>
+                  <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">In Progress</span>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-400">{a.student_id?.email || '—'}</td>
+                <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                  {a.started_at
+                    ? new Date(a.started_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })
+                    : '—'}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5 text-sm font-bold text-amber-700">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    {a.started_at ? <ElapsedTimer startedAt={a.started_at} /> : '—'}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <ProctoringPanel attempt={a} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════════════════════════════════ */
 const AssessmentAttempts = () => {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
   const [assessment, setAssessment] = useState(null);
   const [attempts, setAttempts] = useState([]);
+  const [inProgress, setInProgress] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
@@ -530,6 +611,7 @@ const AssessmentAttempts = () => {
       if (assRes.success) setAssessment(assRes.assessment);
       if (attRes.success) {
         setAttempts(attRes.attempts || []);
+        setInProgress(attRes.in_progress || []);
         setTotal(attRes.total || 0);
         setTotalPages(attRes.pages || 1);
       }
@@ -551,6 +633,7 @@ const AssessmentAttempts = () => {
 
   const stats = {
     total,
+    inProgressCount: inProgress.length,
     avg: attempts.length > 0 ? Math.round(attempts.reduce((s, a) => s + (a.score_percentage || 0), 0) / attempts.length) : 0,
     passed: attempts.filter(a => (a.score_percentage || 0) >= 50).length,
     topScore: attempts.length > 0 ? Math.max(...attempts.map(a => a.score_percentage || 0)) : 0,
@@ -697,15 +780,19 @@ const AssessmentAttempts = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
           {[
-            { label: 'Total Attempts', value: stats.total,      color: 'bg-blue-50 border-blue-100 text-blue-700' },
-            { label: 'Avg Score',      value: `${stats.avg}%`,  color: 'bg-cyan-50 border-cyan-100 text-cyan-700' },
-            { label: 'Passed (≥50%)',  value: stats.passed,     color: 'bg-green-50 border-green-100 text-green-700' },
-            { label: 'Top Score',      value: `${stats.topScore}%`, color: 'bg-indigo-50 border-indigo-100 text-indigo-700' },
+            { label: 'In Progress',    value: stats.inProgressCount, color: stats.inProgressCount > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-100 text-gray-400', live: stats.inProgressCount > 0 },
+            { label: 'Submitted',      value: stats.total,           color: 'bg-blue-50 border-blue-100 text-blue-700' },
+            { label: 'Avg Score',      value: `${stats.avg}%`,       color: 'bg-cyan-50 border-cyan-100 text-cyan-700' },
+            { label: 'Passed (≥50%)',  value: stats.passed,          color: 'bg-green-50 border-green-100 text-green-700' },
+            { label: 'Top Score',      value: `${stats.topScore}%`,  color: 'bg-indigo-50 border-indigo-100 text-indigo-700' },
             { label: 'Flagged', value: stats.flagged, icon: true, color: stats.flagged > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-100 text-gray-400' },
           ].map(s => (
-            <div key={s.label} className={`px-4 py-3 rounded-xl border ${s.color} text-center`}>
+            <div key={s.label} className={`px-4 py-3 rounded-xl border ${s.color} text-center relative overflow-hidden`}>
+              {s.live && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              )}
               {s.icon && s.value > 0
                 ? <div className="flex items-center justify-center gap-1"><ShieldAlert className="w-5 h-5" /><p className="text-2xl font-black tabular-nums">{s.value}</p></div>
                 : <p className="text-2xl font-black tabular-nums">{s.value}</p>}
@@ -720,14 +807,21 @@ const AssessmentAttempts = () => {
           </div>
         )}
 
+        {/* In-Progress students */}
+        <InProgressSection students={inProgress} />
+
         {/* Table */}
         {attempts.length === 0 ? (
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-16 text-center">
             <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Users className="w-7 h-7 text-blue-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-700 mb-1">No Attempts Yet</h3>
-            <p className="text-gray-400 text-sm">Students haven't taken this assessment yet.</p>
+            <h3 className="text-lg font-bold text-gray-700 mb-1">No Submitted Attempts Yet</h3>
+            <p className="text-gray-400 text-sm">
+              {inProgress.length > 0
+                ? `${inProgress.length} student${inProgress.length !== 1 ? 's are' : ' is'} currently taking the assessment.`
+                : "Students haven't taken this assessment yet."}
+            </p>
           </div>
         ) : (
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">

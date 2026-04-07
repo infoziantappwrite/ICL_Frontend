@@ -3,130 +3,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
-import { jobAPI } from '../api/Api';
+import { jobAPI, courseAPI, assessmentAttemptAPI } from '../api/Api';
 import StudentLayout from '../components/layout/StudentLayout';
 import {
-  Briefcase, ChevronRight, Edit, Star, Zap, AlertCircle,
-  Sparkles, MapPin, CheckCircle, Target, Clock, Users,
-  TrendingUp, Award, BookOpen, BarChart2, Rocket, Shield,
-  FileText, ArrowRight
+  Briefcase, ChevronRight, Edit, Star, Zap, Rocket, AlertCircle,
+  Clock, MapPin, Users, BookOpen, LayoutDashboard, Search,
+  FileText, ArrowRight, Code2, Sparkles, Target, CheckCircle
 } from 'lucide-react';
 
-// ─── Mock Data ───
-const MOCK_COURSES = [
-  {
-    id: 1,
-    title: 'Full Stack Web Development',
-    provider: 'ICL Academy',
-    tags: ['React', 'Node.js'],
-    rating: 4.8,
-    reviews: 2100,
-    duration: '48 hrs',
-    enrolled: 2400,
-    badge: 'Bestseller',
-    badgeColor: 'bg-amber-100 text-amber-700',
-    thumbBg: 'from-blue-700 to-blue-500',
-    icon: '⚛️',
-    price: 'Free',
-  },
-  {
-    id: 2,
-    title: 'Data Science Fundamentals',
-    provider: 'ICL Academy',
-    tags: ['Python', 'Pandas'],
-    rating: 4.7,
-    reviews: 1800,
-    duration: '36 hrs',
-    enrolled: 1900,
-    badge: 'Trending',
-    badgeColor: 'bg-green-100 text-green-700',
-    thumbBg: 'from-emerald-700 to-teal-500',
-    icon: '🐍',
-    price: 'Free',
-  },
-  {
-    id: 3,
-    title: 'Cloud Computing with AWS',
-    provider: 'ICL Academy',
-    tags: ['AWS', 'DevOps'],
-    rating: 4.6,
-    reviews: 980,
-    duration: '30 hrs',
-    enrolled: 1200,
-    badge: 'New',
-    badgeColor: 'bg-purple-100 text-purple-700',
-    thumbBg: 'from-purple-700 to-indigo-500',
-    icon: '☁️',
-    price: '₹499',
-  },
-];
-
-const MOCK_ASSESSMENTS = [
-  {
-    id: 1,
-    title: 'JavaScript Proficiency',
-    questions: 30,
-    duration: '45 mins',
-    level: 'Beginner to Intermediate',
-    tags: ['JS', 'ES6+'],
-    tagColors: ['bg-blue-50 text-blue-700', 'bg-indigo-50 text-indigo-700'],
-    iconBg: 'bg-blue-50',
-    icon: '💻',
-    btnColor: 'bg-blue-600 hover:bg-blue-700',
-    score: null,
-  },
-  {
-    id: 2,
-    title: 'Aptitude & Reasoning',
-    questions: 50,
-    duration: '60 mins',
-    level: 'All levels',
-    tags: ['Quant', 'Logical'],
-    tagColors: ['bg-amber-50 text-amber-700', 'bg-purple-50 text-purple-700'],
-    iconBg: 'bg-green-50',
-    icon: '🧠',
-    btnColor: 'bg-green-600 hover:bg-green-700',
-    score: 78,
-    scoreColor: 'text-green-600',
-    barColor: 'bg-green-500',
-  },
-  {
-    id: 3,
-    title: 'React Developer Quiz',
-    questions: 25,
-    duration: '30 mins',
-    level: 'Intermediate',
-    tags: ['React', 'Hooks'],
-    tagColors: ['bg-blue-50 text-blue-700', 'bg-purple-50 text-purple-700'],
-    iconBg: 'bg-purple-50',
-    icon: '⚛️',
-    btnColor: 'bg-purple-600 hover:bg-purple-700',
-    score: null,
-  },
-  {
-    id: 4,
-    title: 'SQL & Database Basics',
-    questions: 35,
-    duration: '40 mins',
-    level: 'Beginner',
-    tags: ['SQL', 'MySQL'],
-    tagColors: ['bg-orange-50 text-orange-700', 'bg-green-50 text-green-700'],
-    iconBg: 'bg-orange-50',
-    icon: '🗄️',
-    btnColor: 'bg-amber-600 hover:bg-amber-700',
-    score: 64,
-    scoreColor: 'text-amber-600',
-    barColor: 'bg-amber-500',
-  },
-];
-
-const TRENDING_SKILLS = [
-  { icon: '⚛️', name: 'React.js', jobs: '4,200 jobs' },
-  { icon: '🐍', name: 'Python', jobs: '3,800 jobs' },
-  { icon: '☁️', name: 'AWS Cloud', jobs: '2,900 jobs' },
-  { icon: '🤖', name: 'Gen AI / LLMs', jobs: '1,600 jobs' },
-  { icon: '📊', name: 'Data Analytics', jobs: '2,100 jobs' },
-];
 
 const TOP_COMPANIES = [
   { initial: 'I', name: 'Infosys', jobs: '142 openings', badge: 'Campus', badgeStyle: 'bg-blue-50 text-blue-700', logoBg: 'bg-blue-600' },
@@ -159,12 +43,9 @@ const Card = ({ children, className = '' }) => (
 );
 
 // ─── Section Header ───
-const SectionHeader = ({ title, onViewAll }) => (
-  <div className="flex items-center justify-between mb-3">
+const SectionHeader = ({ title }) => (
+  <div className="mb-3">
     <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-bold text-gray-900">{title}</h2>
-    <button onClick={onViewAll} className="text-blue-600 text-[12px] sm:text-[13px] md:text-[14px] font-semibold hover:underline">
-      View all
-    </button>
   </div>
 );
 
@@ -209,8 +90,8 @@ const FeedJobCard = ({ job, onClick }) => (
 );
 
 // ─── Course Card with Thumbnail ───
-const CourseCard = ({ course }) => (
-  <div className="bg-white border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all">
+const CourseCard = ({ course, onClick }) => (
+  <div onClick={onClick} className="bg-white border border-gray-100 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all">
     {/* Thumbnail */}
     <div className={`h-[90px] bg-gradient-to-br ${course.thumbBg} flex items-center justify-center relative overflow-hidden`}>
       <span className="text-4xl z-10 relative">{course.icon}</span>
@@ -226,14 +107,14 @@ const CourseCard = ({ course }) => (
       <div className="flex items-center gap-1 mt-1.5">
         <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
         <span className="text-[11px] font-semibold text-gray-700">{course.rating}</span>
-        <span className="text-[10px] text-gray-400">({(course.reviews / 1000).toFixed(1)}k)</span>
+        <span className="text-[10px] text-gray-400">({course.reviews >= 1000 ? (course.reviews / 1000).toFixed(1) + 'k' : course.reviews})</span>
       </div>
       <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400">
         <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{course.duration}</span>
-        <span className="flex items-center gap-1"><Users className="w-2.5 h-2.5" />{course.enrolled.toLocaleString()}</span>
+        <span className="flex items-center gap-1"><Users className="w-2.5 h-2.5" />{course.enrolled?.toLocaleString() || 0}</span>
       </div>
       <div className="flex flex-wrap gap-1 mt-2">
-        {course.tags.map((t, i) => (
+        {course.tags?.map((t, i) => (
           <span key={i} className="px-1.5 py-0.5 bg-gray-50 border border-gray-100 rounded text-[9px] md:text-[10px] text-gray-600">{t}</span>
         ))}
       </div>
@@ -241,7 +122,7 @@ const CourseCard = ({ course }) => (
     {/* Footer */}
     <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100">
       <span className="text-[13px] font-bold text-blue-600">{course.price}</span>
-      <button className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+      <button onClick={(e) => { e.stopPropagation(); onClick && onClick(e); }} className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors">
         Enroll
       </button>
     </div>
@@ -249,8 +130,8 @@ const CourseCard = ({ course }) => (
 );
 
 // ─── Assessment Card ───
-const AssessmentCard = ({ assessment }) => (
-  <div className="bg-white border border-gray-100 rounded-xl p-3 md:p-4 cursor-pointer hover:shadow-md transition-shadow flex gap-3">
+const AssessmentCard = ({ assessment, onStart }) => (
+  <div onClick={onStart} className="bg-white border border-gray-100 rounded-xl p-3 md:p-4 cursor-pointer hover:shadow-md transition-shadow flex gap-3">
     <div className={`w-11 h-11 rounded-xl ${assessment.iconBg} flex items-center justify-center text-xl flex-shrink-0`}>
       {assessment.icon}
     </div>
@@ -258,8 +139,8 @@ const AssessmentCard = ({ assessment }) => (
       <h4 className="font-bold text-[13px] md:text-[14px] text-gray-900 mb-0.5">{assessment.title}</h4>
       <p className="text-[11px] text-gray-500">{assessment.questions} questions · {assessment.duration} · {assessment.level}</p>
       <div className="flex flex-wrap gap-1.5 mt-2">
-        {assessment.tags.map((tag, i) => (
-          <span key={i} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${assessment.tagColors[i]}`}>{tag}</span>
+        {assessment.tags?.map((tag, i) => (
+          <span key={i} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${assessment.tagColors?.[i] || 'bg-gray-100 text-gray-700'}`}>{tag}</span>
         ))}
       </div>
       {assessment.score !== null && assessment.score !== undefined ? (
@@ -275,7 +156,7 @@ const AssessmentCard = ({ assessment }) => (
       ) : (
         <p className="text-[10px] text-gray-400 mt-2">Not taken yet</p>
       )}
-      <button className={`mt-2.5 text-[11px] font-bold px-3 py-1.5 rounded-full text-white transition-colors ${assessment.btnColor}`}>
+      <button onClick={(e) => { e.stopPropagation(); onStart && onStart(e); }} className={`mt-2.5 text-[11px] font-bold px-3 py-1.5 rounded-full text-white transition-colors ${assessment.btnColor}`}>
         {assessment.score !== null && assessment.score !== undefined ? 'Retake Test →' : 'Start Test →'}
       </button>
     </div>
@@ -286,7 +167,7 @@ const AssessmentCard = ({ assessment }) => (
 const JobGrid = ({ items }) => (
   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
     {items.map(job => (
-      <FeedJobCard key={job._id || job.id} job={job} onClick={() => {}} />
+      <FeedJobCard key={job._id || job.id} job={job} onClick={() => { }} />
     ))}
   </div>
 );
@@ -296,11 +177,15 @@ const ProfileDashboard = () => {
   const { user } = useAuth();
   const { profile, profileCompleteness, isLoading, fetchProfile } = useProfile();
   const [jobs, setJobs] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [assessments, setAssessments] = useState([]);
   const [activeTab, setActiveTab] = useState('Jobs');
   const [loadingFeeds, setLoadingFeeds] = useState(true);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+  const [loadingAssessments, setLoadingAssessments] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  useEffect(() => { fetchProfile(); loadJobs(); }, []);
+  useEffect(() => { fetchProfile(); loadJobs(); loadCourses(); loadAssessments(); }, []);
 
   useEffect(() => {
     if (user && (user._id || user.id)) {
@@ -325,6 +210,84 @@ const ProfileDashboard = () => {
       console.error(err);
     } finally {
       setLoadingFeeds(false);
+    }
+  };
+
+  const loadCourses = async () => {
+    try {
+      setLoadingCourses(true);
+      const res = await courseAPI.getAllCourses({ limit: 4, recommended: 'true' });
+      const list = res && (res.courses || res.data || res.results || []);
+      const mappedCourses = (Array.isArray(list) ? list : []).slice(0, 3).map((c, i) => {
+        const bgColors = ['from-blue-700 to-blue-500', 'from-emerald-700 to-teal-500', 'from-purple-700 to-indigo-500'];
+        const badgeColors = ['bg-amber-100 text-amber-700', 'bg-green-100 text-green-700', 'bg-purple-100 text-purple-700'];
+        const badges = ['Bestseller', 'Trending', 'New'];
+        return {
+          id: c._id || i,
+          title: c.title || 'Course Title',
+          provider: c.instructor?.name || c.provider || 'ICL Academy',
+          tags: (Array.isArray(c.tags) && c.tags.length > 0 ? c.tags : (c.category ? [c.category] : ['IT'])).map(t => typeof t === 'object' && t !== null ? (t.name || t.title || 'Tag') : String(t)),
+          rating: c.rating?.average?.toFixed(1) || 4.5,
+          reviews: c.rating?.count || 1200,
+          duration: typeof c.duration === 'object' && c.duration !== null ? (c.duration.hours ? `${c.duration.hours} hrs` : (c.duration.total ? `${c.duration.total} hrs` : (c.duration.value ? `${c.duration.value} hrs` : 'Flexible'))) : (c.duration ? String(c.duration) : 'Flexible'),
+          enrolled: typeof c.enrolledCount === 'object' && c.enrolledCount !== null ? (c.enrolledCount.count || c.enrolledCount.total || 1500) : (c.enrolledCount || 1500),
+          badge: badges[i % badges.length],
+          badgeColor: badgeColors[i % badgeColors.length],
+          thumbBg: bgColors[i % bgColors.length],
+          icon: c.icon || '⚛️',
+          price: typeof c.price === 'object' && c.price !== null ? (c.price.original === 0 && !c.price.discounted ? 'Free' : `₹${c.price.discounted || c.price.original || 0}`) : (c.price === 0 || !c.price ? 'Free' : String(c.price)),
+          _id: c._id
+        };
+      });
+      setCourses(mappedCourses);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
+  const loadAssessments = async () => {
+    try {
+      setLoadingAssessments(true);
+      const res = await assessmentAttemptAPI.getMyAssignedAssessments();
+      const list = res && (res.assessments || res.data || res.results || []);
+      const mappedAssessments = (Array.isArray(list) ? list : [])
+        .filter(a => a.status === 'pending')
+        .slice(0, 4)
+        .map((a, i) => {
+        const title = a.jd_id?.jobTitle || a.title || a.skill_id?.name || 'Skill Assessment';
+        const bgColors = ['bg-blue-50', 'bg-green-50', 'bg-purple-50', 'bg-orange-50'];
+        const iconList = ['💻', '🧠', '⚛️', '🗄️'];
+        const btnColors = ['bg-blue-600 hover:bg-blue-700', 'bg-green-600 hover:bg-green-700', 'bg-purple-600 hover:bg-purple-700', 'bg-amber-600 hover:bg-amber-700'];
+        const tagColorsList = [
+          ['bg-blue-50 text-blue-700', 'bg-indigo-50 text-indigo-700'],
+          ['bg-amber-50 text-amber-700', 'bg-purple-50 text-purple-700'],
+          ['bg-blue-50 text-blue-700', 'bg-purple-50 text-purple-700'],
+          ['bg-orange-50 text-orange-700', 'bg-green-50 text-green-700']
+        ];
+        return {
+          id: a._id || i,
+          title: title,
+          questions: a.questions?.length || a.total_questions || 30,
+          duration: a.duration_minutes ? `${a.duration_minutes} mins` : 'Flexible',
+          level: a.level || 'All levels',
+          tags: (Array.isArray(a.tags) && a.tags.length > 0 ? a.tags.slice(0, 2) : [a.level || 'Skill']).map(t => typeof t === 'object' && t !== null ? (t.name || t.title || 'Tag') : String(t)),
+          tagColors: tagColorsList[i % tagColorsList.length],
+          iconBg: bgColors[i % bgColors.length],
+          icon: iconList[i % iconList.length],
+          btnColor: btnColors[i % btnColors.length],
+          score: a.score || null,
+          scoreColor: (a.score || 0) >= 70 ? 'text-green-600' : 'text-amber-600',
+          barColor: (a.score || 0) >= 70 ? 'bg-green-500' : 'bg-amber-500',
+          _id: a._id
+        };
+      });
+      setAssessments(mappedAssessments);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingAssessments(false);
     }
   };
 
@@ -550,126 +513,37 @@ const ProfileDashboard = () => {
             {/* ─── MAIN FEED ─── */}
             <div className="col-span-1 md:col-span-9 space-y-4 sm:space-y-5">
 
-              {/* ── Banner ── */}
-              {showWelcome ? (
-                <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 rounded-xl p-4 md:p-6 text-white shadow relative overflow-hidden">
-                  <h2 className="text-[16px] sm:text-[18px] md:text-[24px] font-bold flex items-center gap-1.5 md:gap-2">
-                    <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-yellow-300" /> Welcome to ICL, {getFirstName()}!
-                  </h2>
-                  <p className="text-[12px] md:text-[14px] text-blue-100 mt-1 md:mt-2 max-w-xl">
-                    Your career journey starts here. Set up your profile so recruiters can find you.
-                  </p>
-                  <div className="mt-3 md:mt-4 flex flex-wrap gap-2 md:gap-3">
-                    <button onClick={() => { dismissWelcome(); navigate('/profile/edit'); }} className="bg-white text-blue-700 hover:bg-gray-50 px-3.5 md:px-5 py-1.5 md:py-2.5 rounded-full text-[12px] md:text-[14px] font-bold transition-colors shadow-sm">
-                      Complete Profile
-                    </button>
-                    <button onClick={dismissWelcome} className="px-3.5 md:px-5 py-1.5 md:py-2.5 rounded-full text-[12px] md:text-[14px] font-medium border border-white/30 hover:bg-white/10">
-                      Explore Jobs
-                    </button>
-                  </div>
-                  {/* Stats row */}
-                  <div className="mt-4 pt-4 border-t border-white/20 flex gap-6">
-                    {[['12,400+', 'Active Jobs'], ['800+', 'Companies'], ['92%', 'Placement Rate']].map(([val, label]) => (
-                      <div key={label}>
-                        <p className="text-[18px] font-extrabold">{val}</p>
-                        <p className="text-[11px] text-blue-200">{label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="absolute right-0 top-0 w-40 h-40 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-                </div>
-              ) : pct >= 100 ? (
-                <div className="bg-[#f0fdf4] rounded-xl p-4 md:p-6 border border-[#bbf7d0] flex flex-col sm:flex-row sm:items-center gap-3 md:gap-6">
-                  <div className="flex-1">
-                    <h2 className="text-[15px] sm:text-[17px] md:text-[22px] font-bold text-gray-900">{getFirstName()}, you have an All-Star Profile!</h2>
-                    <p className="text-[11px] sm:text-[12px] md:text-[13px] text-gray-600 mt-1 md:mt-1.5">Stand out further by passing a skill assessment</p>
-                    <button onClick={() => setActiveTab('Assessments')} className="mt-2.5 md:mt-4 bg-[#16a34a] hover:bg-[#15803d] text-white px-3.5 md:px-5 py-1.5 md:py-2.5 rounded-full text-[12px] md:text-[13px] font-bold flex items-center gap-1.5 w-fit shadow-sm">
-                      <Target className="w-3.5 h-3.5 md:w-4 md:h-4" /> Take Assessment
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
-                    <CheckCircle className="w-10 h-10 text-[#16a34a]" />
-                    <span className="text-[12px] md:text-[13px] font-semibold text-[#166534]">Certified Profile</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-[#fff9ed] rounded-xl p-4 md:p-6 border border-[#ffe0b2]">
-                  <h2 className="text-[15px] sm:text-[17px] md:text-[22px] font-bold text-gray-900">{getFirstName()}, you are missing out on key features</h2>
-                  <p className="text-[11px] sm:text-[12px] md:text-[13px] text-gray-600 mt-1 md:mt-1.5">Complete your profile to unlock all features</p>
-                  <button onClick={() => navigate('/profile/edit')} className="mt-2.5 md:mt-4 bg-[#b45309] hover:bg-[#92400e] text-white px-3.5 md:px-5 py-1.5 md:py-2.5 rounded-full text-[12px] md:text-[13px] font-bold flex items-center gap-1.5 w-fit shadow-sm">
-                    <Star className="w-3.5 h-3.5 md:w-4 md:h-4" /> Complete Profile
-                  </button>
-                </div>
-              )}
-
-              {/* ══════════════════════════════════════
-                  FEATURED COURSE BANNER
-              ══════════════════════════════════════ */}
-              <div className="rounded-xl overflow-hidden grid grid-cols-1 sm:grid-cols-2 shadow-sm">
-                {/* Left: Info */}
-                <div className="bg-[#0f172a] p-5 md:p-6">
-                  <span className="inline-block bg-blue-900/50 text-blue-300 text-[11px] font-semibold px-3 py-1 rounded-full mb-3">
-                    ✦ Featured Course
-                  </span>
-                  <h2 className="text-[16px] md:text-[20px] font-extrabold text-white leading-snug">
-                    Full Stack Web Development Bootcamp
-                  </h2>
-                  <p className="text-[12px] text-slate-400 mt-2 leading-relaxed">
-                    Master React, Node.js, MongoDB & more. Build 10 real projects and land your first dev job.
-                  </p>
-                  <div className="flex flex-wrap gap-4 mt-3 text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />48 Hours</span>
-                    <span className="flex items-center gap-1"><Star className="w-3 h-3 fill-amber-400 text-amber-400" />4.9 Rating</span>
-                    <span className="flex items-center gap-1"><Users className="w-3 h-3" />2,400 Enrolled</span>
-                  </div>
-                  <button
-                    onClick={() => navigate('/dashboard/student/courses')}
-                    className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-[13px] px-5 py-2 rounded-full transition-all shadow"
-                  >
-                    Enroll for Free <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                {/* Right: Visual */}
-                <div className="bg-gradient-to-br from-blue-700 to-indigo-600 flex items-center justify-center p-6 relative overflow-hidden min-h-[140px]">
-                  <div className="text-center z-10 relative">
-                    <span className="text-6xl block">💻</span>
-                    <p className="text-white/80 text-[11px] mt-2">Live + Recorded Sessions</p>
-                    <p className="text-white/50 text-[10px] mt-1">Certificate on Completion</p>
-                  </div>
-                  {/* Decorative dots */}
-                  <div className="absolute top-3 right-3 grid grid-cols-4 gap-1.5 opacity-20">
-                    {Array.from({ length: 16 }).map((_, i) => (
-                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-white" />
-                    ))}
-                  </div>
-                </div>
+              {/* ── Welcome Note ── */}
+              <div className="mb-2">
+                <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+                  Hi, <span className="text-blue-600">Welcome {getUserName()}!</span>
+                </h1>
+                <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+                  Here's what's happening with your career profile today.
+                </p>
               </div>
 
               {/* ══════════════════════════════════════
                   JOBS BASED ON APPLIES (with tabs)
               ══════════════════════════════════════ */}
               <div>
-                <div className="flex items-center justify-between mb-2 md:mb-3">
-                  <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-bold text-gray-900">Jobs based on your applies</h2>
-                  <button onClick={() => navigate('/dashboard/student/jobs')} className="text-blue-600 text-[12px] sm:text-[13px] md:text-[14px] font-semibold hover:underline">View all</button>
-                </div>
-
-                {/* Tab bar */}
-                <div className="flex items-center gap-0 border-b-2 border-gray-200 mb-3 overflow-x-auto hide-scrollbar">
-                  {['Jobs', 'Courses', 'Assessments'].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`pb-2 md:pb-3 px-3 md:px-4 text-[12px] sm:text-[13px] md:text-[14px] font-semibold flex-shrink-0 relative transition-colors ${activeTab === tab ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                      {tab} {tab === 'Jobs' && `(${jobs.length})`}
-                      {activeTab === tab && <span className="absolute bottom-0 left-0 right-0 h-[2px] md:h-[3px] bg-blue-600 rounded-t" />}
-                    </button>
-                  ))}
+                <div className="border-b-2 border-gray-200 mb-4">
+                  <div className="flex items-center gap-0 overflow-x-auto hide-scrollbar">
+                    {['Jobs', 'Assessments'].map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`pb-2 md:pb-3 px-3 md:px-4 text-[12px] sm:text-[13px] md:text-[14px] font-semibold flex-shrink-0 relative transition-colors ${activeTab === tab ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        {tab} {tab === 'Jobs' ? `(${jobs.length})` : `(${assessments.length})`}
+                        {activeTab === tab && <span className="absolute bottom-0 left-0 right-0 h-[2px] md:h-[3px] bg-blue-600 rounded-t" />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Tab content */}
-                {loadingFeeds ? (
+                {loadingFeeds && activeTab === 'Jobs' ? (
                   <SkeletonGrid count={4} />
                 ) : activeTab === 'Jobs' ? (
                   jobs.length > 0 ? <JobGrid items={jobs} /> : (
@@ -678,76 +552,45 @@ const ProfileDashboard = () => {
                       No jobs found
                     </div>
                   )
-                ) : activeTab === 'Courses' ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
-                    {MOCK_COURSES.map(c => <CourseCard key={c.id} course={c} />)}
-                  </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {MOCK_ASSESSMENTS.map(a => <AssessmentCard key={a.id} assessment={a} />)}
-                  </div>
-                )}
-              </div>
-
-              {/* ══════════════════════════════════════
-                  TRENDING SKILLS
-              ══════════════════════════════════════ */}
-              <div>
-                <SectionHeader title="Trending Skills to Learn" onViewAll={() => navigate('/dashboard/student/courses')} />
-                <div className="flex flex-wrap gap-2">
-                  {TRENDING_SKILLS.map((skill, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-100 rounded-xl cursor-pointer hover:border-blue-200 hover:bg-blue-50 transition-all flex-1 min-w-[120px]"
-                    >
-                      <span className="text-[18px]">{skill.icon}</span>
-                      <div>
-                        <p className="text-[12px] font-bold text-gray-900">{skill.name}</p>
-                        <p className="text-[10px] text-gray-500">{skill.jobs}</p>
+                  loadingAssessments ? <SkeletonGrid count={2} /> : (
+                    assessments.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {assessments.map(a => <AssessmentCard key={a.id} assessment={a} onStart={() => navigate(`/dashboard/student/assessments/${a._id}/take`)} />)}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ) : <div className="text-center py-8 text-[12px] text-gray-500">no assessment</div>
+                  )
+                )}
               </div>
 
               {/* ══════════════════════════════════════
                   FEATURED COURSES SECTION
               ══════════════════════════════════════ */}
               <div>
-                <SectionHeader title="Top Courses for You" onViewAll={() => navigate('/dashboard/student/courses')} />
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
-                  {MOCK_COURSES.map(c => <CourseCard key={c.id} course={c} />)}
-                </div>
+                <SectionHeader title="Top Courses for You" />
+                {loadingCourses ? <SkeletonGrid count={3} /> : (
+                  courses.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
+                      {courses.map(c => <CourseCard key={c.id} course={c} onClick={() => navigate(`/dashboard/student/courses/${c._id}`)} />)}
+                    </div>
+                  ) : <div className="text-center py-8 text-[12px] text-gray-500">No courses available</div>
+                )}
               </div>
 
               {/* ══════════════════════════════════════
                   ASSESSMENTS SECTION
               ══════════════════════════════════════ */}
               <div>
-                <SectionHeader title="Skill Assessments" onViewAll={() => navigate('/dashboard/student/assessments')} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {MOCK_ASSESSMENTS.map(a => <AssessmentCard key={a.id} assessment={a} />)}
-                </div>
+                <SectionHeader title="Skill Assessments" />
+                {loadingAssessments ? <SkeletonGrid count={2} /> : (
+                  assessments.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {assessments.map(a => <AssessmentCard key={a.id} assessment={a} onStart={() => navigate(`/dashboard/student/assessments/${a._id}/take`)} />)}
+                    </div>
+                  ) : <div className="text-center py-8 text-[12px] text-gray-500">No assessments available</div>
+                )}
               </div>
 
-              {/* ══════════════════════════════════════
-                  TOP COMPANIES HIRING
-              ══════════════════════════════════════ */}
-              <div>
-                <SectionHeader title="Top Companies Hiring Now" onViewAll={() => navigate('/dashboard/student/jobs')} />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {TOP_COMPANIES.map((c, i) => (
-                    <div key={i} className="bg-white border border-gray-100 rounded-xl p-3 text-center cursor-pointer hover:shadow-md transition-shadow">
-                      <div className={`w-11 h-11 rounded-xl ${c.logoBg} flex items-center justify-center text-white font-bold text-[18px] mx-auto mb-2`}>
-                        {c.initial}
-                      </div>
-                      <p className="text-[13px] font-bold text-gray-900">{c.name}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">{c.jobs}</p>
-                      <span className={`inline-block mt-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full ${c.badgeStyle}`}>{c.badge}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               {/* ══════════════════════════════════════
                   RESUME BOOSTER BANNER
@@ -774,22 +617,6 @@ const ProfileDashboard = () => {
                 </div>
               </div>
 
-              {/* ══════════════════════════════════════
-                  JOBS BASED ON PROFILE
-              ══════════════════════════════════════ */}
-              <div>
-                <SectionHeader title="Jobs based on your profile" onViewAll={() => navigate('/dashboard/student/jobs')} />
-                {loadingFeeds ? (
-                  <SkeletonGrid count={4} />
-                ) : jobs.length > 0 ? (
-                  <JobGrid items={jobs.slice(0, 4)} />
-                ) : (
-                  <div className="text-center py-8 text-gray-500 text-[12px]">
-                    <Briefcase className="w-7 h-7 text-gray-300 mx-auto mb-1.5" />
-                    Complete your profile to see recommendations
-                  </div>
-                )}
-              </div>
 
             </div>
           </div>

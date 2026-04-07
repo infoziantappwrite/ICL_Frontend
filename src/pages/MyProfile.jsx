@@ -11,7 +11,7 @@ import {
   Briefcase, GraduationCap, Target,
   Upload, Download, Plus, Loader2,
   CheckCircle, Clock, Code, BookOpen, FileText,
-  ChevronDown, Trash2
+  ChevronDown, Trash2, AlertTriangle
 } from 'lucide-react';
 
 // ─── Card ──────────────────────────────────────────────────────────────────
@@ -64,6 +64,50 @@ const ActionRow = ({ onSave, onCancel, saving }) => (
     </button>
   </div>
 );
+
+const ConfirmDeleteModal = ({ open, documentLabel, onCancel, onConfirm, loading }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
+        <div className="border-b border-gray-100 bg-gradient-to-r from-red-50 via-white to-white px-6 py-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-[18px] font-bold text-gray-900">Delete document?</h3>
+              <p className="mt-1 text-[13px] leading-relaxed text-gray-500">
+                This will permanently remove your {documentLabel}. You can upload it again later if needed.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-5">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="rounded-xl border border-gray-200 px-4 py-2 text-[13px] font-bold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-[13px] font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {loading ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Shared styles ─────────────────────────────────────────────────────────
 const iCls = 'w-full px-3 py-2 border border-gray-200 rounded-xl text-[13px] focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition bg-white';
@@ -356,6 +400,7 @@ const MyProfile = () => {
   const [saving, setSaving] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
   const [idProofFile, setIdProofFile] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   // Upload progress states
   const [resumeProgress, setResumeProgress] = useState(0);
@@ -460,6 +505,20 @@ const MyProfile = () => {
     setIdProofFile(null);
     setResumeProgress(0);
     setIdProofProgress(0);
+  };
+
+  const openDeleteModal = (fileType, fileId) => {
+    if (!fileId) return;
+    setPendingDelete({
+      fileType,
+      fileId,
+      label: fileType === 'resume' ? 'resume' : 'ID proof',
+    });
+  };
+
+  const closeDeleteModal = () => {
+    if (saving) return;
+    setPendingDelete(null);
   };
 
   // ── Generic save for non-file sections ──
@@ -615,7 +674,6 @@ const MyProfile = () => {
   // Quick links
   const quickLinks = [
     { id: 'sec-resume', label: 'Resume', badge: !resumeUrl ? 'Update' : null, bc: 'text-blue-600' },
-    { id: 'sec-headline', label: 'Resume headline', badge: !profile?.currentRole ? 'Add' : null, bc: 'text-green-600' },
     { id: 'sec-skills', label: 'Key skills', badge: !profile?.primarySkills?.length ? 'Add' : null, bc: 'text-green-600' },
     { id: 'sec-education', label: 'Education', badge: !profile?.collegeName ? 'Add' : null, bc: 'text-green-600' },
     { id: 'sec-professional', label: 'Professional details', badge: !profile?.currentStatus ? 'Add' : null, bc: 'text-green-600' },
@@ -879,26 +937,6 @@ const MyProfile = () => {
               </Card>
 
               {/* ── RESUME HEADLINE ── */}
-              <Card id="sec-headline">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Resume headline</h2>
-                  <EditBtn onClick={() => openEdit('headline')} />
-                </div>
-                {editing === 'headline' ? (
-                  <div>
-                    <label className={lCls}>Headline</label>
-                    <textarea rows={2} className={iCls + ' resize-none'}
-                      value={draftProfessional.currentRole}
-                      onChange={e => setDraftProfessional(p => ({ ...p, currentRole: e.target.value }))}
-                      placeholder="e.g. Entry level Full Stack Developer" />
-                    <ActionRow onSave={saveProfessional} onCancel={closeEdit} saving={saving} />
-                  </div>
-                ) : (
-                  <p className="text-[14px] text-gray-700 font-medium">
-                    {profile?.currentRole || <span className="text-gray-400">Add a headline to describe your role</span>}
-                  </p>
-                )}
-              </Card>
 
               {/* ── KEY SKILLS (primary + secondary + langs + tools merged) ── */}
               <Card id="sec-skills">

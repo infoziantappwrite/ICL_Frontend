@@ -1,18 +1,25 @@
 // src/components/assessment/CodeEditor.jsx
-// Full-featured code editor for coding assessment questions
-// Uses a textarea with monospace font (no external deps needed)
-//
-// Run modes:
-//   "Test Cases"   — runs against the question's visible test cases (pass/fail shown)
-//   "Custom Input" — student types their own stdin; raw output shown, no pass/fail
+// Upgraded: Monaco Editor replaces textarea
+// Features: syntax highlighting, real-time validation, IntelliSense
+// All Judge0 API calls (run / run-custom / submit) remain unchanged.
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Editor, { useMonaco } from '@monaco-editor/react';
 import {
   Play, Send, ChevronDown, Loader2, CheckCircle2, XCircle,
   Terminal, RefreshCw, Code2, Eye, EyeOff, AlertTriangle,
   Clock, Keyboard, FlaskConical,
 } from 'lucide-react';
 import { codeAPI } from '../../api/Api';
+
+// ── Language → Monaco language id mapping ──────────────────────
+const MONACO_LANG = {
+  python:     'python',
+  javascript: 'javascript',
+  java:       'java',
+  cpp:        'cpp',
+  c:          'c',
+};
 
 // ── Default starter templates ──────────────────────────────────
 const STARTERS = {
@@ -23,6 +30,74 @@ const STARTERS = {
   c:          `#include <stdio.h>\n\nint main() {\n    // Write your solution here\n    return 0;\n}\n`,
 };
 
+// ── Monaco editor options ───────────────────────────────────────
+const EDITOR_OPTIONS = {
+  fontSize: 13,
+  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, 'Courier New', monospace",
+  fontLigatures: true,
+  minimap: { enabled: false },
+  scrollBeyondLastLine: false,
+  lineNumbers: 'on',
+  roundedSelection: true,
+  automaticLayout: true,
+  tabSize: 4,
+  insertSpaces: true,
+  wordWrap: 'on',
+  padding: { top: 12, bottom: 12 },
+  scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+  overviewRulerLanes: 0,
+  renderLineHighlight: 'line',
+  cursorBlinking: 'smooth',
+  cursorSmoothCaretAnimation: 'on',
+  smoothScrolling: true,
+  // IntelliSense / suggestions
+  quickSuggestions: { other: true, comments: true, strings: true },
+  suggestOnTriggerCharacters: true,
+  acceptSuggestionOnEnter: 'on',
+  parameterHints: { enabled: true },
+  hover: { enabled: true },
+  // Validation
+  'semanticHighlighting.enabled': true,
+};
+
+// ── Monaco theme definition (matches existing dark bg) ─────────
+const DARK_THEME = {
+  base: 'vs-dark',
+  inherit: true,
+  rules: [
+    { token: 'comment',        foreground: '6b7280', fontStyle: 'italic' },
+    { token: 'keyword',        foreground: '818cf8' },
+    { token: 'string',         foreground: '34d399' },
+    { token: 'number',         foreground: 'fb923c' },
+    { token: 'type',           foreground: '38bdf8' },
+    { token: 'function',       foreground: 'fbbf24' },
+    { token: 'variable',       foreground: 'e2e8f0' },
+    { token: 'operator',       foreground: 'f472b6' },
+    { token: 'delimiter',      foreground: '94a3b8' },
+    { token: 'annotation',     foreground: 'a78bfa' },
+  ],
+  colors: {
+    'editor.background':           '#030712',
+    'editor.foreground':           '#e2e8f0',
+    'editor.lineHighlightBackground': '#111827',
+    'editorLineNumber.foreground': '#374151',
+    'editorLineNumber.activeForeground': '#6b7280',
+    'editor.selectionBackground':  '#1e3a5f',
+    'editor.inactiveSelectionBackground': '#172a45',
+    'editorCursor.foreground':     '#60a5fa',
+    'editorWidget.background':     '#111827',
+    'editorWidget.border':         '#1f2937',
+    'editorSuggestWidget.background': '#111827',
+    'editorSuggestWidget.border':  '#1f2937',
+    'editorSuggestWidget.selectedBackground': '#1e3a5f',
+    'editorHoverWidget.background': '#111827',
+    'editorHoverWidget.border':    '#1f2937',
+    'scrollbarSlider.background':  '#1f2937',
+    'scrollbarSlider.hoverBackground': '#374151',
+  },
+};
+
+// ── Small UI sub-components (unchanged from original) ──────────
 const StatusBadge = ({ passed, isHidden }) => {
   if (isHidden && !passed) {
     return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Hidden</span>;
@@ -38,12 +113,17 @@ const StatusBadge = ({ passed, isHidden }) => {
   );
 };
 
-// Test Cases result panel
 const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMessage }) => {
   const [expanded, setExpanded] = useState(null);
   if (!results?.length && !errorMessage) return null;
 
-  // Human-readable label based on Judge0 status id stored in result
+  // ── Hide hidden test cases from students completely ──────────
+  // Students only see visible test cases in the results panel.
+  // Hidden test cases are used for scoring only (handled server-side).
+  const visibleResults = (results || []).filter((tc) => !tc.is_hidden);
+  const visiblePassed  = visibleResults.filter((tc) => tc.passed).length;
+  const visibleTotal   = visibleResults.length;
+
   const getStatusLabel = (tc) => {
     if (tc.passed) return null;
     const s = tc.judge0_status_id ?? 0;
@@ -57,22 +137,22 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
   return (
     <div className="border-t border-gray-100">
       <div className={`px-4 py-2.5 flex items-center justify-between text-sm font-semibold ${
-        errorMessage ? 'bg-red-50' : passedCount === totalCount ? 'bg-green-50' : 'bg-amber-50'
+        errorMessage ? 'bg-red-50' : visiblePassed === visibleTotal ? 'bg-green-50' : 'bg-amber-50'
       }`}>
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-gray-500" />
           <span className="text-gray-700">{runType === 'run' ? 'Run Results' : 'Submit Results'}</span>
-          {!errorMessage && results?.length > 0 && (
-            <span className={`font-black ${passedCount === totalCount ? 'text-green-700' : 'text-amber-700'}`}>
-              {passedCount}/{totalCount} passed
+          {!errorMessage && visibleResults.length > 0 && (
+            <span className={`font-black ${visiblePassed === visibleTotal ? 'text-green-700' : 'text-amber-700'}`}>
+              {visiblePassed}/{visibleTotal} passed
             </span>
           )}
         </div>
         {errorMessage && <span className="text-red-600 text-xs font-medium truncate max-w-xs">{errorMessage}</span>}
       </div>
-      {results && results.length > 0 && (
+      {visibleResults.length > 0 && (
         <div className="divide-y divide-gray-50 max-h-64 overflow-y-auto">
-          {results.map((tc, idx) => {
+          {visibleResults.map((tc, idx) => {
             const statusLabel = getStatusLabel(tc);
             const hasError    = tc.stderr && tc.stderr.trim();
             return (
@@ -81,9 +161,9 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
                   onClick={() => setExpanded(expanded === idx ? null : idx)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors"
                 >
-                  <StatusBadge passed={tc.passed} isHidden={tc.is_hidden} />
+                  <StatusBadge passed={tc.passed} isHidden={false} />
                   <span className="text-xs text-gray-600 flex-1">
-                    Test Case {idx + 1}{tc.is_hidden && <span className="ml-1 text-gray-400">(Hidden)</span>}
+                    Test Case {idx + 1}
                     {!tc.passed && statusLabel && (
                       <span className="ml-2 text-[10px] font-bold text-red-500">— {statusLabel}</span>
                     )}
@@ -110,7 +190,6 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
                     <div>
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Your Output</p>
                       {tc.actual_output != null ? (
-                        // FIXED: check != null so empty string "" is treated as real output
                         <pre className={`text-xs border rounded-lg px-3 py-2 font-mono overflow-x-auto whitespace-pre-wrap ${
                           tc.passed ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'
                         }`}>{tc.actual_output === '' ? '(empty output)' : tc.actual_output}</pre>
@@ -139,12 +218,9 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
   );
 };
 
-// Custom Input result panel — raw stdout, no pass/fail
 const CustomOutputPanel = ({ result }) => {
   if (!result) return null;
-  // FIXED: hasOutput is true even when output is "" (empty string) — that IS output.
-  // Only null means Judge0 returned nothing at all.
-  const hasOutput    = result.output != null;
+  const hasOutput = result.stdout != null;
   const hasError     = result.stderr != null && result.stderr !== '';
   const isCompileErr = result.execution_status === 'compile_error';
   const isTimeout    = result.execution_status === 'timeout';
@@ -170,7 +246,7 @@ const CustomOutputPanel = ({ result }) => {
           <div>
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Output</p>
             <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap leading-relaxed">
-              {result.output === '' ? '(empty output)' : result.output}
+              {result.stdout === '' ? '(empty output)' : result.stdout}
             </pre>
           </div>
         )}
@@ -190,7 +266,7 @@ const CustomOutputPanel = ({ result }) => {
   );
 };
 
-// ── Main CodeEditor ────────────────────────────────────────────
+// ── Main CodeEditor ─────────────────────────────────────────────
 const CodeEditor = ({
   assessmentId,
   questionId,
@@ -201,6 +277,8 @@ const CodeEditor = ({
   onCodeSubmitted,
   disabled = false,
 }) => {
+  const monaco = useMonaco();
+
   const [languages,     setLanguages]     = useState([]);
   const [language,      setLanguage]      = useState(defaultLanguage || 'python');
   const [code,          setCode]          = useState('');
@@ -210,32 +288,62 @@ const CodeEditor = ({
   const [submitting,    setSubmitting]    = useState(false);
   const [submitted,     setSubmitted]     = useState(false);
   const [showEditor,    setShowEditor]    = useState(true);
+  const [editorReady,   setEditorReady]   = useState(false);
 
   // Custom input state
-  const [inputMode,     setInputMode]     = useState('testcases'); // 'testcases' | 'custom'
+  const [inputMode,     setInputMode]     = useState('testcases');
   const [customInput,   setCustomInput]   = useState('');
   const [customResult,  setCustomResult]  = useState(null);
   const [runningCustom, setRunningCustom] = useState(false);
 
-  const textareaRef = useRef(null);
+  const editorRef = useRef(null);
 
   const getStarter = useCallback((lang) => {
     if (boilerplateCode) return boilerplateCode;
     return STARTERS[lang] || '';
   }, [boilerplateCode]);
 
+  // Register custom Monaco theme once monaco is available
+  useEffect(() => {
+    if (!monaco) return;
+    monaco.editor.defineTheme('icl-dark', DARK_THEME);
+    monaco.editor.setTheme('icl-dark');
+  }, [monaco]);
+
+  // Configure JS/TS IntelliSense defaults
+  useEffect(() => {
+    if (!monaco) return;
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation:   false,
+    });
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      target:   monaco.languages.typescript.ScriptTarget.ES2020,
+      allowNonTsExtensions: true,
+    });
+  }, [monaco]);
+
+  // Fetch available languages from backend
   useEffect(() => {
     codeAPI.getLanguages().then(res => {
       if (res?.data?.length) setLanguages(res.data);
     }).catch(() => {});
   }, []);
 
+  // Load saved code / starter on mount
   useEffect(() => {
-    if (!assessmentId || !questionId) { setCode(getStarter(language)); return; }
+    if (!assessmentId || !questionId) {
+      setCode(getStarter(language));
+      return;
+    }
     codeAPI.getHistory(assessmentId, questionId).then(res => {
       if (res?.data?.length) {
         const last = res.data[0];
-        if (last.code) { setCode(last.code); setLanguage(last.language || defaultLanguage || 'python'); return; }
+        if (last.code) {
+          setCode(last.code);
+          setLanguage(last.language || defaultLanguage || 'python');
+          return;
+        }
       }
       setCode(getStarter(language));
     }).catch(() => setCode(getStarter(language)));
@@ -245,6 +353,21 @@ const CodeEditor = ({
     setLanguage(lang);
     const isDefault = Object.values(STARTERS).includes(code) || code === boilerplateCode || code === '';
     if (isDefault) setCode(getStarter(lang));
+  };
+
+  // Monaco editor mount callback
+  const handleEditorDidMount = (editor) => {
+    editorRef.current = editor;
+    setEditorReady(true);
+
+    // Add keyboard shortcut: Ctrl/Cmd+Enter → Run
+    editor.addCommand(
+      (monaco?.KeyMod?.CtrlCmd ?? 0) | (monaco?.KeyCode?.Enter ?? 0),
+      () => {
+        if (inputMode === 'testcases') handleRun();
+        else handleRunCustom();
+      }
+    );
   };
 
   const handleRun = async () => {
@@ -282,14 +405,15 @@ const CodeEditor = ({
     } finally { setSubmitting(false); }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const ta = textareaRef.current;
-      const start = ta.selectionStart, end = ta.selectionEnd;
-      const next = code.substring(0, start) + '    ' + code.substring(end);
-      setCode(next);
-      requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 4; });
+  const handleReset = () => {
+    setCode(getStarter(language));
+    setRunResult(null);
+    setSubmitResult(null);
+    setCustomResult(null);
+    // Also reset model markers
+    if (monaco && editorRef.current) {
+      const model = editorRef.current.getModel();
+      if (model) monaco.editor.setModelMarkers(model, 'owner', []);
     }
   };
 
@@ -298,10 +422,12 @@ const CodeEditor = ({
   return (
     <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
 
-      {/* Toolbar */}
+      {/* ── Toolbar ─────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 border-b border-gray-700">
         <Code2 className="w-4 h-4 text-blue-400 shrink-0" />
         <span className="text-xs font-bold text-gray-300 flex-1">Code Editor</span>
+
+        {/* Language selector */}
         <div className="relative">
           <select
             value={language}
@@ -311,41 +437,58 @@ const CodeEditor = ({
           >
             {languages.length > 0
               ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
-              : ['python','javascript','java','cpp','c'].map(l => (
+              : ['python', 'javascript', 'java', 'cpp', 'c'].map(l => (
                   <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
                 ))}
           </select>
           <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
+
+        {/* Reset */}
         <button
-          onClick={() => { setCode(getStarter(language)); setRunResult(null); setSubmitResult(null); setCustomResult(null); }}
-          disabled={disabled || submitted} title="Reset to starter"
+          onClick={handleReset}
+          disabled={disabled || submitted}
+          title="Reset to starter"
           className="p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors disabled:opacity-40"
-        ><RefreshCw className="w-3.5 h-3.5" /></button>
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Toggle editor visibility */}
         <button
-          onClick={() => setShowEditor(p => !p)} title={showEditor ? 'Hide editor' : 'Show editor'}
+          onClick={() => setShowEditor(p => !p)}
+          title={showEditor ? 'Hide editor' : 'Show editor'}
           className="p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors"
-        >{showEditor ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
+        >
+          {showEditor ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        </button>
       </div>
 
-      {/* Code textarea */}
+      {/* ── Monaco Editor ────────────────────────────────────── */}
       {showEditor && (
-        <div className="relative bg-gray-950">
-          <textarea
-            ref={textareaRef}
+        <div className="bg-gray-950" style={{ minHeight: 320 }}>
+          <Editor
+            height="320px"
+            language={MONACO_LANG[language] || language}
             value={code}
-            onChange={e => setCode(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled || submitted}
-            rows={16}
-            spellCheck={false} autoCorrect="off" autoCapitalize="off"
-            className="w-full bg-transparent text-green-300 font-mono text-[13px] px-5 py-4 focus:outline-none resize-none leading-relaxed disabled:opacity-60 disabled:cursor-not-allowed"
-            placeholder="// Write your solution here..."
+            onChange={(val) => setCode(val ?? '')}
+            theme="icl-dark"
+            options={{
+              ...EDITOR_OPTIONS,
+              readOnly: disabled || submitted,
+            }}
+            onMount={handleEditorDidMount}
+            loading={
+              <div className="flex items-center justify-center h-full bg-gray-950 text-gray-500 text-xs gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading editor…
+              </div>
+            }
           />
         </div>
       )}
 
-      {/* ── Input Mode Tabs + Action Buttons ─────────────────── */}
+      {/* ── Mode Tabs + Action Buttons ───────────────────────── */}
       <div className="flex items-stretch border-t border-gray-700 bg-gray-900">
         {/* Tabs */}
         <button
@@ -370,6 +513,11 @@ const CodeEditor = ({
         </button>
 
         <div className="flex-1" />
+
+        {/* Keyboard shortcut hint */}
+        <div className="hidden sm:flex items-center px-3">
+          <span className="text-[10px] text-gray-600 font-mono">Ctrl+Enter to run</span>
+        </div>
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 px-3">
@@ -405,7 +553,7 @@ const CodeEditor = ({
         </div>
       </div>
 
-      {/* Custom Input textarea */}
+      {/* ── Custom stdin textarea ─────────────────────────────── */}
       {inputMode === 'custom' && (
         <div className="bg-gray-950 border-t border-gray-800">
           <div className="px-4 pt-3 pb-1">
@@ -428,20 +576,26 @@ const CodeEditor = ({
         </div>
       )}
 
-      {/* Submitted status bar */}
+      {/* ── Submitted status bar ─────────────────────────────── */}
       {inputMode === 'testcases' && submitted && (
         <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 border-t border-gray-700">
           <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
           <span className="text-xs font-semibold text-green-400">Code submitted</span>
-          {submitResult && (
-            <span className="text-gray-400 text-xs">
-              — {submitResult.passed_count}/{submitResult.total_count} test cases passed
-            </span>
-          )}
+          {submitResult && (() => {
+            // Only count visible test cases in the status bar
+            const visibleResults = (submitResult.test_results || []).filter(tc => !tc.is_hidden);
+            const visiblePassed  = visibleResults.filter(tc => tc.passed).length;
+            const visibleTotal   = visibleResults.length;
+            return (
+              <span className="text-gray-400 text-xs">
+                — {visiblePassed}/{visibleTotal} test cases passed
+              </span>
+            );
+          })()}
         </div>
       )}
 
-      {/* Result panels */}
+      {/* ── Result panels ────────────────────────────────────── */}
       {inputMode === 'testcases' && activeResult && (
         <TestResultsPanel
           results={activeResult.test_results}

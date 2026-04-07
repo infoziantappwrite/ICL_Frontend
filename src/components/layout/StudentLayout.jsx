@@ -36,38 +36,10 @@ const StudentLayout = ({ children }) => {
     const [showUserMenu, setShowUserMenu] = useState(false);
     const userMenuRef = useRef(null);
 
-    // Desktop nav indicator
-    const buttonRefs = useRef([]);
-    const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-
     const isActive = (path) => {
         if (path === '/dashboard/student') return location.pathname === path;
         return location.pathname.startsWith(path);
     };
-
-    const snapTo = (index) => {
-        const btn = buttonRefs.current[index];
-        if (!btn) return;
-        setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth });
-    };
-
-    useEffect(() => {
-        const activeIndex = navLinks.findIndex((l) => isActive(l.path));
-        if (activeIndex === -1) { setIndicator({ left: 0, width: 0 }); return; }
-        snapTo(activeIndex);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname]);
-
-    useEffect(() => {
-        const onResize = () => {
-            const idx = navLinks.findIndex((l) => isActive(l.path));
-            if (idx === -1) return;
-            snapTo(idx);
-        };
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname]);
 
     // Close drawer on route change
     useEffect(() => { setShowDrawer(false); }, [location.pathname]);
@@ -121,30 +93,20 @@ const StudentLayout = ({ children }) => {
 
                     {/* ── Desktop Nav (center-right) ── */}
                     <nav className="hidden md:flex flex-1 justify-end">
-                        <div className="relative flex items-center gap-1 pb-[3px]" style={{ overflow: 'visible' }}>
-                            {navLinks.map((link, index) => (
+                        <div className="flex items-center gap-1">
+                            {navLinks.map((link) => (
                                 <button
                                     key={link.path}
-                                    ref={(el) => { buttonRefs.current[index] = el; }}
                                     onClick={() => navigate(link.path)}
-                                    className={`relative flex items-center px-4 py-2 text-[14px] font-medium rounded-lg transition-colors duration-200 cursor-pointer
-                                        ${isActive(link.path) ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+                                    className={`relative flex items-center px-4 py-2 text-[14px] font-medium rounded-lg transition-colors duration-200 cursor-pointer after:absolute after:bottom-0 after:left-4 after:h-[3px] after:rounded-full after:bg-blue-600 after:transition-all after:duration-300 ${
+                                        isActive(link.path)
+                                            ? 'text-gray-900 after:w-[calc(100%-2rem)]'
+                                            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 after:w-0 hover:after:w-[calc(100%-2rem)]'
+                                    }`}
                                 >
                                     {link.label}
                                 </button>
                             ))}
-                            <span
-                                aria-hidden="true"
-                                style={{
-                                    position: 'absolute', bottom: 0,
-                                    left: indicator.left, width: indicator.width,
-                                    height: '3px',
-                                    opacity: indicator.width === 0 ? 0 : 1,
-                                    borderRadius: '9999px 9999px 0 0',
-                                    background: '#2563eb',
-                                    transition: 'left 0.25s, width 0.25s',
-                                }}
-                            />
                         </div>
                     </nav>
 

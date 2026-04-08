@@ -8,7 +8,7 @@ import Editor, { useMonaco } from '@monaco-editor/react';
 import {
   Play, Send, ChevronDown, Loader2, CheckCircle2, XCircle,
   Terminal, RefreshCw, Code2, Eye, EyeOff, AlertTriangle,
-  Clock, Keyboard, FlaskConical,
+  Clock, Keyboard, FlaskConical, Save, ChevronUp, ChevronRight
 } from 'lucide-react';
 import { codeAPI } from '../../api/Api';
 
@@ -299,8 +299,12 @@ const CodeEditor = ({
   const editorRef = useRef(null);
 
   const getStarter = useCallback((lang) => {
-    if (boilerplateCode) return boilerplateCode;
     return STARTERS[lang] || '';
+  }, []);
+
+  const getInitialCode = useCallback((lang) => {
+    // Use boilerplateCode for the default language's question
+    return boilerplateCode || STARTERS[lang] || '';
   }, [boilerplateCode]);
 
   // Register custom Monaco theme once monaco is available
@@ -330,10 +334,18 @@ const CodeEditor = ({
     }).catch(() => {});
   }, []);
 
+  // Reset submission state when navigating to a different question
+  useEffect(() => {
+    setSubmitted(false);
+    setSubmitResult(null);
+    setRunResult(null);
+    setCustomResult(null);
+  }, [assessmentId, questionId]);
+
   // Load saved code / starter on mount
   useEffect(() => {
     if (!assessmentId || !questionId) {
-      setCode(getStarter(language));
+      setCode(getInitialCode(language));
       return;
     }
     codeAPI.getHistory(assessmentId, questionId).then(res => {
@@ -345,9 +357,9 @@ const CodeEditor = ({
           return;
         }
       }
-      setCode(getStarter(language));
-    }).catch(() => setCode(getStarter(language)));
-  }, [assessmentId, questionId, getStarter]);
+      setCode(getInitialCode(language));
+    }).catch(() => setCode(getInitialCode(language)));
+  }, [assessmentId, questionId, getInitialCode]);
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
@@ -406,7 +418,7 @@ const CodeEditor = ({
   };
 
   const handleReset = () => {
-    setCode(getStarter(language));
+    setCode(getInitialCode(language));
     setRunResult(null);
     setSubmitResult(null);
     setCustomResult(null);
@@ -420,55 +432,59 @@ const CodeEditor = ({
   const activeResult = submitResult || runResult;
 
   return (
-    <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+    <div className="flex flex-col h-full overflow-hidden">
 
-      {/* ── Toolbar ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 border-b border-gray-700">
-        <Code2 className="w-4 h-4 text-blue-400 shrink-0" />
-        <span className="text-xs font-bold text-gray-300 flex-1">Code Editor</span>
 
-        {/* Language selector */}
-        <div className="relative">
-          <select
-            value={language}
-            onChange={e => handleLanguageChange(e.target.value)}
-            disabled={disabled || submitted}
-            className="appearance-none bg-gray-800 border border-gray-600 text-gray-200 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer disabled:opacity-60"
-          >
-            {languages.length > 0
-              ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
-              : ['python', 'javascript', 'java', 'cpp', 'c'].map(l => (
-                  <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
-                ))}
-          </select>
-          <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* ── Code Editor Block ── */}
+      <div className="border border-slate-800 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden bg-[#0f172a] shadow-lg">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-3 py-2 bg-[#0f172a] border-b border-slate-800 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+            <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+          </div>
+
+          <div className="relative">
+            <select
+              value={language}
+              onChange={e => handleLanguageChange(e.target.value)}
+              disabled={disabled || submitted}
+              className="appearance-none bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] uppercase tracking-wider font-bold rounded-lg px-4 py-1.5 pr-8 outline-none border border-slate-700 transition-colors cursor-pointer"
+            >
+              {languages.length > 0
+                ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
+                : ['python', 'javascript', 'java', 'cpp', 'c'].map(l => (
+                    <option key={l} value={l}>{l === 'java' ? 'JAVA - Java 11+' : l.toUpperCase()}</option>
+                  ))}
+            </select>
+            <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-slate-300">
+              <span className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> {code.split('\n').length} lines
+              </span>
+              <span className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {code.length} chars
+              </span>
+            </div>
+            <button onClick={handleReset} disabled={disabled || submitted}
+              className="p-1.5 rounded-md bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 transition-colors border border-blue-500/20" title="Reset">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => {}} disabled={disabled || submitted}
+              className="p-1.5 rounded-md bg-teal-600/20 hover:bg-teal-600/40 text-teal-400 transition-colors border border-teal-500/20">
+              <Save className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Reset */}
-        <button
-          onClick={handleReset}
-          disabled={disabled || submitted}
-          title="Reset to starter"
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors disabled:opacity-40"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-        </button>
-
-        {/* Toggle editor visibility */}
-        <button
-          onClick={() => setShowEditor(p => !p)}
-          title={showEditor ? 'Hide editor' : 'Show editor'}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-colors"
-        >
-          {showEditor ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-        </button>
-      </div>
-
-      {/* ── Monaco Editor ────────────────────────────────────── */}
-      {showEditor && (
-        <div className="bg-gray-950" style={{ minHeight: 320 }}>
+        {/* Monaco Editor */}
+        <div className="bg-[#0f172a] flex-1 min-h-0 relative">
           <Editor
-            height="320px"
+            height="100%"
             language={MONACO_LANG[language] || language}
             value={code}
             onChange={(val) => setCode(val ?? '')}
@@ -479,135 +495,95 @@ const CodeEditor = ({
             }}
             onMount={handleEditorDidMount}
             loading={
-              <div className="flex items-center justify-center h-full bg-gray-950 text-gray-500 text-xs gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading editor…
+              <div className="flex items-center justify-center h-full bg-[#0f172a] text-slate-500 text-xs gap-2 font-bold">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                Loading IDE…
               </div>
             }
           />
         </div>
-      )}
 
-      {/* ── Mode Tabs + Action Buttons ───────────────────────── */}
-      <div className="flex items-stretch border-t border-gray-700 bg-gray-900">
-        {/* Tabs */}
+        {/* Footer Text */}
+        <div className="px-3 py-1.5 border-t border-slate-800/80 bg-[#0b1222] shrink-0">
+          <p className="text-[10px] font-bold text-slate-500 font-mono tracking-wider">
+            Ready to Execute <span className="opacity-50 px-1">•</span> Press Run Code
+          </p>
+        </div>
+      </div>
+
+      {/* ── Action Buttons ── */}
+      <div className="flex flex-wrap items-center gap-2 mt-2 shrink-0">
         <button
-          onClick={() => setInputMode('testcases')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold transition-colors border-b-2 ${
-            inputMode === 'testcases'
-              ? 'border-blue-500 text-blue-400 bg-gray-800'
-              : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
+          onClick={() => setInputMode(p => p === 'custom' ? 'testcases' : 'custom')}
+          className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 bg-white rounded-lg text-[11px] font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
         >
-          <FlaskConical className="w-3.5 h-3.5" /> Test Cases
-        </button>
-        <button
-          onClick={() => setInputMode('custom')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold transition-colors border-b-2 ${
-            inputMode === 'custom'
-              ? 'border-purple-500 text-purple-400 bg-gray-800'
-              : 'border-transparent text-gray-500 hover:text-gray-300'
-          }`}
-        >
-          <Keyboard className="w-3.5 h-3.5" /> Custom Input
+          {inputMode === 'custom' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {inputMode === 'custom' ? 'Hide Custom Input' : 'Show Custom Input'}
         </button>
 
         <div className="flex-1" />
 
-        {/* Keyboard shortcut hint */}
-        <div className="hidden sm:flex items-center px-3">
-          <span className="text-[10px] text-gray-600 font-mono">Ctrl+Enter to run</span>
-        </div>
+        <button onClick={handleRun} disabled={disabled || running || submitting || !code.trim()}
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-lg text-[12px] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
+          {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Run Code
+        </button>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 px-3">
-          {inputMode === 'testcases' ? (
-            <>
-              <button
-                onClick={handleRun}
-                disabled={disabled || running || submitting || !code.trim()}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-                {running ? 'Running…' : 'Run'}
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={disabled || running || submitting || submitted || !code.trim()}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                {submitting ? 'Submitting…' : submitted ? 'Submitted ✓' : 'Submit Code'}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleRunCustom}
-              disabled={disabled || runningCustom || !code.trim()}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {runningCustom ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-              {runningCustom ? 'Running…' : 'Run with Input'}
-            </button>
-          )}
-        </div>
+        <button onClick={() => { setInputMode('testcases'); handleRun(); }} disabled={disabled || running || submitting || !code.trim()}
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#a855f7] hover:bg-purple-600 text-white rounded-lg text-[12px] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
+          {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+          Run Test Cases
+        </button>
+
+        <button onClick={handleSubmit} disabled={disabled || running || submitting || submitted || !code.trim()}
+          className="flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] hover:bg-green-600 text-white rounded-lg text-[12px] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
+          {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Terminal className="w-3.5 h-3.5" />}
+          {submitting ? 'Submitting...' : submitted ? 'Submitted ✓' : 'Submit'}
+        </button>
       </div>
 
-      {/* ── Custom stdin textarea ─────────────────────────────── */}
-      {inputMode === 'custom' && (
-        <div className="bg-gray-950 border-t border-gray-800">
-          <div className="px-4 pt-3 pb-1">
-            <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1.5">
-              stdin — one line per input() call
-            </p>
-            <textarea
-              value={customInput}
-              onChange={e => setCustomInput(e.target.value)}
-              rows={4}
-              spellCheck={false}
-              placeholder={"e.g.\n4\n2 7 11 15\n9"}
-              className="w-full bg-gray-900 border border-gray-700 text-gray-200 font-mono text-[13px] px-3 py-2.5 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none leading-relaxed placeholder-gray-600"
+      {/* ── Custom Input / Results (limited height, scrollable) ── */}
+      {(inputMode === 'custom' || activeResult || customResult) && (
+        <div className="mt-2 shrink-0 max-h-[180px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          {inputMode === 'custom' && (
+            <>
+              <div className="bg-gray-50 border-b border-gray-100 px-3 py-2 flex items-center justify-between sticky top-0">
+                <span className="text-[12px] font-bold text-gray-700 flex items-center gap-1.5">
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-400" /> Custom Input (stdin)
+                  <span className="text-gray-400 text-[10px] font-medium ml-1">- Type your input here...</span>
+                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    {customInput.split('\n').length} lines | {customInput.length} chars
+                  </span>
+                  <button onClick={() => setCustomInput('')} className="text-[10px] text-blue-600 font-bold hover:underline">Reset</button>
+                </div>
+              </div>
+              <textarea
+                value={customInput}
+                onChange={e => setCustomInput(e.target.value)}
+                rows={3}
+                spellCheck={false}
+                className="w-full text-[12px] font-mono p-3 outline-none resize-none text-gray-800 placeholder-gray-300"
+                placeholder="leetcode"
+              />
+            </>
+          )}
+          {inputMode === 'testcases' && activeResult && (
+            <TestResultsPanel
+              results={activeResult.test_results}
+              passedCount={activeResult.passed_count}
+              totalCount={activeResult.total_count}
+              runType={activeResult.run_type || (submitResult ? 'submit' : 'run')}
+              errorMessage={activeResult.error_message}
             />
-          </div>
-          <p className="px-4 pb-2.5 text-[11px] text-gray-600 font-medium">
-            Each line maps to one <code className="text-gray-400 bg-gray-800 px-1 rounded">input()</code> call.
-            This <strong className="text-gray-500">does not affect your score</strong> — for testing only.
-          </p>
+          )}
+          {inputMode === 'custom' && customResult && (
+            <CustomOutputPanel result={customResult} />
+          )}
         </div>
       )}
 
-      {/* ── Submitted status bar ─────────────────────────────── */}
-      {inputMode === 'testcases' && submitted && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-gray-800 border-t border-gray-700">
-          <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-          <span className="text-xs font-semibold text-green-400">Code submitted</span>
-          {submitResult && (() => {
-            // Only count visible test cases in the status bar
-            const visibleResults = (submitResult.test_results || []).filter(tc => !tc.is_hidden);
-            const visiblePassed  = visibleResults.filter(tc => tc.passed).length;
-            const visibleTotal   = visibleResults.length;
-            return (
-              <span className="text-gray-400 text-xs">
-                — {visiblePassed}/{visibleTotal} test cases passed
-              </span>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* ── Result panels ────────────────────────────────────── */}
-      {inputMode === 'testcases' && activeResult && (
-        <TestResultsPanel
-          results={activeResult.test_results}
-          passedCount={activeResult.passed_count}
-          totalCount={activeResult.total_count}
-          runType={activeResult.run_type || (submitResult ? 'submit' : 'run')}
-          errorMessage={activeResult.error_message}
-        />
-      )}
-      {inputMode === 'custom' && customResult && (
-        <CustomOutputPanel result={customResult} />
-      )}
     </div>
   );
 };

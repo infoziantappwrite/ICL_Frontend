@@ -1,387 +1,232 @@
-// pages/Student/Assessments/TakeAssessment.jsx
-import { useState, useEffect, useCallback, useRef } from 'react';
+// src/pages/assessment/TakeAssessment.jsx
+// Redesigned: HackerEarth/HackerRank-style layout — WHITE THEME
+// Layout: Fixed left sidebar (question numbers) | Scrollable middle (question content) | Fixed right (code editor)
+
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Clock, ChevronLeft, ChevronRight, Flag, Send,
-  AlertTriangle, CheckCircle2, SkipForward, X,
-  Loader2, BookOpen, Target,
-  PanelRight, PanelRightClose, Shield, ShieldAlert,
-  ShieldCheck, Maximize, Lock
+  Clock, Flag, Send, ChevronLeft, ChevronRight,
+  AlertTriangle, BookOpen, Shield, CheckCircle2,
+  Loader2, SkipForward
 } from 'lucide-react';
 import { assessmentAPI, assessmentAttemptAPI } from '../../../api/Api';
-import useProctoringGuard from '../../../hooks/useProctoringGuard';
-import useCameraProctoring from '../../../hooks/useCameraProctoring';
-import CameraOverlay from '../../../components/proctoring/CameraOverlay';
 import CodeEditor from '../../../components/assessment/CodeEditor';
 
-const LEVEL_CONFIG = {
-  Beginner:     { label: 'Beginner',     color: 'bg-green-50 text-green-700 border-green-200',   dot: 'bg-green-500' },
-  Intermediate: { label: 'Intermediate', color: 'bg-blue-50 text-blue-700 border-blue-200',      dot: 'bg-blue-500'  },
-  Advanced:     { label: 'Advanced',     color: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+// ── Utility: format seconds → MM:SS ────────────────────────────
+const formatTime = (seconds) => {
+  if (seconds <= 0) return '00:00';
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 };
 
-// ── Shared Card Wrapper ────────────────────────────────────────────
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 ${className}`}>
-    {children}
-  </div>
-);
-
-// ── Timer ──────────────────────────────────────────────────────────
-const Timer = ({ totalSeconds, onExpire }) => {
-  const [remaining, setRemaining] = useState(totalSeconds);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!totalSeconds) return;
-    setRemaining(totalSeconds);
-    ref.current = setInterval(() => {
-      setRemaining(p => {
-        if (p <= 1) { clearInterval(ref.current); onExpire?.(); return 0; }
-        return p - 1;
-      });
-    }, 1000);
-    return () => clearInterval(ref.current);
-  }, [totalSeconds]);
-
-  const m = Math.floor(remaining / 60), s = remaining % 60;
-  const isRed = remaining < 60, isAmber = remaining < 300;
-
+// ── Question Status Pill (left sidebar) ──────────────────────────
+const QuestionPill = ({ number, status, onClick, isCurrent }) => {
+  const base = 'w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold cursor-pointer transition-all duration-150 select-none border';
+  const styles = {
+    current: 'bg-blue-600 text-white border-blue-600 shadow-[0_0_0_2px_rgba(37,99,235,0.25)]',
+    answered: 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-400',
+    unanswered: 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600',
+    flagged: 'bg-amber-50 text-amber-600 border-amber-300',
+    skipped: 'bg-orange-50 text-orange-500 border-orange-200 hover:border-orange-400',
+  };
+  const style = isCurrent ? styles.current : styles[status] || styles.unanswered;
   return (
-    <div className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-bold font-mono transition-all
-      ${isRed ? 'bg-red-50 text-red-600 border border-red-200 animate-pulse'
-               : isAmber ? 'bg-amber-50 text-amber-700 border border-amber-200'
-               : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
-      <Clock className="w-4 h-4 shrink-0" />
-      {String(m).padStart(2,'0')}:{String(s).padStart(2,'0')}
-    </div>
+    <button onClick={onClick} className={`${base} ${style}`} title={`Question ${number}`}>
+      {number}
+    </button>
   );
 };
 
-// ── Loading screen ─────────────────────────────────────────────────
+// ── Complexity Badge ──────────────────────────────────────────────
+const ComplexityBadge = ({ label, value }) => (
+  <div className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-md bg-gray-50 border border-gray-200">
+    <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400">{label}</span>
+    <span className="text-[11px] font-bold text-blue-600 font-mono">{value}</span>
+  </div>
+);
+
+// ── Tag Chip ─────────────────────────────────────────────────────
+const TagChip = ({ label }) => {
+  const colors = {
+    'coding question': 'bg-blue-50 text-blue-700 border-blue-200',
+    coding: 'bg-blue-50 text-blue-700 border-blue-200',
+    strings: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    arrays: 'bg-purple-50 text-purple-700 border-purple-200',
+    default: 'bg-gray-100 text-gray-600 border-gray-200',
+  };
+  const cls = colors[label?.toLowerCase()] || colors.default;
+  return (
+    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${cls}`}>
+      {label}
+    </span>
+  );
+};
+
+// ── Sample Test Case Card ─────────────────────────────────────────
+const SampleCase = ({ index, input, output, explanation }) => (
+  <div className="rounded-lg border border-gray-200 overflow-hidden bg-white shadow-sm">
+    <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200">
+      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Sample Case {index}</span>
+    </div>
+    <div className="grid grid-cols-2 divide-x divide-gray-200">
+      <div className="p-3">
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Input</p>
+        <pre className="text-[12px] font-mono text-gray-800 whitespace-pre-wrap leading-relaxed">{input}</pre>
+      </div>
+      <div className="p-3">
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Output</p>
+        <pre className="text-[12px] font-mono text-emerald-600 whitespace-pre-wrap leading-relaxed">{output}</pre>
+      </div>
+    </div>
+    {explanation && (
+      <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Explanation</p>
+        <p className="text-[12px] text-gray-600 italic leading-relaxed">{explanation}</p>
+      </div>
+    )}
+  </div>
+);
+
+// ── Full-screen Loader ────────────────────────────────────────────
 const FullLoader = ({ title, sub, pct }) => (
-  <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-    <Card className="text-center w-full max-w-sm py-12 px-6">
-      <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-6 border border-blue-100">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+  <div className="h-screen w-screen bg-white flex items-center justify-center">
+    <div className="flex flex-col items-center gap-4 text-center">
+      <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
       </div>
-      <h2 className="text-[18px] font-bold text-gray-900 mb-1">{title}</h2>
-      {sub && <p className="text-[13px] text-gray-500 mb-6">{sub}</p>}
+      <h2 className="text-[16px] font-bold text-gray-900">{title}</h2>
+      {sub && <p className="text-[13px] text-gray-500">{sub}</p>}
       {pct !== undefined && (
-        <div className="px-4">
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-2">
-            <div className="h-2 bg-blue-600 rounded-full transition-all duration-300" style={{width:`${pct}%`}} />
+        <div className="w-48">
+          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-blue-600 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
           </div>
-          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{pct}% loaded</p>
+          <p className="text-[11px] font-bold text-gray-400 mt-2">{pct}% loaded</p>
         </div>
       )}
-    </Card>
-  </div>
-);
-
-// ── Proctoring Warning Toast ───────────────────────────────────────
-const ProctoringWarningToast = ({ violation, remaining, onDismiss }) => {
-  if (!violation) return null;
-  const isCritical = violation.severity === 'CRITICAL';
-  return (
-    <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex items-start gap-3 px-5 py-4 rounded-2xl shadow-2xl border max-w-md w-full mx-4 animate-in slide-in-from-top-4 duration-300
-        ${isCritical ? 'bg-red-600 border-red-700 text-white' : 'bg-amber-500 border-amber-600 text-white'}`}>
-      <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-[14px] leading-tight">
-          {isCritical ? '⚠ Proctoring Violation Detected' : '⚠ Warning'}
-        </p>
-        <p className="text-[12px] opacity-90 mt-0.5">{violation.label}</p>
-        {isCritical && remaining > 0 && (
-          <p className="text-[11px] opacity-80 mt-1 font-bold">
-            {remaining} warning{remaining !== 1 ? 's' : ''} remaining before auto-submit
-          </p>
-        )}
-      </div>
-      <button onClick={onDismiss} className="p-1 opacity-70 hover:opacity-100 shrink-0">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  );
-};
-
-// ── Fullscreen Prompt Overlay ──────────────────────────────────────
-const FullscreenPrompt = ({ onRequestFullscreen, violationCount }) => (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998] flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <Maximize className="w-8 h-8 text-red-500" />
-      </div>
-      <h3 className="font-bold text-[18px] text-gray-900 mb-2">Fullscreen Required</h3>
-      <p className="text-[13px] text-gray-500 mb-4 leading-relaxed">
-        You exited fullscreen mode. The assessment requires you to stay in fullscreen at all times.
-      </p>
-      {violationCount > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2 mb-5">
-          <p className="text-[12px] font-bold text-red-600">
-            Violation #{violationCount} recorded — this incident has been reported.
-          </p>
-        </div>
-      )}
-      <button
-        onClick={onRequestFullscreen}
-        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-[14px] hover:bg-blue-700 shadow-sm transition-colors flex items-center justify-center gap-2"
-      >
-        <Maximize className="w-4 h-4" /> Return to Fullscreen
-      </button>
     </div>
   </div>
 );
 
-// ── Auto-Submit Blocked Overlay ────────────────────────────────────
-const BlockedOverlay = () => (
-  <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <Lock className="w-8 h-8 text-red-600" />
-      </div>
-      <h3 className="font-bold text-[20px] text-gray-900 mb-2">Assessment Terminated</h3>
-      <p className="text-[13px] text-gray-500 leading-relaxed">
-        Multiple proctoring violations were detected. Your assessment has been automatically submitted and flagged for review by your instructor.
-      </p>
-      <div className="mt-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-        <p className="text-[12px] font-bold text-red-700">
-          All violation events have been recorded and sent to your institution.
-        </p>
-      </div>
-    </div>
-  </div>
-);
-
-// ── Camera Violation Modal ─────────────────────────────────────────
-const CameraViolationModal = ({ violationCount, max, onDismiss }) => (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9997] flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <ShieldAlert className="w-8 h-8 text-red-500" />
-      </div>
-      <h3 className="font-bold text-[18px] text-gray-900 mb-2">Camera Violation Detected</h3>
-      <p className="text-[13px] text-gray-500 mb-4 leading-relaxed">
-        A camera proctoring violation has been recorded. Ensure your face is clearly visible and no other devices are in frame.
-      </p>
-      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5">
-        <p className="text-[12px] font-bold text-red-600">
-          Violation #{violationCount} of {max} — {max - violationCount} remaining before auto-submit.
-        </p>
-        <div className="flex justify-center gap-1.5 mt-2">
-          {Array.from({ length: max }).map((_, i) => (
-            <span
-              key={i}
-              className={`w-3 h-3 rounded-full border ${i < violationCount ? 'bg-red-500 border-red-600' : 'bg-gray-100 border-gray-300'}`}
-            />
-          ))}
-        </div>
-      </div>
-      <button
-        onClick={onDismiss}
-        className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-[14px] hover:bg-blue-700 shadow-sm transition-colors"
-      >
-        I Understand — Continue Assessment
-      </button>
-    </div>
-  </div>
-);
-
-// ── Proctoring Status Badge ────────────────────────────────────────
-const ProctoringBadge = ({ isFullscreen, warningCount, max, camViolationCount, camMax }) => {
-  const safe = warningCount === 0 && camViolationCount === 0;
-  const critical = warningCount >= max || camViolationCount >= camMax;
-  return (
-    <div
-      className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border
-        ${safe ? 'bg-green-50 text-green-700 border-green-200'
-               : critical ? 'bg-red-50 text-red-700 border-red-200'
-               : 'bg-amber-50 text-amber-700 border-amber-200'}`}
-    >
-      {safe ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-      {safe ? 'Secured' : (
-        <span className="flex items-center gap-1.5">
-          <span title="Browser violations">🖥 {warningCount}/{max}</span>
-          <span className="opacity-40">·</span>
-          <span title="Camera violations">📷 {camViolationCount}/{camMax}</span>
-        </span>
-      )}
-    </div>
-  );
-};
-
-
-// ═══════════════════════════════════════════════════════════════════
-// Main Component
-// ═══════════════════════════════════════════════════════════════════
+// ── Main TakeAssessment ───────────────────────────────────────────
 const TakeAssessment = () => {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
 
-  const [phase, setPhase] = useState('briefing');
+  // ── State ─────────────────────────────────────────────────────
+  const [phase, setPhase] = useState('loading');       // 'loading' | 'fetching' | 'in_progress' | 'submitting' | 'done'
   const [briefingInfo, setBriefingInfo] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentIdx, setCurrentIdx] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [statuses, setStatuses] = useState({});
-  const [flagged, setFlagged] = useState({});
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [answers, setAnswers] = useState({});              // qid → answer value
+  const [statuses, setStatuses] = useState({});              // qid → 'unanswered'|'answered'|'skipped'|'flagged'
+  const [flagged, setFlagged] = useState({});              // qid → bool
   const [error, setError] = useState('');
-  const [submitConfirm, setSubmitConfirm] = useState(false);
-  const [fetchProgress, setFetchProgress] = useState({ loaded: 0, total: 0 });
   const [submissionId, setSubmissionId] = useState(null);
-  const [showWarningToast, setShowWarningToast] = useState(false);
-  const [cameraLastViolation, setCameraLastViolation] = useState(null);
-  const [camViolationCount, setCamViolationCount] = useState(0);
-  const [showCamViolationModal, setShowCamViolationModal] = useState(false);
-  const CAM_MAX_VIOLATIONS = Number(import.meta.env.VITE_PROCTORING_MAX_CAMERA_VIOLATIONS) || 5;
+  const [fetchProgress, setFetchProgress] = useState({ loaded: 0, total: 0 });
+  const [submitConfirm, setSubmitConfirm] = useState(false);
+  const questionScrollRef = useRef(null);
 
-  // ── Proctoring master switch ─────────────────────────────────────────────────
-  // Controlled by VITE_PROCTORING_ENABLED in .env (dev=false) / .env.production (prod=true)
-  const PROCTORING_ENABLED = import.meta.env.VITE_PROCTORING_ENABLED !== 'false';
+  // ── Timer state ───────────────────────────────────────────────
+  const [remaining, setRemaining] = useState(0);
+  const timerRef = useRef(null);
 
-  // Camera permission is requested on the briefing screen, BEFORE fullscreen,
-  // so the permission dialog never conflicts with fullscreen mode.
-  const [cameraPermStatus, setCameraPermStatus] = useState('idle'); // 'idle'|'requesting'|'granted'|'denied'|'error'
-
-  const proctoringActive = phase === 'in_progress' && PROCTORING_ENABLED;
-  const autoSubmitRef = useRef(null);
-  // Tracks whether we've already started camera for this session
-  const cameraInitializedRef = useRef(false);
-
-  const guard = useProctoringGuard({
-    submissionId,
-    onAutoSubmit: (reason) => autoSubmitRef.current?.(reason),
-    enabled: proctoringActive,
-  });
-
-  // ── Camera proctoring (face-api.js, client-side AI) ──────────────────────────
-  const camera = useCameraProctoring({
-    submissionId,
-    enabled: PROCTORING_ENABLED,
-    debugMode: false,
-    onViolation: (event) => {
-      setShowWarningToast(true);
-      setCameraLastViolation(event);
-      const t = setTimeout(() => setShowWarningToast(false), 5000);
-      return () => clearTimeout(t);
-    },
-    onCriticalViolation: (event) => {
-      // Camera has its own independent 5-violation counter.
-      // Do NOT forward to guard — browser and camera are tracked separately.
-      setCamViolationCount(prev => {
-        const next = prev + 1;
-        setShowCamViolationModal(true);
-        if (next >= CAM_MAX_VIOLATIONS) {
-          // Camera hit 5 violations — auto-submit
-          autoSubmitRef.current?.('camera_proctoring_violation');
-        }
-        return next;
-      });
-    },
-    // v3.0 — soft warning callback (no-face warning 1 & 2, does NOT count as violation)
-    onWarning: (event) => {
-      setCameraLastViolation(event);
-      // Toast is shown by CameraOverlay's WarningToast internally for NO_FACE_WARNING;
-      // for other WARNING-severity events we still surface the existing toast.
-      if (event.type !== 'NO_FACE_WARNING') {
-        setShowWarningToast(true);
-        const t = setTimeout(() => setShowWarningToast(false), 4000);
-        return () => clearTimeout(t);
-      }
-    },
-  });
-
-
-  // ── Start camera + fullscreen AFTER CameraOverlay has mounted ────────────────
-  // CRITICAL FIX: camera.startCamera() must run AFTER React has re-rendered with
-  // phase='in_progress', because only then does CameraOverlay mount and set
-  // videoRef.current. Calling startCamera() synchronously after setPhase('in_progress')
-  // means videoRef.current is still null → video.srcObject is never set → all
-  // runScan() calls see videoWidth===0 and return immediately → no detection ever runs.
+  // ── Scroll to top on question change ──────────────────────────
   useEffect(() => {
-    if (phase === 'in_progress' && PROCTORING_ENABLED && !cameraInitializedRef.current) {
-      cameraInitializedRef.current = true;
-      camera.startCamera()
-        .then(() => guard.requestFullscreen())
-        .catch(err => {
-          if (import.meta.env.DEV) console.error('[TakeAssessment] Camera/fullscreen start error:', err);
-        });
-    }
-  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (questionScrollRef.current) questionScrollRef.current.scrollTop = 0;
+  }, [currentIdx]);
 
-  // Show toast on new browser-behaviour violation
+  // ── Check for existing attempts & fetch briefing info ─────────
   useEffect(() => {
-    if (guard.lastViolation) {
-      setCameraLastViolation(null); // clear camera violation so guard violation shows
-      setShowWarningToast(true);
-      const t = setTimeout(() => setShowWarningToast(false), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [guard.lastViolation]);
-
-  useEffect(() => {
-    // Check if student already has a submitted attempt — redirect to history
     assessmentAttemptAPI.getMyAttempts(assessmentId)
       .then(res => {
         if (res.success && res.attempts?.some(a => a.status === 'submitted')) {
           navigate('/dashboard/student/assessments/history', { replace: true });
+          return;
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     assessmentAPI.getAssessmentDetails(assessmentId)
-      .then(res => { if (res.success) setBriefingInfo(res.assessment); })
-      .catch(() => {});
-
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+      .then(res => {
+        if (res.success) {
+          setBriefingInfo(res.assessment);
+          setPhase('briefing');
+        }
+      })
+      .catch(e => {
+        setError(e.message || 'Failed to load assessment');
+        setPhase('loading');
+      });
   }, [assessmentId]);
 
-  const handleBegin = async () => {
-    // Guard: camera permission must be granted before we can start (only when proctoring is on)
-    if (PROCTORING_ENABLED && cameraPermStatus !== 'granted') {
-      setError('Please allow camera access before starting the assessment.');
-      return;
-    }
+  // ── Start timer ───────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'in_progress' || remaining <= 0) return;
+    timerRef.current = setInterval(() => {
+      setRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          handleSubmit('timer_expired');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [phase]);
 
+  const isTimeLow = remaining > 0 && remaining < 300;
+
+  // ── Begin assessment: start attempt + fetch questions ──────────
+  const handleBegin = async (info) => {
     setPhase('loading');
     setError('');
     try {
       const startRes = await assessmentAPI.startAssessment(assessmentId);
       if (!startRes.success) throw new Error(startRes.message || 'Failed to start');
+
       const { attempt_id, total_questions } = startRes;
-      if (!total_questions) throw new Error('This assessment has no questions yet.');
+      if (!total_questions) throw new Error('This assessment has no questions.');
 
       setSubmissionId(attempt_id);
       setPhase('fetching');
       setFetchProgress({ loaded: 0, total: total_questions });
 
+      // Fetch all questions in parallel
       const qs = (await Promise.all(
         Array.from({ length: total_questions }, (_, i) =>
           assessmentAPI.getQuestion(attempt_id, i + 1)
-            .then(res => { setFetchProgress(p => ({ ...p, loaded: p.loaded + 1 })); return res.success ? res.question : null; })
+            .then(res => {
+              setFetchProgress(p => ({ ...p, loaded: p.loaded + 1 }));
+              return res.success ? res.question : null;
+            })
             .catch(() => null)
         )
       )).filter(Boolean);
 
       if (!qs.length) throw new Error('Failed to load questions.');
-      setQuestions(qs);
-      const init = {};
-      qs.forEach(q => { init[q.question_id] = 'unanswered'; });
-      setStatuses(init);
-      setPhase('in_progress');
 
-      // Camera + fullscreen are now started by the useEffect below, which fires
-      // AFTER this render commits — ensuring videoRef.current is valid.
+      setQuestions(qs);
+
+      // Initialize statuses
+      const initStatuses = {};
+      qs.forEach(q => { initStatuses[q.question_id] = 'unanswered'; });
+      setStatuses(initStatuses);
+
+      // Set timer
+      const duration = info?.duration_minutes || briefingInfo?.duration_minutes || 60;
+      setRemaining(duration * 60);
+
+      setPhase('in_progress');
     } catch (e) {
       setError(e.message);
-      setPhase('briefing');
+      setPhase('loading');
     }
   };
 
+  // ── Answer helpers ────────────────────────────────────────────
   const setAnswer = (qid, val) => {
     setAnswers(p => ({ ...p, [qid]: val }));
     setStatuses(p => ({ ...p, [qid]: flagged[qid] ? 'flagged' : 'answered' }));
@@ -398,14 +243,18 @@ const TakeAssessment = () => {
     setCurrentIdx(i => Math.min(i + 1, questions.length - 1));
   };
 
+  // ── Submit assessment ─────────────────────────────────────────
   const handleSubmit = useCallback(async (reason = 'manual') => {
     setSubmitConfirm(false);
     setPhase('submitting');
-    guard.exitFullscreen();
-    camera.stopCamera();
+    clearInterval(timerRef.current);
     try {
-      const res = await assessmentAttemptAPI.submitAssessment(assessmentId,
-        questions.map(q => ({ question_id: q.question_id, selected_answer: answers[q.question_id] ?? null }))
+      const res = await assessmentAttemptAPI.submitAssessment(
+        assessmentId,
+        questions.map(q => ({
+          question_id: q.question_id,
+          selected_answer: answers[q.question_id] ?? null,
+        }))
       );
       if (!res.success) throw new Error(res.message);
       setPhase('done');
@@ -413,621 +262,480 @@ const TakeAssessment = () => {
       setError(e.message);
       setPhase('in_progress');
     }
-  }, [assessmentId, questions, answers, guard]);
+  }, [assessmentId, questions, answers]);
 
-  useEffect(() => { autoSubmitRef.current = handleSubmit; }, [handleSubmit]);
+  // ── Question status helper ────────────────────────────────────
+  const getStatus = (q) => statuses[q.question_id] || 'unanswered';
 
-  const handleTimerExpire = useCallback(() => {
-    if (phase === 'in_progress') handleSubmit('timer_expired');
-  }, [phase, handleSubmit]);
-
-  // ── Desktop gate ──
-  if (!isDesktop) {
+  // ── Phase: Briefing (Instructions) ────────────────────────────
+  if (phase === 'briefing') {
     return (
-      <div className="fixed inset-0 bg-[#0f172a] z-[9999] flex flex-col items-center justify-center p-8 text-center overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full" />
-        <div className="relative z-10 flex flex-col items-center">
-          <div className="w-24 h-24 bg-gradient-to-tr from-blue-600/20 to-cyan-500/20 rounded-[2rem] flex items-center justify-center mb-8 border border-white/10 backdrop-blur-sm shadow-2xl">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
-              <AlertTriangle className="w-8 h-8 text-blue-400" />
+      <div className="min-h-screen bg-[#F8F9fa] font-sans text-gray-800 flex flex-col" style={{ fontFamily: "'Inter', 'IBM Plex Sans', sans-serif" }}>
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center gap-3 max-w-[70%]">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center shrink-0">
+              <BookOpen className="w-4 h-4 text-white" />
             </div>
+            <h1 className="text-[16px] font-bold text-gray-900 truncate">
+              {briefingInfo?.skill_id?.name || briefingInfo?.skill || 'Assessment Instructions'}
+            </h1>
           </div>
-          <h1 className="text-white text-3xl md:text-4xl font-black mb-4 tracking-tight">Desktop Access Required</h1>
-          <div className="w-16 h-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full mb-8" />
-          <p className="text-slate-400 max-w-md text-[15px] md:text-[16px] leading-relaxed mb-10 font-medium">
-            Skill assessments can only be attended on a
-            <span className="text-blue-400 font-bold"> desktop or laptop device</span>.
-            Mobile and tablet access is restricted.
-          </p>
-          <button
-            onClick={() => navigate('/dashboard/student/assessments')}
-            className="group px-8 py-4 bg-white text-[#0f172a] rounded-2xl font-extrabold hover:bg-blue-50 transition-all shadow-[0_20px_40px_rgba(0,0,0,0.3)] flex items-center gap-3 active:scale-95"
-          >
-            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" /> Back to Assessments
-          </button>
-          <p className="mt-12 text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">Controlled Testing Environment</p>
-        </div>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 border border-green-200 shrink-0">
+            <Shield className="w-3.5 h-3.5 text-green-600" />
+            <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Secured</span>
+          </div>
+        </header>
+
+        {/* Main Content Box */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+            
+            {/* Left Column: Instructions */}
+            <div className="flex-1 w-full bg-white p-6 lg:p-8 rounded-2xl border border-gray-200 shadow-sm">
+              <h2 className="text-[22px] font-bold text-gray-900 mb-6">Instructions</h2>
+              
+              <div className="space-y-8">
+                <section>
+                  <h3 className="text-[13px] font-bold text-blue-800 bg-blue-50 px-3 py-1.5 inline-flex items-center gap-2 rounded-lg mb-4">
+                    <Clock className="w-4 h-4" /> TIMING & NAVIGATION
+                  </h3>
+                  <ul className="text-[14px] text-gray-600 space-y-3">
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div>The assessment duration is <strong className="text-gray-900">{briefingInfo?.duration_minutes || 60} minutes</strong>.</div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div>The timer will start the moment you click on "Start Assessment".</div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div>You can skip questions and navigate between them using the right panel during the test.</div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div>Answers are continuously saved automatically.</div>
+                    </li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-[13px] font-bold text-blue-800 bg-blue-50 px-3 py-1.5 inline-flex items-center gap-2 rounded-lg mb-4">
+                    <Shield className="w-4 h-4" /> PROCTORING & INTEGRITY
+                  </h3>
+                  <ul className="text-[14px] text-gray-600 space-y-3">
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div>Ensure you are in a quiet, properly lit room with a stable internet connection.</div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div><strong>Do not switch tabs or minimize the browser.</strong> Navigating away may lead to automatic test submission or penalty.</div>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
+                      <div>Any form of unauthorized material or suspicious activity will instantly flag your session directly to the admin.</div>
+                    </li>
+                  </ul>
+                </section>
+
+                {briefingInfo?.instructions && (
+                  <section>
+                    <h3 className="text-[13px] font-bold text-blue-800 bg-blue-50 px-3 py-1.5 inline-flex items-center gap-2 rounded-lg mb-4">
+                      <BookOpen className="w-4 h-4" /> SPECIFIC GUIDELINES
+                    </h3>
+                    <div className="text-[14px] text-gray-700 bg-gray-50/80 p-5 rounded-xl border border-gray-100 whitespace-pre-wrap leading-relaxed">
+                      {briefingInfo.instructions}
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 mt-8 flex gap-4">
+                <AlertTriangle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-blue-900 text-[14px] mb-1">Important Note</h4>
+                  <p className="text-blue-800/80 text-[13px] leading-relaxed">
+                    Make sure you have blocked out at least {briefingInfo?.duration_minutes || 60} minutes for this assessment. Once started, you cannot pause the timer. Please do not press F5 or the Back button during the test.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Summary Card */}
+            <div className="w-full lg:w-[360px] shrink-0 sticky top-24">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100">
+                  <h3 className="font-bold text-gray-900 text-[15px]">Assessment details</h3>
+                </div>
+                
+                <div className="p-6">
+                  <div className="flex items-center justify-between py-3.5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 text-[13px] text-gray-500 font-medium">
+                      <BookOpen className="w-4 h-4 text-gray-400" /> Total Questions
+                    </div>
+                    <span className="font-bold text-gray-900 text-[14px]">{briefingInfo?.total_questions || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3.5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 text-[13px] text-gray-500 font-medium">
+                      <Clock className="w-4 h-4 text-gray-400" /> Duration
+                    </div>
+                    <span className="font-bold text-gray-900 text-[14px]">{briefingInfo?.duration_minutes || 60} mins</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3.5 border-b border-gray-100">
+                    <div className="flex items-center gap-2 text-[13px] text-gray-500 font-medium">
+                      <CheckCircle2 className="w-4 h-4 text-gray-400" /> Pass Mark
+                    </div>
+                    <span className="font-bold text-gray-900 text-[14px]">{briefingInfo?.passing_score || 50}%</span>
+                  </div>
+                  <div className="flex items-center justify-between py-3.5 mb-2">
+                    <div className="flex items-center gap-2 text-[13px] text-gray-500 font-medium">
+                      <Shield className="w-4 h-4 text-gray-400" /> Security
+                    </div>
+                    <span className="flex items-center gap-1 font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded border border-green-200 text-[10px] uppercase tracking-wider">
+                      Enabled
+                    </span>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    <button 
+                      onClick={() => handleBegin(briefingInfo)}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm text-[14px]"
+                    >
+                      <Send className="w-4 h-4" /> Start Assessment
+                    </button>
+                    <button 
+                      onClick={() => navigate('/dashboard/student/assessments')}
+                      className="w-full py-3 text-gray-500 font-bold hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors text-[13px]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  
+                  <div className="mt-6 pt-5 border-t border-gray-100 flex items-start gap-2.5 text-[11px] text-gray-400 leading-relaxed font-medium">
+                    <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5 text-gray-300" />
+                    <p>By starting, you agree to the Academic Integrity Policy and terms of service. Disciplinary actions apply to violations.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </main>
       </div>
     );
   }
 
-  if (phase === 'loading') return <FullLoader title="Starting Assessment" sub="Preparing your secure environment..." />;
+  // ── Phase: Loading ────────────────────────────────────────────
+  if (phase === 'loading') {
+    if (error) {
+      return (
+        <div className="h-screen w-screen bg-white flex items-center justify-center">
+          <div className="text-center max-w-sm">
+            <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+            <h2 className="text-[16px] font-bold text-gray-900 mb-2">Error</h2>
+            <p className="text-[13px] text-gray-500 mb-4">{error}</p>
+            <button onClick={() => navigate(-1)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-bold">
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return <FullLoader title="Starting Assessment" sub="Preparing your environment..." />;
+  }
+
   if (phase === 'fetching') {
     const pct = fetchProgress.total > 0 ? Math.round((fetchProgress.loaded / fetchProgress.total) * 100) : 0;
     return <FullLoader title="Loading Questions" sub={`Fetching ${fetchProgress.loaded} of ${fetchProgress.total}`} pct={pct} />;
   }
-  if (phase === 'submitting') return <FullLoader title="Submitting Assessment" sub="Please do not close this tab or window." />;
 
-  // ── Briefing ──
-  if (phase === 'briefing') {
-    const skill    = briefingInfo?.skill_id?.name || briefingInfo?.skill || 'Skill Assessment';
-    const levelStr = briefingInfo?.level || 'Beginner';
-    const levelCfg = LEVEL_CONFIG[levelStr] || LEVEL_CONFIG.Beginner;
-    const duration = briefingInfo?.duration_minutes;
-    const totalQ   = briefingInfo?.questions_id?.length || briefingInfo?.total_questions || 0;
+  if (phase === 'submitting') return <FullLoader title="Submitting Assessment" sub="Please do not close this tab." />;
 
-    return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          <Card className="p-0 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 text-white relative">
-              <div className="flex items-start gap-5 relative z-10">
-                <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 shrink-0">
-                  <Target className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-[24px] font-bold text-white mb-2 leading-tight">{skill}</h1>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="px-2.5 py-0.5 rounded text-[11px] font-bold border bg-white/90 border-white/20 flex items-center gap-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${levelCfg.dot}`}></span>
-                      {levelCfg.label}
-                    </span>
-                    <span className="text-[13px] text-blue-100 flex items-center gap-1.5">
-                      <BookOpen className="w-4 h-4" /> Comprehensive Test
-                    </span>
-                    <span className="text-[13px] text-blue-100 flex items-center gap-1.5">
-                      <Shield className="w-4 h-4" /> Proctored
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-8">
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                    <BookOpen className="w-5 h-5 text-gray-500" />
-                  </div>
-                  <div>
-                    <div className="text-[12px] font-bold text-gray-500 uppercase tracking-wide">Questions</div>
-                    <div className="text-[18px] font-bold text-gray-900">{totalQ}</div>
-                  </div>
-                </div>
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                    <Clock className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <div className="text-[12px] font-bold text-blue-600 uppercase tracking-wide">Duration</div>
-                    <div className="text-[18px] font-bold text-blue-900">{duration ? `${duration} Min` : 'Flexible'}</div>
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <div className="flex gap-3 items-start bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-[13px] text-red-700 font-medium">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {error}
-                </div>
-              )}
-
-              {/* ── Camera permission + Proctoring notice — only when proctoring is ON ── */}
-              {PROCTORING_ENABLED ? (
-                <>
-                  {/* Step 1: Camera permission */}
-                  <div className={`mb-6 rounded-xl p-4 border transition-all ${
-                    cameraPermStatus === 'granted'
-                      ? 'bg-green-50 border-green-200'
-                      : cameraPermStatus === 'denied' || cameraPermStatus === 'error'
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-amber-50 border-amber-200'
-                  }`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      {cameraPermStatus === 'granted'
-                        ? <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        : <AlertTriangle className="w-4 h-4 text-amber-600" />}
-                      <h4 className={`text-[13px] font-bold ${
-                        cameraPermStatus === 'granted' ? 'text-green-800'
-                        : cameraPermStatus === 'denied' || cameraPermStatus === 'error' ? 'text-red-800'
-                        : 'text-amber-800'
-                      }`}>
-                        Step 1 — Camera Access Required
-                      </h4>
-                    </div>
-                    {cameraPermStatus === 'granted' ? (
-                      <p className="text-[12px] text-green-700 font-medium">✓ Camera permission granted. You are ready to begin.</p>
-                    ) : cameraPermStatus === 'denied' ? (
-                      <div>
-                        <p className="text-[12px] text-red-700 font-medium mb-2">Camera access was denied. Please allow camera access in your browser settings and reload this page.</p>
-                        <p className="text-[11px] text-red-600">Click the camera icon in your browser address bar → Allow → Reload page.</p>
-                      </div>
-                    ) : cameraPermStatus === 'error' ? (
-                      <div>
-                        <p className="text-[12px] text-red-700 font-medium mb-2">Camera error. Another app (e.g. Microsoft Teams) may be blocking it.</p>
-                        <p className="text-[11px] text-red-600">Close Teams or any app using your camera, then click Allow Camera Access again.</p>
-                        <button
-                          onClick={async () => {
-                            setCameraPermStatus('requesting');
-                            const result = await camera.requestPermission();
-                            setCameraPermStatus(result === 'granted' ? 'granted' : result);
-                          }}
-                          className="mt-2 px-3 py-1.5 bg-red-600 text-white text-[12px] font-bold rounded-lg hover:bg-red-700 transition-colors"
-                        >
-                          Retry Camera Access
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-[12px] text-amber-700 font-medium mb-3">
-                          You must allow camera access <strong>before</strong> starting. This prevents the permission dialog from appearing during the fullscreen exam (which would count as a violation).
-                        </p>
-                        <button
-                          disabled={cameraPermStatus === 'requesting'}
-                          onClick={async () => {
-                            setCameraPermStatus('requesting');
-                            const result = await camera.requestPermission();
-                            setCameraPermStatus(result === 'granted' ? 'granted' : result);
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-[13px] font-bold rounded-xl hover:bg-amber-700 disabled:opacity-60 transition-colors"
-                        >
-                          {cameraPermStatus === 'requesting'
-                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Requesting…</>
-                            : <><Shield className="w-4 h-4" /> Allow Camera Access</>}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Proctoring notice */}
-                  <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Shield className="w-4 h-4 text-blue-600" />
-                      <h4 className="text-[13px] font-bold text-blue-800">Proctoring & Security Notice</h4>
-                    </div>
-                    <div className="space-y-1.5 text-[12px] text-blue-700 font-medium">
-                      <p>• This assessment runs in <strong>locked fullscreen mode</strong>. Exiting fullscreen is a violation.</p>
-                      <p>• <strong>Tab switching, window minimising</strong>, and focus loss are monitored and logged.</p>
-                      <p>• <strong>Copy, paste, right-click</strong> and browser shortcuts (F12, Ctrl+Shift+I) are disabled.</p>
-                      <p>• After <strong>5 critical violations</strong> the assessment will auto-submit and be flagged.</p>
-                      <p>• <strong>Your webcam will be activated</strong> for AI-powered face monitoring. No video is recorded or uploaded — only violation events are logged.</p>
-                      <p>• All activity is recorded in real-time and reviewed by your institution.</p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                /* Development mode — proctoring fully off */
-                <div className="mb-6 bg-yellow-50 border border-yellow-300 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                    <h4 className="text-[13px] font-bold text-yellow-800">Development Mode — Proctoring Disabled</h4>
-                  </div>
-                  <p className="text-[12px] text-yellow-700 font-medium">
-                    Camera, fullscreen lock, and tab monitoring are <strong>OFF</strong>.
-                    Set <code className="bg-yellow-100 px-1 rounded">VITE_PROCTORING_ENABLED=true</code> in{' '}
-                    <code className="bg-yellow-100 px-1 rounded">.env.production</code> before deploying.
-                  </p>
-                </div>
-              )}
-
-              <div className="mb-8">
-                <h3 className="text-[14px] font-bold text-gray-900 mb-4 uppercase tracking-wide">Assessment Instructions</h3>
-                <div className="space-y-3">
-                  {[
-                    'The timer starts immediately after clicking Begin Assessment and cannot be paused.',
-                    'You can navigate freely between questions using the Question Palette.',
-                    'The assessment will auto-submit when the time expires.',
-                    'Do not refresh or close this tab during the assessment.',
-                  ].map((t, i) => (
-                    <div key={i} className="flex gap-3 items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
-                      <span className="w-5 h-5 bg-blue-100 rounded text-blue-600 flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">{i+1}</span>
-                      <span className="text-[13px] text-gray-700 font-medium">{t}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="w-1/3 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-[14px] hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleBegin}
-                  disabled={PROCTORING_ENABLED && cameraPermStatus !== 'granted'}
-                  className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-[14px] hover:shadow-lg hover:shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  <Lock className="w-4 h-4" /> Begin Secured Assessment <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Done ──
+  // ── Phase: Done ───────────────────────────────────────────────
   if (phase === 'done') {
+    const answeredCount = Object.values(answers).filter(v => v != null && (!Array.isArray(v) || v.length > 0)).length;
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
-        <div className="w-full max-w-lg">
-          <Card className="p-0 overflow-hidden text-center">
-            <div className="py-12 px-8 bg-green-50 border-b border-green-100">
-              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-                <CheckCircle2 className="w-10 h-10 text-green-500" />
-              </div>
-              <h2 className="text-[20px] font-bold text-gray-900 mb-2">Assessment Submitted Successfully!</h2>
-              <p className="text-[14px] text-gray-500">
-                Your answers have been securely recorded. Your score and detailed results will be available once published by your college admin.
-              </p>
-              {(guard.violations.length > 0 || camViolationCount > 0) && (
-                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 space-y-1">
-                  {guard.violations.length > 0 && (
-                    <p className="text-[12px] font-bold text-amber-700">
-                      🖥 {guard.violations.length} browser proctoring event{guard.violations.length !== 1 ? 's were' : ' was'} recorded.
-                    </p>
-                  )}
-                  {camViolationCount > 0 && (
-                    <p className="text-[12px] font-bold text-amber-700">
-                      📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's were' : ' was'} recorded.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="p-8">
-              <div className="flex gap-4">
-                <button
-                  onClick={() => navigate('/dashboard/student/assessments/history')}
-                  className="w-1/2 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-[14px] hover:bg-gray-50 transition-colors"
-                >
-                  View History
-                </button>
-                <button
-                  onClick={() => navigate('/dashboard/student/assessments')}
-                  className="w-1/2 py-3 rounded-xl bg-blue-600 text-white font-bold text-[14px] hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  Back to Assessments
-                </button>
-              </div>
-            </div>
-          </Card>
+      <div className="h-screen w-screen bg-white flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-green-50 border border-green-200 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-8 h-8 text-green-500" />
+          </div>
+          <h2 className="text-[20px] font-bold text-gray-900 mb-2">Assessment Submitted!</h2>
+          <p className="text-[14px] text-gray-500 mb-6">
+            You answered {answeredCount} of {questions.length} questions. Results will be available once published.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => navigate('/dashboard/student/assessments/history')}
+              className="px-5 py-2.5 border border-gray-200 rounded-xl text-[13px] font-bold text-gray-700 hover:bg-gray-50">
+              View History
+            </button>
+            <button onClick={() => navigate('/dashboard/student/assessments')}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[13px] font-bold hover:bg-blue-700">
+              Back to Assessments
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ── In Progress ──
+  // ── Phase: In Progress ────────────────────────────────────────
   const q = questions[currentIdx];
   if (!q) return null;
+
   const total = questions.length;
   const qid = q.question_id;
   const questionText = q.question_text || q.question || '(Question text unavailable)';
   const opts = q.options || [];
   const answeredCount = Object.values(answers).filter(v => v != null && (!Array.isArray(v) || v.length > 0)).length;
-  const progress = ((currentIdx + 1) / total) * 100;
 
+  // ── Render ────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f9fa]" style={{ userSelect: 'none' }}>
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-white" style={{ fontFamily: "'Inter', 'IBM Plex Sans', sans-serif" }}>
 
-      {/* ── Proctoring overlays ── */}
-      {guard.isBlocked && <BlockedOverlay />}
-
-      {!guard.isBlocked && !guard.isFullscreen && (
-        <FullscreenPrompt
-          onRequestFullscreen={guard.requestFullscreen}
-          violationCount={guard.warningCount}
-        />
-      )}
-
-      {!guard.isBlocked && showCamViolationModal && (
-        <CameraViolationModal
-          violationCount={camViolationCount}
-          max={CAM_MAX_VIOLATIONS}
-          onDismiss={() => setShowCamViolationModal(false)}
-        />
-      )}
-
-      {showWarningToast && (guard.lastViolation || cameraLastViolation) && (
-        <ProctoringWarningToast
-          violation={guard.lastViolation || cameraLastViolation}
-          remaining={guard.criticalViolationsRemaining}
-          onDismiss={() => setShowWarningToast(false)}
-        />
-      )}
-
-      {/* ── Camera Proctoring Overlay (bottom-right PiP) ── */}
-      <CameraOverlay
-        videoRef={camera.videoRef}
-        canvasRef={camera.canvasRef}
-        overlayRef={camera.overlayRef}
-        status={camera.status}
-        faceStatus={camera.faceStatus}
-        isActive={camera.isActive}
-        violationCount={camera.violationCount}
-        streak={camera.streak}
-        brightness={camera.brightness}
-        faceConfidence={camera.faceConfidence}
-        lastEvent={camera.lastEvent}
-        noFaceWarningCount={camera.noFaceWarningCount}
-        noFaceWarningsRemaining={camera.noFaceWarningsRemaining}
-        gazeStatus={camera.gazeStatus}
-      />
-
-      {/* ── Top bar ── */}
-      <header className="bg-white border-b border-gray-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] sticky top-0 z-40">
-        <div className="h-1 bg-gray-100">
-          <div className="h-1 bg-blue-600 transition-all duration-300" style={{width:`${progress}%`}} />
+      {/* ═══════════════════════════════════════════════════════
+          TOP NAV BAR
+      ═══════════════════════════════════════════════════════ */}
+      <header className="flex items-center justify-between px-5 shrink-0 border-b border-gray-200 bg-white shadow-sm" style={{ height: '52px' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <span className="text-[14px] font-bold text-gray-900 truncate max-w-[240px] block leading-tight">
+              {briefingInfo?.skill_id?.name || briefingInfo?.skill || 'Assessment'}
+            </span>
+            <span className="text-[11px] text-gray-400 font-medium">
+              Question {currentIdx + 1} of {total} <span className="mx-1">·</span> {answeredCount} Answered
+            </span>
+          </div>
         </div>
-        <div className="px-4 lg:px-6 py-3.5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="font-bold text-gray-900 text-[15px] truncate">
-                {briefingInfo?.skill_id?.name || briefingInfo?.skill || 'Assessment'}
-              </h2>
-              <p className="text-[12px] font-medium text-gray-500">
-                Question {currentIdx + 1} of {total} <span className="mx-1.5 text-gray-300">|</span> {answeredCount} Answered
-              </p>
-            </div>
+
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 border border-green-200">
+          <Shield className="w-3.5 h-3.5 text-green-600" />
+          <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Secured</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-mono text-[13px] font-bold border transition-colors ${isTimeLow ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-gray-50 text-gray-900 border-gray-200'
+            }`}>
+            <Clock className={`w-3.5 h-3.5 ${isTimeLow ? 'text-red-500' : 'text-blue-600'}`} />
+            {formatTime(remaining)}
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <ProctoringBadge
-              isFullscreen={guard.isFullscreen}
-              warningCount={guard.warningCount}
-              max={guard.MAX_VIOLATIONS}
-              camViolationCount={camViolationCount}
-              camMax={CAM_MAX_VIOLATIONS}
-            />
-            {!guard.isOnline && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Offline
-              </div>
-            )}
-            <div className="hidden sm:block">
-              <Timer totalSeconds={(briefingInfo?.duration_minutes || 60) * 60} onExpire={handleTimerExpire} />
-            </div>
-            <button
-              onClick={() => setSidebarOpen(p => !p)}
-              className={`p-2.5 rounded-lg border transition-all hidden lg:flex items-center justify-center ${sidebarOpen ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-            >
-              {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRight className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setSubmitConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg text-[13px] font-bold hover:shadow-md transition-shadow"
-            >
-              <Send className="w-3.5 h-3.5" /> Submit Assessment
-            </button>
-          </div>
+          <button onClick={() => setSubmitConfirm(true)}
+            className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-bold transition-colors shadow-sm">
+            <Send className="w-3.5 h-3.5" /> Submit Assessment
+          </button>
         </div>
       </header>
 
-      <div className="sm:hidden bg-white border-b border-gray-200 px-4 py-2 flex justify-center">
-        <Timer totalSeconds={(briefingInfo?.duration_minutes || 60) * 60} onExpire={handleTimerExpire} />
-      </div>
-
+      {/* Error bar */}
       {error && (
-        <div className="mx-4 mt-4 lg:mx-8 flex gap-3 items-center bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-[13px] font-medium shadow-sm">
-          <AlertTriangle className="w-4 h-4 shrink-0" /><span className="flex-1">{error}</span>
-          <button onClick={() => setError('')} className="p-1 hover:bg-red-100 rounded-md"><X className="w-4 h-4" /></button>
+        <div className="px-5 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 text-[12px] font-medium text-red-700">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {error}
+          <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600 text-[11px] font-bold">Dismiss</button>
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-[800px] mx-auto px-4 py-6 lg:px-8">
-            <Card className="p-0 overflow-hidden mb-6">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[12px] font-bold rounded-md border border-blue-200">
-                    Question {currentIdx + 1}
-                  </span>
-                  <span className="text-[12px] font-medium text-gray-500 bg-white border border-gray-200 px-2.5 py-1 rounded-md">
-                    {q.marks ?? 1} Mark{(q.marks ?? 1) !== 1 ? 's' : ''}
-                  </span>
-                  {q.type === 'multiple_answer' && (
-                    <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 text-[12px] font-bold rounded-md">
-                      Multiple Choice
+      {/* ═══════════════════════════════════════════════════════
+          MAIN 3-COLUMN BODY
+      ═══════════════════════════════════════════════════════ */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+
+        {/* LEFT SIDEBAR — Question number navigator */}
+        <aside className="flex flex-col items-center py-3 gap-2 shrink-0 overflow-y-auto border-r border-gray-200 bg-gray-50" style={{ width: '56px' }}>
+          {questions.map((sq, idx) => (
+            <QuestionPill
+              key={sq.question_id}
+              number={idx + 1}
+              status={getStatus(sq)}
+              isCurrent={idx === currentIdx}
+              onClick={() => setCurrentIdx(idx)}
+            />
+          ))}
+          <div className="mt-auto pt-3 border-t border-gray-200 w-full flex flex-col items-center gap-2 pb-2">
+            <div className="w-2 h-2 rounded-sm bg-blue-600" title="Current" />
+            <div className="w-2 h-2 rounded-sm bg-blue-100 border border-blue-300" title="Answered" />
+            <div className="w-2 h-2 rounded-sm bg-white border border-gray-300" title="Unanswered" />
+            <div className="w-2 h-2 rounded-sm bg-amber-100 border border-amber-400" title="Flagged" />
+          </div>
+        </aside>
+
+        {/* MIDDLE — Question content (scrollable) */}
+        <main ref={questionScrollRef} className="flex-1 overflow-y-auto min-h-0 bg-white">
+          <div className="max-w-[680px] mx-auto px-6 py-5 pb-16">
+
+            {/* Question header */}
+            <div className="mb-5">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                      Q{currentIdx + 1}
                     </span>
-                  )}
-                  {flagged[qid] && (
-                    <span className="px-2.5 py-1 bg-red-50 text-red-600 border border-red-200 text-[12px] font-bold rounded-md flex items-center gap-1">
-                      <Flag className="w-3 h-3" /> Flagged
-                    </span>
-                  )}
+                    <span className="text-[11px] text-gray-400 font-medium">{q.marks ?? 1} Mark{(q.marks ?? 1) !== 1 ? 's' : ''}</span>
+                  </div>
+                  <h1 className="text-[20px] font-bold text-gray-900 leading-snug">{questionText}</h1>
                 </div>
-                <button
-                  onClick={() => toggleFlag(qid)}
-                  className={`flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md border font-bold transition-colors
-                    ${flagged[qid] ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
-                >
-                  <Flag className="w-3 h-3" /> {flagged[qid] ? 'Unflag' : 'Flag'}
+                <button onClick={() => toggleFlag(qid)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-colors shrink-0 ${flagged[qid] ? 'bg-amber-50 text-amber-600 border-amber-300' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                    }`}>
+                  <Flag className="w-3.5 h-3.5" /> {flagged[qid] ? 'Flagged' : 'Flag'}
                 </button>
               </div>
 
-              <div className="px-6 py-6">
-                <h3 className="text-gray-900 font-bold text-[16px] leading-relaxed">{questionText}</h3>
+              {/* Tags */}
+              <div className="flex flex-wrap gap-1.5">
+                {q.type === 'coding' && <TagChip label="Coding Question" />}
+                {q.algorithm_tags?.map(t => <TagChip key={t} label={t} />)}
               </div>
+            </div>
 
-              {(q.type === 'single_answer' || q.type === 'multiple_answer') && opts.length > 0 && (
-                <div className="px-6 pb-8 space-y-3">
-                  {opts.map((opt, oIdx) => {
-                    const sel = q.type === 'multiple_answer'
-                      ? (Array.isArray(answers[qid]) && answers[qid].includes(opt.label))
-                      : answers[qid] === opt.label;
-
-                    const click = () => {
-                      if (q.type === 'multiple_answer') {
-                        const cur = Array.isArray(answers[qid]) ? answers[qid] : [];
-                        const next = sel ? cur.filter(l => l !== opt.label) : [...cur, opt.label];
-                        setAnswers(p => ({ ...p, [qid]: next.length ? next : null }));
-                        setStatuses(p => ({ ...p, [qid]: flagged[qid] ? 'flagged' : next.length ? 'answered' : 'unanswered' }));
-                      } else {
-                        setAnswer(qid, opt.label);
-                      }
-                    };
-
-                    return (
-                      <button key={opt.label} onClick={click}
-                        className={`w-full text-left flex items-center gap-4 px-4 py-4 rounded-xl border-2 transition-all
-                          ${sel ? 'border-blue-500 bg-blue-50/50 shadow-[0_2px_8px_rgba(59,130,246,0.1)]'
-                                : 'border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50'}`}>
-                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold shrink-0 transition-colors
-                          ${sel ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
-                          {String.fromCharCode(65 + oIdx)}
-                        </span>
-                        <span className={`font-medium text-[14px] flex-1 ${sel ? 'text-blue-900' : 'text-gray-700'}`}>{opt.text}</span>
-                        {sel && <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                        </div>}
-                      </button>
-                    );
-                  })}
-                  {q.type === 'multiple_answer' && (
-                    <p className="text-[12px] font-medium text-gray-500 mt-4 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" /> Select multiple options to proceed.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {q.type === 'fill_up' && (
-                <div className="px-6 pb-8">
-                  <input type="text"
-                    value={typeof answers[qid] === 'string' ? answers[qid] : ''}
-                    onChange={e => setAnswer(qid, e.target.value)}
-                    placeholder="Type your answer here..."
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-4 text-[14px] font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all bg-gray-50 focus:bg-white"
-                    autoComplete="off"
-                    spellCheck="false"
-                  />
-                </div>
-              )}
-
-              {q.type === 'coding' && (
-                <div className="px-6 pb-8">
-                  <div className="mb-3 flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 ring-1 ring-purple-200">
-                      Coding Question
-                    </span>
-                    {q.marks && (
-                      <span className="text-xs text-gray-500 font-medium">{q.marks} mark{q.marks !== 1 ? 's' : ''}</span>
-                    )}
-                    {q.algorithm_tags?.length > 0 && q.algorithm_tags.map(t => (
-                      <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-[10px] font-medium">{t}</span>
-                    ))}
-                  </div>
-
-                  {/* Problem description */}
-                  {q.problem_description && (
-                    <div className="mb-4 p-4 bg-blue-50/60 border border-blue-100 rounded-xl">
-                      <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1.5">Problem Description</p>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{q.problem_description}</p>
-                    </div>
-                  )}
-
-                  {/* Input / Output Format */}
-                  {(q.input_format || q.output_format) && (
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {q.input_format && (
-                        <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Input Format</p>
-                          <p className="text-xs text-gray-700 whitespace-pre-wrap font-mono">{q.input_format}</p>
-                        </div>
-                      )}
-                      {q.output_format && (
-                        <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Output Format</p>
-                          <p className="text-xs text-gray-700 whitespace-pre-wrap font-mono">{q.output_format}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Constraints */}
-                  {q.constraints && (
-                    <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                      <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Constraints</p>
-                      <p className="text-xs text-gray-700 whitespace-pre-wrap">{q.constraints}</p>
-                    </div>
-                  )}
-
-                  {/* Visible sample test cases */}
-                  {q.test_cases?.filter(tc => !tc.is_hidden).length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Sample Test Cases</p>
-                      <div className="space-y-2">
-                        {q.test_cases.filter(tc => !tc.is_hidden).map((tc, i) => (
-                          <div key={i} className="grid grid-cols-2 gap-2">
-                            <div className="p-2.5 bg-gray-900 rounded-lg">
-                              <p className="text-[10px] text-gray-500 font-bold mb-1">Input</p>
-                              <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap">{tc.input}</pre>
-                            </div>
-                            <div className="p-2.5 bg-gray-900 rounded-lg">
-                              <p className="text-[10px] text-gray-500 font-bold mb-1">Expected Output</p>
-                              <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap">{tc.expected_output}</pre>
-                            </div>
-                            {tc.explanation && (
-                              <div className="col-span-2 text-xs text-gray-500 italic">💡 {tc.explanation}</div>
-                            )}
-                          </div>
-                        ))}
+            {/* ── For CODING questions: show problem details ── */}
+            {q.type === 'coding' && (
+              <>
+                {q.problem_description && (
+                  <section className="mb-5">
+                    <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+                      <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+                        <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Problem Description</span>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-[13px] text-gray-700 leading-relaxed whitespace-pre-wrap">{q.problem_description}</p>
                       </div>
                     </div>
-                  )}
+                  </section>
+                )}
 
-                  <CodeEditor
-                    assessmentId={assessmentId}
-                    questionId={qid}
-                    questionText={q.question}
-                    marks={q.marks}
-                    boilerplateCode={q.boilerplate_code || q.starter_code}
-                    defaultLanguage={briefingInfo?.default_coding_language || 'python'}
-                    onCodeSubmitted={({ passedCount, totalCount }) => {
-                      setAnswer(qid, `[Code submitted: ${passedCount}/${totalCount} tests passed]`);
-                    }}
-                  />
-                </div>
-              )}
-            </Card>
+                {(q.input_format || q.output_format) && (
+                  <section className="mb-5 grid grid-cols-2 gap-3">
+                    {q.input_format && (
+                      <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+                        <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Input Format</span>
+                        </div>
+                        <div className="p-3">
+                          <p className="text-[12px] text-gray-600 leading-relaxed font-mono whitespace-pre-wrap">{q.input_format}</p>
+                        </div>
+                      </div>
+                    )}
+                    {q.output_format && (
+                      <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+                        <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Output Format</span>
+                        </div>
+                        <div className="p-3">
+                          <p className="text-[12px] text-gray-600 leading-relaxed font-mono whitespace-pre-wrap">{q.output_format}</p>
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
 
-            <div className="flex items-center justify-between">
-              <button onClick={() => setCurrentIdx(i => Math.max(i-1,0))} disabled={currentIdx===0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] font-bold text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all">
-                <ChevronLeft className="w-4 h-4" /> Previous
+                {q.constraints && (
+                  <section className="mb-5">
+                    <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+                      <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Constraints</span>
+                        <div className="flex items-center gap-2">
+                          {q.time_complexity && <ComplexityBadge label="Time" value={q.time_complexity} />}
+                          {q.space_complexity && <ComplexityBadge label="Space" value={q.space_complexity} />}
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <pre className="text-[12px] font-mono text-gray-600 whitespace-pre-wrap">{q.constraints}</pre>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {q.test_cases?.filter(tc => !tc.is_hidden).length > 0 && (
+                  <section className="mb-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-[12px] font-bold text-gray-900">Sample Test Cases</span>
+                      <span className="text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full">
+                        {q.test_cases.filter(tc => !tc.is_hidden).length} cases
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {q.test_cases.filter(tc => !tc.is_hidden).map((tc, i) => (
+                        <SampleCase key={i} index={i + 1} input={tc.input} output={tc.expected_output} explanation={tc.explanation} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </>
+            )}
+
+            {/* ── For MCQ / FILL-UP questions ── */}
+            {(q.type === 'single_answer' || q.type === 'multiple_answer') && opts.length > 0 && (
+              <div className="space-y-3 mb-5">
+                {opts.map((opt, oIdx) => {
+                  const sel = q.type === 'multiple_answer'
+                    ? (Array.isArray(answers[qid]) && answers[qid].includes(opt.label))
+                    : answers[qid] === opt.label;
+
+                  const click = () => {
+                    if (q.type === 'multiple_answer') {
+                      const cur = Array.isArray(answers[qid]) ? answers[qid] : [];
+                      const next = sel ? cur.filter(l => l !== opt.label) : [...cur, opt.label];
+                      setAnswers(p => ({ ...p, [qid]: next.length ? next : null }));
+                      setStatuses(p => ({ ...p, [qid]: flagged[qid] ? 'flagged' : next.length ? 'answered' : 'unanswered' }));
+                    } else {
+                      setAnswer(qid, opt.label);
+                    }
+                  };
+
+                  return (
+                    <button key={opt.label} onClick={click}
+                      className={`w-full text-left flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition-all ${sel ? 'border-blue-500 bg-blue-50/40' : 'border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50'
+                        }`}>
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold shrink-0 ${sel ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                        {String.fromCharCode(65 + oIdx)}
+                      </span>
+                      <span className={`font-medium text-[15px] flex-1 ${sel ? 'text-blue-900' : 'text-gray-700'}`}>{opt.text}</span>
+                      {sel && <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {q.type === 'fill_up' && (
+              <div className="mb-5">
+                <input type="text"
+                  value={typeof answers[qid] === 'string' ? answers[qid] : ''}
+                  onChange={e => setAnswer(qid, e.target.value)}
+                  placeholder="Type your answer here..."
+                  className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 text-[15px] font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all bg-gray-50 focus:bg-white"
+                  autoComplete="off" spellCheck="false"
+                />
+              </div>
+            )}
+
+            {/* Bottom navigation */}
+            <div className="flex items-center justify-between pt-2">
+              <button onClick={() => setCurrentIdx(i => Math.max(0, i - 1))} disabled={currentIdx === 0}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-[12px] font-bold text-gray-500 hover:border-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
-
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button onClick={() => handleSkip(qid)}
-                  className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] font-bold text-gray-600 hover:bg-gray-50 shadow-sm transition-all">
-                  Skip <SkipForward className="w-4 h-4" />
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-200 text-[12px] font-bold text-gray-500 hover:border-gray-400 transition-colors">
+                  Skip <SkipForward className="w-3 h-3" />
                 </button>
-
                 {currentIdx < total - 1 ? (
-                  <button onClick={() => setCurrentIdx(i => Math.min(i+1,total-1))}
-                    className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-[13px] font-bold hover:bg-blue-700 shadow-sm shadow-blue-200 transition-all">
-                    Next <ChevronRight className="w-4 h-4" />
+                  <button onClick={() => setCurrentIdx(i => Math.min(i + 1, total - 1))}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[12px] font-bold hover:bg-blue-700 transition-colors">
+                    Next <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 ) : (
                   <button onClick={() => setSubmitConfirm(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl text-[13px] font-bold hover:bg-green-700 shadow-sm shadow-green-200 transition-all">
-                    Submit <Send className="w-4 h-4" />
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-green-600 text-white text-[12px] font-bold hover:bg-green-700 transition-colors">
+                    Submit <Send className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -1035,97 +743,34 @@ const TakeAssessment = () => {
           </div>
         </main>
 
-        {/* ── Sidebar Palette ── */}
-        <aside className={`hidden lg:flex flex-col bg-white border-l border-gray-200 shadow-[0_0_15px_rgba(0,0,0,0.03)] transition-all duration-300 overflow-hidden shrink-0 ${sidebarOpen ? 'w-[300px]' : 'w-0'}`}>
-          <div className="w-[300px] flex flex-col h-full overflow-hidden">
-            <div className="px-5 py-5 border-b border-gray-100 bg-gray-50/50">
-              <h3 className="font-bold text-[14px] text-gray-900 mb-1 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-gray-500" /> Question Palette
-              </h3>
-              <p className="text-[12px] font-medium text-gray-500">{answeredCount} of {total} Answered</p>
+        {/* RIGHT PANEL — Code editor (only for coding questions) */}
+        {q.type === 'coding' && (
+          <aside className="flex flex-col shrink-0 border-l border-gray-200 overflow-hidden bg-gray-50"
+            style={{ width: '50%', minWidth: '480px', maxWidth: '800px' }}>
+            <div className="flex-1 min-h-0 overflow-hidden p-3">
+              <CodeEditor
+                key={qid}
+                assessmentId={assessmentId}
+                questionId={qid}
+                questionText={q.question}
+                marks={q.marks}
+                boilerplateCode={q.boilerplate_code || q.starter_code}
+                defaultLanguage={briefingInfo?.default_coding_language || 'python'}
+                onCodeSubmitted={({ passedCount, totalCount }) => {
+                  setAnswer(qid, `[Code submitted: ${passedCount}/${totalCount} tests passed]`);
+                }}
+              />
             </div>
-
-            <div className="px-5 py-4 grid grid-cols-2 gap-3 border-b border-gray-100 bg-white text-[12px] font-medium">
-              {[
-                { label: 'Answered', s: 'answered',   bg: 'bg-blue-600',  text: 'text-white',     border: 'border-transparent' },
-                { label: 'Skipped',  s: 'skipped',    bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
-                { label: 'Flagged',  s: 'flagged',    bg: 'bg-red-100',   text: 'text-red-700',   border: 'border-red-200' },
-                { label: 'Pending',  s: 'unanswered', bg: 'bg-white',     text: 'text-gray-600',  border: 'border-gray-200' },
-              ].map(l => (
-                <div key={l.label} className="flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded flex items-center justify-center text-[11px] font-bold border ${l.bg} ${l.text} ${l.border}`}>
-                    {Object.values(statuses).filter(s => s === l.s).length}
-                  </span>
-                  <span className="text-gray-600">{l.label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-5 flex-1 overflow-y-auto bg-gray-50/30">
-              <div className="grid grid-cols-5 gap-2.5">
-                {questions.map((sq, idx) => {
-                  const st = statuses[sq.question_id] || 'unanswered';
-                  let styleClass = '';
-                  if      (st === 'answered') styleClass = 'bg-blue-600 text-white border-transparent shadow-[0_2px_4px_rgba(37,99,235,0.2)]';
-                  else if (st === 'skipped')  styleClass = 'bg-amber-100 text-amber-700 border-amber-200';
-                  else if (st === 'flagged')  styleClass = 'bg-red-100 text-red-600 border-red-200';
-                  else                        styleClass = 'bg-white text-gray-600 border-gray-200 hover:border-gray-300';
-
-                  return (
-                    <button key={sq.question_id} onClick={() => setCurrentIdx(idx)}
-                      className={`w-10 h-10 rounded-lg text-[13px] font-bold border transition-all flex items-center justify-center
-                        ${currentIdx === idx ? 'ring-2 ring-blue-600 ring-offset-2 scale-105' : 'hover:scale-105'}
-                        ${styleClass}`}>
-                      {idx + 1}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {(guard.warningCount > 0 || camViolationCount > 0) && (
-              <div className="mx-5 mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                  <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Proctoring Alerts</p>
-                </div>
-                {guard.warningCount > 0 && (
-                  <p className="text-[12px] text-amber-700">
-                    🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} ({guard.criticalViolationsRemaining} remaining).
-                  </p>
-                )}
-                {camViolationCount > 0 && (
-                  <p className="text-[12px] text-amber-700 mt-0.5">
-                    📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} ({CAM_MAX_VIOLATIONS - camViolationCount} remaining).
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="p-5 border-t border-gray-200 bg-white">
-              <button
-                onClick={() => setSubmitConfirm(true)}
-                className="w-full py-3.5 bg-blue-600 text-white rounded-xl text-[13px] font-bold hover:bg-blue-700 hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                <Send className="w-4 h-4" /> Submit Assessment
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        <button
-          onClick={() => setSidebarOpen(p => !p)}
-          className="lg:hidden fixed right-0 top-1/2 -translate-y-1/2 z-50 bg-white border border-gray-200 border-r-0 text-gray-700 rounded-l-xl px-2 py-4 shadow-[-4px_0_15px_rgba(0,0,0,0.05)]"
-        >
-          {sidebarOpen ? <ChevronRight className="w-5 h-5 text-gray-400" /> : <PanelRight className="w-5 h-5 text-blue-600" />}
-        </button>
+          </aside>
+        )}
       </div>
 
-      {/* Submit modal */}
+      {/* ── Submit confirmation modal ── */}
       {submitConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-sm p-8 text-center animate-in fade-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-              <AlertTriangle className="w-8 h-8 text-blue-600" />
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center border border-gray-100">
+            <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle className="w-7 h-7 text-blue-600" />
             </div>
             <h3 className="font-bold text-[18px] text-gray-900 mb-2">Submit Assessment?</h3>
             <p className="text-[14px] text-gray-500 mb-3">
@@ -1133,30 +778,20 @@ const TakeAssessment = () => {
             </p>
             {total - answeredCount > 0 && (
               <div className="bg-red-50 text-red-600 font-medium text-[12px] py-2 px-3 rounded-lg mb-4 border border-red-100">
-                {total - answeredCount} unanswered questions will be marked incorrect.
-              </div>
-            )}
-            {guard.warningCount > 0 && (
-              <div className="bg-amber-50 text-amber-700 font-medium text-[12px] py-2 px-3 rounded-lg mb-2 border border-amber-200">
-                🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} will be included in your report.
-              </div>
-            )}
-            {camViolationCount > 0 && (
-              <div className="bg-amber-50 text-amber-700 font-medium text-[12px] py-2 px-3 rounded-lg mb-4 border border-amber-200">
-                📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} will be included in your report.
+                {total - answeredCount} unanswered question{total - answeredCount !== 1 ? 's' : ''} will be marked incorrect.
               </div>
             )}
             <div className="flex gap-3 mt-4">
               <button onClick={() => setSubmitConfirm(false)}
-                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-bold text-[13px] transition-colors">
+                className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-bold text-[13px]">
                 Return
               </button>
               <button onClick={() => handleSubmit('manual')}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-[13px] hover:bg-blue-700 shadow-sm transition-colors">
+                className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-[13px] hover:bg-blue-700">
                 Confirm Submit
               </button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
     </div>

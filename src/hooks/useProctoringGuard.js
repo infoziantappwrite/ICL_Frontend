@@ -245,7 +245,11 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // 1. Fullscreen change
+    // 1. Fullscreen change — record violation. The FullscreenPrompt overlay in
+    // TakeAssessment will immediately block all content and force the student
+    // to click "Return to Fullscreen" — that click IS a user gesture so
+    // requestFullscreen() works. We cannot auto-call it here (browsers block
+    // requestFullscreen unless triggered by a direct user gesture).
     const onFullscreenChange = () => {
       const fsEl = document.fullscreenElement
         || document.webkitFullscreenElement
@@ -253,7 +257,7 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
         || document.msFullscreenElement;
       const nowFs = Boolean(fsEl);
       setIsFullscreen(nowFs);
-      if (!nowFs && stateRef.current.enabled) {
+      if (!nowFs && stateRef.current.enabled && !stateRef.current.isBlocked) {
         recordViolation(VIOLATION.FULLSCREEN_EXIT);
       }
     };
@@ -295,10 +299,10 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
       recordViolation(VIOLATION.CONTEXT_MENU);
     };
 
-    // 5. Clipboard events
-    const onCopy  = (e) => { e.preventDefault(); recordViolation(VIOLATION.COPY_ATTEMPT); };
-    const onPaste = (e) => { e.preventDefault(); recordViolation(VIOLATION.PASTE_ATTEMPT); };
-    const onCut   = (e) => { e.preventDefault(); recordViolation(VIOLATION.CUT_ATTEMPT); };
+    // 5. Clipboard events — attached to BOTH document AND window to catch Monaco editor
+    const onCopy  = (e) => { e.preventDefault(); e.stopPropagation(); recordViolation(VIOLATION.COPY_ATTEMPT); };
+    const onPaste = (e) => { e.preventDefault(); e.stopPropagation(); recordViolation(VIOLATION.PASTE_ATTEMPT); };
+    const onCut   = (e) => { e.preventDefault(); e.stopPropagation(); recordViolation(VIOLATION.CUT_ATTEMPT); };
 
     // 6. keydown — block/log restricted shortcuts
     const onKeyDown = (e) => {
@@ -319,10 +323,13 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
         return;
       }
 
-      // PrintScreen
+      // PrintScreen — blur page briefly to ruin screenshot + log violation
       if (k === 'PRINTSCREEN') {
         e.preventDefault();
         recordViolation(VIOLATION.PRINT_ATTEMPT, { key: 'PrintScreen' });
+        // Briefly hide page content to ruin the screenshot
+        document.body.style.filter = 'blur(20px) brightness(0.1)';
+        setTimeout(() => { document.body.style.filter = ''; }, 500);
         return;
       }
 
@@ -387,6 +394,9 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
       if (k === 'PRINTSCREEN') {
         e.preventDefault();
         recordViolation(VIOLATION.PRINT_ATTEMPT, { key: 'PrintScreen(keyup)' });
+        // Blur page to ruin the screenshot (keyup fires AFTER screenshot is taken)
+        document.body.style.filter = 'blur(20px) brightness(0.1)';
+        setTimeout(() => { document.body.style.filter = ''; }, 500);
       }
     };
 
@@ -471,10 +481,13 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
     window.addEventListener('blur',                     onWindowBlur);
     window.addEventListener('focus',                    onWindowFocus);
     document.addEventListener('contextmenu',            onContextMenu);
-    document.addEventListener('copy',                   onCopy);
-    document.addEventListener('paste',                  onPaste);
-    document.addEventListener('cut',                    onCut);
-    document.addEventListener('keydown',                onKeyDown);
+    document.addEventListener("copy",  onCopy,  true);
+    window.addEventListener("copy",    onCopy,  true);
+    document.addEventListener("paste", onPaste, true);
+    window.addEventListener("paste",   onPaste, true);
+    document.addEventListener("cut",   onCut,   true);
+    window.addEventListener("cut",     onCut,   true);
+    document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener('keyup',                  onKeyUp);
     document.addEventListener('mouseleave',             onMouseLeave);
     document.addEventListener('selectionchange',        onSelectionChange);
@@ -494,10 +507,13 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
       window.removeEventListener('blur',                     onWindowBlur);
       window.removeEventListener('focus',                    onWindowFocus);
       document.removeEventListener('contextmenu',            onContextMenu);
-      document.removeEventListener('copy',                   onCopy);
-      document.removeEventListener('paste',                  onPaste);
-      document.removeEventListener('cut',                    onCut);
-      document.removeEventListener('keydown',                onKeyDown);
+      document.removeEventListener("copy",  onCopy,  true);
+      window.removeEventListener("copy",    onCopy,  true);
+      document.removeEventListener("paste", onPaste, true);
+      window.removeEventListener("paste",   onPaste, true);
+      document.removeEventListener("cut",   onCut,   true);
+      window.removeEventListener("cut",     onCut,   true);
+      document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener('keyup',                  onKeyUp);
       document.removeEventListener('mouseleave',             onMouseLeave);
       document.removeEventListener('selectionchange',        onSelectionChange);

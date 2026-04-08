@@ -299,8 +299,10 @@ const useCameraProctoring = ({
     setLastEvent(entry);
     if (entry.severity === 'WARNING') onWarning?.(entry);
     onViolation?.(entry);
-    if ([CAM_VIOLATION.NO_FACE_DETECTED, CAM_VIOLATION.CAMERA_DARK,
-         CAM_VIOLATION.CAMERA_COVERED, CAM_VIOLATION.MOBILE_DETECTED].includes(type)) {
+    // Fire onCriticalViolation for every CRITICAL-severity camera event.
+    // Previous list was missing MULTIPLE_FACES which is also CRITICAL severity.
+    // Using severity check ensures future CRITICAL types are also covered.
+    if (entry.severity === 'CRITICAL') {
       onCriticalViolation?.(entry);
     }
     if (submissionId) {

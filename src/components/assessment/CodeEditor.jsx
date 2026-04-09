@@ -1,14 +1,16 @@
 // src/components/assessment/CodeEditor.jsx
 // Upgraded: Monaco Editor replaces textarea
 // Features: syntax highlighting, real-time validation, IntelliSense
-// All Judge0 API calls (run / run-custom / submit) remain unchanged.
+// Bug 2 Fix: Fullscreen mode for the editor panel (Maximize2/Minimize2 button)
+// Bug 3 Fix: Error line/column markers drawn on Monaco editor after Run/Submit
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
 import {
   Play, Send, ChevronDown, Loader2, CheckCircle2, XCircle,
   Terminal, RefreshCw, Code2, Eye, EyeOff, AlertTriangle,
-  Clock, Keyboard, FlaskConical, Save, ChevronUp, ChevronRight
+  Clock, Keyboard, FlaskConical, Save, ChevronUp, ChevronRight,
+  Maximize2, Minimize2
 } from 'lucide-react';
 import { codeAPI } from '../../api/Api';
 
@@ -50,54 +52,117 @@ const EDITOR_OPTIONS = {
   cursorBlinking: 'smooth',
   cursorSmoothCaretAnimation: 'on',
   smoothScrolling: true,
-  // IntelliSense / suggestions
   quickSuggestions: { other: true, comments: true, strings: true },
   suggestOnTriggerCharacters: true,
   acceptSuggestionOnEnter: 'on',
   parameterHints: { enabled: true },
   hover: { enabled: true },
-  // Validation
   'semanticHighlighting.enabled': true,
 };
 
-// ── Monaco theme definition (matches existing dark bg) ─────────
+// ── Monaco theme definition ─────────────────────────────────────
 const DARK_THEME = {
   base: 'vs-dark',
   inherit: true,
   rules: [
-    { token: 'comment',        foreground: '6b7280', fontStyle: 'italic' },
-    { token: 'keyword',        foreground: '818cf8' },
-    { token: 'string',         foreground: '34d399' },
-    { token: 'number',         foreground: 'fb923c' },
-    { token: 'type',           foreground: '38bdf8' },
-    { token: 'function',       foreground: 'fbbf24' },
-    { token: 'variable',       foreground: 'e2e8f0' },
-    { token: 'operator',       foreground: 'f472b6' },
-    { token: 'delimiter',      foreground: '94a3b8' },
-    { token: 'annotation',     foreground: 'a78bfa' },
+    { token: 'comment',    foreground: '6b7280', fontStyle: 'italic' },
+    { token: 'keyword',    foreground: '818cf8' },
+    { token: 'string',     foreground: '34d399' },
+    { token: 'number',     foreground: 'fb923c' },
+    { token: 'type',       foreground: '38bdf8' },
+    { token: 'function',   foreground: 'fbbf24' },
+    { token: 'variable',   foreground: 'e2e8f0' },
+    { token: 'operator',   foreground: 'f472b6' },
+    { token: 'delimiter',  foreground: '94a3b8' },
+    { token: 'annotation', foreground: 'a78bfa' },
   ],
   colors: {
-    'editor.background':           '#030712',
-    'editor.foreground':           '#e2e8f0',
+    'editor.background':              '#030712',
+    'editor.foreground':              '#e2e8f0',
     'editor.lineHighlightBackground': '#111827',
-    'editorLineNumber.foreground': '#374151',
+    'editorLineNumber.foreground':    '#374151',
     'editorLineNumber.activeForeground': '#6b7280',
-    'editor.selectionBackground':  '#1e3a5f',
+    'editor.selectionBackground':     '#1e3a5f',
     'editor.inactiveSelectionBackground': '#172a45',
-    'editorCursor.foreground':     '#60a5fa',
-    'editorWidget.background':     '#111827',
-    'editorWidget.border':         '#1f2937',
+    'editorCursor.foreground':        '#60a5fa',
+    'editorWidget.background':        '#111827',
+    'editorWidget.border':            '#1f2937',
     'editorSuggestWidget.background': '#111827',
-    'editorSuggestWidget.border':  '#1f2937',
+    'editorSuggestWidget.border':     '#1f2937',
     'editorSuggestWidget.selectedBackground': '#1e3a5f',
-    'editorHoverWidget.background': '#111827',
-    'editorHoverWidget.border':    '#1f2937',
-    'scrollbarSlider.background':  '#1f2937',
-    'scrollbarSlider.hoverBackground': '#374151',
+    'editorHoverWidget.background':   '#111827',
+    'editorHoverWidget.border':       '#1f2937',
+    'scrollbarSlider.background':     '#1f2937',
+    'scrollbarSlider.hoverBackground':'#374151',
   },
 };
 
-// ── Small UI sub-components (unchanged from original) ──────────
+// ── Bug 3: Parse error line/col from stderr for all 5 languages ─
+const parseErrorLines = (stderr, language) => {
+  if (!stderr) return [];
+  const errors = [];
+  const lines = stderr.split('\n');
+
+  if (language === 'python') {
+    // "  File "...", line N" pattern
+    lines.forEach((line, idx) => {
+      const m = line.match(/\bline (\d+)\b/i);
+      if (m) {
+        const msg =
+          lines.slice(idx + 1).find(l => l.trim() && !l.trim().startsWith('File'))?.trim()
+          || line.trim();
+        errors.push({ line: parseInt(m[1], 10), col: 1, message: msg });
+      }
+    });
+  } else if (language === 'javascript') {
+    // "something:N:M" Node.js/V8 format
+    lines.forEach(line => {
+      const m = line.match(/:(\d+):(\d+)/);
+      if (m) {
+        errors.push({ line: parseInt(m[1], 10), col: parseInt(m[2], 10), message: lines[0]?.trim() || 'Error' });
+      }
+    });
+  } else if (language === 'java') {
+    // "ClassName.java:N: error: message"
+    lines.forEach(line => {
+      const m = line.match(/\.java:(\d+):/);
+      if (m) {
+        const errPart = line.split(/:\d+:\s*/)[1]?.trim() || line.trim();
+        errors.push({ line: parseInt(m[1], 10), col: 1, message: errPart });
+      }
+    });
+  } else if (language === 'c' || language === 'cpp') {
+    // "file.c:N:M: error: message"
+    lines.forEach(line => {
+      const m = line.match(/:(\d+):(\d+):\s*(?:error|warning):\s*(.*)/);
+      if (m) {
+        errors.push({ line: parseInt(m[1], 10), col: parseInt(m[2], 10), message: m[3]?.trim() || line.trim() });
+      }
+    });
+  }
+
+  // Deduplicate by line number
+  const seen = new Set();
+  return errors.filter(e => { if (seen.has(e.line)) return false; seen.add(e.line); return true; });
+};
+
+// ── Bug 3: ErrorLocationBar — shows ⚠ Line N:M — message badges ─
+const ErrorLocationBar = ({ errors }) => {
+  if (!errors?.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 px-3 py-1.5 bg-red-950/30 border-t border-red-900/30 shrink-0">
+      <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest mr-1">Errors</span>
+      {errors.slice(0, 4).map((e, i) => (
+        <span key={i} className="inline-flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-950/50 border border-red-900/50 px-2 py-0.5 rounded font-mono">
+          <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+          Line {e.line}{e.col > 1 ? `:${e.col}` : ''} — {e.message.length > 45 ? e.message.slice(0, 45) + '…' : e.message}
+        </span>
+      ))}
+    </div>
+  );
+};
+
+// ── StatusBadge ─────────────────────────────────────────────────
 const StatusBadge = ({ passed, isHidden }) => {
   if (isHidden && !passed) {
     return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">Hidden</span>;
@@ -113,13 +178,11 @@ const StatusBadge = ({ passed, isHidden }) => {
   );
 };
 
+// ── TestResultsPanel ────────────────────────────────────────────
 const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMessage }) => {
   const [expanded, setExpanded] = useState(null);
   if (!results?.length && !errorMessage) return null;
 
-  // ── Hide hidden test cases from students completely ──────────
-  // Students only see visible test cases in the results panel.
-  // Hidden test cases are used for scoring only (handled server-side).
   const visibleResults = (results || []).filter((tc) => !tc.is_hidden);
   const visiblePassed  = visibleResults.filter((tc) => tc.passed).length;
   const visibleTotal   = visibleResults.length;
@@ -127,9 +190,9 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
   const getStatusLabel = (tc) => {
     if (tc.passed) return null;
     const s = tc.judge0_status_id ?? 0;
-    if (s === 5)  return 'Time Limit Exceeded';
-    if (s === 6)  return 'Compilation Error';
-    if (s >= 7)   return 'Runtime Error';
+    if (s === 5) return 'Time Limit Exceeded';
+    if (s === 6) return 'Compilation Error';
+    if (s >= 7)  return 'Runtime Error';
     if (tc.actual_output == null && tc.stderr) return 'Runtime Error';
     return 'Wrong Answer';
   };
@@ -218,9 +281,10 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
   );
 };
 
+// ── CustomOutputPanel ───────────────────────────────────────────
 const CustomOutputPanel = ({ result }) => {
   if (!result) return null;
-  const hasOutput = result.stdout != null;
+  const hasOutput    = result.stdout != null;
   const hasError     = result.stderr != null && result.stderr !== '';
   const isCompileErr = result.execution_status === 'compile_error';
   const isTimeout    = result.execution_status === 'timeout';
@@ -266,6 +330,32 @@ const CustomOutputPanel = ({ result }) => {
   );
 };
 
+// ── Auto-save helpers ───────────────────────────────────────────
+const autosaveKey = (assessmentId, questionId, language) =>
+  `icl_autosave_${assessmentId}_${questionId}_${language}`;
+
+const saveToLocal = (assessmentId, questionId, language, code) => {
+  try {
+    localStorage.setItem(
+      autosaveKey(assessmentId, questionId, language),
+      JSON.stringify({ code, savedAt: Date.now() })
+    );
+  } catch (_) {}
+};
+
+const loadFromLocal = (assessmentId, questionId, language) => {
+  try {
+    const raw = localStorage.getItem(autosaveKey(assessmentId, questionId, language));
+    if (!raw) return null;
+    const { code } = JSON.parse(raw);
+    return code || null;
+  } catch (_) { return null; }
+};
+
+const clearLocal = (assessmentId, questionId, language) => {
+  try { localStorage.removeItem(autosaveKey(assessmentId, questionId, language)); } catch (_) {}
+};
+
 // ── Main CodeEditor ─────────────────────────────────────────────
 const CodeEditor = ({
   assessmentId,
@@ -296,70 +386,104 @@ const CodeEditor = ({
   const [customResult,  setCustomResult]  = useState(null);
   const [runningCustom, setRunningCustom] = useState(false);
 
+  // Bug 2: Fullscreen state + container ref
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef(null);
+
+  // Bug 3: Error locations for ErrorLocationBar
+  const [errorLocations, setErrorLocations] = useState([]);
+
   const editorRef = useRef(null);
+  const autosaveTimerRef = useRef(null);
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
 
-  const getStarter = useCallback((lang) => {
-    return STARTERS[lang] || '';
-  }, []);
+  const getStarter = useCallback((lang) => STARTERS[lang] || '', []);
+  const getInitialCode = useCallback((lang) => boilerplateCode || STARTERS[lang] || '', [boilerplateCode]);
 
-  const getInitialCode = useCallback((lang) => {
-    // Use boilerplateCode for the default language's question
-    return boilerplateCode || STARTERS[lang] || '';
-  }, [boilerplateCode]);
-
-  // Register custom Monaco theme once monaco is available
+  // Register custom Monaco theme
   useEffect(() => {
     if (!monaco) return;
     monaco.editor.defineTheme('icl-dark', DARK_THEME);
     monaco.editor.setTheme('icl-dark');
   }, [monaco]);
 
-  // Configure JS/TS IntelliSense defaults
+  // Configure JS/TS IntelliSense
   useEffect(() => {
     if (!monaco) return;
     monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: false,
-      noSyntaxValidation:   false,
+      noSyntaxValidation: false,
     });
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      target:   monaco.languages.typescript.ScriptTarget.ES2020,
+      target: monaco.languages.typescript.ScriptTarget.ES2020,
       allowNonTsExtensions: true,
     });
   }, [monaco]);
 
-  // Fetch available languages from backend
+  // Fetch available languages
   useEffect(() => {
     codeAPI.getLanguages().then(res => {
       if (res?.data?.length) setLanguages(res.data);
     }).catch(() => {});
   }, []);
 
-  // Reset submission state when navigating to a different question
+  // Load saved code: localStorage draft first (instant), then fall back to API history
   useEffect(() => {
     setSubmitted(false);
     setSubmitResult(null);
     setRunResult(null);
     setCustomResult(null);
-  }, [assessmentId, questionId]);
+    setErrorLocations([]);
+    setSaveStatus('idle');
 
-  // Load saved code / starter on mount
-  useEffect(() => {
-    if (!assessmentId || !questionId) {
-      setCode(getInitialCode(language));
-      return;
+    if (!assessmentId || !questionId) { setCode(getInitialCode(language)); return; }
+
+    // 1. Restore draft from localStorage immediately (no network wait)
+    const draft = loadFromLocal(assessmentId, questionId, language);
+    if (draft) {
+      setCode(draft);
+      setSaveStatus('saved');
+      return; // skip API call — user's latest draft is here
     }
+
+    // 2. Fall back to server history
     codeAPI.getHistory(assessmentId, questionId).then(res => {
       if (res?.data?.length) {
         const last = res.data[0];
-        if (last.code) {
-          setCode(last.code);
-          setLanguage(last.language || defaultLanguage || 'python');
-          return;
-        }
+        if (last.code) { setCode(last.code); setLanguage(last.language || defaultLanguage || 'python'); return; }
       }
       setCode(getInitialCode(language));
     }).catch(() => setCode(getInitialCode(language)));
-  }, [assessmentId, questionId, getInitialCode]);
+  }, [assessmentId, questionId]);
+
+  // Auto-save: debounce 800ms after every keystroke
+  useEffect(() => {
+    if (!assessmentId || !questionId || !code) return;
+    setSaveStatus('saving');
+    clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      saveToLocal(assessmentId, questionId, language, code);
+      setSaveStatus('saved');
+    }, 800);
+    return () => clearTimeout(autosaveTimerRef.current);
+  }, [code, language, assessmentId, questionId]);
+
+  // Bug 2: Sync fullscreen state with browser fullscreenchange event
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // Bug 2: Toggle fullscreen on editor container
+  const toggleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
@@ -367,27 +491,55 @@ const CodeEditor = ({
     if (isDefault) setCode(getStarter(lang));
   };
 
-  // Monaco editor mount callback
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
     setEditorReady(true);
-
-    // Add keyboard shortcut: Ctrl/Cmd+Enter → Run
     editor.addCommand(
       (monaco?.KeyMod?.CtrlCmd ?? 0) | (monaco?.KeyCode?.Enter ?? 0),
-      () => {
-        if (inputMode === 'testcases') handleRun();
-        else handleRunCustom();
-      }
+      () => { if (inputMode === 'testcases') handleRun(); else handleRunCustom(); }
     );
   };
 
+  // Bug 3: Apply Monaco error markers + scroll to first error
+  const applyErrorMarkers = useCallback((stderr, lang) => {
+    if (!monaco || !editorRef.current) return;
+    const model = editorRef.current.getModel();
+    if (!model) return;
+    const errors = parseErrorLines(stderr, lang);
+    setErrorLocations(errors);
+    const markers = errors.map(e => ({
+      severity: monaco.MarkerSeverity.Error,
+      startLineNumber: e.line,
+      startColumn: e.col,
+      endLineNumber: e.line,
+      endColumn: model.getLineMaxColumn(Math.min(e.line, model.getLineCount())) || 100,
+      message: e.message,
+    }));
+    monaco.editor.setModelMarkers(model, 'judge0', markers);
+    if (errors.length > 0) editorRef.current.revealLineInCenter(errors[0].line);
+  }, [monaco]);
+
+  // Bug 3: Clear Monaco error markers
+  const clearErrorMarkers = useCallback(() => {
+    if (!monaco || !editorRef.current) return;
+    const model = editorRef.current.getModel();
+    if (model) monaco.editor.setModelMarkers(model, 'judge0', []);
+    setErrorLocations([]);
+  }, [monaco]);
+
+  // ── Run against test cases (can be done multiple times before submit) ──
   const handleRun = async () => {
     if (!code.trim() || running) return;
-    setRunning(true); setRunResult(null);
+    setRunning(true);
+    setRunResult(null);
+    setInputMode('testcases');
+    clearErrorMarkers();
     try {
       const res = await codeAPI.runCode({ assessment_id: assessmentId, question_id: questionId, code, language });
       setRunResult(res.data);
+      // Bug 3: Show error markers from first failing test case stderr
+      const firstError = res.data?.test_results?.find(tc => !tc.passed && tc.stderr);
+      if (firstError?.stderr) applyErrorMarkers(firstError.stderr, language);
     } catch (e) {
       setRunResult({ error_message: e.message || 'Run failed', test_results: [] });
     } finally { setRunning(false); }
@@ -395,10 +547,13 @@ const CodeEditor = ({
 
   const handleRunCustom = async () => {
     if (!code.trim() || runningCustom) return;
-    setRunningCustom(true); setCustomResult(null);
+    setRunningCustom(true);
+    setCustomResult(null);
+    clearErrorMarkers();
     try {
       const res = await codeAPI.runCustom({ code, language, custom_input: customInput });
       setCustomResult(res.data);
+      if (res.data?.stderr) applyErrorMarkers(res.data.stderr, language);
     } catch (e) {
       setCustomResult({ execution_status: 'runtime_error', output: null, stderr: e.message || 'Custom run failed' });
     } finally { setRunningCustom(false); }
@@ -406,12 +561,18 @@ const CodeEditor = ({
 
   const handleSubmit = async () => {
     if (!code.trim() || submitting || submitted) return;
-    setSubmitting(true); setSubmitResult(null);
+    setSubmitting(true);
+    setSubmitResult(null);
+    clearErrorMarkers();
     try {
       const res = await codeAPI.submitCode({ assessment_id: assessmentId, question_id: questionId, code, language });
       setSubmitResult(res.data);
       setSubmitted(true);
+      clearLocal(assessmentId, questionId, language); // draft fulfilled — clean up
       onCodeSubmitted?.({ passedCount: res.data.passed_count, totalCount: res.data.total_count, language, code });
+      // Bug 3: Show error markers if any test failed with stderr
+      const firstError = res.data?.test_results?.find(tc => !tc.passed && tc.stderr);
+      if (firstError?.stderr) applyErrorMarkers(firstError.stderr, language);
     } catch (e) {
       setSubmitResult({ error_message: e.message || 'Submit failed', test_results: [] });
     } finally { setSubmitting(false); }
@@ -422,21 +583,18 @@ const CodeEditor = ({
     setRunResult(null);
     setSubmitResult(null);
     setCustomResult(null);
-    // Also reset model markers
-    if (monaco && editorRef.current) {
-      const model = editorRef.current.getModel();
-      if (model) monaco.editor.setModelMarkers(model, 'owner', []);
-    }
+    clearErrorMarkers();
   };
 
   const activeResult = submitResult || runResult;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-
+    // Bug 2: containerRef wraps entire editor — requestFullscreen() targets this element
+    <div ref={containerRef} className="flex flex-col h-full overflow-hidden">
 
       {/* ── Code Editor Block ── */}
       <div className="border border-slate-800 rounded-xl flex flex-col flex-1 min-h-0 overflow-hidden bg-[#0f172a] shadow-lg">
+
         {/* Toolbar */}
         <div className="flex items-center justify-between px-3 py-2 bg-[#0f172a] border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-1.5">
@@ -471,12 +629,32 @@ const CodeEditor = ({
               </span>
             </div>
             <button onClick={handleReset} disabled={disabled || submitted}
-              className="p-1.5 rounded-md bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 transition-colors border border-blue-500/20" title="Reset">
+              className="p-1.5 rounded-md bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 transition-colors border border-blue-500/20" title="Reset code">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => {}} disabled={disabled || submitted}
-              className="p-1.5 rounded-md bg-teal-600/20 hover:bg-teal-600/40 text-teal-400 transition-colors border border-teal-500/20">
-              <Save className="w-3.5 h-3.5" />
+            {/* Auto-save status indicator */}
+            <span className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold transition-all border ${
+              saveStatus === 'saving'
+                ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                : saveStatus === 'saved'
+                ? 'bg-teal-600/20 border-teal-500/20 text-teal-400'
+                : 'bg-slate-800 border-slate-700 text-slate-500'
+            }`} title="Auto-saved to browser">
+              {saveStatus === 'saving' ? (
+                <><Loader2 className="w-2.5 h-2.5 animate-spin" /> Saving…</>
+              ) : saveStatus === 'saved' ? (
+                <><Save className="w-2.5 h-2.5" /> Saved</>
+              ) : (
+                <><Save className="w-2.5 h-2.5" /> Auto-save</>
+              )}
+            </span>
+            {/* Bug 2: Fullscreen button — fullscreens just the editor panel */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-1.5 rounded-md bg-slate-700/50 hover:bg-slate-600/70 text-slate-300 hover:text-white transition-colors border border-slate-600/50"
+              title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Fullscreen editor'}
+            >
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
@@ -489,21 +667,20 @@ const CodeEditor = ({
             value={code}
             onChange={(val) => setCode(val ?? '')}
             theme="icl-dark"
-            options={{
-              ...EDITOR_OPTIONS,
-              readOnly: disabled || submitted,
-            }}
+            options={{ ...EDITOR_OPTIONS, readOnly: disabled || submitted }}
             onMount={handleEditorDidMount}
             loading={
               <div className="flex items-center justify-center h-full bg-[#0f172a] text-slate-500 text-xs gap-2 font-bold">
-                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                Loading IDE…
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> Loading IDE…
               </div>
             }
           />
         </div>
 
-        {/* Footer Text */}
+        {/* Bug 3: Error location badges — shown above footer when errors exist */}
+        <ErrorLocationBar errors={errorLocations} />
+
+        {/* Footer */}
         <div className="px-3 py-1.5 border-t border-slate-800/80 bg-[#0b1222] shrink-0">
           <p className="text-[10px] font-bold text-slate-500 font-mono tracking-wider">
             Ready to Execute <span className="opacity-50 px-1">•</span> Press Run Code
@@ -523,6 +700,7 @@ const CodeEditor = ({
 
         <div className="flex-1" />
 
+        {/* Run Code — switches to testcases mode so results are visible */}
         <button onClick={handleRun} disabled={disabled || running || submitting || !code.trim()}
           className="flex items-center gap-1.5 px-4 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-lg text-[12px] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
           {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
@@ -542,7 +720,7 @@ const CodeEditor = ({
         </button>
       </div>
 
-      {/* ── Custom Input / Results (limited height, scrollable) ── */}
+      {/* ── Custom Input / Results ── */}
       {(inputMode === 'custom' || activeResult || customResult) && (
         <div className="mt-2 shrink-0 max-h-[180px] overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           {inputMode === 'custom' && (

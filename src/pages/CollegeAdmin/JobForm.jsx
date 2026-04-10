@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { DetailSkeleton } from '../../components/common/SkeletonLoader';
-import { jobAPI, companyAPI, skillAPI } from '../../api/Api';
+import apiCall, { jobAPI, companyAPI, skillAPI, branchAPI } from '../../api/Api';
 
 /* ─── ChipInput ─────────────────────────── */
 const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
@@ -99,6 +99,78 @@ const getSkillName = (skill) => {
   return '';
 };
 
+const getBranchCode = (branch) => {
+  if (typeof branch === 'string') return branch.trim();
+  if (branch && typeof branch === 'object') return (branch.code || branch.name || '').trim();
+  return '';
+};
+
+const getBranchLabel = (branch) => {
+  if (typeof branch === 'string') return branch.trim();
+  if (branch && typeof branch === 'object') {
+    const code = (branch.code || '').trim();
+    const name = (branch.name || '').trim();
+    if (code && name && code !== name) return `${code} - ${name}`;
+    return code || name;
+  }
+  return '';
+};
+
+const DEFAULT_COUNTRY = { name: 'India', isoCode: 'IN' };
+
+const createLocationMeta = () => ({
+  stateOptions: [],
+  cityOptions: [],
+  selectedCountryCode: DEFAULT_COUNTRY.isoCode,
+  selectedStateCode: '',
+  loadedStatesForCountry: '',
+  loadedCitiesForCountry: '',
+  loadedCitiesForState: '',
+  statesLoading: false,
+  citiesLoading: false,
+});
+
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 46,
+    borderRadius: 12,
+    borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.15)' : 'none',
+    '&:hover': {
+      borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+    },
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#9ca3af',
+    fontSize: '0.875rem',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    fontSize: '0.875rem',
+    color: '#111827',
+  }),
+  input: (base) => ({
+    ...base,
+    fontSize: '0.875rem',
+  }),
+  option: (base, state) => ({
+    ...base,
+    fontSize: '0.875rem',
+    backgroundColor: state.isFocused ? '#eff6ff' : state.isSelected ? '#dbeafe' : '#fff',
+    color: '#111827',
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
 /* ══════════════════════════════════════════ */
 const JobForm = () => {
   const toast = useToast();
@@ -113,6 +185,10 @@ const JobForm = () => {
   const [success, setSuccess] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [countryLoading, setCountryLoading] = useState(false);
+  const [locationMeta, setLocationMeta] = useState([createLocationMeta()]);
 
   const defaultFormData = {
     jobCode: '', jobTitle: '', jobType: 'Full-Time', jobRole: 'Software Engineer', companyId: '',
@@ -128,16 +204,23 @@ const JobForm = () => {
 
   const [formData, setFormData] = useState(defaultFormData);
 
-  const branches = ['CSE', 'IT', 'ECE', 'EEE', 'AI/ML', 'DS', 'MECH', 'CIVIL', 'Other'];
   const batches = ['2024', '2025', '2026', '2027', '2028'];
   const roundTypes = ['Online Test', 'Technical Interview', 'HR Interview', 'Group Discussion', 'Case Study', 'Other'];
 
   useEffect(() => {
     fetchCompanies();
     fetchSkills();
+    fetchBranches();
+    fetchCountries();
 
     if (isEditMode) fetchJobDetails();
   }, [jobId]);
+
+  useEffect(() => {
+    setLocationMeta((prev) =>
+      formData.locations.map((_, index) => prev[index] || createLocationMeta())
+    );
+  }, [formData.locations.length]);
 
   const fetchCompanies = async () => {
     try {
@@ -162,6 +245,125 @@ const JobForm = () => {
     }
   };
 
+  const fetchBranches = async () => {
+    try {
+      const response = await branchAPI.getActiveBranches();
+      if (response.success) {
+        setBranches(response.branches || []);
+      }
+    } catch (error) {
+      console.error('Error fetching branches:', error);
+    }
+  };
+
+  const updateLocationMeta = (index, updates) => {
+    setLocationMeta((prev) =>
+      prev.map((meta, metaIndex) =>
+        metaIndex === index ? { ...meta, ...updates } : meta
+      )
+    );
+  };
+
+  const fetchCountries = async () => {
+    try {
+      setCountryLoading(true);
+      const response = await apiCall('/location/countries');
+      if (response.success) {
+        setCountryOptions(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      toast.error('Error', 'Unable to load countries');
+    } finally {
+      setCountryLoading(false);
+    }
+  };
+
+  const fetchStates = async (index, countryCode) => {
+    if (!countryCode) {
+      updateLocationMeta(index, {
+        selectedCountryCode: '',
+        selectedStateCode: '',
+        stateOptions: [],
+        cityOptions: [],
+        loadedStatesForCountry: '',
+        loadedCitiesForCountry: '',
+        loadedCitiesForState: '',
+        statesLoading: false,
+        citiesLoading: false,
+      });
+      return;
+    }
+
+    updateLocationMeta(index, {
+      statesLoading: true,
+      selectedCountryCode: countryCode,
+      selectedStateCode: '',
+      stateOptions: [],
+      cityOptions: [],
+      loadedStatesForCountry: '',
+      loadedCitiesForCountry: '',
+      loadedCitiesForState: '',
+    });
+
+    try {
+      const response = await apiCall(`/location/states/${countryCode}`);
+      updateLocationMeta(index, {
+        stateOptions: response.success ? response.data || [] : [],
+        loadedStatesForCountry: countryCode,
+      });
+    } catch (error) {
+      console.error('Error fetching states:', error);
+      updateLocationMeta(index, {
+        stateOptions: [],
+        loadedStatesForCountry: countryCode,
+      });
+      toast.error('Error', 'Unable to load states');
+    } finally {
+      updateLocationMeta(index, { statesLoading: false });
+    }
+  };
+
+  const fetchCities = async (index, countryCode, stateCode) => {
+    if (!countryCode || !stateCode) {
+      updateLocationMeta(index, {
+        selectedStateCode: '',
+        cityOptions: [],
+        loadedCitiesForCountry: '',
+        loadedCitiesForState: '',
+        citiesLoading: false,
+      });
+      return;
+    }
+
+    updateLocationMeta(index, {
+      citiesLoading: true,
+      selectedStateCode: stateCode,
+      cityOptions: [],
+      loadedCitiesForCountry: '',
+      loadedCitiesForState: '',
+    });
+
+    try {
+      const response = await apiCall(`/location/cities/${countryCode}/${stateCode}`);
+      updateLocationMeta(index, {
+        cityOptions: response.success ? response.data || [] : [],
+        loadedCitiesForCountry: countryCode,
+        loadedCitiesForState: stateCode,
+      });
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      updateLocationMeta(index, {
+        cityOptions: [],
+        loadedCitiesForCountry: countryCode,
+        loadedCitiesForState: stateCode,
+      });
+      toast.error('Error', 'Unable to load cities');
+    } finally {
+      updateLocationMeta(index, { citiesLoading: false });
+    }
+  };
+
   const normalizedPreferredSkills = formData.preferredSkills
     .map(getSkillName)
     .filter(Boolean);
@@ -181,6 +383,152 @@ const JobForm = () => {
     value: skillName,
     label: skillName,
   }));
+
+  const branchOptions = [...new Set([
+    ...branches.map(getBranchCode),
+    ...formData.eligibility.branches.map((branch) => branch?.trim()).filter(Boolean),
+  ])]
+    .filter(Boolean)
+    .map((code) => {
+      const matchingBranch = branches.find((branch) => getBranchCode(branch) === code);
+      return {
+        value: code,
+        label: matchingBranch ? getBranchLabel(matchingBranch) : code,
+      };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const selectedBranchOptions = branchOptions.filter((branch) =>
+    formData.eligibility.branches.includes(branch.value)
+  );
+
+  const countrySelectOptions = countryOptions.map((country) => ({
+    value: country.isoCode,
+    label: country.name,
+  }));
+
+  const getStateSelectOptions = (index) =>
+    (locationMeta[index]?.stateOptions || []).map((state) => ({
+      value: state.isoCode,
+      label: state.name,
+    }));
+
+  const getCitySelectOptions = (index) =>
+    (locationMeta[index]?.cityOptions || []).map((city) => ({
+      value: city.name,
+      label: city.name,
+    }));
+
+  const getSelectedCountryOption = (index, location) =>
+    countrySelectOptions.find((option) => option.value === locationMeta[index]?.selectedCountryCode) ||
+    countrySelectOptions.find((option) => option.label === location.country) ||
+    (location.country ? { value: location.country, label: location.country } : null);
+
+  const getSelectedStateOption = (index, location) => {
+    const stateOptions = getStateSelectOptions(index);
+    return (
+      stateOptions.find((option) => option.value === locationMeta[index]?.selectedStateCode) ||
+      stateOptions.find((option) => option.label === location.state) ||
+      (location.state ? { value: location.state, label: location.state } : null)
+    );
+  };
+
+  const getSelectedCityOption = (index, location) => {
+    const cityOptions = getCitySelectOptions(index);
+    return (
+      cityOptions.find((option) => option.value === location.city) ||
+      (location.city ? { value: location.city, label: location.city } : null)
+    );
+  };
+
+  useEffect(() => {
+    if (!countryOptions.length) {
+      return;
+    }
+
+    formData.locations.forEach((location, index) => {
+      const meta = locationMeta[index];
+      if (!meta) {
+        return;
+      }
+
+      const currentCountry = location.country || DEFAULT_COUNTRY.name;
+      const matchedCountry =
+        countryOptions.find((country) => country.name === currentCountry) ||
+        countryOptions.find((country) => country.isoCode === DEFAULT_COUNTRY.isoCode);
+
+      if (!matchedCountry) {
+        updateLocationMeta(index, {
+          selectedCountryCode: '',
+          selectedStateCode: '',
+          stateOptions: [],
+          cityOptions: [],
+          loadedStatesForCountry: '',
+          loadedCitiesForCountry: '',
+          loadedCitiesForState: '',
+        });
+        return;
+      }
+
+      if (currentCountry !== matchedCountry.name) {
+        updateLocation(index, 'country', matchedCountry.name);
+      }
+
+      if (meta.selectedCountryCode !== matchedCountry.isoCode) {
+        updateLocationMeta(index, { selectedCountryCode: matchedCountry.isoCode });
+      }
+
+      if (meta.loadedStatesForCountry !== matchedCountry.isoCode) {
+        fetchStates(index, matchedCountry.isoCode);
+      }
+    });
+  }, [countryOptions, formData.locations]);
+
+  useEffect(() => {
+    formData.locations.forEach((location, index) => {
+      const meta = locationMeta[index];
+      if (!meta) {
+        return;
+      }
+
+      if (!location.state || !meta.stateOptions.length || !meta.selectedCountryCode) {
+        if (meta.selectedStateCode || meta.cityOptions.length || meta.loadedCitiesForState) {
+          updateLocationMeta(index, {
+            selectedStateCode: '',
+            cityOptions: [],
+            loadedCitiesForCountry: '',
+            loadedCitiesForState: '',
+          });
+        }
+        return;
+      }
+
+      const matchedState = meta.stateOptions.find((state) => state.name === location.state);
+
+      if (!matchedState) {
+        if (meta.selectedStateCode || meta.cityOptions.length || meta.loadedCitiesForState) {
+          updateLocationMeta(index, {
+            selectedStateCode: '',
+            cityOptions: [],
+            loadedCitiesForCountry: '',
+            loadedCitiesForState: '',
+          });
+        }
+        return;
+      }
+
+      if (meta.selectedStateCode !== matchedState.isoCode) {
+        updateLocationMeta(index, { selectedStateCode: matchedState.isoCode });
+      }
+
+      if (
+        meta.loadedCitiesForCountry !== meta.selectedCountryCode ||
+        meta.loadedCitiesForState !== matchedState.isoCode
+      ) {
+        fetchCities(index, meta.selectedCountryCode, matchedState.isoCode);
+      }
+    });
+  }, [formData.locations, locationMeta]);
 
   const fetchJobDetails = async () => {
     try {
@@ -210,6 +558,14 @@ const JobForm = () => {
     e.preventDefault();
     setSaving(true); setError(null); setSuccess(false);
     try {
+      const hasIncompleteLocation = formData.locations.some(
+        (location) => !location.country || !location.state || !location.city
+      );
+
+      if (hasIncompleteLocation && saveAs !== 'Draft') {
+        throw new Error('Please select country, state, and city for every location');
+      }
+
       const submitData = {
         ...formData,
         status: saveAs || formData.status,
@@ -253,10 +609,71 @@ const JobForm = () => {
   const addArrayItem = (field, template) => setFormData(p => ({ ...p, [field]: [...p[field], template] }));
   const updateArrayItem = (field, idx, value) => setFormData(p => { const a = [...p[field]]; a[idx] = value; return { ...p, [field]: a }; });
   const removeArrayItem = (field, idx) => setFormData(p => ({ ...p, [field]: p[field].filter((_, i) => i !== idx) }));
-  const toggleBranch = (branch) => updateNested('eligibility', 'branches', formData.eligibility.branches.includes(branch) ? formData.eligibility.branches.filter(b => b !== branch) : [...formData.eligibility.branches, branch]);
   const toggleBatch = (batch) => updateNested('eligibility', 'batches', formData.eligibility.batches.includes(batch) ? formData.eligibility.batches.filter(b => b !== batch) : [...formData.eligibility.batches, batch]);
-  const addLocation = () => addArrayItem('locations', { city: '', state: '', country: 'India', workMode: 'On-site' });
   const updateLocation = (idx, field, value) => setFormData(p => { const locs = [...p.locations]; locs[idx] = { ...locs[idx], [field]: value }; return { ...p, locations: locs }; });
+  const addLocationRow = () => {
+    setFormData((prev) => ({
+      ...prev,
+      locations: [...prev.locations, { city: '', state: '', country: DEFAULT_COUNTRY.name, workMode: 'On-site' }],
+    }));
+    setLocationMeta((prev) => [...prev, createLocationMeta()]);
+  };
+  const removeLocationRow = (idx) => {
+    setFormData((prev) => ({
+      ...prev,
+      locations: prev.locations.filter((_, index) => index !== idx),
+    }));
+    setLocationMeta((prev) => prev.filter((_, index) => index !== idx));
+  };
+  const handleCountryChange = (idx, countryCode) => {
+    const selectedCountry = countryOptions.find((country) => country.isoCode === countryCode);
+
+    updateLocationMeta(idx, {
+      selectedCountryCode: countryCode,
+      selectedStateCode: '',
+      stateOptions: [],
+      cityOptions: [],
+      loadedStatesForCountry: '',
+      loadedCitiesForCountry: '',
+      loadedCitiesForState: '',
+    });
+
+    setFormData((prev) => {
+      const locations = [...prev.locations];
+      locations[idx] = {
+        ...locations[idx],
+        country: selectedCountry?.name || '',
+        state: '',
+        city: '',
+      };
+      return { ...prev, locations };
+    });
+
+    fetchStates(idx, countryCode);
+  };
+  const handleStateChange = (idx, stateCode) => {
+    const selectedState = locationMeta[idx]?.stateOptions.find((state) => state.isoCode === stateCode);
+
+    updateLocationMeta(idx, {
+      selectedStateCode: stateCode,
+      cityOptions: [],
+      loadedCitiesForCountry: '',
+      loadedCitiesForState: '',
+    });
+
+    setFormData((prev) => {
+      const locations = [...prev.locations];
+      locations[idx] = {
+        ...locations[idx],
+        state: selectedState?.name || '',
+        city: '',
+      };
+      return { ...prev, locations };
+    });
+
+    fetchCities(idx, locationMeta[idx]?.selectedCountryCode, stateCode);
+  };
+  const handleCityChange = (idx, cityName) => updateLocation(idx, 'city', cityName);
   const addSelectionRound = () => setFormData(p => ({ ...p, selectionProcess: { ...p.selectionProcess, rounds: [...p.selectionProcess.rounds, { name: 'Online Test', description: '', duration: '' }] } }));
   const updateSelectionRound = (idx, field, value) => setFormData(p => { const rounds = [...p.selectionProcess.rounds]; rounds[idx] = { ...rounds[idx], [field]: value }; return { ...p, selectionProcess: { ...p.selectionProcess, rounds } }; });
   const removeSelectionRound = (idx) => setFormData(p => ({ ...p, selectionProcess: { ...p.selectionProcess, rounds: p.selectionProcess.rounds.filter((_, i) => i !== idx) } }));
@@ -448,24 +865,69 @@ const JobForm = () => {
               <div className="flex justify-between items-center mb-3">
                 <p className="text-xs font-bold text-gray-700">Location {idx + 1}</p>
                 {formData.locations.length > 1 && (
-                  <button type="button" onClick={() => removeArrayItem('locations', idx)}
+                  <button type="button" onClick={() => removeLocationRow(idx)}
                     className="text-red-400 hover:bg-red-50 p-1.5 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <TextInput label="City" required placeholder="Bangalore"
-                  value={location.city} onChange={e => updateLocation(idx, 'city', e.target.value)} />
-                <TextInput label="State" required placeholder="Karnataka"
-                  value={location.state} onChange={e => updateLocation(idx, 'state', e.target.value)} />
-                <TextInput label="Country" required placeholder="India"
-                  value={location.country} onChange={e => updateLocation(idx, 'country', e.target.value)} />
+                <div>
+                  <FieldLabel required>Country</FieldLabel>
+                  <Select
+                    inputId={`job-country-${idx}`}
+                    isSearchable
+                    options={countrySelectOptions}
+                    value={getSelectedCountryOption(idx, location)}
+                    onChange={(option) => handleCountryChange(idx, option?.value || '')}
+                    placeholder={countryLoading ? 'Loading countries...' : 'Search or select country'}
+                    isDisabled={countryLoading}
+                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                    menuPosition="fixed"
+                    styles={selectStyles}
+                    className="text-sm"
+                    noOptionsMessage={() => 'No countries found'}
+                  />
+                </div>
+                <div>
+                  <FieldLabel required>State</FieldLabel>
+                  <Select
+                    inputId={`job-state-${idx}`}
+                    isSearchable
+                    options={getStateSelectOptions(idx)}
+                    value={getSelectedStateOption(idx, location)}
+                    onChange={(option) => handleStateChange(idx, option?.value || '')}
+                    placeholder={locationMeta[idx]?.statesLoading ? 'Loading states...' : locationMeta[idx]?.selectedCountryCode ? 'Search or select state' : 'Select country first'}
+                    isDisabled={!locationMeta[idx]?.selectedCountryCode || locationMeta[idx]?.statesLoading}
+                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                    menuPosition="fixed"
+                    styles={selectStyles}
+                    className="text-sm"
+                    noOptionsMessage={() => 'No states found'}
+                  />
+                </div>
+                <div>
+                  <FieldLabel required>City</FieldLabel>
+                  <Select
+                    inputId={`job-city-${idx}`}
+                    isSearchable
+                    options={getCitySelectOptions(idx)}
+                    value={getSelectedCityOption(idx, location)}
+                    onChange={(option) => handleCityChange(idx, option?.value || '')}
+                    placeholder={locationMeta[idx]?.citiesLoading ? 'Loading cities...' : locationMeta[idx]?.selectedStateCode ? 'Search or select city' : 'Select state first'}
+                    isDisabled={!locationMeta[idx]?.selectedStateCode || locationMeta[idx]?.citiesLoading}
+                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                    menuPosition="fixed"
+                    styles={selectStyles}
+                    className="text-sm"
+                    noOptionsMessage={() => 'No cities found'}
+                  />
+                </div>
                 <SelectInput label="Work Mode" required value={location.workMode}
                   onChange={e => updateLocation(idx, 'workMode', e.target.value)}
                   options={[{ value: 'On-site', label: 'On-site' }, { value: 'Remote', label: 'Remote' }, { value: 'Hybrid', label: 'Hybrid' }]} />
               </div>
             </div>
           ))}
-          <button type="button" onClick={addLocation}
+          <button type="button" onClick={addLocationRow}
             className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
             <Plus className="w-3.5 h-3.5" /> Add Location
           </button>
@@ -494,17 +956,32 @@ const JobForm = () => {
 
           <div>
             <FieldLabel required>Eligible Branches</FieldLabel>
-            <div className="flex flex-wrap gap-2">
-              {branches.map(branch => (
-                <button key={branch} type="button" onClick={() => toggleBranch(branch)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${formData.eligibility.branches.includes(branch)
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                    : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
-                    }`}>
-                  {branch}
-                </button>
-              ))}
-            </div>
+            <Select
+              isMulti
+              isSearchable
+              closeMenuOnSelect={false}
+              options={branchOptions}
+              value={selectedBranchOptions}
+              placeholder={branchOptions.length ? 'Search and select departments...' : 'No departments available'}
+              noOptionsMessage={() => 'No departments found'}
+              menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                menu: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              onChange={(selected) =>
+                updateNested(
+                  'eligibility',
+                  'branches',
+                  selected ? selected.map((branch) => branch.value) : []
+                )
+              }
+              className="text-sm"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Select one or more departments from the active branch list
+            </p>
           </div>
 
           <div>

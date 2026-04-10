@@ -3,11 +3,13 @@
 // Excel download after single/multiple/bulk success, server-side validation inline.
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
+import Select from 'react-select';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { useToast } from '../../context/ToastContext';
 import { collegeAdminStudentAPI } from '../../api/studentAPI';
+import { branchAPI } from '../../api/Api';
 import {
   GraduationCap, Search, SlidersHorizontal, Upload, RefreshCw,
   X, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle,
@@ -22,6 +24,126 @@ const BRANCHES  = ['CSE','ECE','EEE','MECH','CIVIL','IT','AI/ML','DS','Other'];
 const SEMESTERS = ['1','2','3','4','5','6','7','8'];
 const REQUIRED_COLS = ['name','email','roll_number'];
 const PER_PAGE  = 25;
+
+const normalizeBranchCodes = (branches = []) =>
+  [...new Set(
+    branches
+      .map((branch) =>
+        typeof branch === 'string'
+          ? branch.trim()
+          : (branch?.code || '').trim()
+      )
+      .filter(Boolean)
+  )];
+
+const branchSelectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 42,
+    borderRadius: 12,
+    borderColor: state.isFocused ? '#60a5fa' : '#e2e8f0',
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(96, 165, 250, 0.18)' : 'none',
+    paddingLeft: 28,
+    '&:hover': {
+      borderColor: state.isFocused ? '#60a5fa' : '#cbd5e1',
+    },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    paddingLeft: 0,
+    fontSize: '0.875rem',
+  }),
+  input: (base) => ({
+    ...base,
+    fontSize: '0.875rem',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#94a3b8',
+    fontSize: '0.875rem',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    fontSize: '0.875rem',
+    color: '#0f172a',
+  }),
+  option: (base, state) => ({
+    ...base,
+    fontSize: '0.875rem',
+    backgroundColor: state.isFocused ? '#eff6ff' : state.isSelected ? '#dbeafe' : '#fff',
+    color: '#0f172a',
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+const branchTableSelectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 30,
+    borderRadius: 8,
+    borderColor: state.isFocused ? '#60a5fa' : '#e2e8f0',
+    boxShadow: state.isFocused ? '0 0 0 1px rgba(96, 165, 250, 0.3)' : 'none',
+    fontSize: '0.75rem',
+    '&:hover': {
+      borderColor: state.isFocused ? '#60a5fa' : '#cbd5e1',
+    },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    padding: '0 8px',
+    fontSize: '0.75rem',
+  }),
+  input: (base) => ({
+    ...base,
+    margin: 0,
+    padding: 0,
+    fontSize: '0.75rem',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#94a3b8',
+    fontSize: '0.75rem',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    fontSize: '0.75rem',
+    color: '#0f172a',
+  }),
+  indicatorsContainer: (base) => ({
+    ...base,
+    height: 28,
+  }),
+  dropdownIndicator: (base) => ({
+    ...base,
+    padding: 4,
+  }),
+  clearIndicator: (base) => ({
+    ...base,
+    padding: 4,
+  }),
+  indicatorSeparator: () => ({ display: 'none' }),
+  option: (base, state) => ({
+    ...base,
+    fontSize: '0.75rem',
+    backgroundColor: state.isFocused ? '#eff6ff' : state.isSelected ? '#dbeafe' : '#fff',
+    color: '#0f172a',
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
 
 /* ══════════════════════════════════════════════════════════
    ATOMS
@@ -188,13 +310,14 @@ const EMPTY_STUDENT = {
   isEligibleForPlacements: true,
 };
 
-function AddSingleModal({ onClose, onDone }) {
+function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   const toast = useToast();
   const [step, setStep]           = useState('form');
   const [form, setForm]           = useState(EMPTY_STUDENT);
   const [saving, setSaving]       = useState(false);
   const [errors, setErrors]       = useState({});
   const [successData, setSuccess] = useState(null);
+  const branchOptions = branchCodes.map((code) => ({ value: code, label: code }));
 
   const setF = (k, v) => {
     setForm(p => ({...p, [k]: v}));
@@ -391,10 +514,19 @@ function AddSingleModal({ onClose, onDone }) {
                 value={form.phone} onChange={e => setF('phone', e.target.value)}/>
             </Field>
             <Field label="Department / Branch" icon={BookOpen}>
-              <select className={`${I_ICON} ${OK_CLS} appearance-none`} value={form.branch} onChange={e => setF('branch', e.target.value)}>
-                <option value="">Select department</option>
-                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
+              <Select
+                inputId="single-student-branch"
+                isSearchable
+                options={branchOptions}
+                value={branchOptions.find((option) => option.value === form.branch) || null}
+                onChange={(option) => setF('branch', option?.value || '')}
+                placeholder="Search department code"
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                menuPosition="fixed"
+                styles={branchSelectStyles}
+                className="text-sm"
+                noOptionsMessage={() => 'No department codes found'}
+              />
             </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -469,7 +601,7 @@ const EMPTY_ROW = () => ({
   semester: '', cgpa: '', batch: '', phone: '',
 });
 
-function AddMultipleModal({ onClose, onDone }) {
+function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   const toast = useToast();
   const [step, setStep]         = useState('table');
   const [rows, setRows]         = useState([EMPTY_ROW(), EMPTY_ROW(), EMPTY_ROW()]);
@@ -477,6 +609,7 @@ function AddMultipleModal({ onClose, onDone }) {
   const [rowErrors, setRowErr]  = useState({});
   const [result, setResult]     = useState(null);
   const [filledRows, setFilled] = useState([]);
+  const branchOptions = branchCodes.map((code) => ({ value: code, label: code }));
 
   const addRow    = () => setRows(p => [...p, EMPTY_ROW()]);
   const removeRow = (id) => setRows(p => p.filter(r => r.id !== id));
@@ -647,7 +780,7 @@ function AddMultipleModal({ onClose, onDone }) {
     { key: 'fullName',   label: 'Full Name *',  width: 'min-w-[140px]', placeholder: 'Ravi Kumar',   type: 'text' },
     { key: 'email',      label: 'Email *',       width: 'min-w-[160px]', placeholder: 'email@edu.in', type: 'email' },
     { key: 'rollNumber', label: 'Roll No. *',    width: 'min-w-[110px]', placeholder: '21CSE001',     type: 'text' },
-    { key: 'branch',     label: 'Branch',        width: 'min-w-[95px]',  type: 'select', options: BRANCHES },
+    { key: 'branch',     label: 'Branch',        width: 'min-w-[95px]',  type: 'select', options: branchCodes },
     { key: 'semester',   label: 'Sem.',          width: 'min-w-[70px]',  type: 'select', options: SEMESTERS },
     { key: 'cgpa',       label: 'CGPA',          width: 'min-w-[70px]',  placeholder: '8.50',         type: 'number' },
     { key: 'batch',      label: 'Batch',         width: 'min-w-[80px]',  placeholder: '2026',         type: 'text' },
@@ -688,11 +821,28 @@ function AddMultipleModal({ onClose, onDone }) {
                       <td key={col.key} className={`p-1 ${err ? 'bg-red-50' : ''}`} style={{minWidth: col.type==='select' ? 90 : 100}}>
                         <div className="relative group">
                           {col.type === 'select' ? (
-                            <select className={`${cellBase} appearance-none`} value={row[col.key]}
-                              onChange={e => setCell(row.id, col.key, e.target.value)}>
-                              <option value="">—</option>
-                              {col.options?.map(o => <option key={o} value={o}>{col.key==='semester' ? `Sem ${o}` : o}</option>)}
-                            </select>
+                            col.key === 'branch' ? (
+                              <Select
+                                inputId={`multiple-student-${row.id}-branch`}
+                                isClearable
+                                isSearchable
+                                options={branchOptions}
+                                value={branchOptions.find((option) => option.value === row[col.key]) || null}
+                                onChange={(option) => setCell(row.id, col.key, option?.value || '')}
+                                placeholder="Search"
+                                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                                menuPosition="fixed"
+                                styles={branchTableSelectStyles}
+                                className="text-xs"
+                                noOptionsMessage={() => 'No codes found'}
+                              />
+                            ) : (
+                              <select className={`${cellBase} appearance-none`} value={row[col.key]}
+                                onChange={e => setCell(row.id, col.key, e.target.value)}>
+                                <option value="">—</option>
+                                {col.options?.map(o => <option key={o} value={o}>{col.key==='semester' ? `Sem ${o}` : o}</option>)}
+                              </select>
+                            )
                           ) : (
                             <input type={col.type} value={row[col.key]} placeholder={col.placeholder}
                               onChange={e => setCell(row.id, col.key, e.target.value)}
@@ -1394,6 +1544,7 @@ export default function StudentManagement() {
   const [showFilter, setShowFilter] = useState(false);
   const [page,       setPage]       = useState(1);
   const [filters,    setFilters]    = useState({ search:'', branch:'', batch:'', isPlaced:'' });
+  const [branchCodes, setBranchCodes] = useState(BRANCHES);
 
   const setF = (k, v) => { setFilters(p => ({...p, [k]:v})); setPage(1); };
   const clearAll = () => { setFilters({ search:'', branch:'', batch:'', isPlaced:'' }); setPage(1); };
@@ -1414,7 +1565,22 @@ export default function StudentManagement() {
     } finally { setLoading(false); }
   }, [page, filters, toast]);
 
+  const loadBranchCodes = useCallback(async () => {
+    try {
+      const response = await branchAPI.getActiveBranches();
+      if (response.success) {
+        const codes = normalizeBranchCodes(response.branches);
+        if (codes.length) {
+          setBranchCodes(codes);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading branch codes:', error);
+    }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadBranchCodes(); }, [loadBranchCodes]);
 
   const placed = students.filter(s => s.studentInfo?.isPlaced).length;
 
@@ -1730,10 +1896,13 @@ export default function StudentManagement() {
       </div>
 
       {/* ── Modals render via portal above sidebar ── */}
-      {modal==='single'   && <AddSingleModal   onClose={() => setModal(null)} onDone={() => { setPage(1); load(); }}/>}
-      {modal==='multiple' && <AddMultipleModal onClose={() => setModal(null)} onDone={() => { setPage(1); load(); }}/>}
+      {modal==='single'   && <AddSingleModal   branchCodes={branchCodes} onClose={() => setModal(null)} onDone={() => { setPage(1); load(); }}/>}
+      {modal==='multiple' && <AddMultipleModal branchCodes={branchCodes} onClose={() => setModal(null)} onDone={() => { setPage(1); load(); }}/>}
       {modal==='upload'   && <BulkUploadModal  onClose={() => setModal(null)} onDone={() => { setPage(1); load(); }}/>}
       {modal==='export'   && <ExportModal      onClose={() => setModal(null)}/>}
     </CollegeAdminLayout>
   );
 }
+
+
+

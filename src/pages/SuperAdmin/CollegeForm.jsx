@@ -2,6 +2,7 @@ import { useToast } from '../../context/ToastContext';
 // pages/SuperAdmin/CollegeForm.jsx - Add/Edit College Form
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Select from 'react-select';
 import apiCall from '../../api/Api';
 import {
   Building2,
@@ -18,8 +19,6 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
-  CheckCircle2,
-  AlertCircle,
   Hash,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
@@ -53,6 +52,48 @@ const Field = ({ label, icon: Icon, required, hint, children }) => (
 
 const inputBase =
   'w-full px-3 py-2.5 text-sm border border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white placeholder-gray-400';
+
+const DEFAULT_COUNTRY = { name: 'India', isoCode: 'IN' };
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: 46,
+    borderRadius: 12,
+    borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.15)' : 'none',
+    '&:hover': {
+      borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+    },
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: '#9ca3af',
+    fontSize: '0.875rem',
+  }),
+  singleValue: (base) => ({
+    ...base,
+    fontSize: '0.875rem',
+    color: '#111827',
+  }),
+  input: (base) => ({
+    ...base,
+    fontSize: '0.875rem',
+  }),
+  option: (base, state) => ({
+    ...base,
+    fontSize: '0.875rem',
+    backgroundColor: state.isFocused ? '#eff6ff' : state.isSelected ? '#dbeafe' : '#fff',
+    color: '#111827',
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
 
 const CollegeForm = () => {
   const toast = useToast();
@@ -90,12 +131,77 @@ const CollegeForm = () => {
   });
 
   const [newAccreditation, setNewAccreditation] = useState('');
+  const [countryOptions, setCountryOptions] = useState([]);
+  const [stateOptions, setStateOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+  const [selectedCountryCode, setSelectedCountryCode] = useState(DEFAULT_COUNTRY.isoCode);
+  const [selectedStateCode, setSelectedStateCode] = useState('');
+  const [locationLoading, setLocationLoading] = useState({
+    countries: false,
+    states: false,
+    cities: false,
+  });
 
   useEffect(() => {
     if (isEditMode) {
       fetchCollegeData();
     }
   }, [collegeId]);
+
+  useEffect(() => {
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    if (!countryOptions.length) {
+      return;
+    }
+
+    const currentCountry = formData.address?.country || DEFAULT_COUNTRY.name;
+    const matchedCountry =
+      countryOptions.find((country) => country.name === currentCountry) ||
+      countryOptions.find((country) => country.isoCode === DEFAULT_COUNTRY.isoCode);
+
+    if (!matchedCountry) {
+      setSelectedCountryCode('');
+      setStateOptions([]);
+      setCityOptions([]);
+      setSelectedStateCode('');
+      return;
+    }
+
+    if (currentCountry !== matchedCountry.name) {
+      setFormData((prev) => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          country: matchedCountry.name,
+        },
+      }));
+    }
+
+    setSelectedCountryCode((prev) => (prev === matchedCountry.isoCode ? prev : matchedCountry.isoCode));
+    fetchStates(matchedCountry.isoCode);
+  }, [countryOptions, formData.address?.country]);
+
+  useEffect(() => {
+    if (!formData.address?.state || !stateOptions.length || !selectedCountryCode) {
+      setSelectedStateCode((prev) => (prev ? '' : prev));
+      setCityOptions([]);
+      return;
+    }
+
+    const matchedState = stateOptions.find((state) => state.name === formData.address.state);
+
+    if (!matchedState) {
+      setSelectedStateCode('');
+      setCityOptions([]);
+      return;
+    }
+
+    setSelectedStateCode((prev) => (prev === matchedState.isoCode ? prev : matchedState.isoCode));
+    fetchCities(selectedCountryCode, matchedState.isoCode);
+  }, [stateOptions, selectedCountryCode, formData.address?.state]);
 
   const fetchCollegeData = async () => {
     try {
@@ -109,6 +215,65 @@ const CollegeForm = () => {
       toast.error('Error', 'Error loading college data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      setLocationLoading((prev) => ({ ...prev, countries: true }));
+      const data = await apiCall('/location/countries');
+      if (data.success) {
+        setCountryOptions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      toast.error('Error', 'Unable to load countries');
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, countries: false }));
+    }
+  };
+
+  const fetchStates = async (countryCode) => {
+    if (!countryCode) {
+      setStateOptions([]);
+      setCityOptions([]);
+      setSelectedStateCode('');
+      return;
+    }
+
+    try {
+      setLocationLoading((prev) => ({ ...prev, states: true }));
+      const data = await apiCall(`/location/states/${countryCode}`);
+      if (data.success) {
+        setStateOptions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching states:', error);
+      setStateOptions([]);
+      toast.error('Error', 'Unable to load states');
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, states: false }));
+    }
+  };
+
+  const fetchCities = async (countryCode, stateCode) => {
+    if (!countryCode || !stateCode) {
+      setCityOptions([]);
+      return;
+    }
+
+    try {
+      setLocationLoading((prev) => ({ ...prev, cities: true }));
+      const data = await apiCall(`/location/cities/${countryCode}/${stateCode}`);
+      if (data.success) {
+        setCityOptions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      setCityOptions([]);
+      toast.error('Error', 'Unable to load cities');
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, cities: false }));
     }
   };
 
@@ -140,6 +305,77 @@ const CollegeForm = () => {
       }));
     }
   };
+
+  const handleCountryChange = (e) => {
+    const countryCode = e.target.value;
+    const selectedCountry = countryOptions.find((country) => country.isoCode === countryCode);
+
+    setSelectedCountryCode(countryCode);
+    setSelectedStateCode('');
+    setStateOptions([]);
+    setCityOptions([]);
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        country: selectedCountry?.name || '',
+        state: '',
+        city: '',
+      },
+    }));
+  };
+
+  const handleStateChange = (e) => {
+    const stateCode = e.target.value;
+    const selectedState = stateOptions.find((state) => state.isoCode === stateCode);
+
+    setSelectedStateCode(stateCode);
+    setCityOptions([]);
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        state: selectedState?.name || '',
+        city: '',
+      },
+    }));
+  };
+
+  const handleCityChange = (e) => {
+    const cityName = e.target.value;
+
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        city: cityName,
+      },
+    }));
+  };
+
+  const countrySelectOptions = countryOptions.map((country) => ({
+    value: country.isoCode,
+    label: country.name,
+  }));
+  const stateSelectOptions = stateOptions.map((state) => ({
+    value: state.isoCode,
+    label: state.name,
+  }));
+  const citySelectOptions = cityOptions.map((city) => ({
+    value: city.name,
+    label: city.name,
+  }));
+  const selectedCountryOption =
+    countrySelectOptions.find((option) => option.value === selectedCountryCode) ||
+    countrySelectOptions.find((option) => option.label === formData.address?.country) ||
+    (formData.address?.country ? { value: formData.address.country, label: formData.address.country } : null);
+  const selectedStateOption =
+    stateSelectOptions.find((option) => option.value === selectedStateCode) ||
+    stateSelectOptions.find((option) => option.label === formData.address?.state) ||
+    (formData.address?.state ? { value: formData.address.state, label: formData.address.state } : null);
+  const selectedCityOption =
+    citySelectOptions.find((option) => option.value === formData.address?.city) ||
+    (formData.address?.city ? { value: formData.address.city, label: formData.address.city } : null);
 
   const addDepartment = () => {
     if (newDepartment.name && newDepartment.code) {
@@ -177,6 +413,12 @@ const CollegeForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.address?.state || !formData.address?.city) {
+      toast.error('Error', 'Please select both state and city');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -310,19 +552,37 @@ const CollegeForm = () => {
               </Field>
             </div>
 
-            <Field label="City" required>
-              <input
-                type="text" name="address.city"
-                value={formData.address?.city || ''} onChange={handleChange} required
-                className={inputBase} placeholder="City"
+            <Field label="State" required>
+              <Select
+                inputId="college-state"
+                isSearchable
+                options={stateSelectOptions}
+                value={selectedStateOption}
+                onChange={(option) => handleStateChange({ target: { value: option?.value || '' } })}
+                placeholder={locationLoading.states ? 'Loading states...' : selectedCountryCode ? 'Search or select state' : 'Select country first'}
+                isDisabled={!selectedCountryCode || locationLoading.states}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                menuPosition="fixed"
+                styles={selectStyles}
+                className="text-sm"
+                noOptionsMessage={() => 'No states found'}
               />
             </Field>
 
-            <Field label="State" required>
-              <input
-                type="text" name="address.state"
-                value={formData.address?.state || ''} onChange={handleChange} required
-                className={inputBase} placeholder="State"
+            <Field label="City" required>
+              <Select
+                inputId="college-city"
+                isSearchable
+                options={citySelectOptions}
+                value={selectedCityOption}
+                onChange={(option) => handleCityChange({ target: { value: option?.value || '' } })}
+                placeholder={locationLoading.cities ? 'Loading cities...' : selectedStateCode ? 'Search or select city' : 'Select state first'}
+                isDisabled={!selectedStateCode || locationLoading.cities}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                menuPosition="fixed"
+                styles={selectStyles}
+                className="text-sm"
+                noOptionsMessage={() => 'No cities found'}
               />
             </Field>
 
@@ -336,10 +596,19 @@ const CollegeForm = () => {
             </Field>
 
             <Field label="Country">
-              <input
-                type="text" name="address.country"
-                value={formData.address?.country || 'India'} onChange={handleChange}
-                className={inputBase} placeholder="India"
+              <Select
+                inputId="college-country"
+                isSearchable
+                options={countrySelectOptions}
+                value={selectedCountryOption}
+                onChange={(option) => handleCountryChange({ target: { value: option?.value || '' } })}
+                placeholder={locationLoading.countries ? 'Loading countries...' : 'Search or select country'}
+                isDisabled={locationLoading.countries}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                menuPosition="fixed"
+                styles={selectStyles}
+                className="text-sm"
+                noOptionsMessage={() => 'No countries found'}
               />
             </Field>
           </div>

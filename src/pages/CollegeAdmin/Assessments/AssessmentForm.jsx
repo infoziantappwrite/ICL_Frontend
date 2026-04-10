@@ -27,6 +27,7 @@ const INITIAL_FORM = {
   total_marks: '',       // auto-calculated: num_questions × marks_per_question
   show_results_to_students: false,
   shuffle_questions: false,
+  camera_proctoring_enabled: true,  // camera proctoring ON by default; admin can disable
   default_coding_language: 'python',  // college admin sets default; students can override
 };
 
@@ -130,6 +131,7 @@ const AssessmentForm = () => {
             total_marks: a.total_marks || '',
             show_results_to_students: a.show_results_to_students ?? false,
             shuffle_questions: a.shuffle_questions ?? false,
+            camera_proctoring_enabled: a.camera_proctoring_enabled ?? true,
             default_coding_language: a.default_coding_language || 'python',
           });
         } else {
@@ -180,6 +182,7 @@ const AssessmentForm = () => {
       num_questions:            Number(form.num_questions),
       show_results_to_students: form.show_results_to_students,
       shuffle_questions:        form.shuffle_questions,
+      camera_proctoring_enabled: form.camera_proctoring_enabled,
       default_coding_language:  form.default_coding_language || 'python',
     };
 
@@ -427,6 +430,16 @@ const AssessmentForm = () => {
                 onChange={v => set('shuffle_questions', v)}
                 label="Shuffle Questions"
                 desc="Questions appear in a different random order for each student"
+              />
+              <Toggle
+                checked={form.camera_proctoring_enabled}
+                onChange={v => set('camera_proctoring_enabled', v)}
+                label="Camera Proctoring"
+                desc={
+                  form.camera_proctoring_enabled
+                    ? 'ON — students must allow camera; AI detects face violations and captures photo evidence'
+                    : 'OFF — only window/browser proctoring runs (tab switch, fullscreen, copy-paste)'
+                }
               />
             </div>
 

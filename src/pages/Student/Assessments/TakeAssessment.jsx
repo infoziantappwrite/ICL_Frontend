@@ -181,7 +181,7 @@ const ProctoringWarningToast = ({ violation, remaining, onDismiss }) => {
         <p className="text-[12px] opacity-90 mt-0.5">{violation.label}</p>
         {isCritical && remaining > 0 && (
           <p className="text-[11px] opacity-80 mt-1 font-bold">
-            {remaining} warning{remaining !== 1 ? 's' : ''} remaining before auto-submit
+            Violation noted — your proctoring details are being recorded
           </p>
         )}
       </div>
@@ -192,104 +192,71 @@ const ProctoringWarningToast = ({ violation, remaining, onDismiss }) => {
   );
 };
 
-// ── Fullscreen Prompt Overlay ─────────────────────────────────────
-// ── Fullscreen Violation Overlay ──────────────────────────────────
-// Completely opaque — hides ALL assessment content.
-// Cannot be dismissed without clicking the button (which triggers real user-gesture fullscreen).
-// No ESC, no clicking outside, no seeing behind it.
-const FullscreenPrompt = ({ onRequestFullscreen, violationCount, maxViolations }) => {
-  const remaining = Math.max(0, maxViolations - violationCount);
-  return (
-    <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center"
-      style={{ backgroundColor: '#0f172a', pointerEvents: 'all' }}
-      onContextMenu={e => e.preventDefault()}
-    >
-      {/* Blurred background blobs for visual depth — assessment content is fully hidden */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-red-900/20 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 blur-[120px] rounded-full" />
+// ── Fullscreen Exit Dialog ─────────────────────────────────────────
+// Student can choose to return to fullscreen OR submit & exit.
+// Violation is already logged by the fullscreen change handler.
+const FullscreenPrompt = ({ onRequestFullscreen, onSubmitAndExit, violationCount }) => (
+  <div
+    className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    style={{ pointerEvents: 'all' }}
+    onContextMenu={e => e.preventDefault()}
+  >
+    <div className="w-full max-w-sm mx-4">
+      {/* Amber header */}
+      <div className="bg-amber-500 rounded-t-2xl px-5 py-4 flex items-center gap-3">
+        <ShieldAlert className="w-5 h-5 text-white shrink-0" />
+        <div>
+          <p className="text-white font-black text-[14px]">You Exited Fullscreen</p>
+          <p className="text-amber-100 text-[11px] font-medium">Violation #{violationCount} noted for admin review</p>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md mx-4">
-        {/* Red warning bar at top */}
-        <div className="bg-red-600 rounded-t-2xl px-6 py-4 flex items-center gap-3">
-          <ShieldAlert className="w-6 h-6 text-white shrink-0" />
-          <div>
-            <p className="text-white font-black text-[15px]">⚠ Proctoring Violation Detected</p>
-            <p className="text-red-200 text-[12px] font-medium">This incident has been recorded and reported</p>
-          </div>
+      {/* Card body */}
+      <div className="bg-white rounded-b-2xl shadow-2xl px-6 py-6 text-center">
+        <div className="w-14 h-14 bg-amber-50 border-2 border-amber-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Maximize className="w-7 h-7 text-amber-500" />
         </div>
 
-        {/* Main card */}
-        <div className="bg-white rounded-b-2xl shadow-2xl p-8 text-center">
-          <div className="w-20 h-20 bg-red-50 border-2 border-red-200 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Maximize className="w-10 h-10 text-red-600" />
-          </div>
+        <p className="text-[13px] text-gray-600 leading-relaxed mb-1">
+          The assessment requires fullscreen mode.
+        </p>
+        <p className="text-[12px] text-gray-400 mb-6">
+          Return to fullscreen to continue your exam, or submit and exit if you wish to leave now.
+        </p>
 
-          <h3 className="font-black text-[20px] text-gray-900 mb-2">You Exited Fullscreen</h3>
-          <p className="text-[13px] text-gray-500 mb-5 leading-relaxed">
-            This assessment <strong className="text-gray-800">must run in fullscreen at all times</strong>.
-            Exiting fullscreen is a proctoring violation. You cannot continue until you return to fullscreen.
-          </p>
+        {/* Primary — return to fullscreen */}
+        <button
+          onClick={onRequestFullscreen}
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[14px] shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 mb-3"
+        >
+          <Maximize className="w-4 h-4" /> Return to Fullscreen
+        </button>
 
-          {/* Violation counter */}
-          <div className={`rounded-xl px-5 py-3 mb-5 border-2 ${
-            remaining <= 1 ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-300'
-          }`}>
-            <p className={`text-[13px] font-black ${remaining <= 1 ? 'text-red-700' : 'text-amber-700'}`}>
-              Violation #{violationCount} of {maxViolations}
-            </p>
-            <div className="flex justify-center gap-2 mt-2">
-              {Array.from({ length: maxViolations }).map((_, i) => (
-                <span
-                  key={i}
-                  className={`w-4 h-4 rounded-full border-2 ${
-                    i < violationCount
-                      ? 'bg-red-500 border-red-600'
-                      : 'bg-gray-100 border-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-            <p className={`text-[12px] font-bold mt-2 ${remaining <= 1 ? 'text-red-600' : 'text-amber-600'}`}>
-              {remaining <= 0
-                ? '⚠ Assessment will be auto-submitted!'
-                : `${remaining} more violation${remaining !== 1 ? 's' : ''} will auto-submit your assessment`}
-            </p>
-          </div>
+        {/* Secondary — submit and exit */}
+        <button
+          onClick={onSubmitAndExit}
+          className="w-full py-3 border-2 border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center gap-2"
+        >
+          <Send className="w-4 h-4" /> Submit &amp; Exit Assessment
+        </button>
 
-          {/* The ONLY way out — clicking this button is a real user gesture so requestFullscreen works */}
-          <button
-            onClick={onRequestFullscreen}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-[15px] shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2"
-          >
-            <Maximize className="w-5 h-5" /> Return to Fullscreen to Continue
-          </button>
-
-          <p className="text-[11px] text-gray-400 mt-3 font-medium">
-            Assessment content is hidden until you return to fullscreen
-          </p>
-        </div>
+        <p className="text-[10px] text-gray-400 mt-4">
+          Your answers are saved. Submitting now will end the exam permanently.
+        </p>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-// ── Auto-Submit Blocked Overlay ───────────────────────────────────
-const BlockedOverlay = () => (
-  <div className="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <Lock className="w-8 h-8 text-red-600" />
-      </div>
-      <h3 className="font-bold text-[20px] text-gray-900 mb-2">Assessment Terminated</h3>
-      <p className="text-[13px] text-gray-500 leading-relaxed">
-        Multiple proctoring violations were detected. Your assessment has been automatically submitted and flagged for review by your instructor.
-      </p>
-      <div className="mt-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-        <p className="text-[12px] font-bold text-red-700">
-          All violation events have been recorded and sent to your institution.
+// ── Proctoring Flagged Banner (non-blocking, students can continue) ──────────
+const FlaggedNoticeBanner = ({ count }) => (
+  <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[9990] max-w-sm w-full px-4">
+    <div className="bg-amber-50 border border-amber-300 rounded-xl px-4 py-3 shadow-lg flex items-start gap-3">
+      <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+      <div>
+        <p className="text-[12px] font-bold text-amber-800">Proctoring Violation Noted</p>
+        <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+          {count} violation{count !== 1 ? 's' : ''} recorded. You may continue your assessment — details have been noted for review.
         </p>
       </div>
     </div>
@@ -297,25 +264,21 @@ const BlockedOverlay = () => (
 );
 
 // ── Camera Violation Modal ────────────────────────────────────────
-const CameraViolationModal = ({ violationCount, max, onDismiss }) => (
+const CameraViolationModal = ({ violationCount, onDismiss }) => (
   <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9997] flex items-center justify-center p-4">
     <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
-      <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <ShieldAlert className="w-8 h-8 text-red-500" />
+      <div className="w-16 h-16 bg-amber-50 border border-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+        <ShieldAlert className="w-8 h-8 text-amber-500" />
       </div>
       <h3 className="font-bold text-[18px] text-gray-900 mb-2">Camera Violation Detected</h3>
       <p className="text-[13px] text-gray-500 mb-4 leading-relaxed">
         A camera proctoring violation has been recorded. Ensure your face is clearly visible and no other devices are in frame.
       </p>
-      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5">
-        <p className="text-[12px] font-bold text-red-600">
-          Violation #{violationCount} of {max} — {max - violationCount} remaining before auto-submit.
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
+        <p className="text-[12px] font-bold text-amber-700">
+          Violation #{violationCount} noted. You may continue your assessment.
         </p>
-        <div className="flex justify-center gap-1.5 mt-2">
-          {Array.from({ length: max }).map((_, i) => (
-            <span key={i} className={`w-3 h-3 rounded-full border ${i < violationCount ? 'bg-red-500 border-red-600' : 'bg-gray-100 border-gray-300'}`} />
-          ))}
-        </div>
+        <p className="text-[11px] text-amber-600 mt-1">Your proctoring details are being recorded for admin review.</p>
       </div>
       <button
         onClick={onDismiss}
@@ -328,9 +291,9 @@ const CameraViolationModal = ({ violationCount, max, onDismiss }) => (
 );
 
 // ── Proctoring Status Badge ───────────────────────────────────────
-const ProctoringBadge = ({ warningCount, max, camViolationCount, camMax }) => {
+const ProctoringBadge = ({ warningCount, camViolationCount }) => {
   const safe     = warningCount === 0 && camViolationCount === 0;
-  const critical = warningCount >= max || camViolationCount >= camMax;
+  const critical = warningCount >= 5 || camViolationCount >= 5;
   return (
     <div className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-bold border
       ${safe     ? 'bg-green-50 text-green-700 border-green-200'
@@ -339,11 +302,94 @@ const ProctoringBadge = ({ warningCount, max, camViolationCount, camMax }) => {
       {safe ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
       {safe ? 'Secured' : (
         <span className="flex items-center gap-1.5">
-          <span title="Browser violations">🖥 {warningCount}/{max}</span>
-          <span className="opacity-40">·</span>
-          <span title="Camera violations">📷 {camViolationCount}/{camMax}</span>
+          {warningCount > 0 && <span title="Browser violations">🖥 {warningCount}</span>}
+          {warningCount > 0 && camViolationCount > 0 && <span className="opacity-40">·</span>}
+          {camViolationCount > 0 && <span title="Camera violations">📷 {camViolationCount}</span>}
         </span>
       )}
+    </div>
+  );
+};
+
+
+// ── Briefing Camera Preview ───────────────────────────────────────
+// Shows a live camera feed after permission is granted so the student
+// can verify their face is correctly positioned before starting.
+// Uses the existing videoRef / canvasRef from useCameraProctoring.
+// faceStatus is driven by startPreviewScan() which runs real face-api detection.
+const BriefingCameraPreview = ({ camera }) => {
+  const { videoRef, canvasRef, faceStatus } = camera;
+  const [scanning, setScanning] = useState(true);
+
+  // Give models ~3 s to load before showing result
+  useEffect(() => {
+    const t = setTimeout(() => setScanning(false), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const faceOk       = faceStatus === 'ok';
+  const faceMultiple = faceStatus === 'multiple';
+  const faceNone     = faceStatus === 'no_face';
+
+  const borderColor = scanning       ? 'border-gray-300'
+                    : faceOk         ? 'border-green-400'
+                    : faceMultiple   ? 'border-amber-400'
+                    :                  'border-red-400';
+
+  const badgeBg = scanning       ? 'bg-gray-600'
+                : faceOk         ? 'bg-green-600'
+                : faceMultiple   ? 'bg-amber-500'
+                :                  'bg-red-600';
+
+  const badgeText = scanning     ? '⏳ Scanning…'
+                  : faceOk       ? '✓ Face detected — looks good!'
+                  : faceMultiple ? '⚠ Multiple faces detected'
+                  :                '⚠ No face — adjust position';
+
+  const guideText = scanning     ? 'Checking your camera…'
+                  : faceOk       ? 'Great! Your face is clearly visible. You may start the assessment.'
+                  : faceMultiple ? 'Only one person should be visible on camera.'
+                  :                'Make sure your face is centred, fully visible, and the room is well-lit.';
+
+  const guideColor = scanning     ? 'text-gray-500'
+                   : faceOk       ? 'text-green-700'
+                   : faceMultiple ? 'text-amber-700'
+                   :                'text-red-700';
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {/* Hidden canvas used by face-api scan */}
+      <canvas ref={canvasRef} width={320} height={240} style={{ display: 'none' }} />
+
+      {/* Live feed wrapper */}
+      <div className={`relative rounded-xl overflow-hidden border-4 transition-all duration-500 ${borderColor}`}
+        style={{ width: 240, height: 180 }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ width: 240, height: 180, objectFit: 'cover', transform: 'scaleX(-1)' }}
+        />
+        {/* Scanning pulse overlay */}
+        {scanning && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <p className="text-white text-[10px] font-bold">Loading AI…</p>
+            </div>
+          </div>
+        )}
+        {/* Status badge */}
+        <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap ${badgeBg} text-white`}>
+          {badgeText}
+        </div>
+      </div>
+
+      {/* Guidance text */}
+      <p className={`text-[11px] font-medium text-center max-w-[260px] ${guideColor}`}>
+        {guideText}
+      </p>
     </div>
   );
 };
@@ -380,6 +426,11 @@ const TakeAssessment = () => {
   const [cameraPermStatus, setCameraPermStatus]           = useState('idle');
   const CAM_MAX_VIOLATIONS = Number(import.meta.env.VITE_PROCTORING_MAX_CAMERA_VIOLATIONS) || 5;
   const PROCTORING_ENABLED = import.meta.env.VITE_PROCTORING_ENABLED !== 'false';
+  // Camera proctoring is active only if PROCTORING_ENABLED AND the admin explicitly enabled it for this assessment.
+  // IMPORTANT: Default to FALSE (not true) when briefingInfo is not yet loaded.
+  // Previously this defaulted to TRUE because (undefined !== false) === true,
+  // causing camera to start even when the admin had disabled camera proctoring.
+  const CAMERA_PROCTORING_ENABLED = PROCTORING_ENABLED && (briefingInfo?.camera_proctoring_enabled === true);
 
   // ── Direct fullscreen tracker — ground truth from browser API ──
   // This is used for the overlay condition instead of guard.isFullscreen
@@ -421,7 +472,7 @@ const TakeAssessment = () => {
 
   const camera = useCameraProctoring({
     submissionId,
-    enabled: PROCTORING_ENABLED,
+    enabled: CAMERA_PROCTORING_ENABLED,
     debugMode: false,
 
     // BUG 3 FIX: onViolation fires for ALL events (including WARNINGs).
@@ -448,13 +499,13 @@ const TakeAssessment = () => {
     // violations and browser violations are tracked in separate silos and the
     // guard's auto-submit threshold doesn't account for camera violations at all.
     onCriticalViolation: (event) => {
-      // Bridge to guard's shared counter (risk score + auto-submit)
+      // Bridge to guard's shared counter (risk score)
       guard.recordCriticalFromCamera?.(event);
 
       setCamViolationCount(prev => {
         const next = prev + 1;
         setShowCamViolationModal(true);
-        if (next >= CAM_MAX_VIOLATIONS) autoSubmitRef.current?.('camera_proctoring_violation');
+        // Students are NOT auto-submitted — violations are flagged for CollegeAdmin only.
         return next;
       });
     },
@@ -477,7 +528,7 @@ const TakeAssessment = () => {
   // so that CameraOverlay has mounted and videoRef.current is valid.
   // Also surfaces camera errors to the user instead of silently swallowing them.
   useEffect(() => {
-    if (phase === 'in_progress' && PROCTORING_ENABLED && !cameraInitializedRef.current) {
+    if (phase === 'in_progress' && CAMERA_PROCTORING_ENABLED && !cameraInitializedRef.current) {
       cameraInitializedRef.current = true;
 
       camera.startCamera()
@@ -507,6 +558,19 @@ const TakeAssessment = () => {
   useEffect(() => {
     if (questionScrollRef.current) questionScrollRef.current.scrollTop = 0;
   }, [currentIdx]);
+
+  // ── Start live face-check preview when camera permission granted ──
+  // This runs real face detection on the briefing page so the student
+  // can see whether their face is correctly positioned before starting.
+  // Stops automatically when the assessment begins (startCamera takes over).
+  useEffect(() => {
+    if (CAMERA_PROCTORING_ENABLED && cameraPermStatus === 'granted' && phase === 'briefing') {
+      camera.startPreviewScan?.();
+    }
+    return () => {
+      if (cameraPermStatus === 'granted') camera.stopPreviewScan?.();
+    };
+  }, [cameraPermStatus, phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── FIX 1 continued: Initial data fetch — sets phase to 'briefing'
   // only AFTER data has loaded, never before. Also handles existing attempts.
@@ -540,10 +604,12 @@ const TakeAssessment = () => {
 
   // ── Begin assessment ──────────────────────────────────────────
   const handleBegin = async () => {
-    if (PROCTORING_ENABLED && cameraPermStatus !== 'granted') {
+    if (CAMERA_PROCTORING_ENABLED && cameraPermStatus !== 'granted') {
       setError('Please allow camera access before starting the assessment.');
       return;
     }
+    // Stop briefing preview scan — startCamera() will take over
+    camera.stopPreviewScan?.();
     setPhase('loading');
     setError('');
     try {
@@ -734,8 +800,8 @@ const TakeAssessment = () => {
 
               <div className="space-y-8">
 
-                {/* ── Camera Permission — proctoring ON only ── */}
-                {PROCTORING_ENABLED && (
+                {/* ── Camera Permission — camera proctoring ON only ── */}
+                {CAMERA_PROCTORING_ENABLED && (
                   <section>
                     <div className={`rounded-xl p-4 border transition-all ${
                       cameraPermStatus === 'granted'
@@ -755,7 +821,11 @@ const TakeAssessment = () => {
                         }`}>Step 1 — Camera Access Required</h4>
                       </div>
                       {cameraPermStatus === 'granted' ? (
-                        <p className="text-[12px] text-green-700 font-medium">✓ Camera permission granted. You are ready to begin.</p>
+                        <div>
+                          <p className="text-[12px] text-green-700 font-medium mb-3">✓ Camera permission granted. Check your position in the preview below.</p>
+                          {/* ── Live camera preview ── */}
+                          <BriefingCameraPreview camera={camera} />
+                        </div>
                       ) : cameraPermStatus === 'denied' ? (
                         <div>
                           <p className="text-[12px] text-red-700 font-medium mb-1">Camera access was denied. Allow camera access in your browser settings and reload this page.</p>
@@ -793,6 +863,21 @@ const TakeAssessment = () => {
                           </button>
                         </div>
                       )}
+                    </div>
+                  </section>
+                )}
+
+                {/* ── Window-only proctoring notice (camera OFF) ── */}
+                {PROCTORING_ENABLED && !CAMERA_PROCTORING_ENABLED && (
+                  <section>
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                      <Shield className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="text-[13px] font-bold text-blue-800 mb-1">Browser Proctoring Enabled</h4>
+                        <p className="text-[12px] text-blue-700">
+                          Camera is not required for this assessment. Tab switching, fullscreen exit, and copy-paste are still monitored.
+                        </p>
+                      </div>
                     </div>
                   </section>
                 )}
@@ -846,8 +931,8 @@ const TakeAssessment = () => {
                       '<strong class="text-gray-900">Do not switch tabs or minimize the browser.</strong> Tab switching and focus loss are monitored and logged.',
                       '<strong class="text-gray-900">Copy, paste, right-click</strong> and browser shortcuts (F12, Ctrl+Shift+I) are disabled.',
                       'This assessment runs in <strong class="text-gray-900">locked fullscreen mode</strong>. Exiting fullscreen is a violation.',
-                      'After <strong class="text-gray-900">5 critical violations</strong> the assessment will auto-submit and be flagged.',
-                      '<strong class="text-gray-900">Your webcam will be activated</strong> for AI-powered face monitoring. No video is recorded — only violation events are logged.',
+                      'After <strong class="text-gray-900">5 critical violations</strong> your attempt will be flagged and reviewed by the college admin.',
+                      ...(CAMERA_PROCTORING_ENABLED ? ['<strong class="text-gray-900">Your webcam will be activated</strong> for AI-powered face monitoring. No video is recorded — only violation events are logged.'] : []),
                     ].map((t, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-2 shrink-0" />
@@ -927,7 +1012,7 @@ const TakeAssessment = () => {
                   <div className="space-y-3">
                     <button
                       onClick={handleBegin}
-                      disabled={PROCTORING_ENABLED && cameraPermStatus !== 'granted'}
+                      disabled={CAMERA_PROCTORING_ENABLED && cameraPermStatus !== 'granted'}
                       className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-200 transition-all text-[14px] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                     >
                       <Lock className="w-4 h-4" /> Begin Secured Assessment
@@ -1019,20 +1104,18 @@ const TakeAssessment = () => {
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-white" style={{ fontFamily: "'Inter', 'IBM Plex Sans', sans-serif", userSelect: 'none' }}>
 
       {/* ── Proctoring Overlays ── */}
-      {guard.isBlocked && <BlockedOverlay />}
+      {guard.isBlocked && <FlaggedNoticeBanner count={guard.warningCount} />}
 
-      {!guard.isBlocked && !isPageFullscreen && PROCTORING_ENABLED && phase === 'in_progress' && (
+      {!isPageFullscreen && PROCTORING_ENABLED && phase === 'in_progress' && (
         <FullscreenPrompt
           onRequestFullscreen={guard.requestFullscreen}
+          onSubmitAndExit={() => handleSubmit('submit_and_exit')}
           violationCount={guard.warningCount}
-          maxViolations={guard.MAX_VIOLATIONS}
         />
       )}
-
-      {!guard.isBlocked && showCamViolationModal && (
+      {showCamViolationModal && (
         <CameraViolationModal
           violationCount={camViolationCount}
-          max={CAM_MAX_VIOLATIONS}
           onDismiss={() => setShowCamViolationModal(false)}
         />
       )}
@@ -1040,7 +1123,7 @@ const TakeAssessment = () => {
       {showWarningToast && (guard.lastViolation || cameraLastViolation) && (
         <ProctoringWarningToast
           violation={guard.lastViolation || cameraLastViolation}
-          remaining={guard.criticalViolationsRemaining}
+          remaining={0}
           onDismiss={() => setShowWarningToast(false)}
         />
       )}
@@ -1094,9 +1177,7 @@ const TakeAssessment = () => {
           <div className="flex items-center gap-2 shrink-0">
             <ProctoringBadge
               warningCount={guard.warningCount}
-              max={guard.MAX_VIOLATIONS}
               camViolationCount={camViolationCount}
-              camMax={CAM_MAX_VIOLATIONS}
             />
 
             {/* FIX 5: Safe isOnline check */}
@@ -1457,10 +1538,10 @@ const TakeAssessment = () => {
                     <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Proctoring Alerts</p>
                   </div>
                   {guard.warningCount > 0 && (
-                    <p className="text-[11px] text-amber-700">🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} ({guard.criticalViolationsRemaining} remaining).</p>
+                    <p className="text-[11px] text-amber-700">🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} noted.</p>
                   )}
                   {camViolationCount > 0 && (
-                    <p className="text-[11px] text-amber-700 mt-0.5">📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} ({CAM_MAX_VIOLATIONS - camViolationCount} remaining).</p>
+                    <p className="text-[11px] text-amber-700 mt-0.5">📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} noted.</p>
                   )}
                 </div>
               )}
@@ -1495,12 +1576,12 @@ const TakeAssessment = () => {
             )}
             {guard.warningCount > 0 && (
               <div className="bg-amber-50 text-amber-700 font-medium text-[12px] py-2 px-3 rounded-lg mb-2 border border-amber-200">
-                🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} will be included in your report.
+                🖥 {guard.warningCount} browser violation{guard.warningCount !== 1 ? 's' : ''} recorded — noted for review.
               </div>
             )}
             {camViolationCount > 0 && (
               <div className="bg-amber-50 text-amber-700 font-medium text-[12px] py-2 px-3 rounded-lg mb-3 border border-amber-200">
-                📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} will be included in your report.
+                📷 {camViolationCount} camera violation{camViolationCount !== 1 ? 's' : ''} recorded — noted for review.
               </div>
             )}
             <div className="flex gap-3 mt-4">

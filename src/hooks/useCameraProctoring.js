@@ -239,13 +239,14 @@ const useCameraProctoring = ({
   const [noFaceWarningCount, setNoFaceWarningCount] = useState(0);
   const [gazeStatus,         setGazeStatus]         = useState('center');
 
-  const videoRef     = useRef(null);
-  const canvasRef    = useRef(null);
-  const overlayRef   = useRef(null);
-  const streamRef    = useRef(null);
-  const scanTimerRef = useRef(null);
-  const activeRef    = useRef(false);
-  const runScanRef   = useRef(null);
+  const videoRef        = useRef(null);
+  const canvasRef       = useRef(null);
+  const overlayRef      = useRef(null);
+  const streamRef       = useRef(null);
+  const scanTimerRef    = useRef(null);
+  const previewTimerRef = useRef(null);   // briefing-page lightweight scan
+  const activeRef       = useRef(false);
+  const runScanRef      = useRef(null);
 
   const stateRef = useRef({
     consecutiveNoFace      : 0,
@@ -310,7 +311,7 @@ const useCameraProctoring = ({
         submission_id : submissionId,
         event_type    : type,
         severity      : entry.severity,
-        details       : { label: entry.label, source: 'camera', snapshot: snapshot?'[captured]':null, ...meta },
+        details       : { label: entry.label, source: 'camera', snapshot: snapshot || null, ...meta },
         timestamp     : entry.timestamp,
       }).catch(() => {});
     }
@@ -632,10 +633,59 @@ const useCameraProctoring = ({
   const stopCamera = useCallback(() => {
     activeRef.current = false;
     clearInterval(scanTimerRef.current);
+    clearInterval(previewTimerRef.current);
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     if (videoRef.current) videoRef.current.srcObject = null;
     setStatus('idle');
     setFaceStatus('ok');
+  }, []);
+
+  // ── Briefing-page preview scan (no violations logged, just face status) ──────
+  // Called after camera permission is granted so student can verify position.
+  const startPreviewScan = useCallback(async () => {
+    clearInterval(previewTimerRef.current);
+    if (!streamRef.current) return;
+    try {
+      // Attach stream to video element
+      if (videoRef.current) {
+        if (!videoRef.current.srcObject) {
+          videoRef.current.srcObject = streamRef.current;
+          await videoRef.current.play().catch(() => {});
+        }
+      }
+      // Load models (cached after first call)
+      await loadModels();
+
+      const scan = async () => {
+        const video  = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!video || !canvas || video.readyState < 2 || video.videoWidth === 0) return;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+        try {
+          const detections = await faceapi
+            .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions({
+              inputSize: FACE_API_INPUT_SIZE,
+              scoreThreshold: DETECTION_THRESHOLD,
+            }));
+          if      (detections.length === 0) setFaceStatus('no_face');
+          else if (detections.length > 1)   setFaceStatus('multiple');
+          else                              setFaceStatus('ok');
+        } catch { setFaceStatus('no_face'); }
+      };
+
+      // Run immediately then every 2 s
+      scan();
+      previewTimerRef.current = setInterval(scan, 2000);
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[CameraProctoring] startPreviewScan error:', err);
+    }
+  }, []);
+
+  const stopPreviewScan = useCallback(() => {
+    clearInterval(previewTimerRef.current);
+    previewTimerRef.current = null;
+    setFaceStatus('ok'); // reset to neutral when preview ends
   }, []);
 
   useEffect(() => () => stopCamera(), [stopCamera]);
@@ -650,6 +700,7 @@ const useCameraProctoring = ({
     gazeStatus,
     noFaceWarningsRemaining : Math.max(0, NO_FACE_WARNING_LIMIT - noFaceWarningCount),
     requestPermission, startCamera, stopCamera,
+    startPreviewScan, stopPreviewScan,
     SCAN_INTERVAL_OK, CAM_VIOLATION, CAM_LABELS,
   };
 };

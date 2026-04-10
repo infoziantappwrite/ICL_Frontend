@@ -198,12 +198,7 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
       const newCount = stateRef.current.warningCount + 1;
       stateRef.current.warningCount = newCount;
       setWarningCount(newCount);
-
-      if (newCount >= MAX_VIOLATIONS) {
-        stateRef.current.isBlocked = true;
-        setIsBlocked(true);
-        onAutoSubmit?.('proctoring_violation');
-      }
+      // NOTE: Students are NOT blocked — violations are flagged for CollegeAdmin review only.
     }
 
     if (submissionId) {
@@ -245,11 +240,13 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // 1. Fullscreen change — record violation. The FullscreenPrompt overlay in
-    // TakeAssessment will immediately block all content and force the student
-    // to click "Return to Fullscreen" — that click IS a user gesture so
-    // requestFullscreen() works. We cannot auto-call it here (browsers block
-    // requestFullscreen unless triggered by a direct user gesture).
+    // 1. Fullscreen change — record violation AND auto re-enter fullscreen.
+    // The fullscreenchange event itself is treated as a trusted user-gesture
+    // context by Chromium/Firefox, so requestFullscreen() succeeds here
+    // without needing a separate button click from the student.
+    // A short delay (300ms) lets the browser finish the exit animation before
+    // requesting re-entry — without it some browsers ignore the call.
+    let fsRetryTimer = null;
     const onFullscreenChange = () => {
       const fsEl = document.fullscreenElement
         || document.webkitFullscreenElement
@@ -259,6 +256,21 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
       setIsFullscreen(nowFs);
       if (!nowFs && stateRef.current.enabled && !stateRef.current.isBlocked) {
         recordViolation(VIOLATION.FULLSCREEN_EXIT);
+        // Auto re-enter fullscreen after a short delay
+        clearTimeout(fsRetryTimer);
+        fsRetryTimer = setTimeout(async () => {
+          try {
+            const el = document.documentElement;
+            if      (el.requestFullscreen)       await el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+            else if (el.mozRequestFullScreen)    await el.mozRequestFullScreen();
+            else if (el.msRequestFullscreen)     await el.msRequestFullscreen();
+          } catch {
+            // Browser blocked the auto re-entry (e.g. user pressed Esc twice
+            // quickly). The non-blocking toast in TakeAssessment will prompt
+            // them to click "Return to Fullscreen".
+          }
+        }, 300);
       }
     };
 
@@ -499,6 +511,7 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
     return () => {
       clearInterval(devtoolsInterval);
       clearInterval(heartbeatInterval);
+      clearTimeout(fsRetryTimer);
       document.removeEventListener('fullscreenchange',       onFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
       document.removeEventListener('mozfullscreenchange',    onFullscreenChange);
@@ -559,22 +572,15 @@ const useProctoringGuard = ({ submissionId, onAutoSubmit, enabled = true }) => {
     stateRef.current.riskScore = newRisk;
     setRiskScore(newRisk);
 
-    // Count toward auto-submit
+    // Count for CollegeAdmin reporting — students are NOT blocked.
     const newCount = stateRef.current.warningCount + 1;
     stateRef.current.warningCount = newCount;
     setWarningCount(newCount);
-
-    if (newCount >= MAX_VIOLATIONS) {
-      stateRef.current.isBlocked = true;
-      setIsBlocked(true);
-      onAutoSubmit?.('camera_proctoring_violation');
-    }
-  }, [onAutoSubmit]);
+  }, []);
 
   return {
     violations,
     warningCount,
-    criticalViolationsRemaining : Math.max(0, MAX_VIOLATIONS - warningCount),
     isFullscreen,
     isBlocked,
     isOnline,

@@ -76,35 +76,145 @@ const fmtTime = (secs) => {
 };
 
 
-// ── Proctoring Panel (inline in the attempt row) ──────────────────────────
-const ProctoringPanel = ({ attempt }) => {
+// ── Proctoring Detail Modal (popup for CollegeAdmin) ──────────────────────────
+const ProctoringModal = ({ attempt, onClose }) => {
   const [violations, setViolations] = useState(null);
-  const [loading, setLoading]       = useState(false);
-  const [open, setOpen]             = useState(false);
+  const [loading, setLoading]       = useState(true);
 
-  const load = async () => {
-    if (violations !== null) { setOpen(v => !v); return; }
-    setLoading(true);
-    try {
-      const res = await fetchViolations(attempt._id);
-      setViolations(res.violations || []);
-      setOpen(true);
-    } catch {
-      setViolations([]);
-      setOpen(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetchViolations(attempt._id);
+        setViolations(res.violations || []);
+      } catch {
+        setViolations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [attempt._id]);
 
   const flagged  = attempt.proctoring_flagged;
   const count    = attempt.proctoring_violations_count || 0;
   const critical = violations?.filter(v => CRITICAL_TYPES.has(v.event_type)).length ?? 0;
+  const camera   = violations?.filter(v => v.source === 'camera').length ?? 0;
+  const browser  = violations?.filter(v => v.source === 'browser').length ?? 0;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${flagged ? 'bg-red-100' : count > 0 ? 'bg-amber-100' : 'bg-green-100'}`}>
+              {flagged ? <ShieldAlert className="w-5 h-5 text-red-600" /> : count > 0 ? <AlertTriangle className="w-5 h-5 text-amber-600" /> : <ShieldCheck className="w-5 h-5 text-green-600" />}
+            </div>
+            <div>
+              <h2 className="font-black text-gray-900 text-sm">Proctoring Report</h2>
+              <p className="text-xs text-gray-400 mt-0.5">{attempt.student_id?.fullName || '—'}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-all">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Summary stats */}
+        <div className="px-5 py-4 grid grid-cols-4 gap-3 border-b border-gray-100 shrink-0">
+          {[
+            { label: 'Total Events', value: violations?.length ?? '—', color: 'bg-gray-50 border-gray-200 text-gray-700' },
+            { label: 'Critical',     value: loading ? '—' : critical, color: critical > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-200 text-gray-400' },
+            { label: 'Camera',       value: loading ? '—' : camera,   color: camera > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-200 text-gray-400' },
+            { label: 'Browser',      value: loading ? '—' : browser,  color: browser > 0 ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-400' },
+          ].map(s => (
+            <div key={s.label} className={`rounded-xl border px-3 py-2.5 text-center ${s.color}`}>
+              <p className="text-lg font-black tabular-nums">{s.value}</p>
+              <p className="text-[9px] font-semibold opacity-60 mt-0.5 uppercase tracking-wide">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Status badge */}
+        <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-100 shrink-0">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
+            ${flagged ? 'bg-red-50 border-red-200 text-red-700' : count > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+            {flagged ? <><ShieldAlert className="w-3 h-3" /> Flagged</> : count > 0 ? <><AlertTriangle className="w-3 h-3" /> {count} violation{count !== 1 ? 's' : ''}</> : <><ShieldCheck className="w-3 h-3" /> Clean</>}
+          </span>
+          <span className="text-xs text-gray-400 ml-1">Risk Score: <strong className="text-gray-700">{attempt.proctoring_risk_score ?? 0}/100</strong></span>
+        </div>
+
+        {/* Violation list */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
+            </div>
+          ) : violations?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-green-600 gap-2">
+              <ShieldCheck className="w-8 h-8" />
+              <p className="text-sm font-semibold">No violations recorded</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              <div className="px-5 py-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Event Log</p>
+              </div>
+              {violations.map((v, i) => (
+                <div key={i} className="px-5 py-3 hover:bg-gray-50/60 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${CRITICAL_TYPES.has(v.event_type) ? 'bg-red-500' : 'bg-amber-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-bold truncate ${CRITICAL_TYPES.has(v.event_type) ? 'text-red-700' : 'text-amber-700'}`}>
+                        {VIOLATION_LABELS[v.event_type] || v.event_type}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 capitalize">{v.source || 'system'} · {v.severity}</p>
+                    </div>
+                    <span className="text-[10px] text-gray-400 shrink-0 font-mono">
+                      {v.client_timestamp
+                        ? new Date(v.client_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                        : new Date(v.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                  {/* ── Evidence snapshot (camera violations only) ── */}
+                  {v.evidence_snapshot && (
+                    <div className="mt-2 ml-5">
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">📷 Evidence Photo</p>
+                      <img
+                        src={v.evidence_snapshot}
+                        alt="violation evidence"
+                        className="rounded-lg border border-red-200 shadow-sm"
+                        style={{ width: 160, height: 120, objectFit: 'cover' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-gray-100 shrink-0">
+          <button onClick={onClose}
+            className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Proctoring Badge Button (triggers modal) ──────────────────────────────────
+const ProctoringPanel = ({ attempt, onViewDetails }) => {
+  const flagged = attempt.proctoring_flagged;
+  const count   = attempt.proctoring_violations_count || 0;
 
   return (
     <div className="mt-2">
       <button
-        onClick={load}
+        onClick={() => onViewDetails(attempt)}
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all
           ${flagged
             ? 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100'
@@ -112,9 +222,7 @@ const ProctoringPanel = ({ attempt }) => {
             ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
             : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'}`}
       >
-        {loading ? (
-          <RefreshCw className="w-3 h-3 animate-spin" />
-        ) : flagged ? (
+        {flagged ? (
           <ShieldAlert className="w-3 h-3" />
         ) : count > 0 ? (
           <AlertTriangle className="w-3 h-3" />
@@ -122,39 +230,8 @@ const ProctoringPanel = ({ attempt }) => {
           <ShieldCheck className="w-3 h-3" />
         )}
         {flagged ? 'Flagged' : count > 0 ? `${count} violation${count !== 1 ? 's' : ''}` : 'Clean'}
-        {open ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
+        <Eye className="w-3 h-3 ml-0.5 opacity-60" />
       </button>
-
-      {open && violations !== null && (
-        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
-          {violations.length === 0 ? (
-            <div className="flex items-center gap-2 px-3 py-2 text-xs text-green-600 font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" /> No violations recorded
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              <div className="px-3 py-2 flex items-center justify-between">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                  {violations.length} event{violations.length !== 1 ? 's' : ''} · {critical} critical
-                </span>
-              </div>
-              {violations.map((v, i) => (
-                <div key={i} className="px-3 py-2 flex items-center gap-2">
-                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${CRITICAL_TYPES.has(v.event_type) ? 'bg-red-500' : 'bg-amber-400'}`} />
-                  <span className={`text-[10px] font-bold ${CRITICAL_TYPES.has(v.event_type) ? 'text-red-700' : 'text-amber-700'}`}>
-                    {VIOLATION_LABELS[v.event_type] || v.event_type}
-                  </span>
-                  <span className="text-[10px] text-gray-400 ml-auto flex-shrink-0">
-                    {v.client_timestamp
-                      ? new Date(v.client_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                      : new Date(v.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -519,7 +596,7 @@ const ElapsedTimer = ({ startedAt }) => {
 };
 
 /* ─── In-Progress students panel ─────────────────────────────────────── */
-const InProgressSection = ({ students }) => {
+const InProgressSection = ({ students, onViewDetails }) => {
   if (!students || students.length === 0) return null;
   return (
     <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
@@ -572,7 +649,7 @@ const InProgressSection = ({ students }) => {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <ProctoringPanel attempt={a} />
+                  <ProctoringPanel attempt={a} onViewDetails={onViewDetails} />
                 </td>
               </tr>
             ))}
@@ -598,6 +675,7 @@ const AssessmentAttempts = () => {
   const [selectedAttempt, setSelectedAttempt] = useState(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [proctoringModalAttempt, setProctoringModalAttempt] = useState(null);
 
   useEffect(() => { fetchData(); }, [assessmentId, page]);
 
@@ -808,7 +886,7 @@ const AssessmentAttempts = () => {
         )}
 
         {/* In-Progress students */}
-        <InProgressSection students={inProgress} />
+        <InProgressSection students={inProgress} onViewDetails={setProctoringModalAttempt} />
 
         {/* Table */}
         {attempts.length === 0 ? (
@@ -881,7 +959,7 @@ const AssessmentAttempts = () => {
                           {a.submitted_at ? new Date(a.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
                         </td>
                         <td className="px-3 py-3">
-                          <ProctoringPanel attempt={a} />
+                          <ProctoringPanel attempt={a} onViewDetails={setProctoringModalAttempt} />
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button onClick={() => setSelectedAttempt(a)}
@@ -958,6 +1036,9 @@ const AssessmentAttempts = () => {
 
       {selectedAttempt && (
         <AttemptDetailModal attempt={selectedAttempt} assessmentId={assessmentId} onClose={() => setSelectedAttempt(null)} />
+      )}
+      {proctoringModalAttempt && (
+        <ProctoringModal attempt={proctoringModalAttempt} onClose={() => setProctoringModalAttempt(null)} />
       )}
       {showPublishModal && assessment && (
         <PublishModal

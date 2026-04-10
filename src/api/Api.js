@@ -1144,6 +1144,13 @@ export const skillAPI = {
   },
 };
 
+export const branchAPI = {
+  getActiveBranches: async () => {
+    console.log('🏫 Fetching active branches...');
+    return apiCall('/branches/active-branches');
+  },
+};
+
 // ==========================================
 // ASSESSMENT ATTEMPT API — /api/assessment-attempt/*
 // ==========================================

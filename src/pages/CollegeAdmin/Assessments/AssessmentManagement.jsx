@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
+import ActionMenu from '../../../components/common/ActionMenu';
 import { assessmentAPI } from '../../../api/Api';
 
 /* ─── Status config with the new lifecycle ───────────────────────────── */
@@ -208,7 +209,8 @@ const AssessmentManagement = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="space-y-5">
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
 
         {/* ── Toast ── */}
         {toast && (
@@ -219,98 +221,80 @@ const AssessmentManagement = () => {
           </div>
         )}
 
-        {/* ── Hero Banner ── */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.06]"
-              style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div>
+            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+              Assessment <span className="text-blue-600">Management</span>
+            </h1>
+            <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+              Create and manage skill assessments for students
+            </p>
           </div>
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-white/20">
-                <ClipboardList className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-white font-black text-xl leading-tight">Assessments</h1>
-                <p className="text-blue-200 text-xs mt-0.5">Create and manage skill assessments for students</p>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {[
-                    { label: `${stats.total} Total`, color: 'bg-white/20 text-white' },
-                    { label: `${stats.active} Active`, color: 'bg-blue-300/30 text-blue-100' },
-                    { label: `${stats.scheduled} Scheduled`, color: 'bg-violet-300/30 text-violet-100' },
-                    { label: `${stats.ai} AI-Generated`, color: 'bg-cyan-300/30 text-cyan-100' },
-                  ].map(chip => (
-                    <span key={chip.label} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${chip.color}`}>
-                      {chip.label}
-                    </span>
-                  ))}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={fetchAssessments} title="Refresh"
+              className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:outline-none">
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            <button onClick={() => navigate('/dashboard/college-admin/assessments/generate')}
+              className="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <Sparkles className="w-4 h-4" /> Generate with AI
+            </button>
+            <button onClick={() => navigate('/dashboard/college-admin/assessments/create')}
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+              <Plus className="w-4 h-4" /> New Assessment
+            </button>
+          </div>
+        </div>
+
+                {/* ── MAIN PANEL ── */}
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 flex flex-col">
+
+          {/* Top Panel - Stats Row */}
+          <div className="p-4 border-b border-gray-100 grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50/50">
+            {[
+              { label: 'Total', value: stats.total,     bg: 'bg-blue-50 border-blue-100 text-blue-700' },
+              { label: 'Draft', value: stats.draft,     bg: 'bg-amber-50 border-amber-100 text-amber-700' },
+              { label: 'Scheduled', value: stats.scheduled, bg: 'bg-violet-50 border-violet-100 text-violet-700' },
+              { label: 'Active', value: stats.active,   bg: 'bg-blue-50 border-blue-200 text-blue-700' },
+              { label: 'Completed', value: stats.completed, bg: 'bg-green-50 border-green-100 text-green-700' },
+            ].map(s => (
+              <div key={s.label}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${s.bg} cursor-pointer hover:shadow-sm transition-all`}
+                onClick={() => setStatusFilter(s.label === 'Total' ? '' : s.label.toLowerCase())}>
+                <div>
+                  <p className="text-[20px] font-bold tabular-nums leading-none text-gray-900">{s.value}</p>
+                  <p className="text-[11px] font-bold opacity-70 mt-1 uppercase tracking-wider">{s.label}</p>
                 </div>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={fetchAssessments} title="Refresh"
-                className="flex items-center gap-1.5 px-3 py-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all">
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh
-              </button>
-              <button onClick={() => navigate('/dashboard/college-admin/assessments/generate')}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all">
-                <Sparkles className="w-3.5 h-3.5" /> Generate with AI
-              </button>
-              <button onClick={() => navigate('/dashboard/college-admin/assessments/create')}
-                className="flex items-center gap-1.5 px-4 py-2 bg-white text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-50 shadow-md transition-all">
-                <Plus className="w-3.5 h-3.5" /> New Assessment
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Stats Row ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[
-            { label: 'Total', value: stats.total,     color: 'from-blue-500 to-cyan-500',    bg: 'bg-blue-50 border-blue-100 text-blue-700' },
-            { label: 'Draft', value: stats.draft,     color: 'from-amber-400 to-amber-500',  bg: 'bg-amber-50 border-amber-100 text-amber-700' },
-            { label: 'Scheduled', value: stats.scheduled, color: 'from-violet-500 to-purple-500', bg: 'bg-violet-50 border-violet-100 text-violet-700' },
-            { label: 'Active', value: stats.active,   color: 'from-blue-500 to-blue-600',    bg: 'bg-blue-50 border-blue-200 text-blue-700' },
-            { label: 'Completed', value: stats.completed, color: 'from-green-500 to-emerald-500', bg: 'bg-green-50 border-green-100 text-green-700' },
-          ].map(s => (
-            <div key={s.label}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${s.bg} cursor-pointer hover:shadow-sm transition-all`}
-              onClick={() => setStatusFilter(s.label === 'Total' ? '' : s.label.toLowerCase())}>
-              <div>
-                <p className="text-2xl font-black tabular-nums leading-none">{s.value}</p>
-                <p className="text-[10px] font-semibold opacity-60 mt-0.5">{s.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Search + Filter ── */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-48">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by title, skill, level or tag…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-            />
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {STATUS_FILTERS.map(f => (
-              <button key={f.value}
-                onClick={() => setStatusFilter(f.value)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all
-                  ${statusFilter === f.value
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600'}`}>
-                {f.label}
-              </button>
             ))}
           </div>
-        </div>
+
+          {/* Search + Filter */}
+          <div className="p-4 border-b border-gray-100 flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-48">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by title, skill, level or tag…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {STATUS_FILTERS.map(f => (
+                <button key={f.value}
+                  onClick={() => setStatusFilter(f.value)}
+                  className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-all
+                    ${statusFilter === f.value
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
         {/* ── Error ── */}
         {error && (
@@ -319,7 +303,7 @@ const AssessmentManagement = () => {
           </div>
         )}
 
-        {/* ── Table ── */}
+        
         {loading ? (
           <InlineSkeleton rows={6} className="py-20" />
         ) : filtered.length === 0 ? (
@@ -345,21 +329,21 @@ const AssessmentManagement = () => {
             )}
           </div>
         ) : (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+          <div className="flex-1 overflow-hidden flex flex-col">
             {/* Table header bar */}
-            <div className="px-5 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <ClipboardList className="w-3 h-3 text-white" />
+                <div className="w-6 h-6 bg-blue-100 rounded-md flex items-center justify-center">
+                  <ClipboardList className="w-3 h-3 text-blue-600" />
                 </div>
                 <p className="font-bold text-gray-800 text-sm">{filtered.length} Assessment{filtered.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="flex-1 overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/40">
+                  <tr className="border-b border-gray-100 bg-gray-50">
                     {['Assessment', 'Type', 'Details', 'Status', 'Actions'].map(h => (
                       <th key={h} className="text-left text-[9px] font-black text-gray-400 uppercase tracking-wider px-5 py-3 last:pr-5 last:text-right">{h}</th>
                     ))}
@@ -381,7 +365,7 @@ const AssessmentManagement = () => {
 
                         {/* Assessment title / skill */}
                         <td className="px-5 py-4 max-w-[200px]">
-                          <p className="font-bold text-gray-900 text-sm truncate">
+                          <p className="text-[14px] font-bold text-gray-900 truncate">
                             {a.title || a.skill_id?.name || a.jd_id?.jobTitle || (
                               <span className="text-gray-400 italic font-normal">Untitled</span>
                             )}
@@ -459,64 +443,14 @@ const AssessmentManagement = () => {
 
                         {/* Actions */}
                         <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-
-                            {/* Questions */}
-                            <button
-                              onClick={() => navigate(`/dashboard/college-admin/assessments/${a._id}/questions`)}
-                              title="Manage Questions"
-                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                              <ListChecks className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Attempts / Results */}
-                            <button
-                              onClick={() => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`)}
-                              title="View Attempts"
-                              className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                              <ChartBar className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Report (only for completed) */}
-                            {isCompleted && (
-                              <button
-                                onClick={() => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`)}
-                                title="Download Report"
-                                className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all">
-                                <FileText className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Edit */}
-                            {canEdit && (
-                              <button
-                                onClick={() => navigate(`/dashboard/college-admin/assessments/${a._id}/edit`)}
-                                title="Edit"
-                                className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
-                                <SquarePen className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Cancel */}
-                            {canCancel && (
-                              <button
-                                onClick={() => setCancelConfirm(a._id)}
-                                title="Cancel Assessment"
-                                className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all">
-                                <Ban className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Delete */}
-                            {canDelete && (
-                              <button
-                                onClick={() => setDeleteConfirm(a._id)}
-                                title="Delete"
-                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
+                          <ActionMenu actions={[
+                            { label: 'Manage Questions', icon: ListChecks, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/questions`), color: 'text-blue-600 hover:bg-blue-50' },
+                            { label: 'View Attempts', icon: ChartBar, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`), color: 'text-indigo-600 hover:bg-indigo-50' },
+                            isCompleted && { label: 'Download Report', icon: FileText, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`), color: 'text-green-600 hover:bg-green-50' },
+                            canEdit && { label: 'Edit', icon: SquarePen, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/edit`), color: 'text-amber-600 hover:bg-amber-50' },
+                            canCancel && { label: 'Cancel Assessment', icon: Ban, onClick: () => setCancelConfirm(a._id), color: 'text-orange-600 hover:bg-orange-50' },
+                            canDelete && { label: 'Delete', icon: Trash2, onClick: () => setDeleteConfirm(a._id), danger: true },
+                          ].filter(Boolean)} />
                         </td>
                       </tr>
                     );
@@ -532,6 +466,7 @@ const AssessmentManagement = () => {
             />
           </div>
         )}
+        </div>
 
         {/* ── Cancel Confirm Modal ── */}
         {cancelConfirm && (
@@ -583,6 +518,7 @@ const AssessmentManagement = () => {
           </div>
         )}
       </div>
+    </div>
     </CollegeAdminLayout>
   );
 };

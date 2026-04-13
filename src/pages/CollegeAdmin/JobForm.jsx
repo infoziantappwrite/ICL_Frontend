@@ -28,9 +28,9 @@ const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
         <input type="text" value={inputVal} onChange={e => setInputVal(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
           placeholder={placeholder || 'Type and press Enter or click Add'}
-          className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
         <button type="button" onClick={add}
-          className="px-3 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold rounded-xl flex items-center gap-1 hover:scale-105 transition-all">
+          className="px-3 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-lg flex items-center gap-1 hover:bg-blue-700 transition-colors shadow-sm">
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
       </div>
@@ -49,12 +49,12 @@ const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
 
 /* ─── Section card ─────────────────────── */
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Icon className="w-3 h-3 text-white" />
+      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-blue-600" />
       </div>
-      <h3 className="text-sm font-bold text-gray-800">{title}</h3>
+      <h3 className="text-[15px] md:text-[16px] font-bold text-gray-900">{title}</h3>
     </div>
     <div className="space-y-4">{children}</div>
   </div>
@@ -71,7 +71,7 @@ const TextInput = ({ label, required, ...props }) => (
   <div>
     {label && <FieldLabel required={required}>{label}</FieldLabel>}
     <input {...props}
-      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors" />
+      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
   </div>
 );
 
@@ -79,7 +79,7 @@ const SelectInput = ({ label, required, options, ...props }) => (
   <div>
     {label && <FieldLabel required={required}>{label}</FieldLabel>}
     <select {...props}
-      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white hover:border-gray-300 transition-colors">
+      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white hover:border-gray-300 transition-colors appearance-none">
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   </div>
@@ -89,7 +89,7 @@ const TextArea = ({ label, required, ...props }) => (
   <div>
     {label && <FieldLabel required={required}>{label}</FieldLabel>}
     <textarea {...props}
-      className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors resize-none" />
+      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors resize-none bg-white" />
   </div>
 );
 
@@ -133,8 +133,8 @@ const createLocationMeta = () => ({
 const selectStyles = {
   control: (base, state) => ({
     ...base,
-    minHeight: 46,
-    borderRadius: 12,
+    minHeight: 38,
+    borderRadius: 8,
     borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
     boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.15)' : 'none',
     '&:hover': {
@@ -682,34 +682,28 @@ const JobForm = () => {
 
   return (
     <CollegeAdminLayout>
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
       {/* Back button */}
       <button onClick={() => navigate('/dashboard/college-admin/jobs')}
-        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-4 transition-colors group text-sm font-medium">
+        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group text-[14px] font-bold">
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Job Management
       </button>
 
       {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Briefcase className="w-6 h-6 text-blue-600" />
         </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Briefcase className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-blue-200 text-[11px] font-semibold">
-              {isEditMode ? 'Update job posting details' : 'Fill in details to post a new job'}
-            </p>
-            <h1 className="text-white font-black text-lg leading-tight">
-              {isEditMode ? 'Edit Job Description' : 'Create New Job Description'}
-            </h1>
-          </div>
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            {isEditMode ? 'Edit Job Description' : 'Create New Job'}
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">
+            {isEditMode ? 'Update job posting details' : 'Fill in details to post a new job'}
+          </p>
         </div>
       </div>
 
@@ -772,7 +766,7 @@ const JobForm = () => {
                 <input type="text" value={resp}
                   onChange={e => updateArrayItem('responsibilities', idx, e.target.value)}
                   placeholder="Enter responsibility"
-                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
                 {formData.responsibilities.length > 1 && (
                   <button type="button" onClick={() => removeArrayItem('responsibilities', idx)}
                     className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -793,7 +787,7 @@ const JobForm = () => {
                 <input type="text" value={req}
                   onChange={e => updateArrayItem('requirements', idx, e.target.value)}
                   placeholder="Enter requirement"
-                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                  className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
                 {formData.requirements.length > 1 && (
                   <button type="button" onClick={() => removeArrayItem('requirements', idx)}
                     className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -861,7 +855,7 @@ const JobForm = () => {
         {/* Job Locations */}
         <Section icon={MapPin} title="Job Locations">
           {formData.locations.map((location, idx) => (
-            <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3">
+            <div key={idx} className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50/30">
               <div className="flex justify-between items-center mb-3">
                 <p className="text-xs font-bold text-gray-700">Location {idx + 1}</p>
                 {formData.locations.length > 1 && (
@@ -989,7 +983,7 @@ const JobForm = () => {
             <div className="flex flex-wrap gap-2">
               {batches.map(batch => (
                 <button key={batch} type="button" onClick={() => toggleBatch(batch)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition-all ${formData.eligibility.batches.includes(batch)
+                  className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border-2 transition-all ${formData.eligibility.batches.includes(batch)
                     ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                     : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
                     }`}>
@@ -1015,7 +1009,7 @@ const JobForm = () => {
         {/* Selection Process */}
         <Section icon={Users} title="Selection Process">
           {formData.selectionProcess.rounds.map((round, idx) => (
-            <div key={idx} className="border border-gray-200 rounded-xl p-4 mb-3">
+            <div key={idx} className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50/30">
               <div className="flex justify-between items-center mb-3">
                 <p className="text-xs font-bold text-gray-700">Round {idx + 1}</p>
                 {formData.selectionProcess.rounds.length > 1 && (
@@ -1074,18 +1068,18 @@ const JobForm = () => {
         </Section>
 
         {/* ══ ACTION BUTTONS ══ */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
             <button type="button" onClick={() => navigate('/dashboard/college-admin/jobs')}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 border-2 border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 text-sm font-semibold transition-all">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-[13px] font-bold transition-all shadow-sm w-full sm:w-auto">
               <X className="w-4 h-4" /> Cancel
             </button>
             <button type="button" onClick={(e) => handleSubmit(e, 'Draft')} disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-sm font-semibold disabled:opacity-50 transition-all">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-[13px] font-bold disabled:opacity-50 transition-all shadow-sm w-full sm:w-auto">
               <FileText className="w-4 h-4" /> Save as Draft
             </button>
             <button type="submit" disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl shadow-sm hover:shadow-md hover:scale-[1.02] text-sm font-bold disabled:opacity-50 transition-all">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 text-[13px] font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
               <Save className="w-4 h-4" />
               {saving ? 'Saving...' : isEditMode ? 'Update Job' : 'Publish Job'}
             </button>
@@ -1093,6 +1087,8 @@ const JobForm = () => {
         </div>
 
       </form>
+    </div>
+      </div>
     </CollegeAdminLayout>
   );
 };

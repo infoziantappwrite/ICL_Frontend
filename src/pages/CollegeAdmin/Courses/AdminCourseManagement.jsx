@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { TableSkeleton } from '../../../components/common/SkeletonLoader';
+import ActionMenu from '../../../components/common/ActionMenu';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
 const CATEGORIES = [
@@ -121,16 +122,10 @@ const CourseRow = ({ course, onAnalytics, onViewEnrollments }) => {
         ) : <span className="text-xs text-gray-400">—</span>}
       </td>
       <td className="px-4 py-4">
-        <div className="flex items-center gap-1.5">
-          <button onClick={() => onViewEnrollments(course._id)}
-            className="p-1.5 text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors" title="Enrollments">
-            <Users className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => onAnalytics(course._id)}
-            className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Analytics">
-            <BarChart3 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <ActionMenu actions={[
+          { label: 'Enrollments', icon: Users, onClick: () => onViewEnrollments(course._id), color: 'text-cyan-600 hover:bg-cyan-50' },
+          { label: 'Analytics', icon: BarChart3, onClick: () => onAnalytics(course._id), color: 'text-purple-600 hover:bg-purple-50' },
+        ]} />
       </td>
     </tr>
   );

@@ -66,6 +66,7 @@ import StudentReport from './pages/CollegeAdmin/StudentReport';
 // ==================== COLLEGE ADMIN ASSESSMENT PAGES ====================
 import AssessmentManagement from './pages/CollegeAdmin/Assessments/AssessmentManagement';
 import AssessmentForm from './pages/CollegeAdmin/Assessments/AssessmentForm';
+import SectionManager from './pages/CollegeAdmin/Assessments/SectionManager';
 import QuestionManager from './pages/CollegeAdmin/Assessments/QuestionManager';
 import AssessmentAttempts from './pages/CollegeAdmin/Assessments/AssessmentAttempts';
 import AIAssessmentGenerator from './pages/CollegeAdmin/Assessments/AIAssessmentGenerator';
@@ -224,6 +225,7 @@ function App() {
             <Route path="/dashboard/college-admin/assessments" element={<ProtectedRoute><AssessmentManagement /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/create" element={<ProtectedRoute><AssessmentForm /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/edit" element={<ProtectedRoute><AssessmentForm /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/:assessmentId/sections" element={<ProtectedRoute><SectionManager /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/questions" element={<ProtectedRoute><QuestionManager /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/attempts" element={<ProtectedRoute><AssessmentAttempts /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/generate" element={<ProtectedRoute><AIAssessmentGenerator /></ProtectedRoute>} />

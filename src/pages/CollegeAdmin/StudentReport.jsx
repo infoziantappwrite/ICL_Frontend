@@ -151,221 +151,223 @@ const StudentReport = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)}
-            className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-all">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Student Report</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Performance & activity overview</p>
-          </div>
-        </div>
-
-        {/* Student info card */}
-        <Card className="p-6">
-          <div className="flex items-start gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
-              <span className="text-white font-black text-2xl">
-                {fullName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-black text-gray-900">{fullName}</h2>
-              <p className="text-sm text-gray-500 mt-0.5">{email}</p>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {rollNumber !== '—' && (
-                  <Badge color="blue">Roll: {rollNumber}</Badge>
-                )}
-                {branch !== '—' && (
-                  <Badge color="purple">{branch}</Badge>
-                )}
-                {student.semester && (
-                  <Badge color="amber">Sem {student.semester}</Badge>
-                )}
-                {student.cgpa && (
-                  <Badge color="green">CGPA {student.cgpa}</Badge>
-                )}
-              </div>
+          {/* Header */}
+          <div className="flex items-center gap-4 mb-2">
+            <button onClick={() => navigate(-1)}
+              className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors shadow-sm">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">Student <span className="text-blue-600">Report</span></h1>
+              <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">Performance & activity overview</p>
             </div>
           </div>
-        </Card>
 
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Stat icon={Target}       label="Assessments Taken"   value={totalAssessments}    color="blue" />
-          <Stat icon={TrendingUp}   label="Average Score"       value={`${avgScore}%`}       color="green" />
-          <Stat icon={CheckCircle2} label="Passed"              value={passedCount}           color="purple" sub={`of ${totalAssessments}`} />
-          <Stat icon={BookOpen}     label="Courses Enrolled"    value={coursesEnrolled}       color="amber" />
-        </div>
-
-        {/* Assessments table */}
-        {assessments.length > 0 && (
-          <Card>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                <BarChart2 className="w-4 h-4 text-blue-600" />
+          {/* Student info card */}
+          <Card className="p-5 md:p-6">
+            <div className="flex items-start gap-4 md:gap-5">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+                <span className="text-blue-600 font-black text-xl md:text-2xl">
+                  {fullName.charAt(0).toUpperCase()}
+                </span>
               </div>
-              <h3 className="font-black text-gray-900">Assessment Results</h3>
-              <span className="ml-auto text-xs font-semibold text-gray-400">{assessments.length} attempts</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Assessment</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Score</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Progress</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {assessments.map((a, idx) => {
-                    const pct    = Math.round(a.percentage ?? a.score_percentage ?? 0);
-                    const passed = pct >= 50;
-                    const date   = a.submittedAt || a.createdAt;
-                    return (
-                      <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="font-semibold text-gray-900 leading-tight">
-                            {a.assessmentTitle || a.title || `Assessment ${idx + 1}`}
-                          </p>
-                          {a.totalMarks && (
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {a.obtainedMarks ?? a.scored_marks ?? '—'} / {a.totalMarks} marks
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="font-bold text-gray-900 tabular-nums">{pct}%</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <ScoreBar pct={pct} />
-                        </td>
-                        <td className="px-4 py-4">
-                          <Badge color={passed ? 'green' : 'red'}>
-                            {passed ? '✓ Passed' : '✗ Failed'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4 text-gray-500 text-xs">
-                          {date ? new Date(date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-[18px] md:text-xl font-black text-gray-900">{fullName}</h2>
+                <p className="text-[13px] text-gray-500 mt-0.5">{email}</p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {rollNumber !== '—' && (
+                    <Badge color="blue">Roll: {rollNumber}</Badge>
+                  )}
+                  {branch !== '—' && (
+                    <Badge color="purple">{branch}</Badge>
+                  )}
+                  {student.semester && (
+                    <Badge color="amber">Sem {student.semester}</Badge>
+                  )}
+                  {student.cgpa && (
+                    <Badge color="green">CGPA {student.cgpa}</Badge>
+                  )}
+                </div>
+              </div>
             </div>
           </Card>
-        )}
 
-        {/* Courses */}
-        {courses.length > 0 && (
-          <Card>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-green-600" />
+          {/* Summary stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            <Stat icon={Target}       label="Assessments Taken"   value={totalAssessments}    color="blue" />
+            <Stat icon={TrendingUp}   label="Average Score"       value={`${avgScore}%`}       color="green" />
+            <Stat icon={CheckCircle2} label="Passed"              value={passedCount}           color="purple" sub={`of ${totalAssessments}`} />
+            <Stat icon={BookOpen}     label="Courses Enrolled"    value={coursesEnrolled}       color="amber" />
+          </div>
+
+          {/* Assessments table */}
+          {assessments.length > 0 && (
+            <Card>
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <BarChart2 className="w-4 h-4 text-blue-600" />
+                </div>
+                <h3 className="text-[15px] font-bold text-gray-900">Assessment Results</h3>
+                <span className="ml-auto text-[12px] font-bold text-gray-400">{assessments.length} attempts</span>
               </div>
-              <h3 className="font-black text-gray-900">Enrolled Courses</h3>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {courses.map((c, idx) => {
-                const prog = c.progressPercentage ?? c.progress ?? 0;
-                return (
-                  <div key={idx} className="px-6 py-4 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
-                      <Layers className="w-5 h-5 text-green-600" />
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="text-left px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Assessment</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Score</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Progress</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {assessments.map((a, idx) => {
+                      const pct    = Math.round(a.percentage ?? a.score_percentage ?? 0);
+                      const passed = pct >= 50;
+                      const date   = a.submittedAt || a.createdAt;
+                      return (
+                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-5 py-3">
+                            <p className="text-[13px] font-bold text-gray-900 leading-tight">
+                              {a.assessmentTitle || a.title || `Assessment ${idx + 1}`}
+                            </p>
+                            {a.totalMarks && (
+                              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                                {a.obtainedMarks ?? a.scored_marks ?? '—'} / {a.totalMarks} marks
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-[13px] font-black text-gray-900 tabular-nums">{pct}%</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <ScoreBar pct={pct} />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge color={passed ? 'green' : 'red'}>
+                              {passed ? '✓ Passed' : '✗ Failed'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-[12px]">
+                            {date ? new Date(date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Courses */}
+          {courses.length > 0 && (
+            <Card>
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-green-600" />
+                </div>
+                <h3 className="text-[15px] font-bold text-gray-900">Enrolled Courses</h3>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {courses.map((c, idx) => {
+                  const prog = c.progressPercentage ?? c.progress ?? 0;
+                  return (
+                    <div key={idx} className="px-5 py-4 flex items-center gap-4">
+                      <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
+                        <Layers className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-bold text-gray-900">{c.title || c.courseTitle || `Course ${idx + 1}`}</p>
+                        {c.completedModules !== undefined && (
+                          <p className="text-[12px] font-semibold text-gray-400 mt-0.5">
+                            {c.completedModules} / {c.totalModules ?? '?'} modules complete
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <ScoreBar pct={Math.round(prog)} />
+                        {c.completed && <Badge color="green">Complete</Badge>}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900">{c.title || c.courseTitle || `Course ${idx + 1}`}</p>
-                      {c.completedModules !== undefined && (
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {c.completedModules} / {c.totalModules ?? '?'} modules complete
-                        </p>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {/* Skills */}
+          {skills.length > 0 && (
+            <Card className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                  <Star className="w-4 h-4 text-purple-600" />
+                </div>
+                <h3 className="text-[15px] font-bold text-gray-900">Skills</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {skills.map((sk, idx) => (
+                  <span key={idx}
+                    className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-[12px] font-bold">
+                    {typeof sk === 'string' ? sk : sk.name || sk.skill}
+                  </span>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Applications */}
+          {applications.length > 0 && (
+            <Card>
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-amber-600" />
+                </div>
+                <h3 className="text-[15px] font-bold text-gray-900">Job Applications</h3>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {applications.map((ap, idx) => {
+                  const statusColor = {
+                    applied: 'blue', shortlisted: 'purple',
+                    selected: 'green', rejected: 'red',
+                  }[ap.status?.toLowerCase()] ?? 'gray';
+                  return (
+                    <div key={idx} className="px-5 py-4 flex items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-bold text-gray-900">{ap.jobTitle || ap.position || `Application ${idx + 1}`}</p>
+                        {ap.companyName && <p className="text-[12px] font-semibold text-gray-500 mt-0.5">{ap.companyName}</p>}
+                      </div>
+                      <Badge color={statusColor}>
+                        {ap.status ? ap.status.charAt(0).toUpperCase() + ap.status.slice(1) : 'Applied'}
+                      </Badge>
+                      {ap.appliedAt && (
+                        <span className="text-[11px] font-bold text-gray-400 hidden sm:block">
+                          {new Date(ap.appliedAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}
+                        </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <ScoreBar pct={Math.round(prog)} />
-                      {c.completed && <Badge color="green">Complete</Badge>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
-
-        {/* Skills */}
-        {skills.length > 0 && (
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Star className="w-4 h-4 text-purple-600" />
+                  );
+                })}
               </div>
-              <h3 className="font-black text-gray-900">Skills</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((sk, idx) => (
-                <span key={idx}
-                  className="px-3 py-1.5 bg-purple-50 text-purple-700 ring-1 ring-purple-200 rounded-full text-sm font-semibold">
-                  {typeof sk === 'string' ? sk : sk.name || sk.skill}
-                </span>
-              ))}
-            </div>
-          </Card>
-        )}
+            </Card>
+          )}
 
-        {/* Applications */}
-        {applications.length > 0 && (
-          <Card>
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-              <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-amber-600" />
+          {/* Empty state */}
+          {assessments.length === 0 && courses.length === 0 && applications.length === 0 && (
+            <div className="text-center py-20">
+              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Activity className="w-8 h-8 text-gray-300" />
               </div>
-              <h3 className="font-black text-gray-900">Job Applications</h3>
+              <p className="text-[15px] font-bold text-gray-900">No activity yet</p>
+              <p className="text-[13px] text-gray-500 mt-1">This student hasn't taken any assessments or enrolled in courses yet.</p>
             </div>
-            <div className="divide-y divide-gray-50">
-              {applications.map((ap, idx) => {
-                const statusColor = {
-                  applied: 'blue', shortlisted: 'purple',
-                  selected: 'green', rejected: 'red',
-                }[ap.status?.toLowerCase()] ?? 'gray';
-                return (
-                  <div key={idx} className="px-6 py-4 flex items-center gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900">{ap.jobTitle || ap.position || `Application ${idx + 1}`}</p>
-                      {ap.companyName && <p className="text-xs text-gray-400 mt-0.5">{ap.companyName}</p>}
-                    </div>
-                    <Badge color={statusColor}>
-                      {ap.status ? ap.status.charAt(0).toUpperCase() + ap.status.slice(1) : 'Applied'}
-                    </Badge>
-                    {ap.appliedAt && (
-                      <span className="text-xs text-gray-400 hidden sm:block">
-                        {new Date(ap.appliedAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
+          )}
 
-        {/* Empty state */}
-        {assessments.length === 0 && courses.length === 0 && applications.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Activity className="w-8 h-8 text-gray-400" />
-            </div>
-            <p className="text-lg font-bold text-gray-900">No activity yet</p>
-            <p className="text-sm text-gray-500 mt-1">This student hasn't taken any assessments or enrolled in courses yet.</p>
-          </div>
-        )}
-
+        </div>
       </div>
     </CollegeAdminLayout>
   );

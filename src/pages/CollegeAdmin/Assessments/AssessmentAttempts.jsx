@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
+import ActionMenu from '../../../components/common/ActionMenu';
 import { assessmentAPI, assessmentAttemptAPI } from '../../../api/Api';
 import apiCall from '../../../api/Api';
 
@@ -599,7 +600,7 @@ const ElapsedTimer = ({ startedAt }) => {
 const InProgressSection = ({ students, onViewDetails }) => {
   if (!students || students.length === 0) return null;
   return (
-    <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-amber-200 overflow-hidden">
       {/* Header */}
       <div className="px-5 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center gap-2">
         <div className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center">
@@ -615,12 +616,12 @@ const InProgressSection = ({ students, onViewDetails }) => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="flex-1 overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-amber-100 bg-amber-50/40">
               {['#', 'Student', 'Email', 'Started At', 'Elapsed Time', 'Proctoring'].map(h => (
-                <th key={h} className="text-left text-[9px] font-black text-amber-500 uppercase tracking-wider px-4 py-2.5">{h}</th>
+                <th key={h} className="text-left text-[10px] font-black text-amber-500 uppercase tracking-wider px-4 py-2.5 bg-amber-50/40 first:pl-5">{h}</th>
               ))}
             </tr>
           </thead>
@@ -633,7 +634,7 @@ const InProgressSection = ({ students, onViewDetails }) => {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-bold text-gray-900 text-sm">{a.student_id?.fullName || '—'}</p>
+                  <p className="text-[14px] font-bold text-gray-900">{a.student_id?.fullName || '—'}</p>
                   <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">In Progress</span>
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-400">{a.student_id?.email || '—'}</td>
@@ -798,7 +799,7 @@ const AssessmentAttempts = () => {
   // inside CollegeAdminLayout during initial page load
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24">
+      <div className="flex items-center justify-center py-24 min-h-screen bg-[#f0f4f8]">
         <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
@@ -808,52 +809,47 @@ const AssessmentAttempts = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="w-full space-y-4">
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
 
         {/* Back */}
         <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-medium transition-colors group">
+          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
         </button>
 
-        {/* Hero Banner */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div>
+            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+              Leaderboard
+            </h1>
+            <p className="text-[12px] md:text-[14px] text-gray-500 mt-1 max-w-xs md:max-w-md truncate">
+              {assessmentTitle}
+            </p>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {assessment?.status && (
+                <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full ${isCompleted ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                </span>
+              )}
+              {isJD && <span className="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700">JD-Based</span>}
+              {isPublished && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-green-700">
+                  <CheckCircle2 className="w-3 h-3" /> Published
+                </span>
+              )}
+            </div>
           </div>
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 flex-shrink-0">
-                <Trophy className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-white font-black text-lg leading-tight">Leaderboard</h1>
-                <p className="text-blue-200 text-xs mt-0.5 max-w-xs truncate">{assessmentTitle}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {assessment?.status && (
-                    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${isCompleted ? 'bg-green-400/30 text-green-100' : 'bg-white/20 text-white'}`}>
-                      {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
-                    </span>
-                  )}
-                  {isJD && <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-100">JD-Based</span>}
-                  {isPublished && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/30 text-green-100">
-                      <CheckCircle2 className="w-3 h-3" /> Published
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={handleExportCSV} disabled={attempts.length === 0}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white/15 hover:bg-white/25 border border-white/20 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-40">
-                <Download className="w-3.5 h-3.5" /> CSV
-              </button>
-              <button onClick={handleDownloadReport} disabled={attempts.length === 0 || generatingReport}
-                className="flex items-center gap-1.5 px-4 py-2 bg-white text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-50 shadow-md transition-all disabled:opacity-40">
-                {generatingReport ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Generating…</> : <><FileText className="w-3.5 h-3.5" /> Full Report</>}
-              </button>
-            </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={handleExportCSV} disabled={attempts.length === 0}
+              className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-40">
+              <Download className="w-4 h-4" /> CSV
+            </button>
+            <button onClick={handleDownloadReport} disabled={attempts.length === 0 || generatingReport}
+              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+              {generatingReport ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating…</> : <><FileText className="w-4 h-4" /> Full Report</>}
+            </button>
           </div>
         </div>
 
@@ -902,11 +898,11 @@ const AssessmentAttempts = () => {
             </p>
           </div>
         ) : (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden min-h-[400px] flex flex-col">
+            <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <Trophy className="w-3 h-3 text-white" />
+                <div className="w-6 h-6 bg-blue-50 rounded-md flex items-center justify-center">
+                  <Trophy className="w-3 h-3 text-blue-600" />
                 </div>
                 <p className="font-bold text-gray-800 text-sm">{total} Attempt{total !== 1 ? 's' : ''}</p>
               </div>
@@ -916,12 +912,12 @@ const AssessmentAttempts = () => {
                 </span>
               )}
             </div>
-            <div className="overflow-x-auto">
+            <div className="flex-1 overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/40">
                     {['Rank', 'Student', 'Score %', 'Marks', 'Correct', 'Time', 'Submitted', 'Proctoring', 'Actions'].map(h => (
-                      <th key={h} className="text-left text-[9px] font-black text-gray-400 uppercase tracking-wider px-3 py-3 last:text-right last:pr-4">{h}</th>
+                      <th key={h} className="text-left text-[10px] font-black text-gray-400 uppercase tracking-wider bg-gray-50/40 px-4 py-3 last:text-right last:pr-5 first:pl-5">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -930,14 +926,14 @@ const AssessmentAttempts = () => {
                     const isTopN = isJD && assessment?.leaderboard_top_n && idx < assessment.leaderboard_top_n;
                     return (
                       <tr key={a._id} className={`hover:bg-blue-50/20 transition-colors group ${isTopN ? 'bg-amber-50/30' : ''}`}>
-                        <td className="px-3 py-3">
+                        <td className="px-4 py-3 first:pl-5 last:pr-5">
                           <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black
                             ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-100 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'}`}>
                             {idx + 1}
                           </span>
                         </td>
-                        <td className="px-3 py-3">
-                          <p className="font-bold text-gray-900 text-sm">{a.student_id?.fullName || '—'}</p>
+                        <td className="px-4 py-3 first:pl-5 last:pr-5">
+                          <p className="text-[14px] font-bold text-gray-900">{a.student_id?.fullName || '—'}</p>
                           <p className="text-[10px] text-gray-400">{a.student_id?.email || '—'}</p>
                         </td>
                         <td className="px-4 py-3"><ScoreBar pct={a.score_percentage || 0} /></td>
@@ -958,14 +954,13 @@ const AssessmentAttempts = () => {
                         <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
                           {a.submitted_at ? new Date(a.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-4 py-3 first:pl-5 last:pr-5">
                           <ProctoringPanel attempt={a} onViewDetails={setProctoringModalAttempt} />
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => setSelectedAttempt(a)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all opacity-60 group-hover:opacity-100">
-                            <Eye className="w-3 h-3" /> Answers
-                          </button>
+                        <td className="px-4 py-3 text-right last:pr-5">
+                          <ActionMenu actions={[
+                            { label: 'View Answers', icon: Eye, onClick: () => setSelectedAttempt(a), color: 'text-blue-600 hover:bg-blue-50' },
+                          ]} />
                         </td>
                       </tr>
                     );
@@ -992,7 +987,7 @@ const AssessmentAttempts = () => {
         )}
 
         {/* Publish Leaderboard Footer Section */}
-        <div className={`rounded-2xl border p-5 ${isPublished ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+        <div className={`rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border p-5 mt-4 ${isPublished ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3">
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isPublished ? 'bg-green-100' : 'bg-blue-50'}`}>
@@ -1024,7 +1019,7 @@ const AssessmentAttempts = () => {
                 onClick={() => setShowPublishModal(true)}
                 disabled={!isCompleted || attempts.length === 0}
                 title={!isCompleted ? 'Assessment must be completed first' : ''}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20 transition-all">
+                className="flex items-center flex-shrink-0 gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors">
                 <Trophy className="w-4 h-4" />
                 Publish Leaderboard
               </button>
@@ -1047,6 +1042,7 @@ const AssessmentAttempts = () => {
           onPublished={fetchData}
         />
       )}
+    </div>
     </CollegeAdminLayout>
   );
 };

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { TableSkeleton } from '../../components/common/SkeletonLoader';
+import ActionMenu from '../../components/common/ActionMenu';
 import { collegeAdminAPI, jobAPI } from '../../api/Api';
 
 const PAGE_SIZE = 10;
@@ -16,19 +17,21 @@ const PAGE_SIZE = 10;
 /* ── Stat pill ── */
 const StatPill = ({ icon: Icon, label, value, color }) => {
   const c = {
-    blue:   'bg-blue-50 border-blue-100 text-blue-600',
-    cyan:   'bg-cyan-50 border-cyan-100 text-cyan-600',
-    green:  'bg-green-50 border-green-100 text-green-600',
-    amber:  'bg-amber-50 border-amber-100 text-amber-600',
-    red:    'bg-red-50 border-red-100 text-red-500',
-    gray:   'bg-gray-50 border-gray-200 text-gray-500',
-  }[color] || 'bg-blue-50 border-blue-100 text-blue-600';
+    blue:   'text-blue-600',
+    cyan:   'text-cyan-600',
+    green:  'text-emerald-600',
+    amber:  'text-amber-600',
+    red:    'text-red-500',
+    gray:   'text-gray-500',
+  }[color] || 'text-blue-600';
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${c}`}>
-      <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
-      <div>
-        <p className="text-xl font-black leading-none">{value}</p>
-        <p className="text-[10px] font-semibold opacity-60 mt-0.5">{label}</p>
+    <div className={`flex items-center gap-3 p-4 rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] bg-white border border-gray-100`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${c.replace('text-', 'bg-').replace('600', '50').replace('500', '50')}`}>
+        <Icon className={`w-5 h-5 ${c}`} />
+      </div>
+      <div className="flex-1">
+        <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
+        <p className={`text-[24px] font-black leading-none ${c}`}>{value}</p>
       </div>
     </div>
   );
@@ -191,36 +194,30 @@ const JobManagement = () => {
 
   return (
     <CollegeAdminLayout>
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
 
-      {/* Hero */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-        </div>
-        <div className="relative flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Briefcase className="w-5 h-5 text-white" />
-            </div>
+      {/* ══ HEADER ══ */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-white font-black text-lg leading-tight">Job Management</h1>
-              <p className="text-blue-200 text-[11px] mt-0.5">Manage campus placement opportunities · {stats.total} total</p>
+              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+                Job <span className="text-blue-600">Management</span>
+              </h1>
+              <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+                Manage campus placement opportunities · {stats.total} total
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => navigate('/dashboard/college-admin/jobs/create')}
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
+                <Plus className="w-4 h-4"/> Create Job
+              </button>
             </div>
           </div>
-          <button onClick={() => navigate('/dashboard/college-admin/jobs/create')}
-            className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-blue-50 hover:scale-105 transition-all flex-shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Create Job
-          </button>
-        </div>
-      </div>
 
       {/* Stats + job-type mini chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <div className="lg:col-span-2 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3">
+      <div className="hidden grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+        <div className="">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <StatPill icon={Briefcase}   label="Total"  value={stats.total}  color="blue"  />
             <StatPill icon={CircleCheck} label="Active" value={stats.active} color="green" />
@@ -252,14 +249,15 @@ const JobManagement = () => {
         </div>
       </div>
 
-      {/* Search & filter */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
+      {/* ══ MAIN PANEL ══ */}
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 flex flex-col">
+          <div className="p-4 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" placeholder="Search by job title, company, or job code…" value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              className="w-full pl-9 pr-8 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -271,7 +269,7 @@ const JobManagement = () => {
             <div className="relative flex items-center">
               <Filter className="absolute left-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                className="pl-8 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                className="pl-8 pr-8 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white appearance-none transition-colors"
               >
                 <option value="">All Status</option>
                 <option value="Active">Active</option>
@@ -281,7 +279,7 @@ const JobManagement = () => {
               </select>
             </div>
             <button onClick={fetchJobs} disabled={loading}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl hover:opacity-90 disabled:opacity-60 transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-bold bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors shadow-sm"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
             </button>
@@ -290,12 +288,12 @@ const JobManagement = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+          <div className="flex-1 overflow-hidden">
         <div className="overflow-x-auto">
           {paginated.length > 0 ? (
             <table className="w-full">
               <thead>
-                <tr className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
+                <tr className="bg-gray-50 border-y border-gray-100">
                   {['Job Title','Company','Type','Package','Applications','Deadline','Status','Actions'].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider">{h}</th>
                   ))}
@@ -363,29 +361,13 @@ const JobManagement = () => {
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleTogglePin(job._id, job.isPinned)}
-                          className={`p-1.5 rounded-lg transition-colors ${job.isPinned ? 'text-blue-600 hover:bg-blue-50' : 'text-gray-400 hover:bg-gray-50'}`}
-                          title={job.isPinned ? 'Unpin' : 'Pin'}>
-                          {job.isPinned ? <Pin className="w-3.5 h-3.5" fill="currentColor" /> : <PinOff className="w-3.5 h-3.5" />}
-                        </button>
-                        <button onClick={() => navigate(`/dashboard/college-admin/jobs/${job._id}/matched-students`)}
-                          className="p-1.5 text-violet-500 hover:bg-violet-50 rounded-lg transition-colors" title="Matched Students">
-                          <Target className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => navigate(`/dashboard/college-admin/jobs/view/${job._id}`)}
-                          className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="View">
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => navigate(`/dashboard/college-admin/jobs/edit/${job._id}`)}
-                          className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors" title="Edit">
-                          <SquarePen className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDeleteJob(job._id, job.jobTitle)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <ActionMenu actions={[
+                        { label: job.isPinned ? 'Unpin' : 'Pin', icon: job.isPinned ? Pin : PinOff, onClick: () => handleTogglePin(job._id, job.isPinned) },
+                        { label: 'Matched Students', icon: Target, onClick: () => navigate(`/dashboard/college-admin/jobs/${job._id}/matched-students`), color: 'text-violet-600 hover:bg-violet-50' },
+                        { label: 'View', icon: Eye, onClick: () => navigate(`/dashboard/college-admin/jobs/view/${job._id}`), color: 'text-blue-600 hover:bg-blue-50' },
+                        { label: 'Edit', icon: SquarePen, onClick: () => navigate(`/dashboard/college-admin/jobs/edit/${job._id}`), color: 'text-emerald-600 hover:bg-emerald-50' },
+                        { label: 'Delete', icon: Trash2, onClick: () => handleDeleteJob(job._id, job.jobTitle), danger: true },
+                      ]} />
                     </td>
                   </tr>
                 ))}
@@ -409,8 +391,11 @@ const JobManagement = () => {
           )}
         </div>
         <Pagination page={page} total={filtered.length} totalPages={totalPages} pageSize={PAGE_SIZE} onPageChange={setPage} />
-      </div>
+          </div>
+        </div>
 
+    </div>
+      </div>
     </CollegeAdminLayout>
   );
 };

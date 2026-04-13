@@ -37,11 +37,11 @@ const PROBLEM_CATEGORIES = [
   'Hashing', 'Greedy', 'Bit Manipulation', 'Two Pointers',
 ];
 
-const inp = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 transition-all";
+const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
 
 /* ─── Shared UI atoms ─────────────────────────────────────────────────── */
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 ${className}`}>{children}</div>
+  <div className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>{children}</div>
 );
 
 const SectionHeader = ({ icon: Icon, iconBg, iconColor, title, subtitle }) => (
@@ -58,7 +58,7 @@ const SectionHeader = ({ icon: Icon, iconBg, iconColor, title, subtitle }) => (
 
 const Field = ({ label, required, hint, children }) => (
   <div>
-    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
       {label}{required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
@@ -90,14 +90,14 @@ const StepBar = ({ stage }) => {
         return (
           <div key={label} className="flex items-center gap-1">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all
-              ${active ? 'bg-white text-blue-700 shadow-md' : done ? 'bg-white/25 text-white' : 'bg-white/10 text-blue-200'}`}>
+              ${active ? 'bg-blue-50 text-blue-700 border border-blue-200' : done ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
               <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold
-                ${active ? 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white' : done ? 'bg-blue-400 text-white' : 'bg-white/20 text-white'}`}>
+                ${active ? 'bg-blue-600 text-white' : done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
                 {done ? '✓' : i + 1}
               </span>
               {label}
             </div>
-            {i < 2 && <div className="w-4 h-px bg-white/25" />}
+            {i < 2 && <div className="w-4 h-px bg-gray-200" />}
           </div>
         );
       })}
@@ -131,7 +131,7 @@ const AILoader = ({ numQuestions, subjectTitle, isCoding }) => {
               style={{ animation: `ripple 2.4s ease-out ${i * 0.6}s infinite` }} />
           ))}
           <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/40"
-            style={{ background: 'linear-gradient(135deg,#1d4ed8 0%,#0284c7 60%,#06b6d4 100%)' }}>
+            className="bg-blue-600">
             {isCoding ? <Code2 className="w-9 h-9 text-white" /> : <Sparkles className="w-9 h-9 text-white" />}
           </div>
         </div>
@@ -401,12 +401,12 @@ const EditModal = ({ question, onSave, onClose }) => {
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Question Text *</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Question Text *</label>
             <textarea rows={3} value={form.question} onChange={e => setForm(p => ({ ...p, question: e.target.value }))} className={`${inp} resize-none`} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Type</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
               <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))} className={inp}>
                 <option value="single_answer">Single Answer</option>
                 <option value="multiple_answer">Multiple Answer</option>
@@ -414,7 +414,7 @@ const EditModal = ({ question, onSave, onClose }) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Level</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
               <select value={form.level} onChange={e => setForm(p => ({ ...p, level: e.target.value }))} className={inp}>
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
@@ -448,11 +448,11 @@ const EditModal = ({ question, onSave, onClose }) => {
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Marks</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Marks</label>
               <input type="number" min={0.25} step={0.25} value={form.marks} onChange={e => setForm(p => ({ ...p, marks: e.target.value }))} className={inp} />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Explanation</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Explanation</label>
               <input type="text" value={form.explanation} onChange={e => setForm(p => ({ ...p, explanation: e.target.value }))} placeholder="Optional…" className={inp} />
             </div>
           </div>
@@ -525,33 +525,33 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Problem Title *</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Problem Title *</label>
             <input type="text" value={form.question} onChange={e => setForm(p => ({ ...p, question: e.target.value }))} className={inp} placeholder="e.g. Two Sum, Longest Substring Without Repeating…" />
           </div>
 
           {/* Level / Language / Marks */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Level</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
               <select value={form.level} onChange={e => setForm(p => ({ ...p, level: e.target.value }))} className={inp}>
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Language</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Language</label>
               <select value={form.language} onChange={e => setForm(p => ({ ...p, language: e.target.value }))} className={inp}>
                 {CODING_LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Marks</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Marks</label>
               <input type="number" min={1} value={form.marks} onChange={e => setForm(p => ({ ...p, marks: e.target.value }))} className={inp} />
             </div>
           </div>
 
           {/* Problem Description */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Problem Description *</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Problem Description *</label>
             <textarea rows={5} value={form.problem_description} onChange={e => setForm(p => ({ ...p, problem_description: e.target.value }))}
               className={`${inp} resize-none`} placeholder="Full problem statement with examples…" />
           </div>
@@ -559,17 +559,17 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
           {/* Input / Output / Constraints */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Input Format</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Input Format</label>
               <textarea rows={3} value={form.input_format} onChange={e => setForm(p => ({ ...p, input_format: e.target.value }))}
                 className={`${inp} resize-none`} placeholder="Describe input…" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Output Format</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Output Format</label>
               <textarea rows={3} value={form.output_format} onChange={e => setForm(p => ({ ...p, output_format: e.target.value }))}
                 className={`${inp} resize-none`} placeholder="Describe expected output…" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Constraints</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Constraints</label>
               <textarea rows={3} value={form.constraints} onChange={e => setForm(p => ({ ...p, constraints: e.target.value }))}
                 className={`${inp} resize-none`} placeholder="e.g. 1 ≤ N ≤ 10^5" />
             </div>
@@ -577,14 +577,14 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
 
           {/* Algorithm tags */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Algorithm Tags <span className="font-normal text-gray-400">(comma-separated)</span></label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Algorithm Tags <span className="font-normal text-gray-400">(comma-separated)</span></label>
             <input type="text" value={form.algorithm_tags} onChange={e => setForm(p => ({ ...p, algorithm_tags: e.target.value }))}
               className={inp} placeholder="arrays, two-pointer, hashing" />
           </div>
 
           {/* Boilerplate */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Starter / Boilerplate Code</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Starter / Boilerplate Code</label>
             <textarea rows={5} value={form.boilerplate_code} onChange={e => setForm(p => ({ ...p, boilerplate_code: e.target.value }))}
               className={`${inp} resize-none font-mono text-xs`} placeholder="def solution(...):\n    pass" />
           </div>
@@ -636,7 +636,7 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
 
           {/* Explanation */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Solution Hint (optional)</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Solution Hint (optional)</label>
             <input type="text" value={form.explanation} onChange={e => setForm(p => ({ ...p, explanation: e.target.value }))}
               className={inp} placeholder="One-line approach hint…" />
           </div>
@@ -915,31 +915,25 @@ const AIAssessmentGenerator = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="w-full space-y-5 pb-16">
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
 
         {/* Back */}
         <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-medium transition-colors group">
+          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
         </button>
 
-        {/* Hero Banner */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-0 opacity-[0.06]"
-              style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div>
+            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+              AI Assessment Generator
+            </h1>
+            <p className="text-[13px] text-gray-500 mt-1">Generate MCQ or Coding questions using AI — from a JD or a custom topic</p>
           </div>
-          <div className="relative flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 flex-shrink-0">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-white font-black text-lg leading-tight">AI Assessment Generator</h1>
-                <p className="text-blue-200 text-xs mt-0.5">Generate MCQ or Coding questions using AI — from a JD or a custom topic</p>
-              </div>
-            </div>
-            <StepBar stage={stage} />
+          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-2">
+             <StepBar stage={stage} />
           </div>
         </div>
 
@@ -1417,7 +1411,7 @@ const AIAssessmentGenerator = () => {
                     </button>
                     <button onClick={handleSave} disabled={stage === 'saving'}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 shadow-lg"
-                      style={{ background: isCodingMode ? 'linear-gradient(135deg,#059669,#0891b2)' : 'linear-gradient(135deg,#1d4ed8,#0284c7)' }}>
+                      className={isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}>
                       {stage === 'saving' ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Assessment</>}
                     </button>
                   </div>
@@ -1466,7 +1460,7 @@ const AIAssessmentGenerator = () => {
               <div className="sticky bottom-4 flex justify-center">
                 <button onClick={handleSave}
                   className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl transition-all"
-                  style={{ background: isCodingMode ? 'linear-gradient(135deg,#059669,#0891b2)' : 'linear-gradient(135deg,#1e40af,#0284c7,#0891b2)' }}>
+                  className={isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}>
                   <Save className="w-5 h-5" /> Save {questions.length} {isCodingMode ? 'Coding Problems' : 'Questions'} as Assessment
                 </button>
               </div>
@@ -1511,6 +1505,7 @@ const AIAssessmentGenerator = () => {
             </div>
           </Card>
         )}
+      </div>
       </div>
 
       {/* Edit modal — MCQ or Coding */}

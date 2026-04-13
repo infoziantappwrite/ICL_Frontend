@@ -102,36 +102,31 @@ const CompanyList = () => {
 
   return (
     <CollegeAdminLayout>
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
 
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-        </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-blue-200 text-[11px] font-semibold">Placement Portal</p>
-            <h1 className="text-white font-black text-lg leading-tight">Available Companies</h1>
+      {/* ══ HEADER ══ */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+            <div>
+              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+                Available <span className="text-blue-600">Companies</span>
+              </h1>
+              <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+                Placement Portal · {stats.total} total
+              </p>
+            </div>
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
+              <span className="inline-flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-600 border border-gray-200">
                 <Building2 className="w-3 h-3" /> {stats.total} Total
               </span>
-              <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                <CheckCircle className="w-3 h-3" /> {stats.active} Active
+              <span className="inline-flex items-center gap-1 bg-green-50 rounded-lg px-2 py-1 text-[11px] font-bold text-emerald-600 border border-green-200">
+                <CheckCircle className="w-3 h-3 text-emerald-500" /> {stats.active} Active
               </span>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4 flex items-start gap-2.5">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-start gap-3">
         <AlertCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
         <div>
           <p className="text-xs font-bold text-blue-800">Super Admin Approved Companies</p>
@@ -142,8 +137,8 @@ const CompanyList = () => {
       </div>
 
       {/* Stats pills */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="hidden grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="hidden gap-3">
           {[
             { icon: Building2,  label: 'Total Companies', value: stats.total,             color: 'bg-blue-50 border-blue-100 text-blue-600'   },
             { icon: CheckCircle, label: 'Active',         value: stats.active,            color: 'bg-green-50 border-green-100 text-green-600' },
@@ -161,18 +156,18 @@ const CompanyList = () => {
       </div>
 
       {/* Search & Filters */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="flex flex-col sm:flex-row gap-2">
+      <div className="hidden grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="flex flex-col flex-1 sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input type="text" placeholder="Search by company name, location, or industry..."
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              className="w-full pl-9 pr-8 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white" />
           </div>
           <div className="relative sm:w-48">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <select value={filterIndustry} onChange={(e) => setFilterIndustry(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white appearance-none">
+              className="w-full pl-9 pr-8 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white appearance-none">
               <option value="all">All Industries</option>
               {industries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
             </select>
@@ -183,20 +178,20 @@ const CompanyList = () => {
       {/* Company Grid */}
       {paginated.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {paginated.map((company) => (
               <div key={company._id}
-                className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden hover:shadow-md hover:scale-[1.01] transition-all group">
+                className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group flex flex-col">
                 {/* Card header */}
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 px-4 py-3">
+                <div className="bg-gray-50/50 border-b border-gray-100 p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-[11px] font-black text-white flex-shrink-0 shadow-sm">
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[14px] font-black text-blue-600 flex-shrink-0">
                       {company.name?.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">{company.name}</h3>
+                      <h3 className="text-[14px] font-bold text-gray-900 truncate">{company.name}</h3>
                       {company.industry && (
-                        <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-600 text-[9px] font-bold rounded-full mt-0.5">{company.industry}</span>
+                        <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded-md mt-0.5">{company.industry}</span>
                       )}
                     </div>
                     <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold rounded-full border ${
@@ -209,7 +204,8 @@ const CompanyList = () => {
                 </div>
 
                 {/* Card body */}
-                <div className="p-4">
+                <div className="flex-1 flex flex-col p-4">
+
                   <div className="space-y-2 mb-3">
                     {(company.headquarters?.city || company.location) && (
                       <div className="flex items-center gap-2 text-[11px] text-gray-600">
@@ -245,22 +241,23 @@ const CompanyList = () => {
                   )}
 
                   <button onClick={() => navigate(`/dashboard/college-admin/companies/${company._id}`)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold rounded-xl hover:shadow-md hover:scale-[1.02] transition-all">
+                    className="w-full inline-flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm mt-auto">
                     <Eye className="w-3.5 h-3.5" /> View Details
                   </button>
                 </div>
+
               </div>
             ))}
           </div>
 
           {/* Pagination */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+          <div className="bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 rounded-xl">
             <Pagination page={page} total={filteredCompanies.length} totalPages={totalPages}
               pageSize={PAGE_SIZE} onPageChange={setPage} />
           </div>
         </>
       ) : (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-16 text-center">
+        <div className="bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 rounded-xl p-16 text-center">
           <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <Building2 className="w-6 h-6 text-blue-300" />
           </div>
@@ -273,6 +270,8 @@ const CompanyList = () => {
         </div>
       )}
 
+    </div>
+      </div>
     </CollegeAdminLayout>
   );
 };

@@ -15,7 +15,7 @@ import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI, collegeAdminAPI } from '../../../api/Api';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
-const inp = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 transition-all";
+const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
 
 const questionToForm = (q) => ({
   question: q.question || '',
@@ -680,14 +680,14 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
 
           {/* Question text */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Question <span className="text-red-500">*</span></label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Question <span className="text-red-500">*</span></label>
             <textarea rows={3} value={form.question} onChange={e => setForm(prev => ({ ...prev, question: e.target.value }))} placeholder="Enter the question..." className={`${inp} resize-none`} />
           </div>
 
           {/* Type / Level / Marks */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Type</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
               <select value={form.type} onChange={e => setForm(prev => ({ ...prev, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))} className={inp}>
                 <option value="single_answer">Single Answer (MCQ)</option>
                 <option value="multiple_answer">Multiple Answer</option>
@@ -696,13 +696,13 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Level</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
               <select value={form.level} onChange={e => setForm(prev => ({ ...prev, level: e.target.value }))} className={inp}>
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Marks</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Marks</label>
               <input type="number" min={1} value={form.marks} readOnly
                 className={`${inp} bg-gray-50 cursor-not-allowed text-gray-500`}
                 title="Marks are auto-assigned based on assessment settings" />
@@ -713,7 +713,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
           {/* MCQ options */}
           {isChoice && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                 Options <span className="text-red-500">*</span>{' '}
                 <span className="text-xs text-gray-400 font-normal">({form.type === 'multiple_answer' ? 'check all correct' : 'click radio for correct'})</span>
               </label>
@@ -737,7 +737,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
           {/* Fill up answer */}
           {isFill && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
               <input type="text" value={typeof form.correct_answer === 'string' ? form.correct_answer : ''} onChange={e => setForm(prev => ({ ...prev, correct_answer: e.target.value }))} placeholder="Enter the exact correct answer" className={inp} />
             </div>
           )}
@@ -747,7 +747,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
             <>
               {/* Problem Description */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Problem Description <span className="text-xs font-normal text-gray-400">(shown to student)</span>
                 </label>
                 <textarea rows={4} value={form.problem_description}
@@ -759,7 +759,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
               {/* Input / Output Format */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Input Format <span className="text-xs font-normal text-gray-400">(optional)</span>
                   </label>
                   <textarea rows={3} value={form.input_format}
@@ -768,7 +768,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                     className={`${inp} resize-none text-xs`} />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Output Format <span className="text-xs font-normal text-gray-400">(optional)</span>
                   </label>
                   <textarea rows={3} value={form.output_format}
@@ -780,7 +780,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
 
               {/* Constraints */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Constraints <span className="text-xs font-normal text-gray-400">(optional)</span>
                 </label>
                 <textarea rows={2} value={form.constraints}
@@ -791,7 +791,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
 
               {/* Algorithm Tags */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Algorithm Tags <span className="text-xs font-normal text-gray-400">(optional)</span>
                 </label>
                 <div className="flex gap-2">
@@ -817,7 +817,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
 
               {/* Boilerplate / Starter Code */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Boilerplate / Starter Code <span className="text-xs font-normal text-gray-400">(optional — pre-filled in editor)</span>
                 </label>
                 <textarea rows={5} value={form.boilerplate_code}
@@ -944,7 +944,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
           {/* Explanation for non-coding */}
           {!isCoding && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Explanation (optional)</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Explanation (optional)</label>
               <input type="text" value={form.explanation} onChange={e => setForm(prev => ({ ...prev, explanation: e.target.value }))} placeholder="Brief explanation…" className={inp} />
             </div>
           )}
@@ -1012,7 +1012,7 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
           {!parsed ? (
             <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Paste Questions Here</label>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Questions Here</label>
                 <textarea rows={14} value={text} onChange={e => setText(e.target.value)}
                   placeholder={`1. What is React?\nA. A JavaScript library\nB. A CSS framework\nC. A database\nD. A server\nAnswer: A\nExplanation: optional\n\n2. Which hook handles side effects?\n...`}
                   className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
@@ -1157,7 +1157,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
           {!parsed ? (
             <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Paste Coding Problems Here</label>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Coding Problems Here</label>
                 <textarea
                   rows={16}
                   value={text}
@@ -1465,7 +1465,7 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
           )}
           {tab === 'manual' && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Student Email IDs</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Student Email IDs</label>
               <textarea rows={6} value={manualEmails} onChange={e => setManualEmails(e.target.value)} placeholder={'student1@college.edu\nstudent2@college.edu'} className={`${inp} resize-none font-mono text-xs`} />
               <p className="text-xs text-gray-400 mt-1">One per line or comma-separated</p>
             </div>
@@ -1692,7 +1692,7 @@ const QuestionManager = () => {
 
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24">
+      <div className="flex items-center justify-center py-24 min-h-screen bg-[#f0f4f8]">
         <InlineSkeleton rows={4} />
       </div>
     </CollegeAdminLayout>
@@ -1700,7 +1700,8 @@ const QuestionManager = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="w-full space-y-5 pb-8">
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
 
         {/* Toast */}
         {toast && (
@@ -1715,7 +1716,7 @@ const QuestionManager = () => {
 
         {/* Back — guarded */}
         <button onClick={handleTryLeave}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-medium transition-colors group">
+          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
         </button>
 
@@ -1738,80 +1739,67 @@ const QuestionManager = () => {
           </div>
         )}
 
-        {/* Hero Banner */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-          </div>
-          <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 flex-shrink-0">
-                <ListChecks className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-white font-black text-lg leading-tight">
-                  {assessment?.title || assessment?.skill_id?.name || 'Assessment'} — {assessment?.level}
-                </h1>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                    <Hash className="w-3 h-3" /> {savedQs.length}/{limit || '∞'} questions
-                  </span>
-                  <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                    <Award className="w-3 h-3" /> {totalMarks} marks
-                  </span>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border
-                    ${hasStudents ? 'bg-green-400/30 text-white border-green-300/40' : 'bg-red-400/40 text-white border-red-300/40'}`}>
-                    <Users className="w-3 h-3" />
-                    {hasStudents ? `${assessment.eligible_students.length} students` : '⚠ No students'}
-                  </span>
-                  {stagedQs.length > 0 && (
-                    <span className="inline-flex items-center gap-1 bg-amber-400/40 rounded-full px-2 py-0.5 text-[10px] font-bold text-white border border-amber-300/40">
-                      {stagedQs.length} staged
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
-              <button onClick={() => setModal('view-students')}
-                className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
-                <Eye className="w-3.5 h-3.5" /> View Students
-                {hasStudents && <span className="ml-0.5 px-1.5 py-0.5 bg-white/30 text-white text-[10px] font-bold rounded-full">{assessment.eligible_students.length}</span>}
-              </button>
-              <button onClick={() => setModal('assign')}
-                className={`inline-flex items-center gap-1.5 text-white text-xs font-semibold px-3 py-2 rounded-xl border transition-all
-                  ${!hasStudents ? 'bg-red-500/70 hover:bg-red-500/90 border-red-400/50 animate-pulse' : 'bg-white/20 hover:bg-white/30 border-white/30'}`}>
-                <Users className="w-3.5 h-3.5" /> {hasStudents ? 'Assign Students' : 'Assign Students ⚠'}
-              </button>
-              {!atLimit && (
-                <>
-                  {/* MCQ Bulk Paste */}
-                  <button
-                    onClick={() => setModal('bulk')}
-                    className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
-                    <ClipboardPaste className="w-3.5 h-3.5" /> Bulk Paste MCQ
-                  </button>
-                  {/* Coding Bulk Paste — NEW */}
-                  <button
-                    onClick={() => setModal('bulk-coding')}
-                    className="inline-flex items-center gap-1.5 bg-purple-500/50 hover:bg-purple-500/70 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-purple-300/50 transition-all">
-                    <Code2 className="w-3.5 h-3.5" /> Bulk Paste Coding
-                  </button>
-                  {/* Manual Add */}
-                  <button
-                    onClick={() => setModal('add')}
-                    className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
-                    <Plus className="w-3.5 h-3.5" /> Add Question
-                  </button>
-                </>
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div>
+            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+              {assessment?.title || assessment?.skill_id?.name || 'Assessment'} — {assessment?.level}
+            </h1>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className="inline-flex items-center gap-1 bg-white rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 border border-gray-200">
+                <Hash className="w-3 h-3" /> {savedQs.length}/{limit || '∞'} questions
+              </span>
+              <span className="inline-flex items-center gap-1 bg-white rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 border border-gray-200">
+                <Award className="w-3 h-3" /> {totalMarks} marks
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border
+                ${hasStudents ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                <Users className="w-3 h-3" />
+                {hasStudents ? `${assessment.eligible_students.length} students` : '⚠ No students'}
+              </span>
+              {stagedQs.length > 0 && (
+                <span className="inline-flex items-center gap-1 bg-amber-50 rounded-full px-2.5 py-1 text-[10px] font-bold text-amber-700 border border-amber-200">
+                  {stagedQs.length} staged
+                </span>
               )}
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => setModal('view-students')}
+              className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors">
+              <Eye className="w-4 h-4" /> View Students
+              {hasStudents && <span className="ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{assessment.eligible_students.length}</span>}
+            </button>
+            <button onClick={() => setModal('assign')}
+              className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
+                ${!hasStudents ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'}`}>
+              <Users className="w-4 h-4" /> {hasStudents ? 'Assign Students' : 'Assign Students ⚠'}
+            </button>
+            {!atLimit && (
+              <>
+                <button
+                  onClick={() => setModal('bulk')}
+                  className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-gray-50 shadow-sm transition-colors">
+                  <ClipboardPaste className="w-4 h-4" /> Bulk MCQ
+                </button>
+                <button
+                  onClick={() => setModal('bulk-coding')}
+                  className="inline-flex items-center gap-1.5 bg-white border border-purple-200 text-purple-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-purple-50 shadow-sm transition-colors">
+                  <Code2 className="w-4 h-4" /> Bulk Coding
+                </button>
+                <button
+                  onClick={() => setModal('add')}
+                  className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors">
+                  <Plus className="w-4 h-4" /> Add Question
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Question limit progress */}
         {limit > 0 && (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold text-gray-700">Question Progress</span>
               <span className={`text-sm font-black ${atLimit ? 'text-green-600' : 'text-blue-600'}`}>{totalCount} / {limit}</span>
@@ -1846,10 +1834,10 @@ const QuestionManager = () => {
 
         {/* Staged preview */}
         {stagedQs.length > 0 && (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border-2 border-amber-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100 flex items-center justify-between">
+          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-amber-200 overflow-hidden">
+            <div className="px-5 py-3 bg-amber-50/50 border-b border-amber-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center"><Eye className="w-3 h-3 text-white" /></div>
+                <div className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center"><Eye className="w-4 h-4 text-amber-600" /></div>
                 <p className="font-bold text-amber-800 text-sm">{stagedQs.length} Question{stagedQs.length !== 1 ? 's' : ''} Staged — Preview</p>
                 <span className="text-xs text-amber-500">Not saved to DB yet</span>
               </div>
@@ -1873,7 +1861,7 @@ const QuestionManager = () => {
 
         {/* Saved questions */}
         {savedQs.length === 0 && stagedQs.length === 0 ? (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-12 text-center">
+          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-12 text-center flex flex-col justify-center items-center">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><BookOpen className="w-8 h-8 text-blue-400" /></div>
             <h3 className="text-lg font-bold text-gray-700 mb-2">No Questions Yet</h3>
             <p className="text-gray-400 text-sm mb-4">Add questions one by one or paste in bulk.</p>
@@ -1896,9 +1884,9 @@ const QuestionManager = () => {
             </div>
           </div>
         ) : savedQs.length > 0 && (
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center gap-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center"><ListChecks className="w-3 h-3 text-white" /></div>
+          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
+            <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center gap-2 shrink-0">
+              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"><ListChecks className="w-4 h-4 text-blue-600" /></div>
               <p className="font-bold text-gray-800 text-sm">{savedQs.length} Saved Question{savedQs.length !== 1 ? 's' : ''}</p>
             </div>
             <div className="p-4 space-y-3">
@@ -1938,8 +1926,7 @@ const QuestionManager = () => {
         {stagedQs.length > 0 && (
           <div className="sticky bottom-4">
             <button onClick={handleSubmitAll} disabled={submitting}
-              className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl text-white font-bold text-sm shadow-xl shadow-blue-500/30 disabled:opacity-60 transition-opacity hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#1e40af,#0284c7,#0891b2)' }}>
+              className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-white font-bold text-[15px] shadow-sm bg-blue-600 disabled:opacity-60 transition-colors hover:bg-blue-700">
               {submitting
                 ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 : <Send className="w-5 h-5" />}
@@ -1982,6 +1969,7 @@ const QuestionManager = () => {
           level={assessment?.level} onClose={() => setModal(null)} />
       )}
 
+      </div>
       {showChecklist && (
         <CompletionChecklistModal
           assessment={assessment}

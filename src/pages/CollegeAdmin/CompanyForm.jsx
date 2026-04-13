@@ -37,12 +37,12 @@ const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-[10px] mt-
 
 /* ─── Section card ─────────────────────────── */
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Icon className="w-3 h-3 text-white" />
+      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-blue-600" />
       </div>
-      <h3 className="text-sm font-bold text-gray-800">{title}</h3>
+      <h3 className="text-[15px] font-bold text-gray-900">{title}</h3>
     </div>
     {children}
   </div>
@@ -150,34 +150,28 @@ const CompanyForm = () => {
 
   return (
     <CollegeAdminLayout>
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
       {/* Back button */}
       <button onClick={() => navigate('/dashboard/college-admin/companies')}
-        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-4 transition-colors group text-sm font-medium">
+        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group text-sm font-semibold">
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Companies
       </button>
 
       {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Building2 className="w-6 h-6 text-blue-600" />
         </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-blue-200 text-[11px] font-semibold">
-              {isEditMode ? 'Update company information' : 'Register a new recruiting partner'}
-            </p>
-            <h1 className="text-white font-black text-lg leading-tight">
-              {isEditMode ? 'Edit Company' : 'Add New Company'}
-            </h1>
-          </div>
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            {isEditMode ? 'Edit Company' : 'Add New Company'}
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">
+            {isEditMode ? 'Update company information' : 'Register a new recruiting partner'}
+          </p>
         </div>
       </div>
 
@@ -235,7 +229,7 @@ const CompanyForm = () => {
                   </SelectInput>
                   {formData.industry === 'Other' && (
                     <TextInput type="text" name="industryOther" placeholder="Specify industry..."
-                      className="w-full mt-2 px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full mt-2 px-3 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
                       value={formData.industryOther || ''} onChange={handleInputChange} />
                   )}
                   <FieldError msg={errors.industry} />
@@ -263,7 +257,7 @@ const CompanyForm = () => {
             <Section icon={FileText} title="Additional Information">
               <FieldLabel>Description</FieldLabel>
               <textarea name="description" value={formData.description} onChange={handleInputChange} rows="5"
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 transition-colors resize-none"
+                className="w-full px-3 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-colors resize-none bg-white"
                 placeholder="Enter company description..." />
             </Section>
 
@@ -273,12 +267,12 @@ const CompanyForm = () => {
           <div className="flex flex-col gap-4">
 
             {/* Status */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Building2 className="w-3 h-3 text-white" />
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-4 h-4 text-blue-600" />
                 </div>
-                <h3 className="text-sm font-bold text-gray-800">Status</h3>
+                <h3 className="text-[15px] font-bold text-gray-900">Status</h3>
               </div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <div className="relative">
@@ -299,32 +293,32 @@ const CompanyForm = () => {
             </div>
 
             {/* Actions */}
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Save className="w-3 h-3 text-white" />
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Save className="w-4 h-4 text-blue-600" />
                 </div>
-                <h3 className="text-sm font-bold text-gray-800">Actions</h3>
+                <h3 className="text-[15px] font-bold text-gray-900">Actions</h3>
               </div>
               <div className="space-y-2">
                 <button type="submit" disabled={saving}
-                  className="w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="w-full inline-flex items-center justify-center gap-1.5 bg-blue-600 text-white text-[13px] font-bold px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : isEditMode ? 'Update Company' : 'Create Company'}
                 </button>
                 <button type="button" onClick={() => navigate('/dashboard/college-admin/companies')}
-                  className="w-full inline-flex items-center justify-center gap-1.5 bg-gray-100 text-gray-700 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-gray-200 transition-all">
+                  className="w-full inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
                   <X className="w-4 h-4" /> Cancel
                 </button>
               </div>
             </div>
 
             {/* Tips */}
-            <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-cyan-500 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 relative overflow-hidden">
               <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
               <div className="relative">
-                <p className="text-xs font-bold text-white mb-2">💡 Tips</p>
-                <ul className="text-[10px] text-blue-100 space-y-1.5">
+                <p className="text-[13px] font-bold text-blue-800 mb-2">💡 Tips</p>
+                <ul className="text-[11px] font-medium text-blue-700 space-y-1.5">
                   <li>• Industry helps students filter by sector</li>
                   <li>• Add a website for credibility</li>
                   <li>• Description improves student interest</li>
@@ -338,6 +332,8 @@ const CompanyForm = () => {
         </div>
       </form>
 
+    </div>
+      </div>
     </CollegeAdminLayout>
   );
 };

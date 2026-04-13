@@ -31,10 +31,10 @@ const INITIAL_FORM = {
   default_coding_language: 'python',  // college admin sets default; students can override
 };
 
-const inp = "w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 backdrop-blur transition-all";
+const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
 
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
     <div className="px-5 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center gap-2">
       <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
         <Icon className="w-3 h-3 text-white" />
@@ -47,7 +47,7 @@ const Section = ({ icon: Icon, title, children }) => (
 
 const Field = ({ label, children, required, hint }) => (
   <div>
-    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
       {label}{required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
@@ -59,11 +59,11 @@ const Toggle = ({ checked, onChange, label, desc }) => (
   <button
     type="button"
     onClick={() => onChange(!checked)}
-    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border-2 transition-all text-left
-      ${checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white/60 hover:border-gray-300'}`}
+    className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg border transition-all text-left
+      ${checked ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:border-blue-300'}`}
   >
     <div className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0
-      ${checked ? 'bg-gradient-to-r from-blue-600 to-cyan-500' : 'bg-gray-200'}`}>
+      ${checked ? 'bg-blue-600' : 'bg-gray-200'}`}>
       <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform
         ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </div>
@@ -211,7 +211,7 @@ const AssessmentForm = () => {
   // inside CollegeAdminLayout
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24">
+      <div className="flex items-center justify-center py-24 min-h-screen bg-[#f0f4f8]">
         <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
@@ -221,39 +221,36 @@ const AssessmentForm = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="space-y-5 pb-8 w-full">
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
         {/* Back */}
         <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-medium transition-colors group">
+          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
         </button>
 
-        {/* Hero Banner */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.06]"
-              style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-          </div>
-          <div className="relative flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 flex-shrink-0">
-              {isAI ? <Sparkles className="w-5 h-5 text-white" /> : (isEdit ? <SquarePen className="w-5 h-5 text-white" /> : <ClipboardList className="w-5 h-5 text-white" />)}
+        {/* ── HEADER ── */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-100">
+              {isAI ? <Sparkles className="w-6 h-6 text-blue-600" /> : (isEdit ? <SquarePen className="w-6 h-6 text-blue-600" /> : <ClipboardList className="w-6 h-6 text-blue-600" />)}
             </div>
             <div>
-              <h1 className="text-white font-black text-lg leading-tight">
-                {isEdit ? 'Edit Assessment' : isAI ? 'New AI-Generated Assessment' : 'New Manual Assessment'}
+              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+                {isEdit ? 'Edit Assessment' : isAI ? 'New AI Assessment' : 'New Manual Assessment'}
               </h1>
-              <p className="text-blue-200 text-xs mt-0.5">
+              <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">
                 {isEdit ? 'Update assessment settings' : 'Fill in details — questions come next'}
               </p>
             </div>
-            {!isEdit && (
-              <div className={`ml-auto px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border
-                ${isAI ? 'bg-violet-500/20 border-violet-300/30 text-violet-100' : 'bg-white/20 border-white/20 text-white'}`}>
+          </div>
+          {!isEdit && (
+              <div className={`ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 border
+                ${isAI ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
                 {isAI ? <><Sparkles className="w-3 h-3" /> AI Generated</> : <><SquarePen className="w-3 h-3" /> Manual</>}
               </div>
-            )}
-          </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -312,8 +309,8 @@ const AssessmentForm = () => {
                   { value: 'Intermediate', color: 'border-blue-400 bg-blue-50 text-blue-700' },
                   { value: 'Advanced',     color: 'border-indigo-400 bg-indigo-50 text-indigo-700' },
                 ].map(({ value, color }) => (
-                  <label key={value} className={`cursor-pointer text-center px-4 py-3 rounded-xl border-2 transition-all
-                    ${form.level === value ? color + ' font-bold shadow-sm' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                  <label key={value} className={`cursor-pointer text-center px-4 py-2 text-[13px] rounded-lg border transition-all
+                    ${form.level === value ? color + ' font-bold shadow-sm ring-1 ring-blue-500' : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'}`}>
                     <input type="radio" name="level" value={value} checked={form.level === value}
                       onChange={() => set('level', value)} className="sr-only" />
                     <span className="text-sm">{value}</span>
@@ -345,14 +342,14 @@ const AssessmentForm = () => {
             </div>
 
             {/* Auto-calculated Total Marks */}
-            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all
-              ${form.total_marks ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className={`flex items-center gap-3 px-4 py-3.5 rounded-lg border transition-all
+              ${form.total_marks ? 'border-blue-200 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-gray-50'}`}>
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Award className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total Marks (Auto-calculated)</p>
-                <p className={`text-xl font-black ${form.total_marks ? 'text-blue-700' : 'text-gray-300'}`}>
+                <p className={`text-[20px] md:text-[24px] font-bold ${form.total_marks ? 'text-blue-700' : 'text-gray-400'}`}>
                   {form.total_marks
                     ? `${form.total_marks} marks`
                     : 'Enter questions & marks per question above'}
@@ -475,15 +472,15 @@ const AssessmentForm = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
             <button type="button" onClick={() => navigate('/dashboard/college-admin/assessments')}
-              className="flex-1 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-all bg-white/80">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-[13px] font-bold transition-all shadow-sm w-full sm:w-auto">
               Cancel
             </button>
             {/* FIX: replaced <LoadingSpinner size="sm" /> (unsupported prop, causes box artifact)
                 with an inline CSS spinner that stays contained within the button */}
             <button type="submit" disabled={saving}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-60 shadow-md shadow-blue-500/20 transition-all">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 text-[13px] font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
               {saving
                 ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 : <Save className="w-4 h-4" />}
@@ -492,6 +489,7 @@ const AssessmentForm = () => {
           </div>
         </form>
       </div>
+    </div>
     </CollegeAdminLayout>
   );
 };

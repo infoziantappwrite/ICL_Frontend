@@ -1378,3 +1378,60 @@ export const reportAPI = {
 window.reportAPI = reportAPI;
 
 export default apiCall;
+
+// ==========================================
+// SECTION API — /api/sections/*
+// Manages sections within an assessment
+// ==========================================
+export const sectionAPI = {
+
+  // GET /api/sections/assessment/:assessmentId
+  getSections: (assessmentId) =>
+    apiCall(`/sections/assessment/${assessmentId}`),
+
+  // GET /api/sections/assessment/:assessmentId/summary
+  getSectionsSummary: (assessmentId) =>
+    apiCall(`/sections/assessment/${assessmentId}/summary`),
+
+  // POST /api/sections/assessment/:assessmentId
+  createSection: (assessmentId, data) =>
+    apiCall(`/sections/assessment/${assessmentId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // GET /api/sections/:sectionId
+  getSection: (sectionId) =>
+    apiCall(`/sections/${sectionId}`),
+
+  // PUT /api/sections/:sectionId
+  updateSection: (sectionId, data) =>
+    apiCall(`/sections/${sectionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // DELETE /api/sections/:sectionId
+  deleteSection: (sectionId) =>
+    apiCall(`/sections/${sectionId}`, { method: 'DELETE' }),
+
+  // PATCH /api/sections/:sectionId/reorder
+  reorderSection: (sectionId, sequence_order) =>
+    apiCall(`/sections/${sectionId}/reorder`, {
+      method: 'PATCH',
+      body: JSON.stringify({ sequence_order }),
+    }),
+
+  // POST /api/sections/:sectionId/questions
+  addQuestion: (sectionId, question_id) =>
+    apiCall(`/sections/${sectionId}/questions`, {
+      method: 'POST',
+      body: JSON.stringify({ question_id }),
+    }),
+
+  // DELETE /api/sections/:sectionId/questions/:questionId
+  removeQuestion: (sectionId, questionId) =>
+    apiCall(`/sections/${sectionId}/questions/${questionId}`, { method: 'DELETE' }),
+};
+
+window.sectionAPI = sectionAPI;

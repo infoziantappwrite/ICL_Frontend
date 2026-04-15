@@ -2,19 +2,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  ChevronLeft, Save, BookOpen, AlertCircle, CheckCircle2,
+  ChevronLeft, ChevronRight, Save, BookOpen, AlertCircle, CheckCircle2,
   Clock, Calendar, Tag, Info, Link2, ClipboardList,
-  Sparkles, SquarePen, Type, Hash, Eye, Shuffle,
-  Award, Code2,
+  Sparkles, SquarePen, Type, Eye, Award, Code2, Layers,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI } from '../../../api/Api';
 
+// ── Initial state ─────────────────────────────────────────────────────────────
+// NOTE: num_questions & marks_per_question are intentionally NOT here.
+// Those are section-level fields managed in SectionManager.
+// total_marks is entered directly here so SectionManager can validate
+// that all sections' marks sum up to it.
 const INITIAL_FORM = {
   title: '',
   level: 'Beginner',
   source_type: 'college_admin_manual',
+  total_marks: '',             // directly entered — sections must sum to this
   duration_minutes: 60,
   scheduled_date: '',
   start_time: '',
@@ -22,27 +27,36 @@ const INITIAL_FORM = {
   end_time: '',
   tags: '',
   jd_id: '',
-  num_questions: '',
-  marks_per_question: '',
-  total_marks: '',       // auto-calculated: num_questions × marks_per_question
   show_results_to_students: false,
   shuffle_questions: false,
-  camera_proctoring_enabled: true,  // camera proctoring ON by default; admin can disable
-  default_coding_language: 'python',  // college admin sets default; students can override
+  camera_proctoring_enabled: true,
+  default_coding_language: 'python',
 };
 
-const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
+// ── Shared style tokens ───────────────────────────────────────────────────────
+const inp =
+  'w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm ' +
+  'focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ' +
+  'bg-white transition-all placeholder:text-gray-400';
 
-const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
-    <div className="px-5 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center gap-2">
-      <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
-        <Icon className="w-3 h-3 text-white" />
-      </div>
-      <h2 className="font-bold text-gray-800 text-sm">{title}</h2>
-    </div>
-    <div className="p-5 space-y-5">{children}</div>
+// ── Reusable primitives ───────────────────────────────────────────────────────
+const Card = ({ children }) => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    {children}
   </div>
+);
+
+const CardHead = ({ icon: Icon, title, color = 'from-blue-600 to-blue-500' }) => (
+  <div className={`bg-gradient-to-r ${color} px-5 py-3.5 flex items-center gap-3`}>
+    <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 flex-shrink-0">
+      <Icon className="w-4 h-4 text-white" />
+    </div>
+    <h2 className="font-bold text-white text-sm">{title}</h2>
+  </div>
+);
+
+const CardBody = ({ children }) => (
+  <div className="p-5 space-y-4">{children}</div>
 );
 
 const Field = ({ label, children, required, hint }) => (
@@ -51,7 +65,7 @@ const Field = ({ label, children, required, hint }) => (
       {label}{required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
-    {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    {hint && <p className="text-xs text-gray-400 mt-1 leading-relaxed">{hint}</p>}
   </div>
 );
 
@@ -59,53 +73,80 @@ const Toggle = ({ checked, onChange, label, desc }) => (
   <button
     type="button"
     onClick={() => onChange(!checked)}
-    className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg border transition-all text-left
-      ${checked ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white hover:border-blue-300'}`}
+    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border-2 transition-all text-left
+      ${checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
   >
     <div className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0
       ${checked ? 'bg-blue-600' : 'bg-gray-200'}`}>
-      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform
+      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-transform
         ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </div>
     <div>
       <p className={`text-sm font-bold ${checked ? 'text-blue-700' : 'text-gray-600'}`}>{label}</p>
-      {desc && <p className="text-xs text-gray-400">{desc}</p>}
+      {desc && <p className="text-xs text-gray-400 mt-0.5">{desc}</p>}
     </div>
   </button>
 );
 
+// ── Step indicator (shared between Form and SectionManager) ───────────────────
+const Steps = ({ active }) => (
+  <div className="flex items-center bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
+    {[
+      { n: 1, label: 'Assessment Details' },
+      { n: 2, label: 'Sections' },
+      { n: 3, label: 'Questions' },
+    ].map((step, i) => (
+      <div key={step.n} className="flex items-center flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0
+            ${step.n < active
+              ? 'bg-green-500 text-white'
+              : step.n === active
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                : 'bg-gray-100 text-gray-400'
+            }`}>
+            {step.n < active ? <CheckCircle2 className="w-4 h-4" /> : step.n}
+          </div>
+          <span className={`text-xs font-bold truncate
+            ${step.n === active ? 'text-blue-700' : step.n < active ? 'text-green-600' : 'text-gray-400'}`}>
+            {step.label}
+          </span>
+        </div>
+        {i < 2 && <ChevronRight className="w-4 h-4 text-gray-200 flex-shrink-0 mx-1" />}
+      </div>
+    ))}
+  </div>
+);
+
+// ── Main component ────────────────────────────────────────────────────────────
 const AssessmentForm = () => {
-  const navigate = useNavigate();
+  const navigate      = useNavigate();
   const { assessmentId } = useParams();
   const [searchParams] = useSearchParams();
-  const isEdit = !!assessmentId;
-
-  // source_type comes from URL param when creating new
+  const isEdit        = !!assessmentId;
   const urlSourceType = searchParams.get('type') || 'college_admin_manual';
 
-  const [form, setForm]       = useState({ ...INITIAL_FORM, source_type: urlSourceType });
-  const [jobs, setJobs]       = useState([]);
+  const [form, setForm]     = useState({ ...INITIAL_FORM, source_type: urlSourceType });
+  const [jobs, setJobs]     = useState([]);
   const [loading, setLoading] = useState(isEdit);
-  const [saving, setSaving]   = useState(false);
-  const [error, setError]     = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
   const [success, setSuccess] = useState('');
 
+  // Load JD list
   useEffect(() => {
     jobAPI.getAllJobs({ limit: 100 })
       .then(res => { if (res.success) setJobs(res.jobs || res.data || []); })
       .catch(() => {});
   }, []);
 
-  // When JD changes, auto-fill title if blank
+  // Auto-fill title when JD changes
   const handleJdChange = (jdId) => {
     const job = jobs.find(j => j._id === jdId);
-    setForm(prev => ({
-      ...prev,
-      jd_id: jdId,
-      title: prev.title || (job?.jobTitle ?? ''),
-    }));
+    setForm(prev => ({ ...prev, jd_id: jdId, title: prev.title || (job?.jobTitle ?? '') }));
   };
 
+  // Load existing assessment for edit mode
   useEffect(() => {
     if (!isEdit) return;
     const load = async () => {
@@ -114,25 +155,21 @@ const AssessmentForm = () => {
         if (res.success) {
           const a = res.assessment;
           setForm({
-            title: a.title || '',
-            level: a.level || 'Beginner',
-            source_type: a.source_type || 'college_admin_manual',
-            duration_minutes: a.duration_minutes || 60,
-            scheduled_date: a.scheduled_date ? new Date(a.scheduled_date).toISOString().split('T')[0] : '',
-            start_time: a.start_time || '',
-            end_date: a.end_date ? new Date(a.end_date).toISOString().split('T')[0] : '',
-            end_time: a.end_time || '',
-            tags: Array.isArray(a.tags) ? a.tags.join(', ') : '',
-            jd_id: a.jd_id?._id || a.jd_id || '',
-            num_questions: a.num_questions || '',
-            marks_per_question: a.num_questions && a.total_marks
-              ? String(a.total_marks / a.num_questions)
-              : '',
-            total_marks: a.total_marks || '',
+            title:                    a.title || '',
+            level:                    a.level || 'Beginner',
+            source_type:              a.source_type || 'college_admin_manual',
+            total_marks:              a.total_marks || '',
+            duration_minutes:         a.duration_minutes || 60,
+            scheduled_date:           a.scheduled_date ? new Date(a.scheduled_date).toISOString().split('T')[0] : '',
+            start_time:               a.start_time || '',
+            end_date:                 a.end_date ? new Date(a.end_date).toISOString().split('T')[0] : '',
+            end_time:                 a.end_time || '',
+            tags:                     Array.isArray(a.tags) ? a.tags.join(', ') : '',
+            jd_id:                    a.jd_id?._id || a.jd_id || '',
             show_results_to_students: a.show_results_to_students ?? false,
-            shuffle_questions: a.shuffle_questions ?? false,
+            shuffle_questions:        a.shuffle_questions ?? false,
             camera_proctoring_enabled: a.camera_proctoring_enabled ?? true,
-            default_coding_language: a.default_coding_language || 'python',
+            default_coding_language:  a.default_coding_language || 'python',
           });
         } else {
           setError(res.message || 'Failed to load assessment');
@@ -146,31 +183,22 @@ const AssessmentForm = () => {
     load();
   }, [assessmentId, isEdit]);
 
-  // Auto-calculate total_marks whenever num_questions or marks_per_question changes
-  const set = (field, value) => setForm(prev => {
-    const updated = { ...prev, [field]: value };
-    const nq  = parseFloat(field === 'num_questions'      ? value : updated.num_questions)      || 0;
-    const mpq = parseFloat(field === 'marks_per_question' ? value : updated.marks_per_question) || 0;
-    if (nq > 0 && mpq > 0) updated.total_marks = String(nq * mpq);
-    return updated;
-  });
+  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
 
-    if (!form.title.trim())                                  { setError('Assessment title is required'); return; }
-    if (!form.level)                                         { setError('Difficulty level is required'); return; }
-    if (!form.total_marks || Number(form.total_marks) < 1)  { setError('Total marks is required'); return; }
-    if (!form.num_questions || Number(form.num_questions) < 1) { setError('Number of questions is required'); return; }
-    if (!form.duration_minutes || Number(form.duration_minutes) < 1) {
-      setError('Duration must be at least 1 minute'); return;
-    }
+    if (!form.title.trim())                                 { setError('Assessment title is required'); return; }
+    if (!form.level)                                        { setError('Difficulty level is required'); return; }
+    if (!form.total_marks || Number(form.total_marks) < 1) { setError('Total marks is required (min 1)'); return; }
+    if (!form.duration_minutes || Number(form.duration_minutes) < 1) { setError('Duration must be at least 1 minute'); return; }
 
     const payload = {
       title:                    form.title.trim(),
       level:                    form.level,
       source_type:              form.source_type,
+      total_marks:              Number(form.total_marks),
       duration_minutes:         Number(form.duration_minutes),
       scheduled_date:           form.scheduled_date || null,
       start_time:               form.start_time     || null,
@@ -178,12 +206,11 @@ const AssessmentForm = () => {
       end_time:                 form.end_time        || null,
       tags:                     form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       jd_id:                    form.jd_id || null,
-      total_marks:              Number(form.total_marks),
-      num_questions:            Number(form.num_questions),
       show_results_to_students: form.show_results_to_students,
       shuffle_questions:        form.shuffle_questions,
       camera_proctoring_enabled: form.camera_proctoring_enabled,
       default_coding_language:  form.default_coding_language || 'python',
+      has_sections:             true,   // always section-based when created here
     };
 
     setSaving(true);
@@ -194,9 +221,9 @@ const AssessmentForm = () => {
 
       if (res.success) {
         const id = res.assessment?._id || assessmentId;
-        setSuccess(isEdit ? 'Updated successfully!' : 'Created! Now add questions.');
-        // Pass ?new=1 only on first creation so QuestionManager shows the "Create Assessment" button
-        setTimeout(() => navigate(`/dashboard/college-admin/assessments/${id}/questions${isEdit ? '' : '?new=1'}`), 800);
+        setSuccess(isEdit ? 'Updated! Redirecting to sections…' : 'Created! Now set up sections.');
+        // ✅ Always go to Section Manager next
+        setTimeout(() => navigate(`/dashboard/college-admin/assessments/${id}/sections`), 800);
       } else {
         setError(res.message || 'Operation failed');
       }
@@ -207,11 +234,9 @@ const AssessmentForm = () => {
     }
   };
 
-  // FIX: fullScreen={false} prevents the full-screen gradient box artifact
-  // inside CollegeAdminLayout
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24 min-h-screen bg-[#f0f4f8]">
+      <div className="flex items-center justify-center py-24 min-h-screen bg-gray-50">
         <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
@@ -221,275 +246,292 @@ const AssessmentForm = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-        <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
+      <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="max-w-3xl mx-auto space-y-4">
 
-        {/* Back */}
-        <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
-        </button>
+          {/* ── Back ── */}
+          <button
+            onClick={() => navigate('/dashboard/college-admin/assessments')}
+            className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-semibold transition-colors group"
+          >
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            Back to Assessments
+          </button>
 
-        {/* ── HEADER ── */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-100">
-              {isAI ? <Sparkles className="w-6 h-6 text-blue-600" /> : (isEdit ? <SquarePen className="w-6 h-6 text-blue-600" /> : <ClipboardList className="w-6 h-6 text-blue-600" />)}
+          {/* ── Page header ── */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0
+                ${isAI ? 'bg-gradient-to-br from-violet-600 to-purple-500' : 'bg-gradient-to-br from-blue-600 to-blue-500'}`}>
+                {isAI
+                  ? <Sparkles className="w-5 h-5 text-white" />
+                  : isEdit
+                    ? <SquarePen className="w-5 h-5 text-white" />
+                    : <ClipboardList className="w-5 h-5 text-white" />}
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">
+                  {isEdit ? 'Edit Assessment' : isAI ? 'New AI Assessment' : 'New Manual Assessment'}
+                </h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {isEdit ? 'Update settings — sections & questions stay intact' : 'Step 1 of 3 — fill details, then set up sections'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-                {isEdit ? 'Edit Assessment' : isAI ? 'New AI Assessment' : 'New Manual Assessment'}
-              </h1>
-              <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">
-                {isEdit ? 'Update assessment settings' : 'Fill in details — questions come next'}
-              </p>
+            <div className={`hidden sm:flex px-2.5 py-1 rounded-full text-[10px] font-bold items-center gap-1.5 border flex-shrink-0
+              ${isAI ? 'bg-violet-50 border-violet-200 text-violet-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+              {isAI ? <><Sparkles className="w-3 h-3" /> AI</> : <><SquarePen className="w-3 h-3" /> Manual</>}
             </div>
           </div>
-          {!isEdit && (
-              <div className={`ml-auto px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 border
-                ${isAI ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
-                {isAI ? <><Sparkles className="w-3 h-3" /> AI Generated</> : <><SquarePen className="w-3 h-3" /> Manual</>}
-              </div>
-          )}
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ── Step progress ── */}
+          <Steps active={1} />
 
-          {/* Alerts */}
-          {error && (
-            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <pre className="whitespace-pre-wrap font-sans">{error}</pre>
-            </div>
-          )}
-          {success && (
-            <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-700 text-sm">
-              <CheckCircle2 className="w-4 h-4 shrink-0" /> {success}
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* Assessment Info */}
-          <Section icon={BookOpen} title="Assessment Details">
-
-            {/* Title */}
-            <Field label="Assessment Title" required
-              hint={form.jd_id ? 'Auto-filled from the linked Job Description — you can override it' : 'Give a clear name for this assessment'}>
-              <div className="relative">
-                <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={e => set('title', e.target.value)}
-                  placeholder={form.jd_id ? 'Auto-filled from JD…' : 'e.g. React Fundamentals Assessment'}
-                  className={`${inp} pl-10`}
-                />
-              </div>
-            </Field>
-
-            {/* JD Link */}
-            <Field label="Link to Job Description (optional)" hint="Linking a JD auto-assigns eligible students and sets the title">
-              <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select value={form.jd_id} onChange={e => handleJdChange(e.target.value)} className={`${inp} pl-10`}>
-                  <option value="">— No JD linked —</option>
-                  {jobs.map(j => (
-                    <option key={j._id} value={j._id}>
-                      {j.jobTitle}{j.jobCode ? ` (${j.jobCode})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </Field>
-
-            {/* Level */}
-            <Field label="Difficulty Level" required>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { value: 'Beginner',     color: 'border-cyan-400 bg-cyan-50 text-cyan-700' },
-                  { value: 'Intermediate', color: 'border-blue-400 bg-blue-50 text-blue-700' },
-                  { value: 'Advanced',     color: 'border-indigo-400 bg-indigo-50 text-indigo-700' },
-                ].map(({ value, color }) => (
-                  <label key={value} className={`cursor-pointer text-center px-4 py-2 text-[13px] rounded-lg border transition-all
-                    ${form.level === value ? color + ' font-bold shadow-sm ring-1 ring-blue-500' : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'}`}>
-                    <input type="radio" name="level" value={value} checked={form.level === value}
-                      onChange={() => set('level', value)} className="sr-only" />
-                    <span className="text-sm">{value}</span>
-                  </label>
-                ))}
-              </div>
-            </Field>
-
-            {/* Questions + Marks per question → auto total */}
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="No. of Questions" required hint="Total number of questions in the assessment">
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="number" min={1} value={form.num_questions}
-                    onChange={e => set('num_questions', e.target.value)}
-                    placeholder="e.g. 10"
-                    className={`${inp} pl-10`} />
-                </div>
-              </Field>
-              <Field label="Marks per Question" required hint="Each question carries equal marks">
-                <div className="relative">
-                  <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input type="number" min={0.5} step={0.5} value={form.marks_per_question}
-                    onChange={e => set('marks_per_question', e.target.value)}
-                    placeholder="e.g. 5"
-                    className={`${inp} pl-10`} />
-                </div>
-              </Field>
-            </div>
-
-            {/* Auto-calculated Total Marks */}
-            <div className={`flex items-center gap-3 px-4 py-3.5 rounded-lg border transition-all
-              ${form.total_marks ? 'border-blue-200 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-gray-50'}`}>
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Award className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total Marks (Auto-calculated)</p>
-                <p className={`text-[20px] md:text-[24px] font-bold ${form.total_marks ? 'text-blue-700' : 'text-gray-400'}`}>
-                  {form.total_marks
-                    ? `${form.total_marks} marks`
-                    : 'Enter questions & marks per question above'}
-                </p>
-                {form.num_questions && form.marks_per_question && (
-                  <p className="text-[11px] text-blue-500 font-medium mt-0.5">
-                    {form.num_questions} questions × {form.marks_per_question} marks = {form.total_marks}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Tags */}
-            <Field label="Tags" hint="Comma-separated — e.g. frontend, javascript, react">
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
-                  placeholder="react, hooks, components" className={`${inp} pl-10`} />
-              </div>
-            </Field>
-          </Section>
-
-          {/* Schedule */}
-          <Section icon={Calendar} title="Schedule & Duration">
-            <Field label="Duration (minutes)" required>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="number" min={1} max={600} value={form.duration_minutes}
-                  onChange={e => set('duration_minutes', e.target.value)} className={`${inp} pl-10`} />
-              </div>
-            </Field>
-
-            {/* Start date + End date */}
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Start Date" hint="Assessment opens on this date">
-                <input type="date" value={form.scheduled_date}
-                  onChange={e => set('scheduled_date', e.target.value)} className={inp} />
-              </Field>
-              <Field label="End Date" hint="Assessment closes on this date">
-                <input type="date" value={form.end_date}
-                  min={form.scheduled_date || undefined}
-                  onChange={e => set('end_date', e.target.value)} className={inp} />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Start Time" hint="Auto-activates at this time on start date">
-                <input type="time" value={form.start_time}
-                  onChange={e => set('start_time', e.target.value)} className={inp} />
-              </Field>
-              <Field label="End Time" hint="Closes at this time on end date">
-                <input type="time" value={form.end_time}
-                  onChange={e => set('end_time', e.target.value)} className={inp} />
-              </Field>
-            </div>
-
-            {form.scheduled_date && form.start_time && (
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
-                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>
-                  Starts: <strong>{new Date(form.scheduled_date).toDateString()}</strong> at <strong>{form.start_time}</strong>
-                  {form.end_date && form.end_time && (
-                    <> &nbsp;·&nbsp; Ends: <strong>{new Date(form.end_date).toDateString()}</strong> at <strong>{form.end_time}</strong></>
-                  )}
-                </span>
+            {/* ── Alerts ── */}
+            {error && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
-          </Section>
+            {success && (
+              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl p-4 text-green-700 text-sm">
+                <CheckCircle2 className="w-4 h-4 shrink-0" /> {success}
+              </div>
+            )}
 
-          {/* Settings */}
-          <Section icon={Eye} title="Assessment Settings">
-            <div className="space-y-3">
-              <Toggle
-                checked={form.shuffle_questions}
-                onChange={v => set('shuffle_questions', v)}
-                label="Shuffle Questions"
-                desc="Questions appear in a different random order for each student"
-              />
-              <Toggle
-                checked={form.camera_proctoring_enabled}
-                onChange={v => set('camera_proctoring_enabled', v)}
-                label="Camera Proctoring"
-                desc={
-                  form.camera_proctoring_enabled
-                    ? 'ON — students must allow camera; AI detects face violations and captures photo evidence'
-                    : 'OFF — only window/browser proctoring runs (tab switch, fullscreen, copy-paste)'
-                }
-              />
+            {/* ══════════════════════════════════════
+                CARD 1 — Assessment Details
+            ══════════════════════════════════════ */}
+            <Card>
+              <CardHead icon={BookOpen} title="Assessment Details" />
+              <CardBody>
+
+                {/* Title */}
+                <Field label="Assessment Title" required
+                  hint={form.jd_id ? 'Auto-filled from the linked Job Description — you can override it' : 'Give a clear, descriptive name'}>
+                  <div className="relative">
+                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={form.title}
+                      onChange={e => set('title', e.target.value)}
+                      placeholder="e.g. React Fundamentals — Batch 2025"
+                      className={`${inp} pl-10`}
+                    />
+                  </div>
+                </Field>
+
+                {/* JD Link */}
+                <Field label="Link to Job Description (optional)"
+                  hint="Linking a JD auto-assigns eligible students and prefills the title">
+                  <div className="relative">
+                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <select value={form.jd_id} onChange={e => handleJdChange(e.target.value)} className={`${inp} pl-10`}>
+                      <option value="">— No JD linked —</option>
+                      {jobs.map(j => (
+                        <option key={j._id} value={j._id}>
+                          {j.jobTitle}{j.jobCode ? ` (${j.jobCode})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </Field>
+
+                {/* Difficulty Level */}
+                <Field label="Difficulty Level" required>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: 'Beginner',     sel: 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-emerald-300' },
+                      { value: 'Intermediate', sel: 'border-blue-400 bg-blue-50 text-blue-700 ring-blue-300' },
+                      { value: 'Advanced',     sel: 'border-violet-400 bg-violet-50 text-violet-700 ring-violet-300' },
+                    ].map(({ value, sel }) => (
+                      <label key={value}
+                        className={`cursor-pointer text-center px-3 py-2.5 text-xs rounded-xl border-2 font-bold transition-all
+                          ${form.level === value ? `${sel} ring-2` : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'}`}>
+                        <input type="radio" name="level" value={value} checked={form.level === value}
+                          onChange={() => set('level', value)} className="sr-only" />
+                        {value}
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+
+                {/* Tags */}
+                <Field label="Tags" hint="Comma-separated — e.g. frontend, javascript, react">
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
+                      placeholder="react, hooks, components" className={`${inp} pl-10`} />
+                  </div>
+                </Field>
+              </CardBody>
+            </Card>
+
+            {/* ══════════════════════════════════════
+                CARD 2 — Scoring
+            ══════════════════════════════════════ */}
+            <Card>
+              <CardHead icon={Award} title="Overall Marks" color="from-amber-500 to-orange-400" />
+              <CardBody>
+
+                {/* Total Marks — direct input */}
+                <Field label="Total Marks" required
+                  hint="Enter the overall marks for this assessment. You will distribute these marks across sections in the next step.">
+                  <div className="relative">
+                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input
+                      type="number"
+                      min={1}
+                      value={form.total_marks}
+                      onChange={e => set('total_marks', e.target.value)}
+                      placeholder="e.g. 100"
+                      className={`${inp} pl-10`}
+                    />
+                  </div>
+                </Field>
+
+                {/* Info callout */}
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+                  <Layers className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                  <span>
+                    In the next step (<strong>Section Manager</strong>), you'll divide these marks into
+                    sections — e.g. 60 marks for Coding + 40 marks for Quiz.
+                    Each section will ask for its own <em>question count</em> and <em>marks per question</em>.
+                  </span>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* ══════════════════════════════════════
+                CARD 3 — Schedule & Duration
+            ══════════════════════════════════════ */}
+            <Card>
+              <CardHead icon={Calendar} title="Schedule & Duration" color="from-emerald-600 to-teal-500" />
+              <CardBody>
+
+                <Field label="Duration (minutes)" required>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <input type="number" min={1} max={600} value={form.duration_minutes}
+                      onChange={e => set('duration_minutes', e.target.value)} className={`${inp} pl-10`} />
+                  </div>
+                </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Start Date" hint="Assessment opens on this date">
+                    <input type="date" value={form.scheduled_date}
+                      onChange={e => set('scheduled_date', e.target.value)} className={inp} />
+                  </Field>
+                  <Field label="End Date" hint="Assessment closes on this date">
+                    <input type="date" value={form.end_date} min={form.scheduled_date || undefined}
+                      onChange={e => set('end_date', e.target.value)} className={inp} />
+                  </Field>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Start Time" hint="Auto-activates at this time on start date">
+                    <input type="time" value={form.start_time}
+                      onChange={e => set('start_time', e.target.value)} className={inp} />
+                  </Field>
+                  <Field label="End Time" hint="Closes at this time on end date">
+                    <input type="time" value={form.end_time}
+                      onChange={e => set('end_time', e.target.value)} className={inp} />
+                  </Field>
+                </div>
+
+                {form.scheduled_date && form.start_time && (
+                  <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-xs text-emerald-800">
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
+                    <span>
+                      Opens <strong>{new Date(form.scheduled_date).toDateString()}</strong> at <strong>{form.start_time}</strong>
+                      {form.end_date && form.end_time && (
+                        <> &nbsp;·&nbsp; Closes <strong>{new Date(form.end_date).toDateString()}</strong> at <strong>{form.end_time}</strong></>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* ══════════════════════════════════════
+                CARD 4 — Settings
+            ══════════════════════════════════════ */}
+            <Card>
+              <CardHead icon={Eye} title="Assessment Settings" color="from-slate-600 to-slate-500" />
+              <CardBody>
+                <div className="space-y-3">
+                  <Toggle
+                    checked={form.shuffle_questions}
+                    onChange={v => set('shuffle_questions', v)}
+                    label="Shuffle Questions"
+                    desc="Questions appear in a different random order for each student"
+                  />
+                  <Toggle
+                    checked={form.show_results_to_students}
+                    onChange={v => set('show_results_to_students', v)}
+                    label="Show Results to Students"
+                    desc="Students see their score immediately after submission"
+                  />
+                  <Toggle
+                    checked={form.camera_proctoring_enabled}
+                    onChange={v => set('camera_proctoring_enabled', v)}
+                    label="Camera Proctoring"
+                    desc={form.camera_proctoring_enabled
+                      ? 'ON — students must allow camera; AI detects face violations'
+                      : 'OFF — only tab-switch, fullscreen, and copy-paste proctoring runs'}
+                  />
+                </div>
+
+                <Field label="Default Coding Language"
+                  hint="Pre-selected in the code editor. Students can still switch during the assessment.">
+                  <div className="relative">
+                    <Code2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <select value={form.default_coding_language}
+                      onChange={e => set('default_coding_language', e.target.value)}
+                      className={`${inp} pl-10`}>
+                      <option value="python">Python 3</option>
+                      <option value="javascript">JavaScript (Node.js)</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++ (GCC)</option>
+                      <option value="c">C (GCC)</option>
+                    </select>
+                  </div>
+                </Field>
+              </CardBody>
+            </Card>
+
+            {/* ── Info tip ── */}
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-4 text-sm text-blue-800">
+              <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+              <span>
+                After saving, you'll go to the <strong>Section Manager</strong> to divide this assessment
+                into Coding &amp; Quiz sections. The assessment starts as a <strong>Draft</strong> — it
+                won't be visible to students until you publish it.
+              </span>
             </div>
 
-            {/* Default coding language */}
-            <Field
-              label="Default Coding Language"
-              hint="Students start with this language pre-selected in the code editor. They can still switch to any other language during the assessment."
-            >
-              <div className="relative">
-                <Code2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <select
-                  value={form.default_coding_language}
-                  onChange={e => set('default_coding_language', e.target.value)}
-                  className={`${inp} pl-10`}
-                >
-                  <option value="python">Python 3</option>
-                  <option value="javascript">JavaScript (Node.js)</option>
-                  <option value="java">Java</option>
-                  <option value="cpp">C++ (GCC)</option>
-                  <option value="c">C (GCC)</option>
-                </select>
-              </div>
-            </Field>
-          </Section>
+            {/* ── Action buttons ── */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pb-6">
+              <button type="button"
+                onClick={() => navigate('/dashboard/college-admin/assessments')}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-bold transition-all shadow-sm w-full sm:w-auto">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving}
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl shadow-sm shadow-blue-200 hover:bg-blue-700 text-sm font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
+                {saving
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Save className="w-4 h-4" />}
+                {saving ? 'Saving…' : isEdit ? 'Update & Go to Sections' : 'Save & Setup Sections'}
+              </button>
+            </div>
 
-          {/* Info tip */}
-          <div className="flex items-start gap-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
-            <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
-            <span>
-              After saving, you'll be taken to the <strong>Question Manager</strong>.
-              The assessment starts as a <strong>Draft</strong> — preview it before scheduling.
-            </span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3">
-            <button type="button" onClick={() => navigate('/dashboard/college-admin/assessments')}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-[13px] font-bold transition-all shadow-sm w-full sm:w-auto">
-              Cancel
-            </button>
-            {/* FIX: replaced <LoadingSpinner size="sm" /> (unsupported prop, causes box artifact)
-                with an inline CSS spinner that stays contained within the button */}
-            <button type="submit" disabled={saving}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 text-[13px] font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
-              {saving
-                ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <Save className="w-4 h-4" />}
-              {saving ? 'Saving…' : isEdit ? 'Update Assessment' : 'Save & Add Questions'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
     </CollegeAdminLayout>
   );
 };

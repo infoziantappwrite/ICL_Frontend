@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Save, BookOpen, AlertCircle, CheckCircle2,
   Clock, Calendar, Tag, Info, Link2, ClipboardList,
-  Sparkles, SquarePen, Type, Eye, Award, Code2, Layers,
+  Sparkles, SquarePen, Type, Eye, Award, Layers,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -27,10 +27,8 @@ const INITIAL_FORM = {
   end_time: '',
   tags: '',
   jd_id: '',
-  show_results_to_students: false,
   shuffle_questions: false,
   camera_proctoring_enabled: true,
-  default_coding_language: 'python',
 };
 
 // ── Shared style tokens ───────────────────────────────────────────────────────
@@ -166,10 +164,8 @@ const AssessmentForm = () => {
             end_time:                 a.end_time || '',
             tags:                     Array.isArray(a.tags) ? a.tags.join(', ') : '',
             jd_id:                    a.jd_id?._id || a.jd_id || '',
-            show_results_to_students: a.show_results_to_students ?? false,
             shuffle_questions:        a.shuffle_questions ?? false,
             camera_proctoring_enabled: a.camera_proctoring_enabled ?? true,
-            default_coding_language:  a.default_coding_language || 'python',
           });
         } else {
           setError(res.message || 'Failed to load assessment');
@@ -206,10 +202,9 @@ const AssessmentForm = () => {
       end_time:                 form.end_time        || null,
       tags:                     form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       jd_id:                    form.jd_id || null,
-      show_results_to_students: form.show_results_to_students,
+      show_results_to_students: false,
       shuffle_questions:        form.shuffle_questions,
       camera_proctoring_enabled: form.camera_proctoring_enabled,
-      default_coding_language:  form.default_coding_language || 'python',
       has_sections:             true,   // always section-based when created here
     };
 
@@ -246,8 +241,8 @@ const AssessmentForm = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="max-w-3xl mx-auto space-y-4">
+      <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 xl:px-16 py-4 sm:py-6">
+        <div className="max-w-5xl mx-auto space-y-4">
 
           {/* ── Back ── */}
           <button
@@ -302,206 +297,193 @@ const AssessmentForm = () => {
               </div>
             )}
 
-            {/* ══════════════════════════════════════
-                CARD 1 — Assessment Details
-            ══════════════════════════════════════ */}
-            <Card>
-              <CardHead icon={BookOpen} title="Assessment Details" />
-              <CardBody>
+            {/* ── Two-column layout on large screens ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-                {/* Title */}
-                <Field label="Assessment Title" required
-                  hint={form.jd_id ? 'Auto-filled from the linked Job Description — you can override it' : 'Give a clear, descriptive name'}>
-                  <div className="relative">
-                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={form.title}
-                      onChange={e => set('title', e.target.value)}
-                      placeholder="e.g. React Fundamentals — Batch 2025"
-                      className={`${inp} pl-10`}
-                    />
-                  </div>
-                </Field>
+              {/* LEFT COLUMN */}
+              <div className="space-y-4">
 
-                {/* JD Link */}
-                <Field label="Link to Job Description (optional)"
-                  hint="Linking a JD auto-assigns eligible students and prefills the title">
-                  <div className="relative">
-                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <select value={form.jd_id} onChange={e => handleJdChange(e.target.value)} className={`${inp} pl-10`}>
-                      <option value="">— No JD linked —</option>
-                      {jobs.map(j => (
-                        <option key={j._id} value={j._id}>
-                          {j.jobTitle}{j.jobCode ? ` (${j.jobCode})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </Field>
+                {/* CARD 1 — Assessment Details */}
+                <Card>
+                  <CardHead icon={BookOpen} title="Assessment Details" />
+                  <CardBody>
 
-                {/* Difficulty Level */}
-                <Field label="Difficulty Level" required>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { value: 'Beginner',     sel: 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-emerald-300' },
-                      { value: 'Intermediate', sel: 'border-blue-400 bg-blue-50 text-blue-700 ring-blue-300' },
-                      { value: 'Advanced',     sel: 'border-violet-400 bg-violet-50 text-violet-700 ring-violet-300' },
-                    ].map(({ value, sel }) => (
-                      <label key={value}
-                        className={`cursor-pointer text-center px-3 py-2.5 text-xs rounded-xl border-2 font-bold transition-all
-                          ${form.level === value ? `${sel} ring-2` : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'}`}>
-                        <input type="radio" name="level" value={value} checked={form.level === value}
-                          onChange={() => set('level', value)} className="sr-only" />
-                        {value}
-                      </label>
-                    ))}
-                  </div>
-                </Field>
+                    {/* Title */}
+                    <Field label="Assessment Title" required
+                      hint={form.jd_id ? 'Auto-filled from the linked Job Description — you can override it' : 'Give a clear, descriptive name'}>
+                      <div className="relative">
+                        <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={form.title}
+                          onChange={e => set('title', e.target.value)}
+                          placeholder="e.g. React Fundamentals — Batch 2025"
+                          className={`${inp} pl-10`}
+                        />
+                      </div>
+                    </Field>
 
-                {/* Tags */}
-                <Field label="Tags" hint="Comma-separated — e.g. frontend, javascript, react">
-                  <div className="relative">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
-                      placeholder="react, hooks, components" className={`${inp} pl-10`} />
-                  </div>
-                </Field>
-              </CardBody>
-            </Card>
+                    {/* JD Link */}
+                    <Field label="Link to Job Description (optional)"
+                      hint="Linking a JD auto-assigns eligible students and prefills the title">
+                      <div className="relative">
+                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <select value={form.jd_id} onChange={e => handleJdChange(e.target.value)} className={`${inp} pl-10`}>
+                          <option value="">— No JD linked —</option>
+                          {jobs.map(j => (
+                            <option key={j._id} value={j._id}>
+                              {j.jobTitle}{j.jobCode ? ` (${j.jobCode})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </Field>
 
-            {/* ══════════════════════════════════════
-                CARD 2 — Scoring
-            ══════════════════════════════════════ */}
-            <Card>
-              <CardHead icon={Award} title="Overall Marks" color="from-amber-500 to-orange-400" />
-              <CardBody>
+                    {/* Difficulty Level */}
+                    <Field label="Difficulty Level" required>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { value: 'Beginner',     sel: 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-emerald-300' },
+                          { value: 'Intermediate', sel: 'border-blue-400 bg-blue-50 text-blue-700 ring-blue-300' },
+                          { value: 'Advanced',     sel: 'border-violet-400 bg-violet-50 text-violet-700 ring-violet-300' },
+                        ].map(({ value, sel }) => (
+                          <label key={value}
+                            className={`cursor-pointer text-center px-3 py-2.5 text-xs rounded-xl border-2 font-bold transition-all
+                              ${form.level === value ? `${sel} ring-2` : 'border-gray-200 text-gray-500 hover:border-gray-300 bg-white'}`}>
+                            <input type="radio" name="level" value={value} checked={form.level === value}
+                              onChange={() => set('level', value)} className="sr-only" />
+                            {value}
+                          </label>
+                        ))}
+                      </div>
+                    </Field>
 
-                {/* Total Marks — direct input */}
-                <Field label="Total Marks" required
-                  hint="Enter the overall marks for this assessment. You will distribute these marks across sections in the next step.">
-                  <div className="relative">
-                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input
-                      type="number"
-                      min={1}
-                      value={form.total_marks}
-                      onChange={e => set('total_marks', e.target.value)}
-                      placeholder="e.g. 100"
-                      className={`${inp} pl-10`}
-                    />
-                  </div>
-                </Field>
+                    {/* Tags */}
+                    <Field label="Tags" hint="Comma-separated — e.g. frontend, javascript, react">
+                      <div className="relative">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
+                          placeholder="react, hooks, components" className={`${inp} pl-10`} />
+                      </div>
+                    </Field>
+                  </CardBody>
+                </Card>
 
-                {/* Info callout */}
-                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-                  <Layers className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-                  <span>
-                    In the next step (<strong>Section Manager</strong>), you'll divide these marks into
-                    sections — e.g. 60 marks for Coding + 40 marks for Quiz.
-                    Each section will ask for its own <em>question count</em> and <em>marks per question</em>.
-                  </span>
-                </div>
-              </CardBody>
-            </Card>
+                {/* CARD 2 — Overall Marks */}
+                <Card>
+                  <CardHead icon={Award} title="Overall Marks" color="from-blue-600 to-cyan-500" />
+                  <CardBody>
+                    <Field label="Total Marks" required
+                      hint="Enter the overall marks. You will distribute these across sections in the next step.">
+                      <div className="relative">
+                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input
+                          type="number"
+                          min={1}
+                          value={form.total_marks}
+                          onChange={e => set('total_marks', e.target.value)}
+                          placeholder="e.g. 100"
+                          className={`${inp} pl-10`}
+                        />
+                      </div>
+                    </Field>
 
-            {/* ══════════════════════════════════════
-                CARD 3 — Schedule & Duration
-            ══════════════════════════════════════ */}
-            <Card>
-              <CardHead icon={Calendar} title="Schedule & Duration" color="from-emerald-600 to-teal-500" />
-              <CardBody>
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+                      <Layers className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                      <span>
+                        In the next step (<strong>Section Manager</strong>), you'll divide these marks into
+                        sections — e.g. 60 marks for Coding + 40 marks for Quiz.
+                      </span>
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
 
-                <Field label="Duration (minutes)" required>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <input type="number" min={1} max={600} value={form.duration_minutes}
-                      onChange={e => set('duration_minutes', e.target.value)} className={`${inp} pl-10`} />
-                  </div>
-                </Field>
+              {/* RIGHT COLUMN */}
+              <div className="space-y-4">
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Start Date" hint="Assessment opens on this date">
-                    <input type="date" value={form.scheduled_date}
-                      onChange={e => set('scheduled_date', e.target.value)} className={inp} />
-                  </Field>
-                  <Field label="End Date" hint="Assessment closes on this date">
-                    <input type="date" value={form.end_date} min={form.scheduled_date || undefined}
-                      onChange={e => set('end_date', e.target.value)} className={inp} />
-                  </Field>
-                </div>
+                {/* CARD 3 — Schedule & Duration */}
+                <Card>
+                  <CardHead icon={Calendar} title="Schedule & Duration" color="from-cyan-600 to-blue-500" />
+                  <CardBody>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Field label="Start Time" hint="Auto-activates at this time on start date">
-                    <input type="time" value={form.start_time}
-                      onChange={e => set('start_time', e.target.value)} className={inp} />
-                  </Field>
-                  <Field label="End Time" hint="Closes at this time on end date">
-                    <input type="time" value={form.end_time}
-                      onChange={e => set('end_time', e.target.value)} className={inp} />
-                  </Field>
-                </div>
+                    <Field label="Duration (minutes)" required>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <input type="number" min={1} max={600} value={form.duration_minutes}
+                          onChange={e => set('duration_minutes', e.target.value)} className={`${inp} pl-10`} />
+                      </div>
+                    </Field>
 
-                {form.scheduled_date && form.start_time && (
-                  <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-xs text-emerald-800">
-                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
-                    <span>
-                      Opens <strong>{new Date(form.scheduled_date).toDateString()}</strong> at <strong>{form.start_time}</strong>
-                      {form.end_date && form.end_time && (
-                        <> &nbsp;·&nbsp; Closes <strong>{new Date(form.end_date).toDateString()}</strong> at <strong>{form.end_time}</strong></>
-                      )}
-                    </span>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Field label="Start Date" hint="Assessment opens on this date">
+                        <input type="date" value={form.scheduled_date}
+                          onChange={e => set('scheduled_date', e.target.value)} className={inp} />
+                      </Field>
+                      <Field label="End Date" hint="Assessment closes on this date">
+                        <input type="date" value={form.end_date} min={form.scheduled_date || undefined}
+                          onChange={e => set('end_date', e.target.value)} className={inp} />
+                      </Field>
+                    </div>
 
-            {/* ══════════════════════════════════════
-                CARD 4 — Settings
-            ══════════════════════════════════════ */}
-            <Card>
-              <CardHead icon={Eye} title="Assessment Settings" color="from-slate-600 to-slate-500" />
-              <CardBody>
-                <div className="space-y-3">
-                  <Toggle
-                    checked={form.shuffle_questions}
-                    onChange={v => set('shuffle_questions', v)}
-                    label="Shuffle Questions"
-                    desc="Questions appear in a different random order for each student"
-                  />
-                  <Toggle
-                    checked={form.show_results_to_students}
-                    onChange={v => set('show_results_to_students', v)}
-                    label="Show Results to Students"
-                    desc="Students see their score immediately after submission"
-                  />
-                  <Toggle
-                    checked={form.camera_proctoring_enabled}
-                    onChange={v => set('camera_proctoring_enabled', v)}
-                    label="Camera Proctoring"
-                    desc={form.camera_proctoring_enabled
-                      ? 'ON — students must allow camera; AI detects face violations'
-                      : 'OFF — only tab-switch, fullscreen, and copy-paste proctoring runs'}
-                  />
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Field label="Start Time" hint="Auto-activates at this time on start date">
+                        <input type="time" value={form.start_time}
+                          onChange={e => set('start_time', e.target.value)} className={inp} />
+                      </Field>
+                      <Field label="End Time" hint="Closes at this time on end date">
+                        <input type="time" value={form.end_time}
+                          onChange={e => set('end_time', e.target.value)} className={inp} />
+                      </Field>
+                    </div>
 
-                <Field label="Default Coding Language"
-                  hint="Pre-selected in the code editor. Students can still switch during the assessment.">
-                  <div className="relative">
-                    <Code2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    <select value={form.default_coding_language}
-                      onChange={e => set('default_coding_language', e.target.value)}
-                      className={`${inp} pl-10`}>
-                      <option value="python">Python 3</option>
-                      <option value="javascript">JavaScript (Node.js)</option>
-                      <option value="java">Java</option>
-                      <option value="cpp">C++ (GCC)</option>
-                      <option value="c">C (GCC)</option>
-                    </select>
-                  </div>
-                </Field>
-              </CardBody>
-            </Card>
+                    {form.scheduled_date && form.start_time && (
+                      <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-xs text-emerald-800">
+                        <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
+                        <span>
+                          Opens <strong>{new Date(form.scheduled_date).toDateString()}</strong> at <strong>{form.start_time}</strong>
+                          {form.end_date && form.end_time && (
+                            <> &nbsp;·&nbsp; Closes <strong>{new Date(form.end_date).toDateString()}</strong> at <strong>{form.end_time}</strong></>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+
+                {/* CARD 4 — Settings: only shuffle + camera (no show_results, no default_coding_language) */}
+                <Card>
+                  <CardHead icon={Eye} title="Assessment Settings" color="from-blue-700 to-blue-500" />
+                  <CardBody>
+                    <div className="space-y-3">
+                      <Toggle
+                        checked={form.shuffle_questions}
+                        onChange={v => set('shuffle_questions', v)}
+                        label="Shuffle Questions"
+                        desc="Questions appear in a different random order for each student"
+                      />
+                      <Toggle
+                        checked={form.camera_proctoring_enabled}
+                        onChange={v => set('camera_proctoring_enabled', v)}
+                        label="Camera Proctoring"
+                        desc={form.camera_proctoring_enabled
+                          ? 'ON — students must allow camera; AI detects face violations'
+                          : 'OFF — only tab-switch, fullscreen, and copy-paste proctoring runs'}
+                      />
+                    </div>
+
+                    <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-800 mt-3">
+                      <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+                      <span>
+                        The <strong>default coding language</strong> is configured per-question when you add
+                        coding questions in Step 3 (Question Manager).
+                      </span>
+                    </div>
+                  </CardBody>
+                </Card>
+
+              </div>
+            </div>
 
             {/* ── Info tip ── */}
             <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-4 text-sm text-blue-800">

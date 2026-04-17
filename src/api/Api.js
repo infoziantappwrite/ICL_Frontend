@@ -104,7 +104,10 @@ const apiCall = async (endpoint, options = {}, _isRetry = false) => {
 
     if (!response.ok) {
       console.error(`❌ API Error ${response.status}:`, data);
-      throw new Error(data.message || data.error || `Error: ${response.status}`);
+      const err = new Error(data.message || data.error || `Error: ${response.status}`);
+      err.statusCode = response.status;
+      err.responseData = data;
+      throw err;
     }
 
     console.log('✅ API Success:', data);
@@ -972,6 +975,15 @@ export const collegeAdminAPI = {
     console.log('📊 Fetching college admin analytics...');
     return apiCall('/college-admin/analytics');
   },
+
+  // Groups
+  getGroups: async () => {
+    return apiCall('/college-admin/groups');
+  },
+
+  getGroupStudents: async (groupId) => {
+    return apiCall(`/college-admin/groups/${groupId}/students`);
+  },
 };
 
 // Make collegeAdminAPI globally available
@@ -1045,6 +1057,13 @@ export const assessmentAPI = {
     return apiCall(`/assessment/question/${id}`, { method: 'DELETE' });
   },
 
+  // DELETE /api/assessment/question/:id/unlink
+  // Removes the question from all assessments & sections without deleting it,
+  // so a subsequent deleteQuestion call will succeed.
+  unlinkQuestion: async (id) => {
+    return apiCall(`/assessment/question/${id}/unlink`, { method: 'DELETE' });
+  },
+
   // POST /api/assessment/:assessmentId/add-question
   addQuestionToAssessment: async (assessmentId, data) => {
     return apiCall(`/assessment/${assessmentId}/add-question`, {
@@ -1069,6 +1088,14 @@ export const assessmentAPI = {
     return apiCall(`/assessment/${assessmentId}/assign-manual`, {
       method: 'POST',
       body: JSON.stringify({ student_emails: studentEmails }),
+    });
+  },
+
+  // POST /api/assessment/:id/assign-group
+  assignStudentsFromGroup: async (assessmentId, groupId) => {
+    return apiCall(`/assessment/${assessmentId}/assign-group`, {
+      method: 'POST',
+      body: JSON.stringify({ group_id: groupId }),
     });
   },
 

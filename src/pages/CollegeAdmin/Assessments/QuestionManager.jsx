@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
-import { assessmentAPI, jobAPI, collegeAdminAPI } from '../../../api/Api';
+import { assessmentAPI, jobAPI, collegeAdminAPI, sectionAPI } from '../../../api/Api';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
@@ -25,13 +25,13 @@ const questionToForm = (q) => ({
   correct_answer: Array.isArray(q.correct_answer) ? q.correct_answer : (q.correct_answer || 'A'),
   explanation: q.explanation || '',
   marks: q.marks || 1,
-  // ── coding-specific fields ──────────────────────────────
   problem_description:  q.problem_description  || q.description || '',
   input_format:         q.input_format         || '',
   output_format:        q.output_format        || '',
   constraints:          q.constraints          || '',
   algorithm_tags:       q.algorithm_tags       || [],
   boilerplate_code:     q.boilerplate_code     || q.starter_code || '',
+  default_coding_language: q.language || q.default_coding_language || 'python',
   test_cases: q.test_cases?.length
     ? q.test_cases.map(tc => ({
         input:           tc.input           || '',
@@ -49,10 +49,10 @@ const BLANK_FORM = {
   question: '', type: 'single_answer', level: 'Beginner',
   options: ['', '', '', ''], correct_answer: 'A', explanation: '', marks: 1,
   problem_description: '', input_format: '', output_format: '', constraints: '',
-  algorithm_tags: [], boilerplate_code: '', test_cases: [{ ...BLANK_TC }],
+  algorithm_tags: [], boilerplate_code: '', default_coding_language: 'python',
+  test_cases: [{ ...BLANK_TC }],
 };
 
-// ─── MCQ Bulk Paste format example ────────────────────────────────
 const BULK_FORMAT_EXAMPLE = `1. What is React?
 A. A JavaScript library
 B. A CSS framework
@@ -76,13 +76,13 @@ C. Java Syntax XML
 D. None of the above
 Answer: B`;
 
-// ─── Coding Bulk Paste format example ─────────────────────────────
 const BULK_CODING_FORMAT_EXAMPLE = `1. Sum of Two Numbers
 Description: Given two integers A and B, compute and print their sum.
 Input Format: Two space-separated integers A and B on a single line.
 Output Format: Print a single integer — the sum of A and B.
 Constraints: 1 <= A, B <= 10^9
 Level: Beginner
+Language: python
 Tags: math, implementation
 Boilerplate:
 a, b = map(int, input().split())
@@ -103,6 +103,7 @@ Input Format: First line contains N. Second line contains N space-separated inte
 Output Format: Print the maximum element.
 Constraints: 1 <= N <= 10^5 · -10^9 <= arr[i] <= 10^9
 Level: Intermediate
+Language: python
 Tags: arrays
 Boilerplate:
 n = int(input())
@@ -176,8 +177,6 @@ const parseBulkText = (text) => {
 const parseBulkCodingText = (text) => {
   const questions = [];
   const errors = [];
-
-  // Split into question blocks by lines that start with a number followed by . or )
   const blocks = text.split(/\n(?=\d+[\.\)]\s)/).map(b => b.trim()).filter(Boolean);
 
   blocks.forEach((block, blockIdx) => {
@@ -186,6 +185,7 @@ const parseBulkCodingText = (text) => {
       question: '',
       type: 'coding',
       level: 'Beginner',
+      default_coding_language: 'python',
       problem_description: '',
       input_format: '',
       output_format: '',
@@ -195,10 +195,9 @@ const parseBulkCodingText = (text) => {
       test_cases: [],
     };
 
-    // State machine: track which field we're accumulating content for
-    let currentField = null; // 'description' | 'input_format' | 'output_format' | 'constraints' | 'boilerplate' | 'tc_input' | 'tc_output' | null
-    let currentTC = null;   // current test case being built
-    let fieldBuffer = [];   // lines accumulated for the current multi-line field
+    let currentField = null;
+    let currentTC = null;
+    let fieldBuffer = [];
 
     const flushBuffer = () => {
       if (!currentField || fieldBuffer.length === 0) { fieldBuffer = []; return; }
@@ -215,7 +214,6 @@ const parseBulkCodingText = (text) => {
 
     const flushTC = () => {
       if (currentTC !== null) {
-        // Only push if has at least input or output
         if (currentTC.input.trim() || currentTC.expected_output.trim()) {
           q.test_cases.push({ ...currentTC });
         }
@@ -223,7 +221,6 @@ const parseBulkCodingText = (text) => {
       }
     };
 
-    // Keywords that signal a new field (case-insensitive)
     const FIELD_PATTERNS = [
       { re: /^Description:\s*(.*)$/i,          field: 'description' },
       { re: /^Input\s*Format:\s*(.*)$/i,        field: 'input_format' },
@@ -234,6 +231,7 @@ const parseBulkCodingText = (text) => {
     const SINGLE_PATTERNS = [
       { re: /^Level:\s*(.+)$/i,                 key: 'level' },
       { re: /^Tags:\s*(.+)$/i,                  key: 'tags' },
+      { re: /^Language:\s*(.+)$/i,              key: 'language' },
     ];
     const TC_PATTERNS = [
       { re: /^TestCase:\s*$/i,                  key: 'tc_start' },
@@ -247,13 +245,11 @@ const parseBulkCodingText = (text) => {
     lines.forEach((rawLine, lineIdx) => {
       const trimmed = rawLine.trim();
 
-      // ── Question title (first line) ──────────────────────────
       if (lineIdx === 0) {
         const m = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
         if (m) { q.question = m[1].trim(); return; }
       }
 
-      // ── Check for TestCase patterns first (before other patterns) ──
       let matched = false;
       for (const { re, key } of TC_PATTERNS) {
         const m = trimmed.match(re);
@@ -286,7 +282,6 @@ const parseBulkCodingText = (text) => {
       }
       if (matched) return;
 
-      // ── Multi-line field patterns ────────────────────────────
       for (const { re, field } of FIELD_PATTERNS) {
         const m = trimmed.match(re);
         if (m) {
@@ -299,7 +294,6 @@ const parseBulkCodingText = (text) => {
       }
       if (matched) return;
 
-      // ── Single-line patterns ─────────────────────────────────
       for (const { re, key } of SINGLE_PATTERNS) {
         const m = trimmed.match(re);
         if (m) {
@@ -309,6 +303,10 @@ const parseBulkCodingText = (text) => {
             if (['Beginner', 'Intermediate', 'Advanced'].includes(lv)) q.level = lv;
           } else if (key === 'tags') {
             q.algorithm_tags = m[1].split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+          } else if (key === 'language') {
+            const lang = m[1].trim().toLowerCase();
+            const langMap = { python: 'python', 'python3': 'python', javascript: 'javascript', js: 'javascript', java: 'java', 'c++': 'cpp', cpp: 'cpp', c: 'c' };
+            q.language = langMap[lang] || 'python';
           }
           matched = true;
           break;
@@ -316,22 +314,18 @@ const parseBulkCodingText = (text) => {
       }
       if (matched) return;
 
-      // ── Continuation line for current multi-line field ───────
       if (currentField) {
-        // Preserve indentation for boilerplate code
         if (currentField === 'boilerplate') {
-          fieldBuffer.push(rawLine.replace(/^\t/, '  ')); // normalize tabs to spaces
+          fieldBuffer.push(rawLine.replace(/^\t/, '  '));
         } else if (trimmed) {
           fieldBuffer.push(trimmed);
         }
       }
     });
 
-    // Flush any remaining buffer & test case
     flushBuffer();
     flushTC();
 
-    // ── Validate ──────────────────────────────────────────────
     const num = blockIdx + 1;
     if (!q.question) {
       errors.push(`Q${num}: Missing problem title (line must start with "N. Title")`);
@@ -345,10 +339,7 @@ const parseBulkCodingText = (text) => {
   return { questions, errors };
 };
 
-/* ─── Completion Checklist Modal ─────────────────────────────────────
-   Shows when admin tries to leave without completing required steps.
-   Blocks navigation if students are not assigned.
-──────────────────────────────────────────────────────────────────── */
+/* ─── Completion Checklist Modal ─────────────────────────────────────── */
 const CompletionChecklistModal = ({
   assessment,
   savedQs,
@@ -360,8 +351,7 @@ const CompletionChecklistModal = ({
   const meetsQLimit  = !assessment?.num_questions || savedQs.length >= assessment.num_questions;
   const hasStudents  = (assessment?.eligible_students?.length || 0) > 0;
   const hasSchedule  = !!(assessment?.scheduled_date && assessment?.start_time && assessment?.end_time);
-
-  const hardBlocked = !hasStudents;
+  const hardBlocked  = !hasStudents;
 
   const items = [
     {
@@ -416,16 +406,11 @@ const CompletionChecklistModal = ({
             <X className="w-4 h-4" />
           </button>
         </div>
-
         <div className="p-5 space-y-3">
           {items.map(item => (
             <div key={item.id}
               className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all
-                ${item.done
-                  ? 'bg-green-50 border-green-200'
-                  : item.required
-                  ? 'bg-red-50 border-red-300'
-                  : 'bg-amber-50 border-amber-200'}`}>
+                ${item.done ? 'bg-green-50 border-green-200' : item.required ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
                 ${item.done ? 'bg-green-500' : item.required ? 'bg-red-200' : 'bg-amber-200'}`}>
                 {item.done
@@ -436,18 +421,14 @@ const CompletionChecklistModal = ({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className={`text-sm font-bold
-                    ${item.done ? 'text-green-800' : item.required ? 'text-red-700' : 'text-amber-800'}`}>
+                  <p className={`text-sm font-bold ${item.done ? 'text-green-800' : item.required ? 'text-red-700' : 'text-amber-800'}`}>
                     {item.label}
                   </p>
                   {item.required && !item.done && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full border border-red-200">
-                      Required
-                    </span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full border border-red-200">Required</span>
                   )}
                 </div>
-                <p className={`text-xs mt-0.5
-                  ${item.done ? 'text-green-600' : item.required ? 'text-red-500' : 'text-amber-600'}`}>
+                <p className={`text-xs mt-0.5 ${item.done ? 'text-green-600' : item.required ? 'text-red-500' : 'text-amber-600'}`}>
                   {item.warn ? item.warnMsg : item.detail}
                 </p>
               </div>
@@ -461,7 +442,6 @@ const CompletionChecklistModal = ({
             </div>
           ))}
         </div>
-
         <div className="px-5 pb-5 flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-all">
@@ -486,7 +466,7 @@ const CompletionChecklistModal = ({
 };
 
 /* ─── Question preview card ──────────────────────────────────────────── */
-const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false }) => {
+const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false }) => {
   const [open, setOpen] = useState(false);
   const isCorrect = (label) =>
     Array.isArray(q.correct_answer) ? q.correct_answer.includes(label) : q.correct_answer === label;
@@ -566,7 +546,16 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false }) => {
               </button>
             )}
             {onRemove && (
-              <button onClick={() => onRemove(idx)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+              <button
+                onClick={() => !locked && onRemove(idx)}
+                disabled={locked}
+                title={locked ? 'Linked to an assessment — cannot delete' : 'Delete question'}
+                className={`p-2 rounded-lg transition-all ${
+                  locked
+                    ? 'text-gray-200 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                }`}
+              >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -578,28 +567,47 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false }) => {
 };
 
 /* ─── Add / Edit Modal ───────────────────────────────────────────────── */
-const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
+const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType = null }) => {
+  const initialType = forcedType === 'coding' ? 'coding'
+    : forcedType === 'quiz' ? 'single_answer'
+    : question?.type || 'single_answer';
+
   const [form, setForm] = useState(
-    question ? questionToForm(question) : { ...BLANK_FORM, marks: defaultMarks }
+    question ? { ...questionToForm(question), default_coding_language: question.language || question.default_coding_language || 'python' }
+             : { ...BLANK_FORM, marks: defaultMarks, type: initialType, default_coding_language: 'python' }
   );
   const [tagInput, setTagInput] = useState('');
 
   const setOpt = (idx, val) => setForm(prev => { const opts = [...prev.options]; opts[idx] = val; return { ...prev, options: opts }; });
+
   const isChoice = form.type === 'single_answer' || form.type === 'multiple_answer';
   const isFill   = form.type === 'fill_up';
   const isCoding = form.type === 'coding';
+
+  const allowedTypes = forcedType === 'coding'
+    ? [{ value: 'coding', label: 'Coding' }]
+    : forcedType === 'quiz'
+    ? [
+        { value: 'single_answer', label: 'Single Answer (MCQ)' },
+        { value: 'multiple_answer', label: 'Multiple Answer' },
+        { value: 'fill_up', label: 'Fill in the Blank' },
+      ]
+    : [
+        { value: 'single_answer', label: 'Single Answer (MCQ)' },
+        { value: 'multiple_answer', label: 'Multiple Answer' },
+        { value: 'fill_up', label: 'Fill in the Blank' },
+        { value: 'coding', label: 'Coding' },
+      ];
 
   const toggleMulti = (label) => setForm(prev => {
     const cur = Array.isArray(prev.correct_answer) ? prev.correct_answer : [];
     return { ...prev, correct_answer: cur.includes(label) ? cur.filter(l => l !== label) : [...cur, label] };
   });
 
-  // ── test case helpers ────────────────────────────────────────────
   const setTC  = (idx, field, val) => setForm(prev => ({ ...prev, test_cases: prev.test_cases.map((tc, i) => i === idx ? { ...tc, [field]: val } : tc) }));
   const addTC  = () => setForm(prev => ({ ...prev, test_cases: [...prev.test_cases, { ...BLANK_TC }] }));
   const rmTC   = (idx) => setForm(prev => ({ ...prev, test_cases: prev.test_cases.filter((_, i) => i !== idx) }));
 
-  // ── algorithm tags ───────────────────────────────────────────────
   const addTag = () => {
     const t = tagInput.trim().toLowerCase();
     if (t && !form.algorithm_tags.includes(t)) {
@@ -609,13 +617,11 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
   };
   const rmTag = (tag) => setForm(prev => ({ ...prev, algorithm_tags: prev.algorithm_tags.filter(t => t !== tag) }));
 
-  // ── auto-compute marks per hidden test case ──────────────────────
   const hiddenTCCount = form.test_cases.filter(tc => tc.is_hidden).length;
   const marksPerHiddenTC = hiddenTCCount > 0
     ? parseFloat((Number(form.marks) / hiddenTCCount).toFixed(2))
     : 0;
 
-  // ── build save payload ───────────────────────────────────────────
   const handleSave = () => {
     if (!form.question.trim()) return;
     if (isChoice && form.options.some(o => !o.trim())) return;
@@ -637,11 +643,12 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
     if (isFill) payload.correct_answer = typeof form.correct_answer === 'string' ? form.correct_answer : '';
 
     if (isCoding) {
+      if (form.default_coding_language) payload.language = form.default_coding_language;
       if (form.problem_description)  payload.problem_description  = form.problem_description.trim();
       if (form.input_format)         payload.input_format         = form.input_format.trim();
       if (form.output_format)        payload.output_format        = form.output_format.trim();
       if (form.constraints)          payload.constraints          = form.constraints.trim();
-      if (form.algorithm_tags?.length) payload.algorithm_tags      = form.algorithm_tags;
+      if (form.algorithm_tags?.length) payload.algorithm_tags     = form.algorithm_tags;
       if (form.boilerplate_code)     payload.boilerplate_code     = form.boilerplate_code.trim();
       payload.test_cases = form.test_cases
         .filter(tc => tc.input.trim() || tc.expected_output.trim())
@@ -665,7 +672,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 max-w-2xl w-full my-8">
-        {/* Header */}
         <div className="px-5 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -677,23 +683,25 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
         </div>
 
         <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
-
-          {/* Question text */}
           <div>
             <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Question <span className="text-red-500">*</span></label>
             <textarea rows={3} value={form.question} onChange={e => setForm(prev => ({ ...prev, question: e.target.value }))} placeholder="Enter the question..." className={`${inp} resize-none`} />
           </div>
 
-          {/* Type / Level / Marks */}
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
-              <select value={form.type} onChange={e => setForm(prev => ({ ...prev, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))} className={inp}>
-                <option value="single_answer">Single Answer (MCQ)</option>
-                <option value="multiple_answer">Multiple Answer</option>
-                <option value="fill_up">Fill in the Blank</option>
-                <option value="coding">Coding</option>
+              <select value={form.type}
+                onChange={e => setForm(prev => ({ ...prev, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))}
+                disabled={allowedTypes.length === 1}
+                className={`${inp} ${allowedTypes.length === 1 ? 'bg-gray-50 cursor-not-allowed' : ''}`}>
+                {allowedTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
+              {forcedType && (
+                <p className="text-[10px] text-gray-400 mt-1">
+                  {forcedType === 'coding' ? '⚡ Coding section — only coding questions allowed' : '📝 Quiz section — MCQ and fill-in-blank only'}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
@@ -710,7 +718,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
             </div>
           </div>
 
-          {/* MCQ options */}
           {isChoice && (
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
@@ -719,7 +726,9 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
               </label>
               <div className="space-y-2">
                 {OPTION_LABELS.map((label, idx) => {
-                  const isCorr = form.type === 'multiple_answer' ? (Array.isArray(form.correct_answer) ? form.correct_answer.includes(label) : false) : form.correct_answer === label;
+                  const isCorr = form.type === 'multiple_answer'
+                    ? (Array.isArray(form.correct_answer) ? form.correct_answer.includes(label) : false)
+                    : form.correct_answer === label;
                   return (
                     <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isCorr ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
                       {form.type === 'multiple_answer'
@@ -734,7 +743,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
             </div>
           )}
 
-          {/* Fill up answer */}
           {isFill && (
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
@@ -742,21 +750,33 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
             </div>
           )}
 
-          {/* ══════════════════ CODING FIELDS ══════════════════ */}
           {isCoding && (
             <>
-              {/* Problem Description */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Default Language <span className="text-xs font-normal text-gray-400">(pre-selected in student editor)</span>
+                </label>
+                <select value={form.default_coding_language || 'python'}
+                  onChange={e => setForm(prev => ({ ...prev, default_coding_language: e.target.value }))}
+                  className={inp}>
+                  <option value="python">Python 3</option>
+                  <option value="javascript">JavaScript (Node.js)</option>
+                  <option value="java">Java</option>
+                  <option value="cpp">C++ (GCC)</option>
+                  <option value="c">C (GCC)</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Problem Description <span className="text-xs font-normal text-gray-400">(shown to student)</span>
                 </label>
                 <textarea rows={4} value={form.problem_description}
                   onChange={e => setForm(prev => ({ ...prev, problem_description: e.target.value }))}
-                  placeholder="Describe the problem in detail. Include background context, what the student needs to do, and any clarifications..."
+                  placeholder="Describe the problem in detail..."
                   className={`${inp} resize-none`} />
               </div>
 
-              {/* Input / Output Format */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -778,7 +798,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                 </div>
               </div>
 
-              {/* Constraints */}
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Constraints <span className="text-xs font-normal text-gray-400">(optional)</span>
@@ -789,7 +808,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                   className={`${inp} resize-none text-xs`} />
               </div>
 
-              {/* Algorithm Tags */}
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Algorithm Tags <span className="text-xs font-normal text-gray-400">(optional)</span>
@@ -815,18 +833,16 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                 )}
               </div>
 
-              {/* Boilerplate / Starter Code */}
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Boilerplate / Starter Code <span className="text-xs font-normal text-gray-400">(optional — pre-filled in editor)</span>
+                  Boilerplate / Starter Code <span className="text-xs font-normal text-gray-400">(optional)</span>
                 </label>
                 <textarea rows={5} value={form.boilerplate_code}
                   onChange={e => setForm(prev => ({ ...prev, boilerplate_code: e.target.value }))}
-                  placeholder={"def solution(n):\n    # write your code here\n    pass\n\nprint(solution(int(input())))"}
+                  placeholder={"def solution(n):\n    # write your code here\n    pass"}
                   className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
               </div>
 
-              {/* Test Cases */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-semibold text-gray-700">
@@ -841,7 +857,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                 <div className="space-y-3">
                   {form.test_cases.map((tc, idx) => (
                     <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-gray-50/50'}`}>
-                      {/* Case header row */}
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
                           {tc.is_hidden
@@ -860,8 +875,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                           )}
                         </div>
                       </div>
-
-                      {/* Input / Output */}
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Input (stdin)</label>
@@ -872,32 +885,23 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                           <textarea rows={3} value={tc.expected_output} onChange={e => setTC(idx, 'expected_output', e.target.value)} placeholder="8" className={`${inp} font-mono text-xs resize-none`} />
                         </div>
                       </div>
-
-
-                      {/* Marks weightage + Time limit — only for hidden test cases */}
                       {tc.is_hidden ? (
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                              Marks Weightage
-                            </label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Marks Weightage</label>
                             <input type="number" readOnly value={marksPerHiddenTC}
                               className={`${inp} text-xs bg-purple-50 cursor-not-allowed text-purple-700 font-semibold`}
                               title={`Auto: ${form.marks} marks ÷ ${hiddenTCCount} hidden cases`} />
                             <p className="text-[9px] text-purple-400 mt-0.5">Auto ({form.marks}÷{hiddenTCCount})</p>
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                              Time Limit (ms)
-                            </label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Time Limit (ms)</label>
                             <input type="number" min={500} step={500} value={tc.time_limit_ms}
                               onChange={e => setTC(idx, 'time_limit_ms', e.target.value)}
                               className={`${inp} text-xs`} />
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                              Explanation <span className="normal-case font-normal">(visible)</span>
-                            </label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Explanation</label>
                             <input type="text" value={tc.explanation}
                               onChange={e => setTC(idx, 'explanation', e.target.value)}
                               placeholder="Why this output?"
@@ -905,11 +909,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                           </div>
                         </div>
                       ) : (
-                        /* Visible test cases — only explanation */
                         <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                            Explanation <span className="normal-case font-normal">(visible)</span>
-                          </label>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Explanation</label>
                           <input type="text" value={tc.explanation}
                             onChange={e => setTC(idx, 'explanation', e.target.value)}
                             placeholder="Why this output?"
@@ -919,8 +920,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
                     </div>
                   ))}
                 </div>
-
-                {/* Marks summary */}
                 {form.test_cases.length > 0 && (
                   <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
                     <Zap className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -941,7 +940,6 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
             </>
           )}
 
-          {/* Explanation for non-coding */}
           {!isCoding && (
             <div>
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Explanation (optional)</label>
@@ -962,12 +960,12 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1 }) => {
   );
 };
 
-/* ─── MCQ Bulk Paste Modal ───────────────────────────────────────────────── */
+/* ─── MCQ Bulk Paste Modal ───────────────────────────────────────────── */
 const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
-  const [text, setText]       = useState('');
-  const [parsed, setParsed]   = useState(null);
+  const [text, setText]             = useState('');
+  const [parsed, setParsed]         = useState(null);
   const [showFormat, setShowFormat] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError]           = useState('');
 
   const handleParse = () => {
     setError('');
@@ -1007,14 +1005,14 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
           )}
           <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>Each question starts with a number like <code className="bg-amber-100 px-1 rounded font-mono">1.</code> Options use <code className="bg-amber-100 px-1 rounded font-mono">A.</code> — <code className="bg-amber-100 px-1 rounded font-mono">D.</code> <strong>Answer:</strong> can be <code className="bg-amber-100 px-1 rounded font-mono">A</code> or <code className="bg-amber-100 px-1 rounded font-mono">A,C</code> for multiple. No separator needed.</span>
+            <span>Each question starts with a number like <code className="bg-amber-100 px-1 rounded font-mono">1.</code> Options use <code className="bg-amber-100 px-1 rounded font-mono">A.</code> — <code className="bg-amber-100 px-1 rounded font-mono">D.</code> <strong>Answer:</strong> can be <code className="bg-amber-100 px-1 rounded font-mono">A</code> or <code className="bg-amber-100 px-1 rounded font-mono">A,C</code> for multiple.</span>
           </div>
           {!parsed ? (
             <>
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Questions Here</label>
                 <textarea rows={14} value={text} onChange={e => setText(e.target.value)}
-                  placeholder={`1. What is React?\nA. A JavaScript library\nB. A CSS framework\nC. A database\nD. A server\nAnswer: A\nExplanation: optional\n\n2. Which hook handles side effects?\n...`}
+                  placeholder={`1. What is React?\nA. A JavaScript library\nB. A CSS framework\nAnswer: A`}
                   className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
               </div>
               {error && (
@@ -1049,7 +1047,7 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
                     <span className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Answer: <strong className="text-blue-600">{Array.isArray(q.correct_answer) ? q.correct_answer.join(', ') : q.correct_answer}</strong>{' · '}{q.marks} mark{q.marks !== 1 ? 's' : ''}{q.options?.length > 0 && ` · ${q.options.length} options`}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Answer: <strong className="text-blue-600">{Array.isArray(q.correct_answer) ? q.correct_answer.join(', ') : q.correct_answer}</strong>{' · '}{q.marks} mark{q.marks !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                 ))}
@@ -1094,8 +1092,6 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-purple-500/20 border border-white/60 max-w-2xl w-full my-8">
-
-        {/* Header */}
         <div className="px-5 py-4 bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-500 rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -1110,50 +1106,29 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
             <X className="w-4 h-4" />
           </button>
         </div>
-
         <div className="p-5 space-y-4">
-
-          {/* Format guide toggle */}
-          <button
-            onClick={() => setShowFormat(v => !v)}
+          <button onClick={() => setShowFormat(v => !v)}
             className="w-full flex items-center justify-between px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-all">
             <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Paste Format Guide</span>
             {showFormat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
-
           {showFormat && (
             <div className="bg-gray-900 rounded-xl p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-72">
               <div className="mb-3 space-y-1 text-purple-300 text-xs font-semibold font-sans">
                 <p className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 shrink-0" /> Marks are auto-assigned from assessment settings</p>
                 <p className="flex items-center gap-1.5"><Code2 className="w-3.5 h-3.5 shrink-0" /> Each problem needs at least one TestCase: block</p>
               </div>
-              <div className="text-gray-400 text-[10px] font-sans mb-2 space-y-0.5">
-                <p><span className="text-yellow-300 font-semibold">N. Title</span> — required, starts each problem</p>
-                <p><span className="text-cyan-300 font-semibold">Description:</span> — problem statement (multi-line OK)</p>
-                <p><span className="text-cyan-300 font-semibold">Input Format:</span> / <span className="text-cyan-300 font-semibold">Output Format:</span> / <span className="text-cyan-300 font-semibold">Constraints:</span> — optional</p>
-                <p><span className="text-cyan-300 font-semibold">Level:</span> Beginner | Intermediate | Advanced</p>
-                <p><span className="text-cyan-300 font-semibold">Tags:</span> comma,separated,tags</p>
-                <p><span className="text-cyan-300 font-semibold">Boilerplate:</span> — optional starter code (multi-line)</p>
-                <p><span className="text-green-300 font-semibold">TestCase:</span> — starts a test case block</p>
-                <p className="pl-3"><span className="text-green-300">Input:</span> value (or multi-line below)</p>
-                <p className="pl-3"><span className="text-green-300">Output:</span> value</p>
-                <p className="pl-3"><span className="text-green-300">Hidden:</span> true | false</p>
-                <p className="pl-3"><span className="text-green-300">TimeLimit:</span> ms (optional, default 2000)</p>
-              </div>
               <pre className="whitespace-pre-wrap text-green-400">{BULK_CODING_FORMAT_EXAMPLE}</pre>
             </div>
           )}
-
-          {/* Tip banner */}
           <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-800">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               Each problem starts with <code className="bg-purple-100 px-1 rounded font-mono">1. Title</code>.
               Use <code className="bg-purple-100 px-1 rounded font-mono">TestCase:</code> blocks for I/O.
-              Mark hidden tests with <code className="bg-purple-100 px-1 rounded font-mono">Hidden: true</code> — they're used for scoring.
+              Mark hidden tests with <code className="bg-purple-100 px-1 rounded font-mono">Hidden: true</code>.
             </span>
           </div>
-
           {!parsed ? (
             <>
               <div>
@@ -1162,7 +1137,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
                   rows={16}
                   value={text}
                   onChange={e => setText(e.target.value)}
-                  placeholder={`1. Sum of Two Numbers\nDescription: Given two integers A and B, compute their sum.\nInput Format: Two space-separated integers.\nOutput Format: Print the sum.\nConstraints: 1 <= A, B <= 10^9\nLevel: Beginner\nTags: math\nBoilerplate:\na, b = map(int, input().split())\nTestCase:\nInput: 5 3\nOutput: 8\nHidden: false\nTestCase:\nInput: 100 200\nOutput: 300\nHidden: true\n\n2. Next problem...\n...`}
+                  placeholder={`1. Sum of Two Numbers\nDescription: Given two integers A and B, compute their sum.\nTestCase:\nInput: 5 3\nOutput: 8\nHidden: false`}
                   className={`${inp} resize-none font-mono text-xs leading-relaxed`}
                 />
               </div>
@@ -1173,12 +1148,8 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
                 </div>
               )}
               <div className="flex gap-3">
-                <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">
-                  Cancel
-                </button>
-                <button
-                  onClick={handleParse}
-                  disabled={!text.trim()}
+                <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+                <button onClick={handleParse} disabled={!text.trim()}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-purple-500/20">
                   <Eye className="w-4 h-4" /> Parse & Preview
                 </button>
@@ -1186,7 +1157,6 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
             </>
           ) : (
             <>
-              {/* Success banner */}
               <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>
@@ -1194,55 +1164,35 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
                   {parsed.errors.length > 0 && ` · ${parsed.errors.length} skipped`}
                 </span>
               </div>
-
-              {/* Skipped errors */}
               {parsed.errors.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
                   <p className="font-bold mb-1">Skipped:</p>
                   <pre className="whitespace-pre-wrap font-sans">{parsed.errors.join('\n')}</pre>
                 </div>
               )}
-
-              {/* Preview list */}
               <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
                 {parsed.questions.map((q, idx) => {
                   const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
                   const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
                   return (
                     <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-200">
-                      <span className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">
-                        {idx + 1}
-                      </span>
+                      <span className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full font-semibold">
-                            {q.level}
-                          </span>
-                          <span className="text-[10px] text-gray-500">
-                            {visibleTC} visible · {hiddenTC} hidden test case{q.test_cases.length !== 1 ? 's' : ''}
-                          </span>
-                          {q.algorithm_tags?.length > 0 && (
-                            <span className="text-[10px] text-gray-400">
-                              Tags: {q.algorithm_tags.join(', ')}
-                            </span>
-                          )}
+                          <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
+                          <span className="text-[10px] text-gray-500">{visibleTC} visible · {hiddenTC} hidden test case{q.test_cases.length !== 1 ? 's' : ''}</span>
+                          {q.algorithm_tags?.length > 0 && <span className="text-[10px] text-gray-400">Tags: {q.algorithm_tags.join(', ')}</span>}
                         </div>
-                        {q.problem_description && (
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>
-                        )}
+                        {q.problem_description && <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>}
                       </div>
                     </div>
                   );
                 })}
               </div>
-
               <div className="flex gap-3">
-                <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">
-                  ← Re-edit
-                </button>
-                <button
-                  onClick={() => onAdd(parsed.questions)}
+                <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
+                <button onClick={() => onAdd(parsed.questions)}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-purple-500/20">
                   <Plus className="w-4 h-4" /> Add {parsed.questions.length} to Staging
                 </button>
@@ -1255,20 +1205,22 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
   );
 };
 
-/* ─── Assign Students Modal — 3 tabs ─────────────────────────────────── */
+/* ─── Assign Students Modal ──────────────────────────────────────────── */
 const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
   const [tab, setTab]               = useState('all');
   const [allStudents, setAllStudents] = useState([]);
   const [branches, setBranches]     = useState([]);
+  const [groups, setGroups]         = useState([]);
   const [selBranch, setSelBranch]   = useState('');
+  const [selGroup, setSelGroup]     = useState('');
   const [searchAll, setSearchAll]   = useState('');
   const [selIds, setSelIds]         = useState(new Set());
   const [loadingAll, setLoadingAll] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [jdStudents, setJdStudents] = useState([]);
   const [loadingJD, setLoadingJD]   = useState(false);
   const [selJdIds, setSelJdIds]     = useState(new Set());
   const [jdFetched, setJdFetched]   = useState(false);
-  const [manualEmails, setManualEmails] = useState('');
   const [loading, setLoading]       = useState(false);
   const [result, setResult]         = useState(null);
   const [err, setErr]               = useState('');
@@ -1280,8 +1232,17 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
   );
   const alreadyAssignedCount = alreadyAssignedIds.size;
 
-  useEffect(() => { if (tab === 'all') fetchAllStudents(); }, [tab, selBranch]);
-  useEffect(() => { if (tab === 'jd' && !jdFetched) fetchJDStudents(); }, [tab]);
+  useEffect(() => {
+    if (tab === 'all' || tab === 'branch') fetchAllStudents();
+  }, [tab, selBranch]);
+
+  useEffect(() => {
+    if (tab === 'group' && groups.length === 0) fetchGroups();
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab === 'jd' && !jdFetched) fetchJDStudents();
+  }, [tab]);
 
   const fetchAllStudents = async () => {
     setLoadingAll(true);
@@ -1292,9 +1253,20 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
       if (res.success) {
         const list = res.students || [];
         setAllStudents(list);
-        if (!selBranch) { const uniq = [...new Set(list.map(s => s.studentInfo?.branch).filter(Boolean))].sort(); setBranches(uniq); }
+        if (!selBranch) {
+          const uniq = [...new Set(list.map(s => s.studentInfo?.branch).filter(Boolean))].sort();
+          setBranches(uniq);
+        }
       }
     } catch {} finally { setLoadingAll(false); }
+  };
+
+  const fetchGroups = async () => {
+    setLoadingGroups(true);
+    try {
+      const res = await collegeAdminAPI.getGroups?.() || { success: false };
+      if (res.success) setGroups(res.groups || res.data || []);
+    } catch {} finally { setLoadingGroups(false); }
   };
 
   const fetchJDStudents = async () => {
@@ -1308,46 +1280,53 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
   };
 
   const filteredAll = allStudents.filter(s => {
-    const notAssigned = !alreadyAssignedIds.has(String(s._id));
-    if (!notAssigned) return false;
+    if (alreadyAssignedIds.has(String(s._id))) return false;
     if (!searchAll.trim()) return true;
     const q = searchAll.toLowerCase();
     return (s.fullName || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q);
   });
 
-  const filteredJD = jdStudents.filter(s => !alreadyAssignedIds.has(String(s._id || s.userId)));
+  const filteredBranch = allStudents.filter(s => !alreadyAssignedIds.has(String(s._id)));
+  const filteredJD     = jdStudents.filter(s => !alreadyAssignedIds.has(String(s._id || s.userId)));
 
-  const toggleAll = (ids, selSet, setSel) => { if (selSet.size === ids.length && ids.length > 0) setSel(new Set()); else setSel(new Set(ids)); };
+  const toggleAll = (ids, selSet, setSel) => {
+    if (selSet.size === ids.length && ids.length > 0) setSel(new Set());
+    else setSel(new Set(ids));
+  };
 
   const handleAssign = async () => {
     setLoading(true); setErr(''); setResult(null);
     try {
       let res;
-      if (tab === 'all') {
+      if (tab === 'all' || tab === 'branch') {
         if (selIds.size === 0) { setErr('Select at least one student'); setLoading(false); return; }
         const emails = allStudents.filter(s => selIds.has(s._id)).map(s => s.email);
         res = await assessmentAPI.assignStudentsManual(assessmentId, emails);
+      } else if (tab === 'group') {
+        if (!selGroup) { setErr('Select a group first'); setLoading(false); return; }
+        res = await assessmentAPI.assignStudentsFromGroup?.(assessmentId, selGroup)
+              || await (async () => {
+                const gr = await collegeAdminAPI.getGroupStudents?.(selGroup);
+                const emails = (gr?.students || []).map(s => s.email).filter(Boolean);
+                if (!emails.length) return { success: false, message: 'No students in this group' };
+                return assessmentAPI.assignStudentsManual(assessmentId, emails);
+              })();
       } else if (tab === 'jd') {
         if (selJdIds.size === 0) { setErr('Select at least one student'); setLoading(false); return; }
         const emails = jdStudents.filter(s => selJdIds.has(s._id || s.userId)).map(s => s.email);
         res = await assessmentAPI.assignStudentsManual(assessmentId, emails);
-      } else {
-        const emails = manualEmails.split(/[\n,]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
-        if (!emails.length) { setErr('Enter at least one email'); setLoading(false); return; }
-        const invalid = emails.filter(e => !e.includes('@'));
-        if (invalid.length) { setErr(`Invalid emails: ${invalid.join(', ')}`); setLoading(false); return; }
-        res = await assessmentAPI.assignStudentsManual(assessmentId, emails);
       }
-      if (res.success) setResult(`✓ ${res.assigned || 0} student${(res.assigned || 0) !== 1 ? 's' : ''} assigned`);
-      else setErr(res.message || 'Assignment failed');
+      if (res?.success) setResult(`✓ ${res.assigned || 0} student${(res.assigned || 0) !== 1 ? 's' : ''} assigned`);
+      else setErr(res?.message || 'Assignment failed');
     } catch (e) { setErr(e.message); } finally { setLoading(false); }
   };
 
   const jdTitle = typeof assessment?.jd_id === 'object' ? assessment?.jd_id?.jobTitle : 'linked JD';
   const tabs = [
     { id: 'all',    label: 'All Students', icon: Users },
+    { id: 'branch', label: 'By Branch',    icon: Filter },
+    { id: 'group',  label: 'By Group',     icon: Layers },
     { id: 'jd',     label: 'JD Eligible',  icon: UserCheck },
-    { id: 'manual', label: 'By Email',     icon: Mail },
   ];
 
   const StudentRow = ({ s, checked, onToggle, matchPct }) => {
@@ -1379,41 +1358,34 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
             <div>
               <h3 className="font-bold text-white">Assign Students</h3>
               {alreadyAssignedCount > 0 && (
-                <p className="text-blue-200 text-[11px] mt-0.5">{alreadyAssignedCount} already assigned — showing remaining students only</p>
+                <p className="text-blue-200 text-[11px] mt-0.5">{alreadyAssignedCount} already assigned</p>
               )}
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
         </div>
-        <div className="flex border-b border-gray-100">
+
+        <div className="flex border-b border-gray-100 overflow-x-auto">
           {tabs.map(t => (
-            <button key={t.id} onClick={() => { setTab(t.id); setErr(''); setResult(null); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all border-b-2 ${tab === t.id ? 'border-blue-600 text-blue-700 bg-blue-50/40' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            <button key={t.id} onClick={() => { setTab(t.id); setErr(''); setResult(null); setSelIds(new Set()); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap px-2 ${tab === t.id ? 'border-blue-600 text-blue-700 bg-blue-50/40' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
               <t.icon className="w-3.5 h-3.5" />{t.label}
             </button>
           ))}
         </div>
+
         <div className="p-5 space-y-3">
           {tab === 'all' && (
             <>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <input value={searchAll} onChange={e => setSearchAll(e.target.value)} placeholder="Search students…" className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80" />
-                </div>
-                <select value={selBranch} onChange={e => setSelBranch(e.target.value)} className="pl-3 pr-7 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80">
-                  <option value="">All Branches</option>
-                  {branches.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <input value={searchAll} onChange={e => setSearchAll(e.target.value)} placeholder="Search students…" className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80" />
               </div>
               <div className="flex items-center justify-between text-xs text-gray-500 px-1">
                 <button onClick={() => toggleAll(filteredAll.map(s => s._id), selIds, setSelIds)} className="font-semibold text-blue-600 hover:text-blue-700">
                   {selIds.size === filteredAll.length && filteredAll.length > 0 ? '☑ Deselect All' : '☐ Select All'}
                 </button>
-                <span>
-                  {selIds.size} selected · {filteredAll.length} remaining
-                  {alreadyAssignedCount > 0 && <span className="ml-1 text-blue-500">({alreadyAssignedCount} already assigned)</span>}
-                </span>
+                <span>{selIds.size} selected · {filteredAll.length} remaining</span>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
                 {loadingAll
@@ -1424,63 +1396,122 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               </div>
             </>
           )}
+
+          {tab === 'branch' && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Select Branch</label>
+                <select value={selBranch} onChange={e => { setSelBranch(e.target.value); setSelIds(new Set()); }}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                  <option value="">— All Branches —</option>
+                  {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+              {selBranch && (
+                <>
+                  <div className="flex items-center justify-between text-xs text-gray-500 px-1">
+                    <button onClick={() => toggleAll(filteredBranch.map(s => s._id), selIds, setSelIds)} className="font-semibold text-blue-600 hover:text-blue-700">
+                      {selIds.size === filteredBranch.length && filteredBranch.length > 0 ? '☑ Deselect All' : '☐ Select All'}
+                    </button>
+                    <span>{selIds.size} selected · {filteredBranch.length} students</span>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
+                    {loadingAll
+                      ? <InlineSkeleton rows={3} />
+                      : filteredBranch.length === 0
+                      ? <p className="text-center text-gray-400 text-sm py-8">No students in this branch</p>
+                      : filteredBranch.map(s => <StudentRow key={s._id} s={s} checked={selIds.has(s._id)} onToggle={id => setSelIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}
+                  </div>
+                </>
+              )}
+              {!selBranch && <p className="text-center text-gray-400 text-sm py-4">Select a branch above to see students</p>}
+            </>
+          )}
+
+          {tab === 'group' && (
+            <>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Select Group</label>
+                {loadingGroups
+                  ? <InlineSkeleton rows={1} />
+                  : groups.length === 0
+                  ? (
+                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      No groups found. Create groups in the Students section first.
+                    </div>
+                  ) : (
+                    <select value={selGroup} onChange={e => setSelGroup(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                      <option value="">— Select a group —</option>
+                      {groups.map(g => <option key={g._id} value={g._id}>{g.name || g.groupName}</option>)}
+                    </select>
+                  )}
+              </div>
+              {selGroup && (
+                <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+                  <Users className="w-4 h-4 shrink-0" />
+                  All students in this group will be assigned to the assessment.
+                </div>
+              )}
+            </>
+          )}
+
           {tab === 'jd' && (
             <>
               {!assessment?.jd_id ? (
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800"><AlertCircle className="w-4 h-4 shrink-0" />No JD linked. Edit the assessment to link a JD first.</div>
+                <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                  <AlertCircle className="w-4 h-4 shrink-0" />No JD linked. Edit the assessment to link a JD first.
+                </div>
               ) : loadingJD ? (
                 <div className="flex flex-col items-center py-8 gap-3">
                   <InlineSkeleton rows={4} />
-                  <p className="text-sm text-gray-500">Fetching eligible students from JD…</p>
+                  <p className="text-sm text-gray-500">Fetching eligible students…</p>
                 </div>
               ) : filteredJD.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-3"><CheckCircle2 className="w-6 h-6 text-green-500" /></div>
-                  <p className="font-bold text-gray-700 text-sm mb-1">
-                    {jdStudents.length === 0 ? 'No eligible students found' : 'All eligible students already assigned'}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {jdStudents.length === 0
-                      ? `No students match the eligibility criteria of ${jdTitle}`
-                      : `All ${jdStudents.length} eligible students are already assigned`}
-                  </p>
-                  {jdStudents.length === 0 && <button onClick={fetchJDStudents} className="mt-3 flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:underline"><RefreshCw className="w-3 h-3" /> Retry</button>}
+                  <p className="font-bold text-gray-700 text-sm mb-1">{jdStudents.length === 0 ? 'No eligible students found' : 'All eligible students already assigned'}</p>
+                  <p className="text-xs text-gray-400">{jdStudents.length === 0 ? `No students match ${jdTitle}` : `All ${jdStudents.length} eligible students are assigned`}</p>
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
-                    <span className="text-xs text-blue-700 font-semibold">
-                      {filteredJD.length} remaining to assign
-                      {alreadyAssignedCount > 0 && <span className="text-blue-400 ml-1">({alreadyAssignedCount} already done)</span>}
-                    </span>
-                    <button onClick={() => toggleAll(filteredJD.map(s => s._id || s.userId), selJdIds, setSelJdIds)} className="text-xs text-blue-600 font-semibold hover:text-blue-700">{selJdIds.size === filteredJD.length ? 'Deselect All' : 'Select All'}</button>
+                    <span className="text-xs text-blue-700 font-semibold">{filteredJD.length} eligible remaining</span>
+                    <button onClick={() => toggleAll(filteredJD.map(s => s._id || s.userId), selJdIds, setSelJdIds)} className="text-xs text-blue-600 font-semibold hover:text-blue-700">
+                      {selJdIds.size === filteredJD.length ? 'Deselect All' : 'Select All'}
+                    </button>
                   </div>
                   <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
-                    {filteredJD.map(s => { const id = s._id || s.userId; return <StudentRow key={id} s={s} checked={selJdIds.has(id)} matchPct={s.matchPercentage} onToggle={id => setSelJdIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />; })}
+                    {filteredJD.map(s => {
+                      const id = s._id || s.userId;
+                      return <StudentRow key={id} s={s} checked={selJdIds.has(id)} matchPct={s.matchPercentage}
+                        onToggle={id => setSelJdIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />;
+                    })}
                   </div>
                   <p className="text-xs text-gray-400 px-1">{selJdIds.size} selected</p>
                 </>
               )}
             </>
           )}
-          {tab === 'manual' && (
-            <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Student Email IDs</label>
-              <textarea rows={6} value={manualEmails} onChange={e => setManualEmails(e.target.value)} placeholder={'student1@college.edu\nstudent2@college.edu'} className={`${inp} resize-none font-mono text-xs`} />
-              <p className="text-xs text-gray-400 mt-1">One per line or comma-separated</p>
-            </div>
-          )}
-          {err    && <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><pre className="whitespace-pre-wrap font-sans">{err}</pre></div>}
+
+          {err    && <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{err}</span></div>}
           {result && <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl p-3"><CheckCircle2 className="w-4 h-4 shrink-0" />{result}</div>}
+
           <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold text-sm hover:bg-gray-50">Close</button>
             {!result && (
-              <button onClick={handleAssign} disabled={loading || (tab === 'jd' && !assessment?.jd_id)}
+              <button onClick={handleAssign}
+                disabled={loading || (tab === 'jd' && !assessment?.jd_id) || (tab === 'group' && !selGroup)}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
                 {loading
                   ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   : <UserPlus className="w-4 h-4" />}
-                {loading ? 'Assigning…' : tab === 'all' ? `Assign ${selIds.size} Student${selIds.size !== 1 ? 's' : ''}` : tab === 'jd' ? `Assign ${selJdIds.size} Student${selJdIds.size !== 1 ? 's' : ''}` : 'Assign'}
+                {loading ? 'Assigning…'
+                  : tab === 'all'    ? `Assign ${selIds.size} Student${selIds.size !== 1 ? 's' : ''}`
+                  : tab === 'branch' ? `Assign ${selIds.size} from ${selBranch || 'Branch'}`
+                  : tab === 'group'  ? 'Assign Group'
+                  : `Assign ${selJdIds.size} Eligible`}
               </button>
             )}
           </div>
@@ -1501,6 +1532,7 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
   const [search, setSearch]     = useState('');
 
   useEffect(() => { fetchStudents(1); }, []);
+
   const fetchStudents = async (p = 1) => {
     setLoading(true); setError('');
     try {
@@ -1509,7 +1541,10 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
       else setError(res.message || 'Failed');
     } catch (e) { setError(e.message || 'Failed'); } finally { setLoading(false); }
   };
-  const filtered = search.trim() ? students.filter(s => (s.fullName || '').toLowerCase().includes(search.toLowerCase()) || (s.email || '').toLowerCase().includes(search.toLowerCase())) : students;
+
+  const filtered = search.trim()
+    ? students.filter(s => (s.fullName || '').toLowerCase().includes(search.toLowerCase()) || (s.email || '').toLowerCase().includes(search.toLowerCase()))
+    : students;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1552,7 +1587,7 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 text-sm truncate">{s.fullName || '—'}</p>
                       <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                        {s.email      && <span className="flex items-center gap-1 text-xs text-gray-500"><Mail  className="w-3 h-3" />{s.email}</span>}
+                        {s.email        && <span className="flex items-center gap-1 text-xs text-gray-500"><Mail  className="w-3 h-3" />{s.email}</span>}
                         {s.mobileNumber && <span className="flex items-center gap-1 text-xs text-gray-500"><Phone className="w-3 h-3" />{s.mobileNumber}</span>}
                       </div>
                     </div>
@@ -1586,26 +1621,37 @@ const QuestionManager = () => {
   const [searchParams] = useSearchParams();
   const isNewAssessment = searchParams.get('new') === '1';
 
-  const [assessment,    setAssessment]    = useState(null);
-  const [savedQs,       setSavedQs]       = useState([]);
-  const [stagedQs,      setStagedQs]      = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [submitting,    setSubmitting]    = useState(false);
-  const [error,         setError]         = useState('');
-  const [toast,         setToast]         = useState(null);
-  const [modal,         setModal]         = useState(null);
-  const [showChecklist, setShowChecklist] = useState(false);
+  const [assessment,      setAssessment]      = useState(null);
+  const [sections,        setSections]        = useState([]);
+  const [activeSectionId, setActiveSectionId] = useState(null);
+  const [savedQs,         setSavedQs]         = useState([]);
+  const [stagedQs,        setStagedQs]        = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [submitting,      setSubmitting]      = useState(false);
+  const [error,           setError]           = useState('');
+  const [toast,           setToast]           = useState(null);
+  const [modal,           setModal]           = useState(null);
+  const [showChecklist,   setShowChecklist]   = useState(false);
+  const [confirmDelete,   setConfirmDelete]   = useState(null);
+  const [deleting,        setDeleting]        = useState(false); // ← NEW: tracks delete in progress
+  const [linkedQIds,      setLinkedQIds]      = useState(new Set()); // questions locked to an assessment
 
   useEffect(() => { fetchData(); }, [assessmentId]);
 
   const fetchData = async () => {
     setLoading(true); setError('');
     try {
-      const res = await assessmentAPI.getAssessment(assessmentId);
-      if (res.success) {
-        setAssessment(res.assessment);
-        setSavedQs((res.assessment.questions_id || []).filter(q => q && q.status !== 'inactive'));
-      } else setError(res.message || 'Failed to load');
+      const [aRes, sRes] = await Promise.all([
+        assessmentAPI.getAssessment(assessmentId),
+        sectionAPI.getSections(assessmentId).catch(() => ({ success: true, sections: [] })),
+      ]);
+      if (aRes.success) {
+        setAssessment(aRes.assessment);
+        setSavedQs((aRes.assessment.questions_id || []).filter(q => q && q.status !== 'inactive'));
+        const secs = sRes.sections || [];
+        setSections(secs);
+        if (secs.length > 0 && !activeSectionId) setActiveSectionId(secs[0]._id);
+      } else setError(aRes.message || 'Failed to load');
     } catch (err) { setError(err.message || 'Failed to load'); }
     finally { setLoading(false); }
   };
@@ -1617,19 +1663,32 @@ const QuestionManager = () => {
   const handleTryLeave = () => {
     const hasStudents  = (assessment?.eligible_students?.length || 0) > 0;
     const hasQuestions = savedQs.length > 0;
-
     if (!hasQuestions && stagedQs.length === 0) { navigate('/dashboard/college-admin/assessments'); return; }
     if (!hasStudents) { setShowChecklist(true); return; }
     if (stagedQs.length > 0) { setShowChecklist(true); return; }
     navigate('/dashboard/college-admin/assessments');
   };
 
-  const limit      = assessment?.num_questions || 0;
-  const totalCount = savedQs.length + stagedQs.length;
-  const remaining  = limit > 0 ? Math.max(0, limit - totalCount) : Infinity;
-  const atLimit    = limit > 0 && totalCount >= limit;
+  const activeSection   = sections.find(s => s._id === activeSectionId) || sections[0] || null;
+  const sectionType     = activeSection?.type || null;
+  const isCodingSection = sectionType === 'coding';
+  const isQuizSection   = sectionType === 'quiz';
+
+  const sectionSavedQs = activeSectionId
+    ? savedQs.filter(q => {
+        const secQIds = activeSection?.questions?.map(id => String(id?._id || id)) || [];
+        return q.section_id === activeSectionId || secQIds.includes(String(q._id));
+      })
+    : savedQs;
+  const sectionStagedQs = stagedQs.filter(q => q._sectionId === activeSectionId);
+
+  const sectionLimit     = activeSection?.configuration?.question_count || 0;
+  const sectionCount     = sectionSavedQs.length + sectionStagedQs.length;
+  const sectionRemaining = sectionLimit > 0 ? Math.max(0, sectionLimit - sectionCount) : Infinity;
+  const atLimit          = sectionLimit > 0 && sectionCount >= sectionLimit;
 
   const marksPerQ = (() => {
+    if (activeSection?.scoring?.marks_per_question) return activeSection.scoring.marks_per_question;
     if (!assessment) return 1;
     const nq = assessment.num_questions || 0;
     const tm = assessment.total_marks   || 0;
@@ -1638,41 +1697,58 @@ const QuestionManager = () => {
   })();
 
   const handleStageQuestion = (payload) => {
-    const withMarks = { ...payload, marks: marksPerQ };
+    const withMeta = { ...payload, marks: marksPerQ, _sectionId: activeSectionId };
     if (modal?.type === 'edit-staged') {
-      setStagedQs(prev => { const c = [...prev]; c[modal.idx] = withMarks; return c; });
+      setStagedQs(prev => { const c = [...prev]; c[modal.idx] = withMeta; return c; });
     } else {
-      setStagedQs(prev => [...prev, withMarks]);
+      if (atLimit) { showToast(`Section "${activeSection?.title}" is full (${sectionLimit} questions max)`, 'error'); return; }
+      setStagedQs(prev => [...prev, withMeta]);
     }
     setModal(null);
   };
 
   const handleBulkAdd = (questions) => {
-    const withMarks = questions.map(q => ({ ...q, marks: marksPerQ }));
-    setStagedQs(prev => [...prev, ...withMarks]);
+    const allowed = sectionRemaining === Infinity ? questions : questions.slice(0, sectionRemaining);
+    const skipped = questions.length - allowed.length;
+    const withMeta = allowed.map(q => ({ ...q, marks: marksPerQ, _sectionId: activeSectionId }));
+    setStagedQs(prev => [...prev, ...withMeta]);
     setModal(null);
-    showToast(`${questions.length} questions staged (${marksPerQ} mark${marksPerQ !== 1 ? 's' : ''} each) — review and click Submit`);
+    if (skipped > 0) showToast(`${allowed.length} MCQ staged · ${skipped} skipped (section limit reached)`, 'warning');
+    else showToast(`${allowed.length} MCQ questions staged — click Submit to save`);
   };
 
   const handleBulkCodingAdd = (questions) => {
-    const withMarks = questions.map(q => ({ ...q, marks: marksPerQ }));
-    setStagedQs(prev => [...prev, ...withMarks]);
+    const allowed = sectionRemaining === Infinity ? questions : questions.slice(0, sectionRemaining);
+    const skipped = questions.length - allowed.length;
+    const withMeta = allowed.map(q => ({ ...q, marks: marksPerQ, _sectionId: activeSectionId }));
+    setStagedQs(prev => [...prev, ...withMeta]);
     setModal(null);
-    showToast(`${questions.length} coding problem${questions.length !== 1 ? 's' : ''} staged (${marksPerQ} mark${marksPerQ !== 1 ? 's' : ''} each) — review and click Submit`);
+    if (skipped > 0) showToast(`${allowed.length} coding problem${allowed.length !== 1 ? 's' : ''} staged · ${skipped} skipped (section limit reached)`, 'warning');
+    else showToast(`${allowed.length} coding problem${allowed.length !== 1 ? 's' : ''} staged — click Submit to save`);
   };
 
   const handleSubmitAll = async () => {
     if (stagedQs.length === 0) return;
     setSubmitting(true);
     try {
-      const res = await assessmentAPI.bulkAddQuestions(assessmentId, stagedQs);
+      const cleanQs = stagedQs.map(({ _sectionId, ...q }) => q);
+      const res = await assessmentAPI.bulkAddQuestions(assessmentId, cleanQs);
       if (res.success) {
+        const newIds = res.question_ids || res.questions?.map(q => q._id) || [];
+        const linkPromises = stagedQs.map((sq, i) => {
+          const qId = newIds[i];
+          if (qId && sq._sectionId) {
+            return sectionAPI.addQuestion(sq._sectionId, qId).catch(() => null);
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(linkPromises);
         setStagedQs([]);
         await fetchData();
-        showToast(`✓ ${stagedQs.length} questions saved! Now assign students to the assessment.`);
+        showToast(`✓ ${stagedQs.length} questions saved and linked to sections!`);
         const hasStudents = (assessment?.eligible_students?.length || 0) > 0;
         if (!hasStudents) {
-          setTimeout(() => showToast('⚠ Reminder: No students assigned yet — assign students before leaving!', 'warning'), 4000);
+          setTimeout(() => showToast('⚠ Reminder: No students assigned yet!', 'warning'), 4000);
         }
       } else {
         showToast(res.message || 'Submit failed', 'error');
@@ -1684,10 +1760,57 @@ const QuestionManager = () => {
     }
   };
 
+  // ── FIX: Proper delete handler with optimistic UI update ─────────────
+  const handleDeleteQuestion = async () => {
+    if (!confirmDelete) return;
+    const { questionId } = confirmDelete;
+
+    setDeleting(true);
+    // Do NOT optimistically remove — only remove from UI after server confirms.
+
+    try {
+      // ── Step 1: attempt direct delete ─────────────────────────────────
+      const res = await assessmentAPI.deleteQuestion(questionId);
+      if (res.success) {
+        setSavedQs(prev => prev.filter(q => String(q._id) !== String(questionId)));
+        setConfirmDelete(null);
+        showToast('Question deleted successfully');
+        fetchData();
+      }
+    } catch (e) {
+      // 409 = linked to assessment/section; 400 with same message = legacy status code
+      const isLinked =
+        e.statusCode === 409 ||
+        (e.statusCode === 400 && e.message?.toLowerCase().includes('used in an assessment'));
+
+      if (isLinked) {
+        // ── Step 2: unlink from all assessments & sections, then delete ───
+        try {
+          await assessmentAPI.unlinkQuestion(questionId);
+          await assessmentAPI.deleteQuestion(questionId);
+          setSavedQs(prev => prev.filter(q => String(q._id) !== String(questionId)));
+          setConfirmDelete(null);
+          showToast('Question removed from assessment and deleted');
+          fetchData();
+        } catch (unlinkErr) {
+          // Still failed after unlink — mark as locked so button is disabled
+          setLinkedQIds(prev => new Set([...prev, String(questionId)]));
+          showToast(
+            unlinkErr.message || 'Could not unlink question — please try again',
+            'error'
+          );
+          setConfirmDelete(null);
+        }
+      } else {
+        // Network / server error — keep modal open so user can retry
+        showToast(e.message || 'Delete failed — please try again', 'error');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const totalMarks = [...savedQs, ...stagedQs].reduce((s, q) => s + (Number(q.marks) || 0), 0);
-  const marksInfo  = assessment?.num_questions && assessment?.total_marks
-    ? `${(assessment.total_marks / assessment.num_questions).toFixed(assessment.total_marks % assessment.num_questions === 0 ? 0 : 2)} marks/question`
-    : null;
   const hasStudents = (assessment?.eligible_students?.length || 0) > 0;
 
   if (loading) return (
@@ -1701,275 +1824,384 @@ const QuestionManager = () => {
   return (
     <CollegeAdminLayout>
       <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+        <div className="max-w-[1500px] mx-auto space-y-3 sm:space-y-4">
 
-        {/* Toast */}
-        {toast && (
-          <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold max-w-sm
-            ${toast.type === 'error' ? 'bg-red-600 text-white' : toast.type === 'warning' ? 'bg-amber-500 text-white' : 'bg-green-600 text-white'}`}>
-            {toast.type === 'error' || toast.type === 'warning'
-              ? <AlertCircle className="w-4 h-4 shrink-0" />
-              : <CheckCircle2 className="w-4 h-4 shrink-0" />}
-            <span className="leading-snug">{toast.msg}</span>
-          </div>
-        )}
-
-        {/* Back — guarded */}
-        <button onClick={handleTryLeave}
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
-        </button>
-
-        {/* Missing students warning banner */}
-        {!hasStudents && savedQs.length > 0 && stagedQs.length === 0 && (
-          <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-300 rounded-2xl px-5 py-3.5">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                <ShieldAlert className="w-4 h-4 text-red-600" />
-              </div>
-              <div>
-                <p className="font-bold text-red-800 text-sm">No students assigned</p>
-                <p className="text-xs text-red-600 mt-0.5">Students won't see this assessment until you assign them. This is required before leaving.</p>
-              </div>
+          {/* Toast */}
+          {toast && (
+            <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-sm font-semibold max-w-sm
+              ${toast.type === 'error' ? 'bg-red-600 text-white' : toast.type === 'warning' ? 'bg-amber-500 text-white' : 'bg-green-600 text-white'}`}>
+              {toast.type === 'error' || toast.type === 'warning'
+                ? <AlertCircle className="w-4 h-4 shrink-0" />
+                : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+              <span className="leading-snug">{toast.msg}</span>
             </div>
-            <button onClick={() => setModal('assign')}
-              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl whitespace-nowrap transition-colors shrink-0">
-              <Users className="w-3.5 h-3.5" /> Assign Now
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* ── HEADER ── */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-          <div>
-            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-              {assessment?.title || assessment?.skill_id?.name || 'Assessment'} — {assessment?.level}
-            </h1>
-            <div className="flex flex-wrap gap-2 mt-2">
-              <span className="inline-flex items-center gap-1 bg-white rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 border border-gray-200">
-                <Hash className="w-3 h-3" /> {savedQs.length}/{limit || '∞'} questions
-              </span>
-              <span className="inline-flex items-center gap-1 bg-white rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 border border-gray-200">
-                <Award className="w-3 h-3" /> {totalMarks} marks
-              </span>
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border
-                ${hasStudents ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                <Users className="w-3 h-3" />
-                {hasStudents ? `${assessment.eligible_students.length} students` : '⚠ No students'}
-              </span>
-              {stagedQs.length > 0 && (
-                <span className="inline-flex items-center gap-1 bg-amber-50 rounded-full px-2.5 py-1 text-[10px] font-bold text-amber-700 border border-amber-200">
-                  {stagedQs.length} staged
+          {/* Back */}
+          <button onClick={handleTryLeave}
+            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
+          </button>
+
+          {/* No-students warning banner */}
+          {!hasStudents && savedQs.length > 0 && stagedQs.length === 0 && (
+            <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-300 rounded-2xl px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
+                <div>
+                  <p className="font-bold text-red-800 text-sm">No students assigned</p>
+                  <p className="text-xs text-red-600 mt-0.5">Students won't see this assessment. Assign before leaving.</p>
+                </div>
+              </div>
+              <button onClick={() => setModal('assign')}
+                className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl whitespace-nowrap transition-colors shrink-0">
+                <Users className="w-3.5 h-3.5" /> Assign Now
+              </button>
+            </div>
+          )}
+
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-1">
+            <div>
+              <h1 className="text-[20px] md:text-[24px] font-bold text-gray-900 tracking-tight">
+                {assessment?.title || 'Assessment'} — {assessment?.level}
+              </h1>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <span className="inline-flex items-center gap-1 bg-white rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 border border-gray-200">
+                  <Hash className="w-3 h-3" /> {savedQs.length} questions
                 </span>
+                <span className="inline-flex items-center gap-1 bg-white rounded-full px-2.5 py-1 text-[10px] font-bold text-gray-700 border border-gray-200">
+                  <Award className="w-3 h-3" /> {totalMarks} marks
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border
+                  ${hasStudents ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                  <Users className="w-3 h-3" />
+                  {hasStudents ? `${assessment.eligible_students.length} students` : '⚠ No students'}
+                </span>
+                {stagedQs.length > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 rounded-full px-2.5 py-1 text-[10px] font-bold text-amber-700 border border-amber-200">
+                    {stagedQs.length} staged
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => setModal('view-students')}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors">
+                <Eye className="w-4 h-4" /> View Students
+                {hasStudents && <span className="ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{assessment.eligible_students.length}</span>}
+              </button>
+              <button onClick={() => setModal('assign')}
+                className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
+                  ${!hasStudents ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                <Users className="w-4 h-4" /> {hasStudents ? 'Assign Students' : 'Assign Students ⚠'}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center text-red-700">
+              <AlertCircle className="w-8 h-8 mx-auto mb-2" />{error}
+            </div>
+          )}
+
+          {/* TWO-PANEL LAYOUT */}
+          <div className="flex gap-4 items-start">
+
+            {/* LEFT: Sections Sidebar */}
+            {sections.length > 0 && (
+              <div className="w-56 flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-white" />
+                  <p className="text-xs font-bold text-white">Sections</p>
+                </div>
+                <div className="p-2 space-y-1">
+                  {sections.map((sec) => {
+                    const isCoding = sec.type === 'coding';
+                    const isActive = sec._id === activeSectionId;
+                    const secSaved = savedQs.filter(q => {
+                      const secQIds = sec.questions?.map(id => String(id?._id || id)) || [];
+                      return q.section_id === sec._id || secQIds.includes(String(q._id));
+                    }).length;
+                    const secStaged = stagedQs.filter(q => q._sectionId === sec._id).length;
+                    return (
+                      <button key={sec._id} onClick={() => setActiveSectionId(sec._id)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-all border ${isActive
+                          ? isCoding ? 'bg-violet-50 border-violet-300 text-violet-800' : 'bg-blue-50 border-blue-300 text-blue-800'
+                          : 'border-transparent hover:bg-gray-50 text-gray-600'}`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${isCoding ? 'bg-violet-100' : 'bg-blue-100'}`}>
+                            {isCoding ? <Code2 className="w-3 h-3 text-violet-600" /> : <BookOpen className="w-3 h-3 text-blue-600" />}
+                          </div>
+                          <span className="text-xs font-semibold truncate flex-1">{sec.title}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5 ml-7">
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isCoding ? 'bg-violet-100 text-violet-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {isCoding ? 'Coding' : 'Quiz'}
+                          </span>
+                          <span className="text-[9px] text-gray-400">{secSaved}{secStaged > 0 ? `+${secStaged}` : ''}/{sec.configuration?.question_count || '?'} Qs</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="px-3 pb-3">
+                  <button onClick={() => navigate(`/dashboard/college-admin/assessments/${assessmentId}/sections`)}
+                    className="w-full py-2 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 rounded-xl border border-dashed border-blue-200 transition-all">
+                    + Manage Sections
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* RIGHT: Question Panel */}
+            <div className="flex-1 min-w-0 space-y-3">
+
+              {/* Section header + action buttons */}
+              {activeSection && (
+                <div className="space-y-2">
+                  <div className={`rounded-2xl border-2 px-4 py-3 flex items-center justify-between gap-3 flex-wrap
+                    ${atLimit ? 'bg-red-50 border-red-200' : isCodingSection ? 'bg-violet-50 border-violet-200' : 'bg-blue-50 border-blue-200'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+                        ${atLimit ? 'bg-red-100' : isCodingSection ? 'bg-violet-100' : 'bg-blue-100'}`}>
+                        {atLimit
+                          ? <AlertCircle className="w-4 h-4 text-red-500" />
+                          : isCodingSection ? <Code2 className="w-4 h-4 text-violet-600" /> : <BookOpen className="w-4 h-4 text-blue-600" />}
+                      </div>
+                      <div>
+                        <p className={`font-bold text-sm ${atLimit ? 'text-red-700' : isCodingSection ? 'text-violet-800' : 'text-blue-800'}`}>
+                          {activeSection.title}
+                          {atLimit && <span className="ml-2 text-[10px] bg-red-100 text-red-600 border border-red-200 px-1.5 py-0.5 rounded-full font-bold">FULL</span>}
+                        </p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                          <span className={`font-semibold ${atLimit ? 'text-red-600' : sectionCount > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                            {sectionCount}/{sectionLimit || '?'}
+                          </span>
+                          questions used · {activeSection.scoring?.total_marks} marks · {activeSection.configuration?.duration_minutes} min
+                          {isCodingSection ? ' · Coding only' : ' · MCQ / Fill-in-Blank only'}
+                        </p>
+                        {sectionLimit > 0 && (
+                          <div className="mt-1.5 w-40 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${atLimit ? 'bg-red-500' : sectionCount / sectionLimit > 0.8 ? 'bg-amber-400' : 'bg-green-500'}`}
+                              style={{ width: `${Math.min(100, (sectionCount / sectionLimit) * 100)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {atLimit ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-100 text-red-600 text-[12px] font-bold rounded-lg border border-red-200">
+                          <AlertCircle className="w-3.5 h-3.5" /> Section Full — {sectionLimit} / {sectionLimit} Qs
+                        </span>
+                      ) : (
+                        <>
+                          {isCodingSection && (
+                            <button onClick={() => setModal('bulk-coding')}
+                              className="inline-flex items-center gap-1.5 bg-white border border-violet-200 text-violet-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-violet-50 shadow-sm transition-colors">
+                              <Code2 className="w-4 h-4" /> Bulk Coding
+                            </button>
+                          )}
+                          {isQuizSection && (
+                            <button onClick={() => setModal('bulk')}
+                              className="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
+                              <ClipboardPaste className="w-4 h-4" /> Bulk MCQ
+                            </button>
+                          )}
+                          <button onClick={() => setModal('add')}
+                            className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
+                              ${isCodingSection ? 'bg-violet-600 hover:bg-violet-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                            <Plus className="w-4 h-4" /> Add Question
+                            {sectionRemaining !== Infinity && (
+                              <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[10px]">{sectionRemaining} left</span>
+                            )}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
+
+              {/* No sections yet */}
+              {sections.length === 0 && (
+                <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center">
+                  <Layers className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <h3 className="font-bold text-gray-600 mb-1">No sections set up</h3>
+                  <p className="text-sm text-gray-400 mb-4">Go to Section Manager to add Coding and Quiz sections first.</p>
+                  <button onClick={() => navigate(`/dashboard/college-admin/assessments/${assessmentId}/sections`)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-sm">
+                    <Layers className="w-4 h-4" /> Go to Section Manager
+                  </button>
+                </div>
+              )}
+
+              {/* Staged preview */}
+              {sectionStagedQs.length > 0 && (
+                <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-amber-200 overflow-hidden">
+                  <div className="px-5 py-3 bg-amber-50/50 border-b border-amber-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-amber-500" />
+                      <p className="font-bold text-amber-800 text-sm">{sectionStagedQs.length} Staged — Preview</p>
+                      <span className="text-xs text-amber-400">Not saved yet</span>
+                    </div>
+                    <button onClick={handleSubmitAll} disabled={submitting}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-xs font-bold disabled:opacity-60 hover:opacity-90">
+                      {submitting
+                        ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <Send className="w-3.5 h-3.5" />}
+                      {submitting ? 'Saving…' : `Submit ${stagedQs.length} (all sections)`}
+                    </button>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {sectionStagedQs.map((q, idx) => {
+                      const globalIdx = stagedQs.findIndex(sq => sq === q);
+                      return (
+                        <QuestionCard key={idx} q={q} idx={idx} staged
+                          onEdit={() => setModal({ type: 'edit-staged', idx: globalIdx })}
+                          onRemove={() => setStagedQs(prev => prev.filter((_, pi) => pi !== globalIdx))} />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Saved questions */}
+              {sectionSavedQs.length > 0 ? (
+                <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
+                  <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center gap-2">
+                    <ListChecks className="w-4 h-4 text-blue-600" />
+                    <p className="font-bold text-gray-800 text-sm">{sectionSavedQs.length} Saved Questions</p>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {sectionSavedQs.map((q, idx) => (
+                      <QuestionCard key={q._id} q={q} idx={idx}
+                        onEdit={() => setModal({ type: 'edit-saved', question: q })}
+                        onRemove={() => setConfirmDelete({ questionId: q._id, questionText: q.question })}
+                        locked={linkedQIds.has(String(q._id))} />
+                    ))}
+                  </div>
+                </div>
+              ) : sectionStagedQs.length === 0 && activeSection && (
+                <div className="bg-white rounded-xl border-2 border-dashed border-gray-200 p-10 text-center">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isCodingSection ? 'bg-violet-50' : 'bg-blue-50'}`}>
+                    {isCodingSection ? <Code2 className="w-7 h-7 text-violet-400" /> : <BookOpen className="w-7 h-7 text-blue-400" />}
+                  </div>
+                  <h3 className="font-bold text-gray-600 mb-1">No Questions in "{activeSection.title}"</h3>
+                  <p className="text-sm text-gray-400 mb-5">
+                    {isCodingSection ? 'Add coding problems — algorithm challenges with test cases' : 'Add MCQ or fill-in-the-blank questions'}
+                  </p>
+                  <div className="flex items-center justify-center gap-3 flex-wrap">
+                    {isCodingSection && (
+                      <button onClick={() => setModal('bulk-coding')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-violet-200 text-violet-600 rounded-xl font-semibold text-sm hover:bg-violet-50">
+                        <Code2 className="w-4 h-4" /> Bulk Paste Coding
+                      </button>
+                    )}
+                    {isQuizSection && (
+                      <button onClick={() => setModal('bulk')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50">
+                        <ClipboardPaste className="w-4 h-4" /> Bulk Paste MCQ
+                      </button>
+                    )}
+                    <button onClick={() => setModal('add')}
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90
+                        ${isCodingSection ? 'bg-gradient-to-r from-violet-600 to-purple-500 shadow-violet-500/20' : 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/20'}`}>
+                      <Plus className="w-4 h-4" /> Add Question
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Finalize banner */}
+              {isNewAssessment && savedQs.length > 0 && stagedQs.length === 0 && hasStudents && (
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-blue-800 text-sm">Assessment is ready!</p>
+                      <p className="text-xs text-blue-600 mt-0.5">
+                        {savedQs.length} question{savedQs.length !== 1 ? 's' : ''} · {totalMarks} marks · {assessment?.eligible_students?.length} students assigned
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { showToast('Assessment created successfully!'); setTimeout(() => navigate('/dashboard/college-admin/assessments'), 1200); }}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90 transition-opacity whitespace-nowrap"
+                    style={{ background: 'linear-gradient(135deg,#1d4ed8,#0284c7,#0891b2)' }}>
+                    <CheckCircle2 className="w-4 h-4" /> Create Assessment
+                  </button>
+                </div>
+              )}
+
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => setModal('view-students')}
-              className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors">
-              <Eye className="w-4 h-4" /> View Students
-              {hasStudents && <span className="ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{assessment.eligible_students.length}</span>}
-            </button>
-            <button onClick={() => setModal('assign')}
-              className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
-                ${!hasStudents ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'}`}>
-              <Users className="w-4 h-4" /> {hasStudents ? 'Assign Students' : 'Assign Students ⚠'}
-            </button>
-            {!atLimit && (
-              <>
-                <button
-                  onClick={() => setModal('bulk')}
-                  className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-gray-50 shadow-sm transition-colors">
-                  <ClipboardPaste className="w-4 h-4" /> Bulk MCQ
-                </button>
-                <button
-                  onClick={() => setModal('bulk-coding')}
-                  className="inline-flex items-center gap-1.5 bg-white border border-purple-200 text-purple-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-purple-50 shadow-sm transition-colors">
-                  <Code2 className="w-4 h-4" /> Bulk Coding
-                </button>
-                <button
-                  onClick={() => setModal('add')}
-                  className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors">
-                  <Plus className="w-4 h-4" /> Add Question
-                </button>
-              </>
-            )}
-          </div>
-        </div>
 
-        {/* Question limit progress */}
-        {limit > 0 && (
-          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-gray-700">Question Progress</span>
-              <span className={`text-sm font-black ${atLimit ? 'text-green-600' : 'text-blue-600'}`}>{totalCount} / {limit}</span>
-            </div>
-            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-500 ${atLimit ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gradient-to-r from-blue-600 to-cyan-500'}`}
-                style={{ width: `${Math.min((totalCount / limit) * 100, 100)}%` }} />
-            </div>
-            <div className="flex items-center justify-between mt-1.5 text-xs text-gray-400">
-              <span>{savedQs.length} saved · {stagedQs.length} staged{marksInfo ? ` · ${marksInfo}` : ''}</span>
-              <span>{atLimit ? '✓ Limit reached' : `${remaining} slot${remaining !== 1 ? 's' : ''} remaining`}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { icon: ListChecks, label: 'Saved Qs',    value: savedQs.length,  color: 'bg-blue-50 border-blue-100 text-blue-600' },
-            { icon: Layers,     label: 'Staged',      value: stagedQs.length, color: 'bg-amber-50 border-amber-100 text-amber-600' },
-            { icon: Award,      label: 'Total Marks', value: totalMarks,      color: 'bg-cyan-50 border-cyan-100 text-cyan-600' },
-            { icon: Clock,      label: 'Duration',    value: `${assessment?.duration_minutes || 0}m`, color: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
-          ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl ${color}`}>
-              <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
-              <div><p className="text-sm font-black leading-none">{value}</p><p className="text-[9px] font-medium opacity-60 mt-0.5 leading-none">{label}</p></div>
-            </div>
-          ))}
-        </div>
-
-        {error && <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center text-red-700"><AlertCircle className="w-8 h-8 mx-auto mb-2" />{error}</div>}
-
-        {/* Staged preview */}
-        {stagedQs.length > 0 && (
-          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-amber-200 overflow-hidden">
-            <div className="px-5 py-3 bg-amber-50/50 border-b border-amber-100 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center"><Eye className="w-4 h-4 text-amber-600" /></div>
-                <p className="font-bold text-amber-800 text-sm">{stagedQs.length} Question{stagedQs.length !== 1 ? 's' : ''} Staged — Preview</p>
-                <span className="text-xs text-amber-500">Not saved to DB yet</span>
-              </div>
+          {/* Sticky submit */}
+          {stagedQs.length > 0 && (
+            <div className="sticky bottom-4">
               <button onClick={handleSubmitAll} disabled={submitting}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-xs font-bold disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
+                className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-white font-bold text-[15px] shadow-lg bg-blue-600 disabled:opacity-60 transition-colors hover:bg-blue-700">
                 {submitting
-                  ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  : <Send className="w-3.5 h-3.5" />}
-                {submitting ? 'Saving…' : `Submit ${stagedQs.length}`}
+                  ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Send className="w-5 h-5" />}
+                {submitting ? 'Saving to database…' : `Submit ${stagedQs.length} Question${stagedQs.length !== 1 ? 's' : ''} to Assessment`}
               </button>
             </div>
-            <div className="p-4 space-y-3">
-              {stagedQs.map((q, idx) => (
-                <QuestionCard key={idx} q={q} idx={idx} staged
-                  onEdit={i => setModal({ type: 'edit-staged', idx: i })}
-                  onRemove={i => setStagedQs(prev => prev.filter((_, pi) => pi !== i))} />
-              ))}
-            </div>
-          </div>
+          )}
+
+        </div>
+
+        {/* Modals */}
+        {modal === 'add' && (
+          <QuestionModal
+            onSave={handleStageQuestion}
+            onClose={() => setModal(null)}
+            defaultMarks={marksPerQ}
+            forcedType={isCodingSection ? 'coding' : isQuizSection ? 'quiz' : null}
+          />
+        )}
+        {modal === 'bulk' && (
+          <BulkPasteModal onAdd={handleBulkAdd} onClose={() => setModal(null)} remaining={sectionRemaining === Infinity ? 9999 : sectionRemaining} />
+        )}
+        {modal === 'bulk-coding' && (
+          <BulkPasteCodingModal onAdd={handleBulkCodingAdd} onClose={() => setModal(null)} remaining={sectionRemaining === Infinity ? 9999 : sectionRemaining} />
+        )}
+        {modal?.type === 'edit-staged' && (
+          <QuestionModal
+            question={stagedQs[modal.idx]}
+            onSave={handleStageQuestion}
+            onClose={() => setModal(null)}
+            defaultMarks={marksPerQ}
+            forcedType={isCodingSection ? 'coding' : isQuizSection ? 'quiz' : null}
+          />
+        )}
+        {modal?.type === 'edit-saved' && (
+          <QuestionModal question={modal.question}
+            defaultMarks={marksPerQ}
+            forcedType={modal.question?.type === 'coding' ? 'coding' : 'quiz'}
+            onSave={async (payload) => {
+              const res = await assessmentAPI.updateQuestion(modal.question._id, payload);
+              if (res.success) { showToast('Updated'); fetchData(); setModal(null); }
+              else showToast(res.message || 'Error', 'error');
+            }}
+            onClose={() => setModal(null)} />
+        )}
+        {modal === 'assign' && (
+          <AssignStudentsModal assessmentId={assessmentId} assessment={assessment} onClose={() => { setModal(null); fetchData(); }} />
+        )}
+        {modal === 'view-students' && (
+          <ViewAssignedModal assessmentId={assessmentId}
+            assessmentName={assessment?.title || 'Assessment'}
+            level={assessment?.level} onClose={() => setModal(null)} />
         )}
 
-        {/* Saved questions */}
-        {savedQs.length === 0 && stagedQs.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-12 text-center flex flex-col justify-center items-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4"><BookOpen className="w-8 h-8 text-blue-400" /></div>
-            <h3 className="text-lg font-bold text-gray-700 mb-2">No Questions Yet</h3>
-            <p className="text-gray-400 text-sm mb-4">Add questions one by one or paste in bulk.</p>
-            {marksInfo && (
-              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 text-sm text-blue-700 font-semibold mb-5">
-                <Award className="w-4 h-4" />
-                Marks auto-assigned: <strong className="ml-1">{marksInfo}</strong>
-              </div>
-            )}
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <button onClick={() => setModal('bulk')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50">
-                <ClipboardPaste className="w-4 h-4" /> Bulk Paste MCQ
-              </button>
-              <button onClick={() => setModal('bulk-coding')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-purple-200 text-purple-600 rounded-xl font-semibold text-sm hover:bg-purple-50">
-                <Code2 className="w-4 h-4" /> Bulk Paste Coding
-              </button>
-              <button onClick={() => setModal('add')} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90">
-                <Plus className="w-4 h-4" /> Add Question
-              </button>
-            </div>
-          </div>
-        ) : savedQs.length > 0 && (
-          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
-            <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center gap-2 shrink-0">
-              <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"><ListChecks className="w-4 h-4 text-blue-600" /></div>
-              <p className="font-bold text-gray-800 text-sm">{savedQs.length} Saved Question{savedQs.length !== 1 ? 's' : ''}</p>
-            </div>
-            <div className="p-4 space-y-3">
-              {savedQs.map((q, idx) => (
-                <QuestionCard key={q._id} q={q} idx={idx}
-                  onEdit={() => setModal({ type: 'edit-saved', question: q })}
-                  onRemove={() => { if (window.confirm('Delete this question?')) { assessmentAPI.deleteQuestion(q._id).then(r => { if (r.success) { showToast('Deleted'); fetchData(); } }); } }} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Finalize: show once questions saved AND students assigned AND new creation */}
-        {isNewAssessment && savedQs.length > 0 && stagedQs.length === 0 && hasStudents && (
-          <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-bold text-blue-800 text-sm">Assessment is ready!</p>
-                <p className="text-xs text-blue-600 mt-0.5">
-                  {savedQs.length} question{savedQs.length !== 1 ? 's' : ''} · {totalMarks} marks · {assessment?.eligible_students?.length} students assigned
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => { showToast('Assessment created successfully!'); setTimeout(() => navigate('/dashboard/college-admin/assessments'), 1200); }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90 transition-opacity whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg,#1d4ed8,#0284c7,#0891b2)' }}>
-              <CheckCircle2 className="w-4 h-4" /> Create Assessment
-            </button>
-          </div>
-        )}
-
-        {/* Sticky submit */}
-        {stagedQs.length > 0 && (
-          <div className="sticky bottom-4">
-            <button onClick={handleSubmitAll} disabled={submitting}
-              className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-white font-bold text-[15px] shadow-sm bg-blue-600 disabled:opacity-60 transition-colors hover:bg-blue-700">
-              {submitting
-                ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                : <Send className="w-5 h-5" />}
-              {submitting ? 'Saving to database…' : `Submit ${stagedQs.length} Question${stagedQs.length !== 1 ? 's' : ''} to Assessment`}
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* ─── Modals ─────────────────────────────────────────────────── */}
-      {modal === 'add' && (
-        <QuestionModal onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />
-      )}
-      {modal === 'bulk' && (
-        <BulkPasteModal onAdd={handleBulkAdd} onClose={() => setModal(null)} remaining={remaining === Infinity ? 9999 : remaining} />
-      )}
-      {/* ── NEW: Coding Bulk Paste Modal ─────────────────────────── */}
-      {modal === 'bulk-coding' && (
-        <BulkPasteCodingModal onAdd={handleBulkCodingAdd} onClose={() => setModal(null)} remaining={remaining === Infinity ? 9999 : remaining} />
-      )}
-      {modal?.type === 'edit-staged' && (
-        <QuestionModal question={stagedQs[modal.idx]} onSave={handleStageQuestion} onClose={() => setModal(null)} defaultMarks={marksPerQ} />
-      )}
-      {modal?.type === 'edit-saved' && (
-        <QuestionModal question={modal.question}
-          defaultMarks={marksPerQ}
-          onSave={async (payload) => {
-            const res = await assessmentAPI.updateQuestion(modal.question._id, payload);
-            if (res.success) { showToast('Updated'); fetchData(); setModal(null); }
-            else showToast(res.message || 'Error', 'error');
-          }}
-          onClose={() => setModal(null)} />
-      )}
-      {modal === 'assign' && (
-        <AssignStudentsModal assessmentId={assessmentId} assessment={assessment} onClose={() => { setModal(null); fetchData(); }} />
-      )}
-      {modal === 'view-students' && (
-        <ViewAssignedModal assessmentId={assessmentId}
-          assessmentName={assessment?.title || assessment?.skill_id?.name || 'Assessment'}
-          level={assessment?.level} onClose={() => setModal(null)} />
-      )}
-
-      </div>
       {showChecklist && (
         <CompletionChecklistModal
           assessment={assessment}
@@ -1979,6 +2211,71 @@ const QuestionManager = () => {
           onProceedAnyway={() => { setShowChecklist(false); navigate('/dashboard/college-admin/assessments'); }}
         />
       )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {confirmDelete && (() => {
+        const isLocked = linkedQIds.has(String(confirmDelete.questionId));
+        const preview  = confirmDelete.questionText
+          ? `"${confirmDelete.questionText.length > 80
+              ? confirmDelete.questionText.slice(0, 80) + '\u2026'
+              : confirmDelete.questionText}"`
+          : 'This question will be permanently removed.';
+        return (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 flex flex-col items-center text-center gap-4">
+
+              {/* Icon */}
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isLocked ? 'bg-amber-50' : 'bg-red-50'}`}>
+                {isLocked
+                  ? <AlertCircle className="w-7 h-7 text-amber-500" />
+                  : <Trash2 className="w-7 h-7 text-red-500" />}
+              </div>
+
+              {/* Text */}
+              <div>
+                <h3 className="font-bold text-gray-900 text-base mb-1">
+                  {isLocked ? 'Cannot Delete Question' : 'Delete Question?'}
+                </h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{preview}</p>
+                {isLocked && (
+                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 leading-relaxed">
+                    This question is still linked to an assessment or section.
+                    Remove it from the assessment first, then try again.
+                  </p>
+                )}
+              </div>
+
+              {!isLocked && (
+                <p className="text-xs text-red-400 font-medium">This action cannot be undone.</p>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isLocked ? 'Close' : 'Cancel'}
+                </button>
+                {!isLocked && (
+                  <button
+                    onClick={handleDeleteQuestion}
+                    disabled={deleting}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-60"
+                  >
+                    {deleting
+                      ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Trash2 className="w-4 h-4" />}
+                    {deleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                )}
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </CollegeAdminLayout>
   );
 };

@@ -44,7 +44,8 @@ const questionToForm = (q) => ({
     : [{ input: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' }],
 });
 
-const BLANK_TC  = { input: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' };
+const BLANK_TC     = { input: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' };
+const BLANK_SQL_TC = { setup_sql: '', expected_output: '', is_hidden: false, marks_weightage: 1, time_limit_ms: 2000, explanation: '' };
 const BLANK_FORM = {
   question: '', type: 'single_answer', level: 'Beginner',
   options: ['', '', '', ''], correct_answer: 'A', explanation: '', marks: 1,
@@ -120,6 +121,41 @@ Input:
 4
 -3 -1 -4 -2
 Output: -1
+Hidden: true`;
+
+const BULK_SQL_FORMAT_EXAMPLE = `1. Find High Salary Employees
+Description: Write a query to find all employees with salary above 80000, ordered by name.
+Level: Beginner
+Boilerplate:
+SELECT name, salary FROM employees WHERE salary > 80000 ORDER BY name;
+TestCase:
+SetupSQL:
+CREATE TABLE employees (id INTEGER, name TEXT, salary INTEGER);
+INSERT INTO employees VALUES (1,'Alice',90000),(2,'Bob',75000),(3,'Carol',95000);
+Output:
+Alice|90000
+Carol|95000
+Hidden: false
+
+2. Count Orders Per Customer
+Description: Write a query to count how many orders each customer has placed.
+Level: Intermediate
+TestCase:
+SetupSQL:
+CREATE TABLE orders (id INTEGER, customer TEXT, amount REAL);
+INSERT INTO orders VALUES (1,'Alice',100),(2,'Bob',200),(3,'Alice',150);
+Output:
+Alice|2
+Bob|1
+Hidden: false
+TestCase:
+SetupSQL:
+CREATE TABLE orders (id INTEGER, customer TEXT, amount REAL);
+INSERT INTO orders VALUES (1,'X',10),(2,'Y',20),(3,'X',30),(4,'Y',40),(5,'Z',50);
+Output:
+X|2
+Y|2
+Z|1
 Hidden: true`;
 
 // ─── MCQ Bulk Parser ──────────────────────────────────────────────
@@ -339,6 +375,131 @@ const parseBulkCodingText = (text) => {
   return { questions, errors };
 };
 
+// ─── SQL Bulk Parser ──────────────────────────────────────────────
+const parseBulkSqlText = (text) => {
+  const questions = [];
+  const errors = [];
+  const blocks = text.split(/\n(?=\d+[\.\)]\s)/).map(b => b.trim()).filter(Boolean);
+
+  blocks.forEach((block, blockIdx) => {
+    const lines = block.split('\n');
+    const q = {
+      question: '',
+      type: 'sql',
+      level: 'Beginner',
+      problem_description: '',
+      boilerplate_code: '',
+      test_cases: [],
+    };
+
+    let currentField = null;
+    let currentTC = null;
+    let fieldBuffer = [];
+
+    const flushBuffer = () => {
+      if (!currentField || fieldBuffer.length === 0) { fieldBuffer = []; return; }
+      const val = fieldBuffer.join('\n').trim();
+      if (currentField === 'description') q.problem_description = val;
+      else if (currentField === 'boilerplate') q.boilerplate_code = val;
+      else if (currentField === 'setup_sql' && currentTC) currentTC.setup_sql = val;
+      else if (currentField === 'tc_output' && currentTC) currentTC.expected_output = val;
+      fieldBuffer = [];
+    };
+
+    const flushTC = () => {
+      if (currentTC !== null) {
+        if ((currentTC.setup_sql || '').trim() && (currentTC.expected_output || '').trim()) {
+          q.test_cases.push({ ...currentTC });
+        }
+        currentTC = null;
+      }
+    };
+
+    lines.forEach((rawLine, lineIdx) => {
+      const trimmed = rawLine.trim();
+
+      if (lineIdx === 0) {
+        const m = trimmed.match(/^\d+[\.\)]\s+(.+)$/);
+        if (m) { q.question = m[1].trim(); return; }
+      }
+
+      // TestCase block start
+      if (/^TestCase:\s*$/i.test(trimmed)) {
+        flushBuffer(); currentField = null;
+        flushTC();
+        currentTC = { setup_sql: '', expected_output: '', is_hidden: false, marks_weightage: 1, explanation: '' };
+        return;
+      }
+
+      // Within a TestCase
+      if (/^SetupSQL:\s*$/i.test(trimmed)) {
+        flushBuffer();
+        currentField = 'setup_sql';
+        return;
+      }
+      if (/^Output:\s*$/i.test(trimmed)) {
+        flushBuffer();
+        currentField = 'tc_output';
+        return;
+      }
+      const hiddenM = trimmed.match(/^Hidden:\s*(true|false)$/i);
+      if (hiddenM && currentTC) {
+        flushBuffer(); currentField = null;
+        currentTC.is_hidden = hiddenM[1].toLowerCase() === 'true';
+        return;
+      }
+      const expM = trimmed.match(/^Explanation:\s*(.+)$/i);
+      if (expM && currentTC) {
+        flushBuffer(); currentField = null;
+        currentTC.explanation = expM[1].trim();
+        return;
+      }
+
+      // Top-level fields
+      const descM = trimmed.match(/^Description:\s*(.*)$/i);
+      if (descM) {
+        flushBuffer(); flushTC(); currentField = 'description';
+        if (descM[1].trim()) fieldBuffer.push(descM[1].trim());
+        return;
+      }
+      if (/^Boilerplate:\s*$/i.test(trimmed)) {
+        flushBuffer(); flushTC(); currentField = 'boilerplate';
+        return;
+      }
+      const levelM = trimmed.match(/^Level:\s*(.+)$/i);
+      if (levelM) {
+        flushBuffer(); flushTC(); currentField = null;
+        const lv = levelM[1].trim();
+        if (['Beginner', 'Intermediate', 'Advanced'].includes(lv)) q.level = lv;
+        return;
+      }
+
+      // Continuation
+      if (currentField) {
+        if (currentField === 'boilerplate' || currentField === 'setup_sql') {
+          fieldBuffer.push(rawLine.replace(/^\t/, '  '));
+        } else if (trimmed) {
+          fieldBuffer.push(trimmed);
+        }
+      }
+    });
+
+    flushBuffer();
+    flushTC();
+
+    const num = blockIdx + 1;
+    if (!q.question) {
+      errors.push(`Q${num}: Missing problem title (first line must be "N. Title")`);
+    } else if (q.test_cases.length === 0) {
+      errors.push(`Q${num}: "${q.question}" — No valid test cases. Each TestCase needs SetupSQL: and Output: blocks.`);
+    } else {
+      questions.push(q);
+    }
+  });
+
+  return { questions, errors };
+};
+
 /* ─── Completion Checklist Modal ─────────────────────────────────────── */
 const CompletionChecklistModal = ({
   assessment,
@@ -537,6 +698,15 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false
                 )}
               </div>
             )}
+            {q.type === 'sql' && (
+              <div className="mt-2 space-y-1.5">
+                {q.test_cases?.length > 0 && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5">
+                    🗄️ SQL (SQLite) · {q.test_cases.filter(tc => !tc.is_hidden).length} visible · {q.test_cases.filter(tc => tc.is_hidden).length} hidden test cases
+                  </p>
+                )}
+              </div>
+            )}
             {q.explanation && <p className="mt-1.5 text-xs text-gray-400 italic">💡 {q.explanation}</p>}
           </div>
           <div className="flex gap-1 shrink-0">
@@ -583,9 +753,10 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
   const isChoice = form.type === 'single_answer' || form.type === 'multiple_answer';
   const isFill   = form.type === 'fill_up';
   const isCoding = form.type === 'coding';
+  const isSql    = form.type === 'sql';
 
   const allowedTypes = forcedType === 'coding'
-    ? [{ value: 'coding', label: 'Coding' }]
+    ? [{ value: 'coding', label: 'Coding' }, { value: 'sql', label: 'SQL' }]
     : forcedType === 'quiz'
     ? [
         { value: 'single_answer', label: 'Single Answer (MCQ)' },
@@ -597,6 +768,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
         { value: 'multiple_answer', label: 'Multiple Answer' },
         { value: 'fill_up', label: 'Fill in the Blank' },
         { value: 'coding', label: 'Coding' },
+        { value: 'sql', label: 'SQL (SQLite)' },
       ];
 
   const toggleMulti = (label) => setForm(prev => {
@@ -605,7 +777,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
   });
 
   const setTC  = (idx, field, val) => setForm(prev => ({ ...prev, test_cases: prev.test_cases.map((tc, i) => i === idx ? { ...tc, [field]: val } : tc) }));
-  const addTC  = () => setForm(prev => ({ ...prev, test_cases: [...prev.test_cases, { ...BLANK_TC }] }));
+  const addTC  = () => setForm(prev => ({ ...prev, test_cases: [...prev.test_cases, isSql ? { ...BLANK_SQL_TC } : { ...BLANK_TC }] }));
   const rmTC   = (idx) => setForm(prev => ({ ...prev, test_cases: prev.test_cases.filter((_, i) => i !== idx) }));
 
   const addTag = () => {
@@ -661,13 +833,30 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
           explanation:     tc.explanation?.trim() || undefined,
         }));
     }
+
+    if (isSql) {
+      // SQL questions always use language = 'sql' (fixed, Judge0 ID 82)
+      payload.language = 'sql';
+      if (form.problem_description) payload.problem_description = form.problem_description.trim();
+      if (form.boilerplate_code)    payload.boilerplate_code    = form.boilerplate_code.trim();
+      payload.test_cases = form.test_cases
+        .filter(tc => (tc.setup_sql || '').trim() && (tc.expected_output || '').trim())
+        .map(tc => ({
+          setup_sql:       tc.setup_sql.trim(),
+          expected_output: tc.expected_output.trim(),
+          is_hidden:       tc.is_hidden,
+          marks_weightage: tc.is_hidden ? marksPerHiddenTC : 0,
+          explanation:     tc.explanation?.trim() || undefined,
+        }));
+    }
     onSave(payload);
   };
 
   const canSave = form.question.trim()
     && (!isChoice || form.options.every(o => o.trim()))
     && (!isFill   || (typeof form.correct_answer === 'string' && form.correct_answer.trim()))
-    && (!isCoding || form.test_cases.some(tc => tc.input.trim() && tc.expected_output.trim()));
+    && (!isCoding || form.test_cases.some(tc => tc.input.trim() && tc.expected_output.trim()))
+    && (!isSql    || form.test_cases.some(tc => (tc.setup_sql || '').trim() && (tc.expected_output || '').trim()));
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
@@ -699,7 +888,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </select>
               {forcedType && (
                 <p className="text-[10px] text-gray-400 mt-1">
-                  {forcedType === 'coding' ? '⚡ Coding section — only coding questions allowed' : '📝 Quiz section — MCQ and fill-in-blank only'}
+                  {forcedType === 'coding' ? '⚡ Coding section — Coding & SQL questions allowed' : '📝 Quiz section — MCQ and fill-in-blank only'}
                 </p>
               )}
             </div>
@@ -748,6 +937,103 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
               <input type="text" value={typeof form.correct_answer === 'string' ? form.correct_answer : ''} onChange={e => setForm(prev => ({ ...prev, correct_answer: e.target.value }))} placeholder="Enter the exact correct answer" className={inp} />
             </div>
+          )}
+
+          {isSql && (
+            <>
+              <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                <span className="text-base leading-none">🗄️</span>
+                <div>
+                  <p className="font-bold mb-0.5">SQL Question (Judge0 SQLite 3)</p>
+                  <p className="text-amber-700">Each test case has a <strong>Setup SQL</strong> (schema + seed data sent as stdin) and an <strong>Expected Output</strong> (plain text output of the student's query). The student writes only the SELECT query.</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Problem Description <span className="text-xs font-normal text-gray-400">(shown to student)</span>
+                </label>
+                <textarea rows={4} value={form.problem_description}
+                  onChange={e => setForm(prev => ({ ...prev, problem_description: e.target.value }))}
+                  placeholder="e.g. Write a query to find all employees with salary > 80000, sorted by name."
+                  className={`${inp} resize-none`} />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Starter Query <span className="text-xs font-normal text-gray-400">(optional — pre-filled in student editor)</span>
+                </label>
+                <textarea rows={3} value={form.boilerplate_code}
+                  onChange={e => setForm(prev => ({ ...prev, boilerplate_code: e.target.value }))}
+                  placeholder={"SELECT *\nFROM employees\nWHERE salary > 80000;"}
+                  className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Test Cases <span className="text-red-500">*</span>
+                    <span className="text-xs font-normal text-gray-400 ml-1">(setup_sql + expected output per case)</span>
+                  </label>
+                  <button onClick={addTC} type="button"
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
+                    <Plus className="w-3 h-3" /> Add Case
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {form.test_cases.map((tc, idx) => (
+                    <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-gray-50/50'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+                          {tc.is_hidden
+                            ? <><span className="w-2 h-2 rounded-full bg-purple-400 inline-block" />Hidden Test {idx + 1}</>
+                            : <><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />Visible Test {idx + 1}</>}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 cursor-pointer select-none">
+                            <input type="checkbox" checked={tc.is_hidden} onChange={e => setTC(idx, 'is_hidden', e.target.checked)} className="w-3.5 h-3.5 rounded text-purple-600" />
+                            Hidden
+                          </label>
+                          {form.test_cases.length > 1 && (
+                            <button onClick={() => rmTC(idx)} type="button" className="text-red-400 hover:text-red-600 transition-colors">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                          Setup SQL <span className="text-gray-300">(CREATE TABLE + INSERT — sent as stdin to Judge0)</span>
+                        </label>
+                        <textarea rows={5} value={tc.setup_sql || ''}
+                          onChange={e => setTC(idx, 'setup_sql', e.target.value)}
+                          placeholder={"CREATE TABLE employees (id INTEGER, name TEXT, salary INTEGER);\nINSERT INTO employees VALUES (1,'Alice',90000),(2,'Bob',75000),(3,'Carol',95000);"}
+                          className={`${inp} font-mono text-xs resize-none leading-relaxed`} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                          Expected Output <span className="text-gray-300">(exact plain-text stdout from the correct query)</span>
+                        </label>
+                        <textarea rows={3} value={tc.expected_output}
+                          onChange={e => setTC(idx, 'expected_output', e.target.value)}
+                          placeholder={"Alice|90000\nCarol|95000"}
+                          className={`${inp} font-mono text-xs resize-none`} />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Explanation (optional)</label>
+                        <input type="text" value={tc.explanation || ''}
+                          onChange={e => setTC(idx, 'explanation', e.target.value)}
+                          placeholder="e.g. Returns employees with salary above 80000"
+                          className={`${inp} text-xs`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                  ⚠️ Judge0 compares output as plain text — ensure expected output exactly matches SQLite's stdout (pipe-separated rows, no headers by default).
+                </p>
+              </div>
+            </>
           )}
 
           {isCoding && (
@@ -1067,139 +1353,298 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
   );
 };
 
-/* ─── Coding Bulk Paste Modal ─────────────────────────────────────────── */
-const BulkPasteCodingModal = ({ onAdd, onClose, remaining }) => {
-  const [text, setText]             = useState('');
-  const [parsed, setParsed]         = useState(null);
-  const [showFormat, setShowFormat] = useState(false);
-  const [error, setError]           = useState('');
+/* ─── Coding + SQL Bulk Paste Modal (tabbed) ──────────────────────────── */
+const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding' }) => {
+  const [tab, setTab]               = useState(defaultTab); // 'coding' | 'sql'
 
-  const handleParse = () => {
-    setError('');
-    if (!text.trim()) { setError('Paste your coding problems first'); return; }
-    const result = parseBulkCodingText(text);
+  // Coding tab state
+  const [codingText, setCodingText]         = useState('');
+  const [codingParsed, setCodingParsed]     = useState(null);
+  const [codingError, setCodingError]       = useState('');
+  const [showCodingFmt, setShowCodingFmt]   = useState(false);
+
+  // SQL tab state
+  const [sqlText, setSqlText]               = useState('');
+  const [sqlParsed, setSqlParsed]           = useState(null);
+  const [sqlError, setSqlError]             = useState('');
+  const [showSqlFmt, setShowSqlFmt]         = useState(false);
+
+  // ── Coding parse ────────────────────────────────────────────────
+  const handleParseCoding = () => {
+    setCodingError('');
+    if (!codingText.trim()) { setCodingError('Paste your coding problems first'); return; }
+    const result = parseBulkCodingText(codingText);
     if (result.questions.length === 0) {
-      setError(result.errors.length > 0 ? result.errors.join('\n') : 'No valid coding problems found. Check the format.');
+      setCodingError(result.errors.length > 0 ? result.errors.join('\n') : 'No valid coding problems found. Check the format.');
       return;
     }
     if (result.questions.length > remaining) {
-      setError(`Only ${remaining} more question${remaining !== 1 ? 's' : ''} allowed. Parsed ${result.questions.length} — please reduce.`);
+      setCodingError(`Only ${remaining} more question${remaining !== 1 ? 's' : ''} allowed. Parsed ${result.questions.length} — please reduce.`);
       return;
     }
-    setParsed(result);
+    setCodingParsed(result);
   };
+
+  // ── SQL parse ────────────────────────────────────────────────────
+  const handleParseSql = () => {
+    setSqlError('');
+    if (!sqlText.trim()) { setSqlError('Paste your SQL problems first'); return; }
+    const result = parseBulkSqlText(sqlText);
+    if (result.questions.length === 0) {
+      setSqlError(result.errors.length > 0 ? result.errors.join('\n') : 'No valid SQL problems found. Check the format.');
+      return;
+    }
+    if (result.questions.length > remaining) {
+      setSqlError(`Only ${remaining} more question${remaining !== 1 ? 's' : ''} allowed. Parsed ${result.questions.length} — please reduce.`);
+      return;
+    }
+    setSqlParsed(result);
+  };
+
+  const isCoding = tab === 'coding';
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-purple-500/20 border border-white/60 max-w-2xl w-full my-8">
-        <div className="px-5 py-4 bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-500 rounded-t-2xl flex items-center justify-between">
+      <div className={`bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/60 max-w-2xl w-full my-8
+        ${isCoding ? 'shadow-purple-500/20' : 'shadow-amber-500/20'}`}>
+
+        {/* Header */}
+        <div className={`px-5 py-4 rounded-t-2xl flex items-center justify-between
+          ${isCoding
+            ? 'bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-500'
+            : 'bg-gradient-to-r from-amber-600 via-orange-500 to-yellow-500'}`}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <Code2 className="w-4 h-4 text-white" />
+              {isCoding ? <Code2 className="w-4 h-4 text-white" /> : <span className="text-white text-base leading-none">🗄️</span>}
             </div>
             <div>
-              <h3 className="font-bold text-white">Bulk Paste Coding Problems</h3>
-              <p className="text-purple-200 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
+              <h3 className="font-bold text-white">Bulk Paste: Code & SQL</h3>
+              <p className={`text-[11px] ${isCoding ? 'text-purple-200' : 'text-amber-100'}`}>
+                {remaining} slot{remaining !== 1 ? 's' : ''} remaining
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-5 space-y-4">
-          <button onClick={() => setShowFormat(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-all">
-            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Paste Format Guide</span>
-            {showFormat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100">
+          <button
+            onClick={() => setTab('coding')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
+              ${tab === 'coding'
+                ? 'border-purple-600 text-purple-700 bg-purple-50/40'
+                : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
+            <Code2 className="w-4 h-4" /> Coding
           </button>
-          {showFormat && (
-            <div className="bg-gray-900 rounded-xl p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-72">
-              <div className="mb-3 space-y-1 text-purple-300 text-xs font-semibold font-sans">
-                <p className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 shrink-0" /> Marks are auto-assigned from assessment settings</p>
-                <p className="flex items-center gap-1.5"><Code2 className="w-3.5 h-3.5 shrink-0" /> Each problem needs at least one TestCase: block</p>
-              </div>
-              <pre className="whitespace-pre-wrap text-green-400">{BULK_CODING_FORMAT_EXAMPLE}</pre>
-            </div>
-          )}
-          <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-800">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              Each problem starts with <code className="bg-purple-100 px-1 rounded font-mono">1. Title</code>.
-              Use <code className="bg-purple-100 px-1 rounded font-mono">TestCase:</code> blocks for I/O.
-              Mark hidden tests with <code className="bg-purple-100 px-1 rounded font-mono">Hidden: true</code>.
-            </span>
-          </div>
-          {!parsed ? (
-            <>
-              <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Coding Problems Here</label>
-                <textarea
-                  rows={16}
-                  value={text}
-                  onChange={e => setText(e.target.value)}
-                  placeholder={`1. Sum of Two Numbers\nDescription: Given two integers A and B, compute their sum.\nTestCase:\nInput: 5 3\nOutput: 8\nHidden: false`}
-                  className={`${inp} resize-none font-mono text-xs leading-relaxed`}
-                />
-              </div>
-              {error && (
-                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-xs">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <pre className="whitespace-pre-wrap font-sans">{error}</pre>
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
-                <button onClick={handleParse} disabled={!text.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-purple-500/20">
-                  <Eye className="w-4 h-4" /> Parse & Preview
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>
-                  <strong>{parsed.questions.length}</strong> coding problem{parsed.questions.length !== 1 ? 's' : ''} parsed successfully
-                  {parsed.errors.length > 0 && ` · ${parsed.errors.length} skipped`}
-                </span>
-              </div>
-              {parsed.errors.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-                  <p className="font-bold mb-1">Skipped:</p>
-                  <pre className="whitespace-pre-wrap font-sans">{parsed.errors.join('\n')}</pre>
-                </div>
-              )}
-              <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
-                {parsed.questions.map((q, idx) => {
-                  const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
-                  const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
-                  return (
-                    <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-200">
-                      <span className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
-                          <span className="text-[10px] text-gray-500">{visibleTC} visible · {hiddenTC} hidden test case{q.test_cases.length !== 1 ? 's' : ''}</span>
-                          {q.algorithm_tags?.length > 0 && <span className="text-[10px] text-gray-400">Tags: {q.algorithm_tags.join(', ')}</span>}
-                        </div>
-                        {q.problem_description && <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
-                <button onClick={() => onAdd(parsed.questions)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-purple-500/20">
-                  <Plus className="w-4 h-4" /> Add {parsed.questions.length} to Staging
-                </button>
-              </div>
-            </>
-          )}
+          <button
+            onClick={() => setTab('sql')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
+              ${tab === 'sql'
+                ? 'border-amber-500 text-amber-700 bg-amber-50/40'
+                : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
+            <span className="text-base leading-none">🗄️</span> SQL
+          </button>
         </div>
+
+        {/* ── CODING TAB ── */}
+        {tab === 'coding' && (
+          <div className="p-5 space-y-4">
+            <button onClick={() => setShowCodingFmt(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl text-sm font-semibold text-purple-700 hover:bg-purple-100 transition-all">
+              <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Paste Format Guide</span>
+              {showCodingFmt ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {showCodingFmt && (
+              <div className="bg-gray-900 rounded-xl p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-72">
+                <div className="mb-3 space-y-1 text-purple-300 text-xs font-semibold font-sans">
+                  <p className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 shrink-0" /> Marks auto-assigned from assessment settings</p>
+                  <p className="flex items-center gap-1.5"><Code2 className="w-3.5 h-3.5 shrink-0" /> Each problem needs at least one TestCase: block</p>
+                </div>
+                <pre className="whitespace-pre-wrap text-green-400">{BULK_CODING_FORMAT_EXAMPLE}</pre>
+              </div>
+            )}
+            <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-800">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Each problem starts with <code className="bg-purple-100 px-1 rounded font-mono">1. Title</code>.
+                Use <code className="bg-purple-100 px-1 rounded font-mono">TestCase:</code> blocks.
+                Mark hidden tests with <code className="bg-purple-100 px-1 rounded font-mono">Hidden: true</code>.
+              </span>
+            </div>
+            {!codingParsed ? (
+              <>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Coding Problems Here</label>
+                  <textarea
+                    rows={16}
+                    value={codingText}
+                    onChange={e => setCodingText(e.target.value)}
+                    placeholder={`1. Sum of Two Numbers\nDescription: Given two integers A and B, compute their sum.\nTestCase:\nInput: 5 3\nOutput: 8\nHidden: false`}
+                    className={`${inp} resize-none font-mono text-xs leading-relaxed`}
+                  />
+                </div>
+                {codingError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <pre className="whitespace-pre-wrap font-sans">{codingError}</pre>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+                  <button onClick={handleParseCoding} disabled={!codingText.trim()}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-purple-500/20">
+                    <Eye className="w-4 h-4" /> Parse & Preview
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>
+                    <strong>{codingParsed.questions.length}</strong> coding problem{codingParsed.questions.length !== 1 ? 's' : ''} parsed
+                    {codingParsed.errors.length > 0 && ` · ${codingParsed.errors.length} skipped`}
+                  </span>
+                </div>
+                {codingParsed.errors.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                    <p className="font-bold mb-1">Skipped:</p>
+                    <pre className="whitespace-pre-wrap font-sans">{codingParsed.errors.join('\n')}</pre>
+                  </div>
+                )}
+                <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
+                  {codingParsed.questions.map((q, idx) => {
+                    const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
+                    const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
+                    return (
+                      <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-200">
+                        <span className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
+                            <span className="text-[10px] text-gray-500">{visibleTC} visible · {hiddenTC} hidden TC{q.test_cases.length !== 1 ? 's' : ''}</span>
+                            {q.algorithm_tags?.length > 0 && <span className="text-[10px] text-gray-400">Tags: {q.algorithm_tags.join(', ')}</span>}
+                          </div>
+                          {q.problem_description && <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setCodingParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
+                  <button onClick={() => onAdd(codingParsed.questions)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-purple-500/20">
+                    <Plus className="w-4 h-4" /> Add {codingParsed.questions.length} to Staging
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── SQL TAB ── */}
+        {tab === 'sql' && (
+          <div className="p-5 space-y-4">
+            <button onClick={() => setShowSqlFmt(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm font-semibold text-amber-700 hover:bg-amber-100 transition-all">
+              <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Paste Format Guide</span>
+              {showSqlFmt ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            {showSqlFmt && (
+              <div className="bg-gray-900 rounded-xl p-4 text-[11px] font-mono leading-relaxed overflow-auto max-h-72">
+                <div className="mb-3 space-y-1 text-amber-300 text-xs font-semibold font-sans">
+                  <p className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5 shrink-0" /> Marks auto-assigned from assessment settings</p>
+                  <p className="flex items-center gap-1.5"><span className="text-sm">🗄️</span> Each TestCase needs SetupSQL: and Output: blocks</p>
+                  <p className="flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5 shrink-0" /> Output must match SQLite's exact stdout (pipe-separated, no headers)</p>
+                </div>
+                <pre className="whitespace-pre-wrap text-green-400">{BULK_SQL_FORMAT_EXAMPLE}</pre>
+              </div>
+            )}
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Each problem starts with <code className="bg-amber-100 px-1 rounded font-mono">1. Title</code>.
+                Use <code className="bg-amber-100 px-1 rounded font-mono">TestCase:</code> then <code className="bg-amber-100 px-1 rounded font-mono">SetupSQL:</code> (schema + data) and <code className="bg-amber-100 px-1 rounded font-mono">Output:</code> (expected stdout).
+              </span>
+            </div>
+            {!sqlParsed ? (
+              <>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste SQL Problems Here</label>
+                  <textarea
+                    rows={16}
+                    value={sqlText}
+                    onChange={e => setSqlText(e.target.value)}
+                    placeholder={`1. Find All Employees\nDescription: Write a query to select all employees.\nTestCase:\nSetupSQL:\nCREATE TABLE employees (id INTEGER, name TEXT);\nINSERT INTO employees VALUES (1,'Alice'),(2,'Bob');\nOutput:\n1|Alice\n2|Bob\nHidden: false`}
+                    className={`${inp} resize-none font-mono text-xs leading-relaxed`}
+                  />
+                </div>
+                {sqlError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    <pre className="whitespace-pre-wrap font-sans">{sqlError}</pre>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+                  <button onClick={handleParseSql} disabled={!sqlText.trim()}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-amber-500/20">
+                    <Eye className="w-4 h-4" /> Parse & Preview
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>
+                    <strong>{sqlParsed.questions.length}</strong> SQL problem{sqlParsed.questions.length !== 1 ? 's' : ''} parsed
+                    {sqlParsed.errors.length > 0 && ` · ${sqlParsed.errors.length} skipped`}
+                  </span>
+                </div>
+                {sqlParsed.errors.length > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                    <p className="font-bold mb-1">Skipped:</p>
+                    <pre className="whitespace-pre-wrap font-sans">{sqlParsed.errors.join('\n')}</pre>
+                  </div>
+                )}
+                <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
+                  {sqlParsed.questions.map((q, idx) => {
+                    const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
+                    const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
+                    return (
+                      <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-200">
+                        <span className="w-6 h-6 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-full font-semibold">🗄️ SQL</span>
+                            <span className="text-[10px] bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
+                            <span className="text-[10px] text-gray-500">{visibleTC} visible · {hiddenTC} hidden TC{q.test_cases.length !== 1 ? 's' : ''}</span>
+                          </div>
+                          {q.problem_description && <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={() => setSqlParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
+                  <button onClick={() => onAdd(sqlParsed.questions)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-amber-500/20">
+                    <Plus className="w-4 h-4" /> Add {sqlParsed.questions.length} to Staging
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -1979,7 +2424,7 @@ const QuestionManager = () => {
                             {sectionCount}/{sectionLimit || '?'}
                           </span>
                           questions used · {activeSection.scoring?.total_marks} marks · {activeSection.configuration?.duration_minutes} min
-                          {isCodingSection ? ' · Coding only' : ' · MCQ / Fill-in-Blank only'}
+                          {isCodingSection ? ' · Coding & SQL' : ' · MCQ / Fill-in-Blank only'}
                         </p>
                         {sectionLimit > 0 && (
                           <div className="mt-1.5 w-40 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -2001,7 +2446,7 @@ const QuestionManager = () => {
                           {isCodingSection && (
                             <button onClick={() => setModal('bulk-coding')}
                               className="inline-flex items-center gap-1.5 bg-white border border-violet-200 text-violet-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-violet-50 shadow-sm transition-colors">
-                              <Code2 className="w-4 h-4" /> Bulk Coding
+                              <Code2 className="w-4 h-4" /> Bulk Code / SQL
                             </button>
                           )}
                           {isQuizSection && (
@@ -2091,13 +2536,13 @@ const QuestionManager = () => {
                   </div>
                   <h3 className="font-bold text-gray-600 mb-1">No Questions in "{activeSection.title}"</h3>
                   <p className="text-sm text-gray-400 mb-5">
-                    {isCodingSection ? 'Add coding problems — algorithm challenges with test cases' : 'Add MCQ or fill-in-the-blank questions'}
+                    {isCodingSection ? 'Add coding or SQL problems with test cases' : 'Add MCQ or fill-in-the-blank questions'}
                   </p>
                   <div className="flex items-center justify-center gap-3 flex-wrap">
                     {isCodingSection && (
                       <button onClick={() => setModal('bulk-coding')}
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-violet-200 text-violet-600 rounded-xl font-semibold text-sm hover:bg-violet-50">
-                        <Code2 className="w-4 h-4" /> Bulk Paste Coding
+                        <Code2 className="w-4 h-4" /> Bulk Code / SQL
                       </button>
                     )}
                     {isQuizSection && (
@@ -2183,7 +2628,7 @@ const QuestionManager = () => {
         {modal?.type === 'edit-saved' && (
           <QuestionModal question={modal.question}
             defaultMarks={marksPerQ}
-            forcedType={modal.question?.type === 'coding' ? 'coding' : 'quiz'}
+            forcedType={(modal.question?.type === 'coding' || modal.question?.type === 'sql') ? 'coding' : 'quiz'}
             onSave={async (payload) => {
               const res = await assessmentAPI.updateQuestion(modal.question._id, payload);
               if (res.success) { showToast('Updated'); fetchData(); setModal(null); }

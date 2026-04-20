@@ -114,7 +114,33 @@ const SampleCase = ({ index, input, output, explanation }) => (
   </div>
 );
 
-// ── Timer ─────────────────────────────────────────────────────────
+// ── SQL Sample Test Case Card ─────────────────────────────────────
+const SqlSampleCase = ({ index, setupSql, output, explanation }) => (
+  <div className="rounded-lg border border-amber-200 overflow-hidden bg-white shadow-sm">
+    <div className="bg-amber-50 px-3 py-1.5 border-b border-amber-200 flex items-center justify-between">
+      <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">🗄️ Sample Case {index}</span>
+      <span className="text-[10px] text-amber-500 font-medium">Schema is pre-loaded — write only the query</span>
+    </div>
+    {setupSql && (
+      <div className="p-3 border-b border-amber-100 bg-slate-950">
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Table Schema &amp; Data (Setup SQL)</p>
+        <pre className="text-[12px] font-mono text-emerald-300 whitespace-pre-wrap leading-relaxed">{setupSql}</pre>
+      </div>
+    )}
+    <div className="p-3">
+      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Expected Output</p>
+      <pre className="text-[12px] font-mono text-emerald-600 whitespace-pre-wrap leading-relaxed">{output}</pre>
+    </div>
+    {explanation && (
+      <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Explanation</p>
+        <p className="text-[12px] text-gray-600 italic leading-relaxed">{explanation}</p>
+      </div>
+    )}
+  </div>
+);
+
+
 const Timer = ({ totalSeconds, onExpire }) => {
   const [remaining, setRemaining] = useState(totalSeconds);
   const ref = useRef(null);
@@ -1107,7 +1133,8 @@ const TakeAssessment = () => {
   const opts          = q.options || [];
   const answeredCount = Object.values(answers).filter(v => v != null && (!Array.isArray(v) || v.length > 0)).length;
   const progress      = ((currentIdx + 1) / total) * 100;
-  const isCodingQ     = q.type === 'coding';
+  const isCodingQ     = q.type === 'coding' || q.type === 'sql';
+  const isSqlQ        = q.type === 'sql';
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-white" style={{ fontFamily: "'Inter', 'IBM Plex Sans', sans-serif", userSelect: 'none' }}>
@@ -1330,12 +1357,13 @@ const TakeAssessment = () => {
 
               {/* Tags */}
               <div className="flex flex-wrap gap-1.5">
-                {isCodingQ && <TagChip label="Coding Question" />}
+                {isSqlQ   && <TagChip label="SQL Question" />}
+                {!isSqlQ  && isCodingQ && <TagChip label="Coding Question" />}
                 {q.algorithm_tags?.map(t => <TagChip key={t} label={t} />)}
               </div>
             </div>
 
-            {/* ── Coding Question Details ── */}
+            {/* ── Coding / SQL Question Details ── */}
             {isCodingQ && (
               <>
                 {q.problem_description && (
@@ -1351,7 +1379,8 @@ const TakeAssessment = () => {
                   </section>
                 )}
 
-                {(q.input_format || q.output_format) && (
+                {/* Input/Output format — coding only, not SQL */}
+                {!isSqlQ && (q.input_format || q.output_format) && (
                   <section className="mb-5 grid grid-cols-2 gap-3">
                     {q.input_format && (
                       <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
@@ -1376,7 +1405,8 @@ const TakeAssessment = () => {
                   </section>
                 )}
 
-                {q.constraints && (
+                {/* Constraints — coding only, not SQL */}
+                {!isSqlQ && q.constraints && (
                   <section className="mb-5">
                     <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
                       <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
@@ -1403,16 +1433,20 @@ const TakeAssessment = () => {
                     </div>
                     <div className="flex flex-col gap-3">
                       {q.test_cases.filter(tc => !tc.is_hidden).map((tc, i) => (
-                        <SampleCase key={i} index={i + 1} input={tc.input} output={tc.expected_output} explanation={tc.explanation} />
+                        isSqlQ
+                          ? <SqlSampleCase key={i} index={i + 1} setupSql={tc.setup_sql} output={tc.expected_output} explanation={tc.explanation} />
+                          : <SampleCase key={i} index={i + 1} input={tc.input} output={tc.expected_output} explanation={tc.explanation} />
                       ))}
                     </div>
                   </section>
                 )}
 
-                {/* Hint: code editor is on the right */}
+                {/* Hint: editor is on the right */}
                 <div className="text-[12px] text-gray-400 font-medium italic flex items-center gap-2 mb-4">
                   <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
-                  Write your solution in the code editor on the right →
+                  {isSqlQ
+                    ? 'Write your SQL query in the editor on the right →'
+                    : 'Write your solution in the code editor on the right →'}
                 </div>
               </>
             )}
@@ -1517,6 +1551,7 @@ const TakeAssessment = () => {
                 marks={q.marks}
                 boilerplateCode={q.boilerplate_code || q.starter_code}
                 defaultLanguage={q?.language || 'python'}
+                isSql={isSqlQ}
                 onCodeSubmitted={({ passedCount, totalCount }) => {
                   setAnswer(qid, `[Code submitted: ${passedCount}/${totalCount} tests passed]`);
                 }}

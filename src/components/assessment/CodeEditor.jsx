@@ -21,6 +21,7 @@ const MONACO_LANG = {
   java:       'java',
   cpp:        'cpp',
   c:          'c',
+  sql:        'sql',   // Monaco has built-in SQL syntax highlighting
 };
 
 // ── Default starter templates ──────────────────────────────────
@@ -30,6 +31,7 @@ const STARTERS = {
   java:       `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your solution here\n    }\n}\n`,
   cpp:        `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    return 0;\n}\n`,
   c:          `#include <stdio.h>\n\nint main() {\n    // Write your solution here\n    return 0;\n}\n`,
+  sql:        `-- Write your SQL query below\n-- The table schema and data are already set up for you\n\nSELECT *\nFROM table_name\nWHERE condition;\n`,
 };
 
 // ── Monaco editor options ───────────────────────────────────────
@@ -238,20 +240,31 @@ const TestResultsPanel = ({ results, passedCount, totalCount, runType, errorMess
                 </button>
                 {expanded === idx && (
                   <div className="px-4 pb-3 space-y-2 bg-gray-50/50">
-                    {tc.input && !tc.is_hidden && (
+                    {/* SQL questions: never show setup_sql to student — it's internal schema */}
+                    {tc.input && !tc.is_hidden && !tc.setup_sql && (
                       <div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Input</p>
                         <pre className="text-xs bg-white border border-gray-100 rounded-lg px-3 py-2 font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap">{tc.input}</pre>
                       </div>
                     )}
+                    {tc.setup_sql && !tc.is_hidden && (
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Schema (read-only)</p>
+                        <pre className="text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-mono text-emerald-300 overflow-x-auto whitespace-pre-wrap">{tc.setup_sql}</pre>
+                      </div>
+                    )}
                     {tc.expected_output && (
                       <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Expected</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          {tc.setup_sql ? 'Expected Output' : 'Expected'}
+                        </p>
                         <pre className="text-xs bg-white border border-gray-100 rounded-lg px-3 py-2 font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap">{tc.expected_output}</pre>
                       </div>
                     )}
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Your Output</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                        {tc.setup_sql ? 'Your Query Output' : 'Your Output'}
+                      </p>
                       {tc.actual_output != null ? (
                         <pre className={`text-xs border rounded-lg px-3 py-2 font-mono overflow-x-auto whitespace-pre-wrap ${
                           tc.passed ? 'bg-green-50 border-green-100 text-green-800' : 'bg-red-50 border-red-100 text-red-800'
@@ -364,13 +377,15 @@ const CodeEditor = ({
   marks,
   boilerplateCode,
   defaultLanguage,
+  isSql = false,
   onCodeSubmitted,
   disabled = false,
 }) => {
   const monaco = useMonaco();
 
   const [languages,     setLanguages]     = useState([]);
-  const [language,      setLanguage]      = useState(defaultLanguage || 'python');
+  // SQL questions must always use 'sql' regardless of what defaultLanguage says
+  const [language,      setLanguage]      = useState(isSql ? 'sql' : (defaultLanguage || 'python'));
   const [code,          setCode]          = useState('');
   const [runResult,     setRunResult]     = useState(null);
   const [submitResult,  setSubmitResult]  = useState(null);
@@ -439,6 +454,13 @@ const CodeEditor = ({
     if (!assessmentId || !questionId) { setCode(getInitialCode(language)); return; }
 
     // 1. Restore draft from localStorage immediately (no network wait)
+    // For SQL questions: purge any stale drafts saved under wrong language keys
+    // (old broken sessions saved SQL code under 'python' key — clean those up)
+    if (isSql) {
+      ['python', 'javascript', 'java', 'cpp', 'c'].forEach(stale =>
+        clearLocal(assessmentId, questionId, stale)
+      );
+    }
     const draft = loadFromLocal(assessmentId, questionId, language);
     if (draft) {
       setCode(draft);
@@ -449,8 +471,17 @@ const CodeEditor = ({
     // 2. Fall back to server history
     codeAPI.getHistory(assessmentId, questionId).then(res => {
       if (res?.data?.length) {
-        const last = res.data[0];
-        if (last.code) { setCode(last.code); setLanguage(last.language || defaultLanguage || 'python'); return; }
+        // For SQL questions: only restore history from a matching 'sql' run.
+        // Old broken submissions were stored as language='python' and may contain
+        // CREATE TABLE / INSERT lines — restoring them would corrupt the editor.
+        const last = isSql
+          ? res.data.find(r => r.language === 'sql')
+          : res.data[0];
+        if (last?.code) {
+          setCode(last.code);
+          setLanguage(isSql ? 'sql' : (last.language || defaultLanguage || 'python'));
+          return;
+        }
       }
       setCode(getInitialCode(language));
     }).catch(() => setCode(getInitialCode(language)));
@@ -604,19 +635,21 @@ const CodeEditor = ({
           </div>
 
           <div className="relative">
-            <select
-              value={language}
-              onChange={e => handleLanguageChange(e.target.value)}
-              disabled={disabled || submitted}
-              className="appearance-none bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] uppercase tracking-wider font-bold rounded-lg px-4 py-1.5 pr-8 outline-none border border-slate-700 transition-colors cursor-pointer"
-            >
-              {languages.length > 0
-                ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
-                : ['python', 'javascript', 'java', 'cpp', 'c'].map(l => (
-                    <option key={l} value={l}>{l === 'java' ? 'JAVA - Java 11+' : l.toUpperCase()}</option>
-                  ))}
-            </select>
-            <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <>
+              <select
+                value={language}
+                onChange={e => handleLanguageChange(e.target.value)}
+                disabled={disabled || submitted}
+                className="appearance-none bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] uppercase tracking-wider font-bold rounded-lg px-4 py-1.5 pr-8 outline-none border border-slate-700 transition-colors cursor-pointer"
+              >
+                {languages.length > 0
+                  ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
+                  : ['python', 'javascript', 'java', 'cpp', 'c', 'sql'].map(l => (
+                      <option key={l} value={l}>{l === 'java' ? 'JAVA - Java 11+' : l === 'sql' ? 'SQL - SQLite 3' : l.toUpperCase()}</option>
+                    ))}
+              </select>
+              <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -683,20 +716,25 @@ const CodeEditor = ({
         {/* Footer */}
         <div className="px-3 py-1.5 border-t border-slate-800/80 bg-[#0b1222] shrink-0">
           <p className="text-[10px] font-bold text-slate-500 font-mono tracking-wider">
-            Ready to Execute <span className="opacity-50 px-1">•</span> Press Run Code
+            {language === 'sql'
+              ? 'SQL — SQLite 3 • Schema is pre-loaded • Write only your SELECT query'
+              : 'Ready to Execute • Press Run Code'}
           </p>
         </div>
       </div>
 
       {/* ── Action Buttons ── */}
       <div className="flex flex-wrap items-center gap-2 mt-2 shrink-0">
-        <button
-          onClick={() => setInputMode(p => p === 'custom' ? 'testcases' : 'custom')}
-          className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 bg-white rounded-lg text-[11px] font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
-        >
-          {inputMode === 'custom' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          {inputMode === 'custom' ? 'Hide Custom Input' : 'Show Custom Input'}
-        </button>
+        {/* Custom input toggle — hidden when SQL language selected (SQL has no stdin) */}
+        {language !== 'sql' && (
+          <button
+            onClick={() => setInputMode(p => p === 'custom' ? 'testcases' : 'custom')}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 bg-white rounded-lg text-[11px] font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
+          >
+            {inputMode === 'custom' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {inputMode === 'custom' ? 'Hide Custom Input' : 'Show Custom Input'}
+          </button>
+        )}
 
         <div className="flex-1" />
 

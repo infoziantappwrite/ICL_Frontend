@@ -1132,6 +1132,12 @@ export const assessmentAPI = {
     return apiCall(`/assessment/${assessmentId}/attempts/${attemptId}`);
   },
 
+  recalculateAttemptMarks: async (assessmentId, attemptId) => {
+    return apiCall(`/assessment/${assessmentId}/attempts/${attemptId}/recalculate`, {
+      method: 'POST',
+    });
+  },
+
   // POST /api/assessment/generate-questions (AI)
   generateQuestionsFromJD: async (data) => {
     return apiCall('/assessment/generate-questions', {

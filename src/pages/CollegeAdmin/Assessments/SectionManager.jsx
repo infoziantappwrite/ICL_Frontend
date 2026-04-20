@@ -22,7 +22,7 @@ const SECTION_TYPES = [
     border: 'border-violet-300',
     text:   'text-violet-700',
     badge:  'bg-violet-100 text-violet-700',
-    desc:   'Algorithm & programming problems with test cases',
+    desc:   'Algorithm, programming & SQL problems with test cases',
   },
   {
     value:  'quiz',

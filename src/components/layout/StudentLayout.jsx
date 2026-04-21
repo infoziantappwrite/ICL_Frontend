@@ -265,29 +265,66 @@ const StudentLayout = ({ children }) => {
                                     </p>
                                     <div className="flex gap-2.5 mt-5">
                                         {[
-                                            { label: 'f', bg: 'bg-blue-600' },
-                                            { label: 't', bg: 'bg-sky-500' },
-                                            { label: 'in', bg: 'bg-blue-700' },
-                                            { label: 'ig', bg: 'bg-pink-600' },
+                                            { label: 'f',  bg: 'bg-blue-600',  href: 'https://facebook.com' },
+                                            { label: 'X',  bg: 'bg-slate-700', href: 'https://twitter.com' },
+                                            { label: 'in', bg: 'bg-blue-700',  href: 'https://linkedin.com' },
+                                            { label: 'ig', bg: 'bg-pink-600',  href: 'https://instagram.com' },
                                         ].map(s => (
-                                            <div key={s.label} className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center text-white text-[12px] font-bold cursor-pointer hover:opacity-90 transition-opacity`}>
+                                            <a
+                                                key={s.label}
+                                                href={s.href}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center text-white text-[12px] font-bold hover:opacity-80 transition-opacity`}
+                                            >
                                                 {s.label}
-                                            </div>
+                                            </a>
                                         ))}
                                     </div>
                                 </div>
                                 {/* Links */}
                                 {[
-                                    { heading: 'For Students', links: ['Browse Jobs', 'Resume Builder', 'Practice Tests', 'Career Guide', 'Interview Prep'] },
-                                    { heading: 'Courses', links: ['Full Stack Dev', 'Data Science', 'Cloud & DevOps', 'UI/UX Design', 'AI / ML'] },
-                                    { heading: 'Company', links: ['About ICL', 'Contact Us', 'Privacy Policy', 'Terms of Service', 'Help Center'] },
+                                    {
+                                        heading: 'For Students',
+                                        links: [
+                                            { label: 'Browse Jobs',    path: '/dashboard/student/jobs' },
+                                            { label: 'Update Resume',  path: '/profile/my-info' },
+                                            { label: 'Practice Tests', path: '/dashboard/student/assessments' },
+                                            { label: 'Top Courses',    path: '/dashboard/student/courses' },
+                                            { label: 'My Profile',     path: '/profile/my-info' },
+                                        ],
+                                    },
+                                    {
+                                        heading: 'Courses',
+                                        links: [
+                                            { label: 'Full Stack Dev', path: '/dashboard/student/courses' },
+                                            { label: 'Data Science',   path: '/dashboard/student/courses' },
+                                            { label: 'Cloud & DevOps', path: '/dashboard/student/courses' },
+                                            { label: 'UI/UX Design',   path: '/dashboard/student/courses' },
+                                            { label: 'AI / ML',        path: '/dashboard/student/courses' },
+                                        ],
+                                    },
+                                    {
+                                        heading: 'Account',
+                                        links: [
+                                            { label: 'Dashboard',        path: '/dashboard/student' },
+                                            { label: 'Notifications',    path: '/dashboard/student/notifications' },
+                                            { label: 'Settings',         path: '/dashboard/student/settings' },
+                                            { label: 'Change Password',  path: '/change-password' },
+                                            { label: 'Assessments',      path: '/dashboard/student/assessments' },
+                                        ],
+                                    },
                                 ].map(col => (
                                     <div key={col.heading} className="col-span-1">
                                         <h4 className="text-[12px] font-bold text-slate-300 uppercase tracking-wider mb-4">{col.heading}</h4>
                                         <div className="space-y-2.5">
                                             {col.links.map(link => (
-                                                <button key={link} className="block text-[13px] text-slate-400 hover:text-blue-400 transition-colors text-left w-full">
-                                                    {link}
+                                                <button
+                                                    key={link.label}
+                                                    onClick={() => navigate(link.path)}
+                                                    className="block text-[13px] text-slate-400 hover:text-blue-400 transition-colors text-left w-full"
+                                                >
+                                                    {link.label}
                                                 </button>
                                             ))}
                                         </div>
@@ -296,7 +333,7 @@ const StudentLayout = ({ children }) => {
                             </div>
                             {/* Bottom row */}
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 text-center sm:text-left">
-                                <p className="text-[13px] text-slate-500">© 2025 ICL Academy. All rights reserved.</p>
+                                <p className="text-[13px] text-slate-500">© {new Date().getFullYear()} ICL Academy. All rights reserved.</p>
                                 <div className="flex flex-wrap justify-center gap-3">
                                     <span className="text-[12px] text-slate-400 border border-slate-700 bg-slate-800/50 px-3.5 py-1.5 rounded-full flex items-center gap-1.5">
                                         <span className="text-slate-300">🔒</span> SSL Secured

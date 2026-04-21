@@ -386,6 +386,8 @@ const CodeEditor = ({
   const [languages,     setLanguages]     = useState([]);
   // SQL questions must always use 'sql' regardless of what defaultLanguage says
   const [language,      setLanguage]      = useState(isSql ? 'sql' : (defaultLanguage || 'python'));
+  // Only SQL questions are locked — coding questions allow free language switching
+  const isLanguageLocked = isSql;
   const [code,          setCode]          = useState('');
   const [runResult,     setRunResult]     = useState(null);
   const [submitResult,  setSubmitResult]  = useState(null);
@@ -488,8 +490,14 @@ const CodeEditor = ({
   }, [assessmentId, questionId]);
 
   // Auto-save: debounce 800ms after every keystroke
+  // Also reset submitted flag so student knows they have unsaved changes
   useEffect(() => {
     if (!assessmentId || !questionId || !code) return;
+    if (submitted) {
+      setSubmitted(false);     // allow re-submit
+      setSubmitResult(null);   // Fix: clear stale "X/X passed" so old results don't show after edits
+      setRunResult(null);      // also clear run results — they're stale too
+    }
     setSaveStatus('saving');
     clearTimeout(autosaveTimerRef.current);
     autosaveTimerRef.current = setTimeout(() => {
@@ -591,7 +599,7 @@ const CodeEditor = ({
   };
 
   const handleSubmit = async () => {
-    if (!code.trim() || submitting || submitted) return;
+    if (!code.trim() || submitting) return;
     setSubmitting(true);
     setSubmitResult(null);
     clearErrorMarkers();
@@ -636,19 +644,29 @@ const CodeEditor = ({
 
           <div className="relative">
             <>
-              <select
-                value={language}
-                onChange={e => handleLanguageChange(e.target.value)}
-                disabled={disabled || submitted}
-                className="appearance-none bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] uppercase tracking-wider font-bold rounded-lg px-4 py-1.5 pr-8 outline-none border border-slate-700 transition-colors cursor-pointer"
-              >
-                {languages.length > 0
-                  ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
-                  : ['python', 'javascript', 'java', 'cpp', 'c', 'sql'].map(l => (
-                      <option key={l} value={l}>{l === 'java' ? 'JAVA - Java 11+' : l === 'sql' ? 'SQL - SQLite 3' : l.toUpperCase()}</option>
-                    ))}
-              </select>
-              <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {isLanguageLocked ? (
+                <span className="inline-flex items-center gap-1.5 bg-slate-800 text-slate-200 text-[11px] uppercase tracking-wider font-bold rounded-lg px-4 py-1.5 border border-slate-700">
+                  <Code2 className="w-3 h-3 text-blue-400" />
+                  {language === 'java' ? 'JAVA' : language === 'sql' ? 'SQL' : language === 'cpp' ? 'C++' : language.toUpperCase()}
+                  <span className="text-[9px] text-slate-500 normal-case tracking-normal font-medium ml-1">locked</span>
+                </span>
+              ) : (
+                <>
+                  <select
+                    value={language}
+                    onChange={e => handleLanguageChange(e.target.value)}
+                    disabled={disabled}
+                    className="appearance-none bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] uppercase tracking-wider font-bold rounded-lg px-4 py-1.5 pr-8 outline-none border border-slate-700 transition-colors cursor-pointer"
+                  >
+                    {languages.length > 0
+                      ? languages.map(l => <option key={l.name} value={l.name}>{l.label}</option>)
+                      : ['python', 'javascript', 'java', 'cpp', 'c', 'sql'].map(l => (
+                          <option key={l} value={l}>{l === 'java' ? 'JAVA - Java 11+' : l === 'sql' ? 'SQL - SQLite 3' : l.toUpperCase()}</option>
+                        ))}
+                  </select>
+                  <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </>
+              )}
             </>
           </div>
 
@@ -661,7 +679,7 @@ const CodeEditor = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {code.length} chars
               </span>
             </div>
-            <button onClick={handleReset} disabled={disabled || submitted}
+            <button onClick={handleReset} disabled={disabled}
               className="p-1.5 rounded-md bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 transition-colors border border-blue-500/20" title="Reset code">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -700,7 +718,7 @@ const CodeEditor = ({
             value={code}
             onChange={(val) => setCode(val ?? '')}
             theme="icl-dark"
-            options={{ ...EDITOR_OPTIONS, readOnly: disabled || submitted }}
+            options={{ ...EDITOR_OPTIONS, readOnly: disabled }}
             onMount={handleEditorDidMount}
             loading={
               <div className="flex items-center justify-center h-full bg-[#0f172a] text-slate-500 text-xs gap-2 font-bold">
@@ -751,7 +769,7 @@ const CodeEditor = ({
           Run Test Cases
         </button>
 
-        <button onClick={handleSubmit} disabled={disabled || running || submitting || submitted || !code.trim()}
+        <button onClick={handleSubmit} disabled={disabled || running || submitting || !code.trim()}
           className="flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] hover:bg-green-600 text-white rounded-lg text-[12px] font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
           {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Terminal className="w-3.5 h-3.5" />}
           {submitting ? 'Submitting...' : submitted ? 'Submitted ✓' : 'Submit'}

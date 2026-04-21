@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Save, X,
   Code2, BookOpen, AlertCircle, CheckCircle2,
-  Clock, Hash, Award, Info, Layers, ArrowRight, BarChart2,
+  Clock, Hash, Award, Info, Layers, ArrowRight, BarChart2, Database,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -22,7 +22,18 @@ const SECTION_TYPES = [
     border: 'border-violet-300',
     text:   'text-violet-700',
     badge:  'bg-violet-100 text-violet-700',
-    desc:   'Algorithm, programming & SQL problems with test cases',
+    desc:   'Programming problems in Python, Java, C++, etc.',
+  },
+  {
+    value:  'sql',
+    label:  'SQL',
+    icon:   Database,
+    color:  'from-amber-600 to-orange-500',
+    bg:     'bg-amber-50',
+    border: 'border-amber-300',
+    text:   'text-amber-700',
+    badge:  'bg-amber-100 text-amber-700',
+    desc:   'SQL-only questions using SQLite 3 via Judge0',
   },
   {
     value:  'quiz',
@@ -217,7 +228,7 @@ const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMark
         <Field label="Section Title" required>
           <input type="text" value={form.title}
             onChange={e => set('title', e.target.value)}
-            placeholder={form.type === 'coding' ? 'e.g. Coding Round' : 'e.g. MCQ Round'}
+            placeholder={form.type === 'coding' ? 'e.g. Coding Round' : form.type === 'sql' ? 'e.g. SQL Round' : 'e.g. MCQ Round'}
             className={inp} />
         </Field>
         <Field label="Description (optional)">
@@ -517,7 +528,7 @@ const SectionManager = () => {
               <div className="flex-1 min-w-0">
                 <h1 className="text-white font-black text-lg leading-tight">Section Manager</h1>
                 <p className="text-blue-200 text-xs mt-0.5 truncate">
-                  {assessment?.title || 'Assessment'} — divide marks into Coding &amp; Quiz sections
+                  {assessment?.title || 'Assessment'} — divide marks into Coding, SQL &amp; Quiz sections
                 </p>
               </div>
               {totalMarks > 0 && (
@@ -642,8 +653,8 @@ const SectionManager = () => {
               </div>
               <h3 className="font-bold text-gray-700 text-base">No sections yet</h3>
               <p className="text-sm text-gray-400 mt-1 mb-5 max-w-xs mx-auto">
-                Add sections to divide your assessment — e.g. a Coding section and a Quiz section,
-                each with their own marks and question count.
+                Add sections to divide your assessment — e.g. a Coding section, a SQL section,
+                and a Quiz section, each with their own marks and question count.
               </p>
               <button onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-sm shadow-blue-200">
@@ -685,6 +696,8 @@ const SectionManager = () => {
               <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
               <span>
                 Questions for each section are added in the <strong>Question Manager</strong>.
+                Coding sections allow programming languages. SQL sections allow SQL-only questions.
+                Quiz sections allow MCQ and fill-in-blank.
                 {!balanced && totalMarks > 0 && (
                   <span className="text-orange-600 font-semibold">
                     {' '}Section marks don't add up to {totalMarks} yet — you can still proceed and fix it later.

@@ -8,7 +8,7 @@ import {
   Target, Clock, Hash, Award, ClipboardPaste, Send,
   FileText, Check, ChevronDown, ChevronUp, Filter,
   UserCheck, Layers, RefreshCw, Star, ShieldAlert,
-  CircleDot, Circle, ArrowRight, Tag, Zap, Code2,
+  CircleDot, Circle, ArrowRight, Tag, Zap, Code2, Database,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -739,6 +739,7 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false
 /* ─── Add / Edit Modal ───────────────────────────────────────────────── */
 const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType = null }) => {
   const initialType = forcedType === 'coding' ? 'coding'
+    : forcedType === 'sql'  ? 'sql'
     : forcedType === 'quiz' ? 'single_answer'
     : question?.type || 'single_answer';
 
@@ -756,7 +757,9 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
   const isSql    = form.type === 'sql';
 
   const allowedTypes = forcedType === 'coding'
-    ? [{ value: 'coding', label: 'Coding' }, { value: 'sql', label: 'SQL' }]
+    ? [{ value: 'coding', label: 'Coding' }]
+    : forcedType === 'sql'
+    ? [{ value: 'sql', label: 'SQL (SQLite 3)' }]
     : forcedType === 'quiz'
     ? [
         { value: 'single_answer', label: 'Single Answer (MCQ)' },
@@ -888,7 +891,9 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </select>
               {forcedType && (
                 <p className="text-[10px] text-gray-400 mt-1">
-                  {forcedType === 'coding' ? '⚡ Coding section — Coding & SQL questions allowed' : '📝 Quiz section — MCQ and fill-in-blank only'}
+                  {forcedType === 'coding' ? '⚡ Coding section — Coding questions only'
+                   : forcedType === 'sql'  ? '🗄️ SQL section — SQL questions only'
+                   : '📝 Quiz section — MCQ and fill-in-blank only'}
                 </p>
               )}
             </div>
@@ -947,6 +952,19 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                   <p className="font-bold mb-0.5">SQL Question (Judge0 SQLite 3)</p>
                   <p className="text-amber-700">Each test case has a <strong>Setup SQL</strong> (schema + seed data sent as stdin) and an <strong>Expected Output</strong> (plain text output of the student's query). The student writes only the SELECT query.</p>
                 </div>
+              </div>
+
+              {/* SQL language locked indicator — so admin knows what students will see */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Default Language <span className="text-xs font-normal text-gray-400">(pre-selected in student editor)</span>
+                </label>
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-700 text-sm font-bold">
+                  <span>🗄️</span>
+                  <span>SQL (SQLite 3)</span>
+                  <span className="ml-auto text-[10px] font-semibold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full border border-amber-200">locked</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Students will see a SQL editor locked to SQLite 3. No other language can be selected.</p>
               </div>
 
               <div>
@@ -1354,7 +1372,7 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
 };
 
 /* ─── Coding + SQL Bulk Paste Modal (tabbed) ──────────────────────────── */
-const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding' }) => {
+const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding', lockTab = false }) => {
   const [tab, setTab]               = useState(defaultTab); // 'coding' | 'sql'
 
   // Coding tab state
@@ -1418,7 +1436,9 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
               {isCoding ? <Code2 className="w-4 h-4 text-white" /> : <span className="text-white text-base leading-none">🗄️</span>}
             </div>
             <div>
-              <h3 className="font-bold text-white">Bulk Paste: Code & SQL</h3>
+              <h3 className="font-bold text-white">
+                {lockTab ? (isCoding ? 'Bulk Paste: Coding' : 'Bulk Paste: SQL') : 'Bulk Paste: Code & SQL'}
+              </h3>
               <p className={`text-[11px] ${isCoding ? 'text-purple-200' : 'text-amber-100'}`}>
                 {remaining} slot{remaining !== 1 ? 's' : ''} remaining
               </p>
@@ -1431,22 +1451,26 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
 
         {/* Tabs */}
         <div className="flex border-b border-gray-100">
-          <button
-            onClick={() => setTab('coding')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
-              ${tab === 'coding'
-                ? 'border-purple-600 text-purple-700 bg-purple-50/40'
-                : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
-            <Code2 className="w-4 h-4" /> Coding
-          </button>
-          <button
-            onClick={() => setTab('sql')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
-              ${tab === 'sql'
-                ? 'border-amber-500 text-amber-700 bg-amber-50/40'
-                : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
-            <span className="text-base leading-none">🗄️</span> SQL
-          </button>
+          {!lockTab && (
+            <button
+              onClick={() => setTab('coding')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
+                ${tab === 'coding'
+                  ? 'border-purple-600 text-purple-700 bg-purple-50/40'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
+              <Code2 className="w-4 h-4" /> Coding
+            </button>
+          )}
+          {(!lockTab || tab === 'sql') && (
+            <button
+              onClick={() => setTab('sql')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
+                ${tab === 'sql'
+                  ? 'border-amber-500 text-amber-700 bg-amber-50/40'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
+              <span className="text-base leading-none">🗄️</span> SQL
+            </button>
+          )}
         </div>
 
         {/* ── CODING TAB ── */}
@@ -2118,6 +2142,7 @@ const QuestionManager = () => {
   const sectionType     = activeSection?.type || null;
   const isCodingSection = sectionType === 'coding';
   const isQuizSection   = sectionType === 'quiz';
+  const isSqlSection    = sectionType === 'sql';
 
   const sectionSavedQs = activeSectionId
     ? savedQs.filter(q => {
@@ -2363,6 +2388,7 @@ const QuestionManager = () => {
                 <div className="p-2 space-y-1">
                   {sections.map((sec) => {
                     const isCoding = sec.type === 'coding';
+                    const isSql    = sec.type === 'sql';
                     const isActive = sec._id === activeSectionId;
                     const secSaved = savedQs.filter(q => {
                       const secQIds = sec.questions?.map(id => String(id?._id || id)) || [];
@@ -2372,17 +2398,19 @@ const QuestionManager = () => {
                     return (
                       <button key={sec._id} onClick={() => setActiveSectionId(sec._id)}
                         className={`w-full text-left px-3 py-2.5 rounded-xl transition-all border ${isActive
-                          ? isCoding ? 'bg-violet-50 border-violet-300 text-violet-800' : 'bg-blue-50 border-blue-300 text-blue-800'
+                          ? isCoding ? 'bg-violet-50 border-violet-300 text-violet-800'
+                            : isSql  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                                     : 'bg-blue-50 border-blue-300 text-blue-800'
                           : 'border-transparent hover:bg-gray-50 text-gray-600'}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${isCoding ? 'bg-violet-100' : 'bg-blue-100'}`}>
-                            {isCoding ? <Code2 className="w-3 h-3 text-violet-600" /> : <BookOpen className="w-3 h-3 text-blue-600" />}
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${isCoding ? 'bg-violet-100' : isSql ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                            {isCoding ? <Code2 className="w-3 h-3 text-violet-600" /> : isSql ? <Database className="w-3 h-3 text-amber-600" /> : <BookOpen className="w-3 h-3 text-blue-600" />}
                           </div>
                           <span className="text-xs font-semibold truncate flex-1">{sec.title}</span>
                         </div>
                         <div className="flex items-center gap-1.5 mt-1.5 ml-7">
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isCoding ? 'bg-violet-100 text-violet-600' : 'bg-blue-100 text-blue-600'}`}>
-                            {isCoding ? 'Coding' : 'Quiz'}
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isCoding ? 'bg-violet-100 text-violet-600' : isSql ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {isCoding ? 'Coding' : isSql ? 'SQL' : 'Quiz'}
                           </span>
                           <span className="text-[9px] text-gray-400">{secSaved}{secStaged > 0 ? `+${secStaged}` : ''}/{sec.configuration?.question_count || '?'} Qs</span>
                         </div>
@@ -2406,16 +2434,18 @@ const QuestionManager = () => {
               {activeSection && (
                 <div className="space-y-2">
                   <div className={`rounded-2xl border-2 px-4 py-3 flex items-center justify-between gap-3 flex-wrap
-                    ${atLimit ? 'bg-red-50 border-red-200' : isCodingSection ? 'bg-violet-50 border-violet-200' : 'bg-blue-50 border-blue-200'}`}>
+                    ${atLimit ? 'bg-red-50 border-red-200' : isCodingSection ? 'bg-violet-50 border-violet-200' : isSqlSection ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-                        ${atLimit ? 'bg-red-100' : isCodingSection ? 'bg-violet-100' : 'bg-blue-100'}`}>
+                        ${atLimit ? 'bg-red-100' : isCodingSection ? 'bg-violet-100' : isSqlSection ? 'bg-amber-100' : 'bg-blue-100'}`}>
                         {atLimit
                           ? <AlertCircle className="w-4 h-4 text-red-500" />
-                          : isCodingSection ? <Code2 className="w-4 h-4 text-violet-600" /> : <BookOpen className="w-4 h-4 text-blue-600" />}
+                          : isCodingSection ? <Code2 className="w-4 h-4 text-violet-600" />
+                          : isSqlSection    ? <Database className="w-4 h-4 text-amber-600" />
+                          : <BookOpen className="w-4 h-4 text-blue-600" />}
                       </div>
                       <div>
-                        <p className={`font-bold text-sm ${atLimit ? 'text-red-700' : isCodingSection ? 'text-violet-800' : 'text-blue-800'}`}>
+                        <p className={`font-bold text-sm ${atLimit ? 'text-red-700' : isCodingSection ? 'text-violet-800' : isSqlSection ? 'text-amber-800' : 'text-blue-800'}`}>
                           {activeSection.title}
                           {atLimit && <span className="ml-2 text-[10px] bg-red-100 text-red-600 border border-red-200 px-1.5 py-0.5 rounded-full font-bold">FULL</span>}
                         </p>
@@ -2424,7 +2454,7 @@ const QuestionManager = () => {
                             {sectionCount}/{sectionLimit || '?'}
                           </span>
                           questions used · {activeSection.scoring?.total_marks} marks · {activeSection.configuration?.duration_minutes} min
-                          {isCodingSection ? ' · Coding & SQL' : ' · MCQ / Fill-in-Blank only'}
+                          {isCodingSection ? ' · Coding only' : isSqlSection ? ' · SQL (SQLite 3) only' : ' · MCQ / Fill-in-Blank only'}
                         </p>
                         {sectionLimit > 0 && (
                           <div className="mt-1.5 w-40 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -2446,7 +2476,13 @@ const QuestionManager = () => {
                           {isCodingSection && (
                             <button onClick={() => setModal('bulk-coding')}
                               className="inline-flex items-center gap-1.5 bg-white border border-violet-200 text-violet-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-violet-50 shadow-sm transition-colors">
-                              <Code2 className="w-4 h-4" /> Bulk Code / SQL
+                              <Code2 className="w-4 h-4" /> Bulk Code 
+                            </button>
+                          )}
+                          {isSqlSection && (
+                            <button onClick={() => setModal('bulk-coding')}
+                              className="inline-flex items-center gap-1.5 bg-white border border-amber-200 text-amber-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-amber-50 shadow-sm transition-colors">
+                              <Database className="w-4 h-4" /> Bulk SQL
                             </button>
                           )}
                           {isQuizSection && (
@@ -2457,7 +2493,7 @@ const QuestionManager = () => {
                           )}
                           <button onClick={() => setModal('add')}
                             className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
-                              ${isCodingSection ? 'bg-violet-600 hover:bg-violet-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                              ${isCodingSection ? 'bg-violet-600 hover:bg-violet-700' : isSqlSection ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
                             <Plus className="w-4 h-4" /> Add Question
                             {sectionRemaining !== Infinity && (
                               <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[10px]">{sectionRemaining} left</span>
@@ -2531,18 +2567,24 @@ const QuestionManager = () => {
                 </div>
               ) : sectionStagedQs.length === 0 && activeSection && (
                 <div className="bg-white rounded-xl border-2 border-dashed border-gray-200 p-10 text-center">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isCodingSection ? 'bg-violet-50' : 'bg-blue-50'}`}>
-                    {isCodingSection ? <Code2 className="w-7 h-7 text-violet-400" /> : <BookOpen className="w-7 h-7 text-blue-400" />}
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isCodingSection ? 'bg-violet-50' : isSqlSection ? 'bg-amber-50' : 'bg-blue-50'}`}>
+                    {isCodingSection ? <Code2 className="w-7 h-7 text-violet-400" /> : isSqlSection ? <Database className="w-7 h-7 text-amber-400" /> : <BookOpen className="w-7 h-7 text-blue-400" />}
                   </div>
                   <h3 className="font-bold text-gray-600 mb-1">No Questions in "{activeSection.title}"</h3>
                   <p className="text-sm text-gray-400 mb-5">
-                    {isCodingSection ? 'Add coding or SQL problems with test cases' : 'Add MCQ or fill-in-the-blank questions'}
+                    {isCodingSection ? 'Add coding problems with test cases' : isSqlSection ? 'Add SQL problems — students get a locked SQL (SQLite 3) editor' : 'Add MCQ or fill-in-the-blank questions'}
                   </p>
                   <div className="flex items-center justify-center gap-3 flex-wrap">
                     {isCodingSection && (
                       <button onClick={() => setModal('bulk-coding')}
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-violet-200 text-violet-600 rounded-xl font-semibold text-sm hover:bg-violet-50">
-                        <Code2 className="w-4 h-4" /> Bulk Code / SQL
+                        <Code2 className="w-4 h-4" /> Bulk Code 
+                      </button>
+                    )}
+                    {isSqlSection && (
+                      <button onClick={() => setModal('bulk-coding')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-amber-200 text-amber-600 rounded-xl font-semibold text-sm hover:bg-amber-50">
+                        <Database className="w-4 h-4" /> Bulk SQL Paste
                       </button>
                     )}
                     {isQuizSection && (
@@ -2553,7 +2595,7 @@ const QuestionManager = () => {
                     )}
                     <button onClick={() => setModal('add')}
                       className={`inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90
-                        ${isCodingSection ? 'bg-gradient-to-r from-violet-600 to-purple-500 shadow-violet-500/20' : 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/20'}`}>
+                        ${isCodingSection ? 'bg-gradient-to-r from-violet-600 to-purple-500 shadow-violet-500/20' : isSqlSection ? 'bg-gradient-to-r from-amber-600 to-orange-500 shadow-amber-500/20' : 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/20'}`}>
                       <Plus className="w-4 h-4" /> Add Question
                     </button>
                   </div>
@@ -2607,14 +2649,14 @@ const QuestionManager = () => {
             onSave={handleStageQuestion}
             onClose={() => setModal(null)}
             defaultMarks={marksPerQ}
-            forcedType={isCodingSection ? 'coding' : isQuizSection ? 'quiz' : null}
+            forcedType={isCodingSection ? 'coding' : isSqlSection ? 'sql' : isQuizSection ? 'quiz' : null}
           />
         )}
         {modal === 'bulk' && (
           <BulkPasteModal onAdd={handleBulkAdd} onClose={() => setModal(null)} remaining={sectionRemaining === Infinity ? 9999 : sectionRemaining} />
         )}
         {modal === 'bulk-coding' && (
-          <BulkPasteCodingModal onAdd={handleBulkCodingAdd} onClose={() => setModal(null)} remaining={sectionRemaining === Infinity ? 9999 : sectionRemaining} />
+          <BulkPasteCodingModal onAdd={handleBulkCodingAdd} onClose={() => setModal(null)} remaining={sectionRemaining === Infinity ? 9999 : sectionRemaining} defaultTab={isSqlSection ? 'sql' : 'coding'} lockTab={isSqlSection || isCodingSection} />
         )}
         {modal?.type === 'edit-staged' && (
           <QuestionModal
@@ -2622,13 +2664,13 @@ const QuestionManager = () => {
             onSave={handleStageQuestion}
             onClose={() => setModal(null)}
             defaultMarks={marksPerQ}
-            forcedType={isCodingSection ? 'coding' : isQuizSection ? 'quiz' : null}
+            forcedType={isCodingSection ? 'coding' : isSqlSection ? 'sql' : isQuizSection ? 'quiz' : null}
           />
         )}
         {modal?.type === 'edit-saved' && (
           <QuestionModal question={modal.question}
             defaultMarks={marksPerQ}
-            forcedType={(modal.question?.type === 'coding' || modal.question?.type === 'sql') ? 'coding' : 'quiz'}
+            forcedType={modal.question?.type === 'sql' ? 'sql' : (modal.question?.type === 'coding') ? 'coding' : 'quiz'}
             onSave={async (payload) => {
               const res = await assessmentAPI.updateQuestion(modal.question._id, payload);
               if (res.success) { showToast('Updated'); fetchData(); setModal(null); }

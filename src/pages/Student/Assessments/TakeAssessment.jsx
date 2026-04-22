@@ -114,7 +114,33 @@ const SampleCase = ({ index, input, output, explanation }) => (
   </div>
 );
 
-// ── Timer ─────────────────────────────────────────────────────────
+// ── SQL Sample Test Case Card ─────────────────────────────────────
+const SqlSampleCase = ({ index, setupSql, output, explanation }) => (
+  <div className="rounded-lg border border-amber-200 overflow-hidden bg-white shadow-sm">
+    <div className="bg-amber-50 px-3 py-1.5 border-b border-amber-200 flex items-center justify-between">
+      <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">🗄️ Sample Case {index}</span>
+      <span className="text-[10px] text-amber-500 font-medium">Schema is pre-loaded — write only the query</span>
+    </div>
+    {setupSql && (
+      <div className="p-3 border-b border-amber-100 bg-slate-950">
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Table Schema &amp; Data (Setup SQL)</p>
+        <pre className="text-[12px] font-mono text-emerald-300 whitespace-pre-wrap leading-relaxed">{setupSql}</pre>
+      </div>
+    )}
+    <div className="p-3">
+      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Expected Output</p>
+      <pre className="text-[12px] font-mono text-emerald-600 whitespace-pre-wrap leading-relaxed">{output}</pre>
+    </div>
+    {explanation && (
+      <div className="px-3 py-2 border-t border-gray-100 bg-gray-50/50">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Explanation</p>
+        <p className="text-[12px] text-gray-600 italic leading-relaxed">{explanation}</p>
+      </div>
+    )}
+  </div>
+);
+
+
 const Timer = ({ totalSeconds, onExpire }) => {
   const [remaining, setRemaining] = useState(totalSeconds);
   const ref = useRef(null);
@@ -625,7 +651,12 @@ const TakeAssessment = () => {
       const qs = (await Promise.all(
         Array.from({ length: total_questions }, (_, i) =>
           assessmentAPI.getQuestion(attempt_id, i + 1)
-            .then(res => { setFetchProgress(p => ({ ...p, loaded: p.loaded + 1 })); return res.success ? res.question : null; })
+            .then(res => {
+              setFetchProgress(p => ({ ...p, loaded: p.loaded + 1 }));
+              if (!res.success) return null;
+              // Merge section metadata into the question object
+              return { ...res.question, _section: res.section || null };
+            })
             .catch(() => null)
         )
       )).filter(Boolean);
@@ -1095,10 +1126,15 @@ const TakeAssessment = () => {
   const total         = questions.length;
   const qid           = q.question_id;
   const questionText  = q.question_text || q.question || '(Question text unavailable)';
+  const currentSection = q._section || null;
+  // Detect section boundary — show section header when section changes from previous question
+  const prevSection = currentIdx > 0 ? (questions[currentIdx - 1]?._section || null) : null;
+  const sectionChanged = currentSection?.section_id !== prevSection?.section_id;
   const opts          = q.options || [];
   const answeredCount = Object.values(answers).filter(v => v != null && (!Array.isArray(v) || v.length > 0)).length;
   const progress      = ((currentIdx + 1) / total) * 100;
-  const isCodingQ     = q.type === 'coding';
+  const isCodingQ     = q.type === 'coding' || q.type === 'sql';
+  const isSqlQ        = q.type === 'sql';
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-white" style={{ fontFamily: "'Inter', 'IBM Plex Sans', sans-serif", userSelect: 'none' }}>
@@ -1228,15 +1264,29 @@ const TakeAssessment = () => {
           className="flex flex-col items-center py-3 gap-2 shrink-0 overflow-y-auto border-r border-gray-200 bg-gray-50"
           style={{ width: '56px' }}
         >
-          {questions.map((sq, idx) => (
-            <QuestionPill
-              key={sq.question_id}
-              number={idx + 1}
-              status={getStatus(sq)}
-              isCurrent={idx === currentIdx}
-              onClick={() => setCurrentIdx(idx)}
-            />
-          ))}
+          {questions.map((sq, idx) => {
+            const prevSec = idx > 0 ? questions[idx - 1]?._section : null;
+            const thisSec = sq._section;
+            const showDivider = thisSec && (idx === 0 || thisSec.section_id !== prevSec?.section_id);
+            return (
+              <div key={sq.question_id} className="flex flex-col items-center gap-1 w-full">
+                {showDivider && (
+                  <div className="w-full px-1" title={thisSec.section_title}>
+                    <div className={`h-0.5 w-full rounded ${thisSec.section_type === 'coding' ? 'bg-violet-300' : 'bg-blue-300'}`} />
+                    <span className={`text-[8px] font-bold text-center block truncate px-1 mt-0.5 ${thisSec.section_type === 'coding' ? 'text-violet-500' : 'text-blue-500'}`}>
+                      S{thisSec.section_order}
+                    </span>
+                  </div>
+                )}
+                <QuestionPill
+                  number={idx + 1}
+                  status={getStatus(sq)}
+                  isCurrent={idx === currentIdx}
+                  onClick={() => setCurrentIdx(idx)}
+                />
+              </div>
+            );
+          })}
           {/* Legend */}
           <div className="mt-auto pt-3 border-t border-gray-200 w-full flex flex-col items-center gap-2 pb-2">
             <div className="w-2 h-2 rounded-sm bg-blue-600"                         title="Current"    />
@@ -1250,6 +1300,26 @@ const TakeAssessment = () => {
         {/* ── MIDDLE: Question Content (scrollable) ── */}
         <main ref={questionScrollRef} className="flex-1 overflow-y-auto min-h-0 bg-white">
           <div className="max-w-[680px] mx-auto px-6 py-5 pb-16">
+
+            {/* Section banner — shown when section changes or on first question */}
+            {currentSection && (currentIdx === 0 || sectionChanged) && (
+              <div className={`mb-4 px-4 py-2.5 rounded-xl flex items-center gap-2 border text-sm font-semibold
+                ${currentSection.section_type === 'coding'
+                  ? 'bg-violet-50 border-violet-200 text-violet-800'
+                  : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
+                <span className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold text-white
+                  ${currentSection.section_type === 'coding' ? 'bg-violet-500' : 'bg-blue-500'}`}>
+                  {currentSection.section_order}
+                </span>
+                <span>Section {currentSection.section_order}: {currentSection.section_title}</span>
+                <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded
+                  ${currentSection.section_type === 'coding'
+                    ? 'bg-violet-100 text-violet-700'
+                    : 'bg-blue-100 text-blue-700'}`}>
+                  {currentSection.section_type === 'coding' ? 'Coding' : 'Quiz'}
+                </span>
+              </div>
+            )}
 
             {/* Question header */}
             <div className="mb-5">
@@ -1287,12 +1357,13 @@ const TakeAssessment = () => {
 
               {/* Tags */}
               <div className="flex flex-wrap gap-1.5">
-                {isCodingQ && <TagChip label="Coding Question" />}
+                {isSqlQ   && <TagChip label="SQL Question" />}
+                {!isSqlQ  && isCodingQ && <TagChip label="Coding Question" />}
                 {q.algorithm_tags?.map(t => <TagChip key={t} label={t} />)}
               </div>
             </div>
 
-            {/* ── Coding Question Details ── */}
+            {/* ── Coding / SQL Question Details ── */}
             {isCodingQ && (
               <>
                 {q.problem_description && (
@@ -1308,7 +1379,8 @@ const TakeAssessment = () => {
                   </section>
                 )}
 
-                {(q.input_format || q.output_format) && (
+                {/* Input/Output format — coding only, not SQL */}
+                {!isSqlQ && (q.input_format || q.output_format) && (
                   <section className="mb-5 grid grid-cols-2 gap-3">
                     {q.input_format && (
                       <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
@@ -1333,7 +1405,8 @@ const TakeAssessment = () => {
                   </section>
                 )}
 
-                {q.constraints && (
+                {/* Constraints — coding only, not SQL */}
+                {!isSqlQ && q.constraints && (
                   <section className="mb-5">
                     <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
                       <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
@@ -1360,16 +1433,20 @@ const TakeAssessment = () => {
                     </div>
                     <div className="flex flex-col gap-3">
                       {q.test_cases.filter(tc => !tc.is_hidden).map((tc, i) => (
-                        <SampleCase key={i} index={i + 1} input={tc.input} output={tc.expected_output} explanation={tc.explanation} />
+                        isSqlQ
+                          ? <SqlSampleCase key={i} index={i + 1} setupSql={tc.setup_sql} output={tc.expected_output} explanation={tc.explanation} />
+                          : <SampleCase key={i} index={i + 1} input={tc.input} output={tc.expected_output} explanation={tc.explanation} />
                       ))}
                     </div>
                   </section>
                 )}
 
-                {/* Hint: code editor is on the right */}
+                {/* Hint: editor is on the right */}
                 <div className="text-[12px] text-gray-400 font-medium italic flex items-center gap-2 mb-4">
                   <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
-                  Write your solution in the code editor on the right →
+                  {isSqlQ
+                    ? 'Write your SQL query in the editor on the right →'
+                    : 'Write your solution in the code editor on the right →'}
                 </div>
               </>
             )}
@@ -1470,10 +1547,11 @@ const TakeAssessment = () => {
                 key={qid}
                 assessmentId={assessmentId}
                 questionId={qid}
-                questionText={q.question}
+                questionText={questionText}
                 marks={q.marks}
                 boilerplateCode={q.boilerplate_code || q.starter_code}
-                defaultLanguage={briefingInfo?.default_coding_language || 'python'}
+                defaultLanguage={q?.language || 'python'}
+                isSql={isSqlQ}
                 onCodeSubmitted={({ passedCount, totalCount }) => {
                   setAnswer(qid, `[Code submitted: ${passedCount}/${totalCount} tests passed]`);
                 }}

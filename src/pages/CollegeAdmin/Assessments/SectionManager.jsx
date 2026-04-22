@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Save, X,
   Code2, BookOpen, AlertCircle, CheckCircle2,
-  Clock, Hash, Award, Info, Layers, ArrowRight, BarChart2,
+  Clock, Hash, Award, Info, Layers, ArrowRight, BarChart2, Database,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -22,7 +22,18 @@ const SECTION_TYPES = [
     border: 'border-violet-300',
     text:   'text-violet-700',
     badge:  'bg-violet-100 text-violet-700',
-    desc:   'Algorithm & programming problems with test cases',
+    desc:   'Programming problems in Python, Java, C++, etc.',
+  },
+  {
+    value:  'sql',
+    label:  'SQL',
+    icon:   Database,
+    color:  'from-amber-600 to-orange-500',
+    bg:     'bg-amber-50',
+    border: 'border-amber-300',
+    text:   'text-amber-700',
+    badge:  'bg-amber-100 text-amber-700',
+    desc:   'SQL-only questions using SQLite 3 via Judge0',
   },
   {
     value:  'quiz',
@@ -41,7 +52,7 @@ const BLANK = {
   title: '',
   description: '',
   type: 'quiz',
-  configuration: { duration_minutes: 30, question_count: 10, shuffle_questions: false, allow_skip: true },
+  configuration: { duration_minutes: 0, question_count: 0, shuffle_questions: false, allow_skip: true },
   scoring: { total_marks: 0, marks_per_question: 1, negative_marking: false },
 };
 
@@ -107,7 +118,7 @@ const Steps = ({ active }) => (
 );
 
 // ─── SectionForm (inline) ─────────────────────────────────────────────────────
-const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMarks }) => {
+const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMarks, totalAssessmentDuration = 0, usedTime = 0 }) => {
   const [form, setForm] = useState(() =>
     initial ? JSON.parse(JSON.stringify(initial)) : JSON.parse(JSON.stringify(BLANK))
   );
@@ -133,14 +144,20 @@ const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMark
     });
   };
 
-  // Marks available for this section (overall budget minus what other sections already use)
+  // Marks available for this section
   const editingOwnMarks = initial?.scoring?.total_marks || 0;
   const available       = totalAssessmentMarks - usedMarks + editingOwnMarks;
+
+  // Time available for this section
+  const editingOwnTime  = initial?.configuration?.duration_minutes || 0;
+  const availableTime   = totalAssessmentDuration > 0 ? totalAssessmentDuration - usedTime + editingOwnTime : Infinity;
 
   const validate = () => {
     if (!form.title.trim())                                              return 'Section title is required';
     if (!form.configuration.duration_minutes || form.configuration.duration_minutes < 1)
                                                                          return 'Duration must be at least 1 minute';
+    if (totalAssessmentDuration > 0 && form.configuration.duration_minutes > availableTime)
+                                                                         return `Only ${availableTime} minutes available for this section (assessment total: ${totalAssessmentDuration} min)`;
     if (!form.configuration.question_count || form.configuration.question_count < 1)
                                                                          return 'At least 1 question is required';
     if (!form.scoring.marks_per_question || form.scoring.marks_per_question <= 0)
@@ -211,7 +228,7 @@ const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMark
         <Field label="Section Title" required>
           <input type="text" value={form.title}
             onChange={e => set('title', e.target.value)}
-            placeholder={form.type === 'coding' ? 'e.g. Coding Round' : 'e.g. MCQ Round'}
+            placeholder={form.type === 'coding' ? 'e.g. Coding Round' : form.type === 'sql' ? 'e.g. SQL Round' : 'e.g. MCQ Round'}
             className={inp} />
         </Field>
         <Field label="Description (optional)">
@@ -278,16 +295,31 @@ const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMark
           </Field>
         </div>
 
-        {/* Budget indicator — shows remaining marks from assessment total */}
-        {totalAssessmentMarks > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs bg-gray-50 rounded-xl px-3 py-2.5 text-gray-500">
-            <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-            <span>
-              Assessment budget: <strong className="text-gray-800">{totalAssessmentMarks}</strong>
-              &nbsp;·&nbsp; Used by other sections: <strong className="text-gray-800">{usedMarks - editingOwnMarks}</strong>
-              &nbsp;·&nbsp; Available for this section:{' '}
-              <strong className={available < 0 ? 'text-red-600' : 'text-green-600'}>{available}</strong>
-            </span>
+        {/* Budget indicators */}
+        {(totalAssessmentMarks > 0 || totalAssessmentDuration > 0) && (
+          <div className="mt-2 space-y-1.5">
+            {totalAssessmentMarks > 0 && (
+              <div className="flex items-center gap-2 text-xs bg-gray-50 rounded-xl px-3 py-2.5 text-gray-500">
+                <Info className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <span>
+                  Marks budget: <strong className="text-gray-800">{totalAssessmentMarks}</strong>
+                  &nbsp;·&nbsp; Used by others: <strong className="text-gray-800">{usedMarks - editingOwnMarks}</strong>
+                  &nbsp;·&nbsp; Available:{' '}
+                  <strong className={available < 0 ? 'text-red-600' : 'text-green-600'}>{available}</strong>
+                </span>
+              </div>
+            )}
+            {totalAssessmentDuration > 0 && (
+              <div className="flex items-center gap-2 text-xs bg-teal-50 rounded-xl px-3 py-2.5 text-teal-700">
+                <Clock className="w-3.5 h-3.5 text-teal-400 flex-shrink-0" />
+                <span>
+                  Time budget: <strong>{totalAssessmentDuration} min</strong>
+                  &nbsp;·&nbsp; Used by others: <strong>{usedTime - editingOwnTime} min</strong>
+                  &nbsp;·&nbsp; Available:{' '}
+                  <strong className={availableTime < 0 ? 'text-red-600' : 'text-teal-700'}>{availableTime === Infinity ? '∞' : `${availableTime} min`}</strong>
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -411,9 +443,13 @@ const SectionManager = () => {
   }, [assessmentId]);
 
   const totalMarks = assessment?.total_marks || 0;
+  const totalDuration = assessment?.duration_minutes || 0;
   const usedMarks  = sections.reduce((sum, s) => sum + s.scoring.total_marks, 0);
+  const usedTime   = sections.reduce((sum, s) => sum + (s.configuration?.duration_minutes || 0), 0);
   const marksLeft  = totalMarks - usedMarks;
+  const timeLeft   = totalDuration - usedTime;
   const balanced   = totalMarks > 0 && marksLeft === 0;
+  const timeOk     = totalDuration === 0 || usedTime <= totalDuration;
 
   const flash = (msg, isErr = false) => {
     if (isErr) { setError(msg);   setTimeout(() => setError(''),   4000); }
@@ -470,7 +506,7 @@ const SectionManager = () => {
   return (
     <CollegeAdminLayout>
       <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="max-w-3xl mx-auto space-y-4 pb-10">
+        <div className="max-w-5xl mx-auto space-y-4 pb-10">
 
           {/* ── Back — FIX: correct route is /:assessmentId/edit not /edit/:assessmentId ── */}
           <button
@@ -492,7 +528,7 @@ const SectionManager = () => {
               <div className="flex-1 min-w-0">
                 <h1 className="text-white font-black text-lg leading-tight">Section Manager</h1>
                 <p className="text-blue-200 text-xs mt-0.5 truncate">
-                  {assessment?.title || 'Assessment'} — divide marks into Coding &amp; Quiz sections
+                  {assessment?.title || 'Assessment'} — divide marks into Coding, SQL &amp; Quiz sections
                 </p>
               </div>
               {totalMarks > 0 && (
@@ -550,6 +586,37 @@ const SectionManager = () => {
             </div>
           )}
 
+          {/* ── Time distribution bar ── */}
+          {totalDuration > 0 && (
+            <div className={`bg-white rounded-2xl border-2 shadow-sm p-4 ${timeOk ? 'border-teal-200' : 'border-red-300'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Clock className={`w-4 h-4 ${timeOk ? 'text-teal-500' : 'text-red-500'}`} />
+                  <p className="text-sm font-bold text-gray-700">Time Distribution</p>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full
+                  ${!timeOk ? 'bg-red-100 text-red-700' : timeLeft === 0 ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-700'}`}>
+                  {!timeOk
+                    ? `Over by ${Math.abs(timeLeft)} min`
+                    : timeLeft === 0
+                      ? '✓ Fully scheduled'
+                      : `${timeLeft} min unscheduled`}
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className={`h-2.5 rounded-full transition-all duration-500 ${!timeOk ? 'bg-red-500' : timeLeft === 0 ? 'bg-teal-500' : 'bg-gradient-to-r from-teal-400 to-cyan-400'}`}
+                  style={{ width: `${Math.min((usedTime / totalDuration) * 100, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-400 mt-1.5">
+                <span>Scheduled: <strong className="text-gray-700">{usedTime} min</strong></span>
+                <span>Remaining: <strong className={!timeOk ? 'text-red-600' : 'text-teal-600'}>{timeLeft} min</strong></span>
+                <span>Total: <strong className="text-gray-700">{totalDuration} min</strong></span>
+              </div>
+            </div>
+          )}
+
           {/* ── Section list ── */}
           {sections.length > 0 && (
             <div className="space-y-3">
@@ -562,6 +629,8 @@ const SectionManager = () => {
                       onCancel={() => setEditing(null)}
                       totalAssessmentMarks={totalMarks}
                       usedMarks={usedMarks}
+                      totalAssessmentDuration={totalDuration}
+                      usedTime={usedTime}
                     />
                   ) : (
                     <SectionCard
@@ -584,8 +653,8 @@ const SectionManager = () => {
               </div>
               <h3 className="font-bold text-gray-700 text-base">No sections yet</h3>
               <p className="text-sm text-gray-400 mt-1 mb-5 max-w-xs mx-auto">
-                Add sections to divide your assessment — e.g. a Coding section and a Quiz section,
-                each with their own marks and question count.
+                Add sections to divide your assessment — e.g. a Coding section, a SQL section,
+                and a Quiz section, each with their own marks and question count.
               </p>
               <button onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-sm shadow-blue-200">
@@ -602,15 +671,23 @@ const SectionManager = () => {
               onCancel={() => setShowForm(false)}
               totalAssessmentMarks={totalMarks}
               usedMarks={usedMarks}
+              totalAssessmentDuration={totalDuration}
+              usedTime={usedTime}
             />
           )}
 
-          {/* ── Add another section button ── */}
+          {/* ── Add another section button — blocked when fully allocated ── */}
           {sections.length > 0 && !showForm && !editingSection && (
-            <button onClick={() => setShowForm(true)}
-              className="w-full py-3 border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 font-semibold text-sm transition-all flex items-center justify-center gap-2">
-              <Plus className="w-4 h-4" /> Add Another Section
-            </button>
+            balanced ? (
+              <div className="w-full py-3 border-2 border-dashed border-green-200 rounded-2xl bg-green-50 text-green-600 font-semibold text-sm flex items-center justify-center gap-2 cursor-not-allowed">
+                <CheckCircle2 className="w-4 h-4" /> All marks allocated — add more by editing existing sections
+              </div>
+            ) : (
+              <button onClick={() => setShowForm(true)}
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-2xl text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4" /> Add Another Section
+              </button>
+            )
           )}
 
           {/* ── Info hint ── */}
@@ -619,6 +696,8 @@ const SectionManager = () => {
               <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
               <span>
                 Questions for each section are added in the <strong>Question Manager</strong>.
+                Coding sections allow programming languages. SQL sections allow SQL-only questions.
+                Quiz sections allow MCQ and fill-in-blank.
                 {!balanced && totalMarks > 0 && (
                   <span className="text-orange-600 font-semibold">
                     {' '}Section marks don't add up to {totalMarks} yet — you can still proceed and fix it later.

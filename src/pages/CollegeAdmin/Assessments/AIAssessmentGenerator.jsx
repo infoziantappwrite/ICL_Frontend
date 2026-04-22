@@ -130,8 +130,7 @@ const AILoader = ({ numQuestions, subjectTitle, isCoding }) => {
             <div key={i} className="absolute inset-0 rounded-full border-2 border-blue-300/40"
               style={{ animation: `ripple 2.4s ease-out ${i * 0.6}s infinite` }} />
           ))}
-          <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/40"
-            className="bg-blue-600">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/40 bg-blue-600">
             {isCoding ? <Code2 className="w-9 h-9 text-white" /> : <Sparkles className="w-9 h-9 text-white" />}
           </div>
         </div>
@@ -1410,8 +1409,7 @@ const AIAssessmentGenerator = () => {
                       <RefreshCw className="w-4 h-4" /> Regenerate
                     </button>
                     <button onClick={handleSave} disabled={stage === 'saving'}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 shadow-lg"
-                      className={isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}>
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 shadow-lg ${isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}>
                       {stage === 'saving' ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Assessment</>}
                     </button>
                   </div>
@@ -1458,9 +1456,14 @@ const AIAssessmentGenerator = () => {
 
             {stage === 'review' && (
               <div className="sticky bottom-4 flex justify-center">
-                <button onClick={handleSave}
-                  className="flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl transition-all"
-                  className={isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}>
+                <button 
+                  onClick={handleSave}
+                  className={`flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl ${
+                    isCodingMode 
+                      ? "bg-emerald-600 hover:bg-emerald-700" 
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                >
                   <Save className="w-5 h-5" /> Save {questions.length} {isCodingMode ? 'Coding Problems' : 'Questions'} as Assessment
                 </button>
               </div>

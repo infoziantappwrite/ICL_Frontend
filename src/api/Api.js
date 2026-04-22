@@ -112,7 +112,10 @@ const apiCall = async (endpoint, options = {}, _isRetry = false) => {
 
     if (!response.ok) {
       console.error(`❌ API Error ${response.status}:`, data);
-      throw new Error(data.message || data.error || `Error: ${response.status}`);
+      const err = new Error(data.message || data.error || `Error: ${response.status}`);
+      err.statusCode = response.status;
+      err.responseData = data;
+      throw err;
     }
 
     console.log('✅ API Success:', data);
@@ -1096,6 +1099,13 @@ export const assessmentAPI = {
     return apiCall(`/assessment/question/${id}`, { method: 'DELETE' });
   },
 
+  // DELETE /api/assessment/question/:id/unlink
+  // Removes the question from all assessments & sections without deleting it,
+  // so a subsequent deleteQuestion call will succeed.
+  unlinkQuestion: async (id) => {
+    return apiCall(`/assessment/question/${id}/unlink`, { method: 'DELETE' });
+  },
+
   // POST /api/assessment/:assessmentId/add-question
   addQuestionToAssessment: async (assessmentId, data) => {
     return apiCall(`/assessment/${assessmentId}/add-question`, {
@@ -1120,6 +1130,14 @@ export const assessmentAPI = {
     return apiCall(`/assessment/${assessmentId}/assign-manual`, {
       method: 'POST',
       body: JSON.stringify({ student_emails: studentEmails }),
+    });
+  },
+
+  // POST /api/assessment/:id/assign-group
+  assignStudentsFromGroup: async (assessmentId, groupId) => {
+    return apiCall(`/assessment/${assessmentId}/assign-group`, {
+      method: 'POST',
+      body: JSON.stringify({ group_id: groupId }),
     });
   },
 
@@ -1154,6 +1172,12 @@ export const assessmentAPI = {
   // GET /api/assessment/:id/attempts/:attemptId  → { success, student, summary, answers[] }
   getAttemptDetail: async (assessmentId, attemptId) => {
     return apiCall(`/assessment/${assessmentId}/attempts/${attemptId}`);
+  },
+
+  recalculateAttemptMarks: async (assessmentId, attemptId) => {
+    return apiCall(`/assessment/${assessmentId}/attempts/${attemptId}/recalculate`, {
+      method: 'POST',
+    });
   },
 
   // POST /api/assessment/generate-questions (AI)

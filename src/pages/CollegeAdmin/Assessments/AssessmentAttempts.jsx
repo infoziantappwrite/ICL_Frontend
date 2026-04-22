@@ -121,6 +121,7 @@ const ProctoringModal = ({ attempt, onClose }) => {
           </button>
         </div>
 
+
         {/* Summary stats */}
         <div className="px-5 py-4 grid grid-cols-4 gap-3 border-b border-gray-100 shrink-0">
           {[
@@ -238,25 +239,49 @@ const ProctoringPanel = ({ attempt, onViewDetails }) => {
 };
 
 const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
-  const [detail, setDetail] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [expandedQ, setExpandedQ] = useState(null);
+  const [detail, setDetail]             = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [expandedQ, setExpandedQ]       = useState(new Set());
+  const [recalculating, setRecalculating] = useState(false);
+  const [recalcMsg, setRecalcMsg]       = useState('');
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await assessmentAPI.getAttemptDetail(assessmentId, attempt._id);
-        if (res.success) setDetail(res);
-        else setError(res.message || 'Failed to load');
-      } catch (e) {
-        setError(e.message || 'Failed to load');
-      } finally {
-        setLoading(false);
+  const loadDetail = async () => {
+    setLoading(true); setError('');
+    try {
+      const res = await assessmentAPI.getAttemptDetail(assessmentId, attempt._id);
+      if (res.success) {
+        setDetail(res);
+        // Expand all questions by default so answers are immediately visible
+        const allIndexes = new Set((res.answers || []).map((_, i) => i));
+        setExpandedQ(allIndexes);
       }
-    };
-    load();
-  }, [assessmentId, attempt._id]);
+      else setError(res.message || 'Failed to load');
+    } catch (e) {
+      setError(e.message || 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadDetail(); }, [assessmentId, attempt._id]);
+
+  const handleRecalculate = async () => {
+    setRecalculating(true); setRecalcMsg('');
+    try {
+      const res = await assessmentAPI.recalculateAttemptMarks(assessmentId, attempt._id);
+      if (res.success) {
+        setRecalcMsg(`✓ Marks updated: ${res.data.earned_marks}/${res.data.total_marks} (${res.data.score_percentage}%)`);
+        await loadDetail(); // reload the detail with fresh marks
+      } else {
+        setRecalcMsg('Recalculation failed: ' + (res.message || 'Unknown error'));
+      }
+    } catch (e) {
+      setRecalcMsg('Error: ' + (e.message || 'Unknown error'));
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   const formatAnswer = (ans) => {
     if (!ans && ans !== 0) return <span className="text-gray-400 italic">Not answered</span>;
@@ -271,13 +296,30 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
           <div>
             <h2 className="font-black text-gray-900">Answer Sheet</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              {attempt.student_id?.fullName || '—'} · {attempt.score_percentage ?? 0}% · {attempt.earned_marks ?? 0}/{attempt.total_marks ?? 0} marks
+              {attempt.student_id?.fullName || '—'} · {detail?.summary.score_percentage ?? attempt.score_percentage ?? 0}% · {detail?.summary.earned_marks ?? attempt.earned_marks ?? 0}/{detail?.summary.total_marks ?? attempt.total_marks ?? 0} marks
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-all">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRecalculate}
+              disabled={recalculating || loading}
+              title="Recalculate marks from submitted code results"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+            >
+              {recalculating
+                ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Recalculating…</>
+                : <><RefreshCw className="w-3.5 h-3.5" /> Recalculate Marks</>}
+            </button>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-all">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+        {recalcMsg && (
+          <div className={`px-5 py-2 text-xs font-semibold border-b ${recalcMsg.startsWith('✓') ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+            {recalcMsg}
+          </div>
+        )}
         <div className="p-5">
           {/* FIX: fullScreen={false} prevents gradient box artifact inside modal */}
           {loading && <InlineSkeleton rows={4} className="py-10" />}
@@ -303,10 +345,10 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
               </div>
               <div className="space-y-3">
                 {detail.answers.map((ans, idx) => {
-                  const isOpen = expandedQ === idx;
+                  const isOpen = expandedQ.has(idx);
                   return (
                     <div key={idx} className={`rounded-xl border-2 overflow-hidden transition-all ${ans.is_correct ? 'border-green-200 bg-green-50/40' : 'border-red-200 bg-red-50/40'}`}>
-                      <button className="w-full flex items-start gap-3 p-4 text-left" onClick={() => setExpandedQ(isOpen ? null : idx)}>
+                      <button className="w-full flex items-start gap-3 p-4 text-left" onClick={() => setExpandedQ(prev => { const s = new Set(prev); s.has(idx) ? s.delete(idx) : s.add(idx); return s; })}>
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5 ${ans.is_correct ? 'bg-green-500' : 'bg-red-500'}`}>
                           {ans.is_correct ? <Check className="w-4 h-4" /> : idx + 1}
                         </div>
@@ -319,17 +361,17 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                                 : 'bg-red-100 text-red-600'
                             }`}>
                               {ans.marks_earned > 0 ? `+${ans.marks_earned} marks` : '0 marks'}
-                              {ans.question_type === 'coding' && ` (${ans.passed_count ?? 0}/${ans.total_count ?? 0} tests)`}
+                              {['coding','sql'].includes(ans.question_type) && ` (${ans.passed_count ?? 0}/${ans.total_count ?? 0} tests)`}
                             </span>
-                            {ans.question_type !== 'coding' && (
+                            {!['coding','sql'].includes(ans.question_type) && (
                               <span className="text-[10px] text-gray-400">Student: <strong className="text-gray-700">{formatAnswer(ans.student_answer)}</strong></span>
                             )}
-                            {ans.question_type === 'coding' && (
+                            {['coding','sql'].includes(ans.question_type) && (
                               <span className="text-[10px] text-gray-400">
                                 Code: <strong className="text-gray-700">{ans.student_code ? `${ans.code_language || 'submitted'}` : 'not submitted'}</strong>
                               </span>
                             )}
-                            {ans.question_type !== 'coding' && !ans.is_correct && (
+                            {!['coding','sql'].includes(ans.question_type) && !ans.is_correct && (
                               <span className="text-[10px] text-gray-400">Correct: <strong className="text-green-700">{formatAnswer(ans.correct_answer)}</strong></span>
                             )}
                           </div>
@@ -339,7 +381,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                       {isOpen && (
                         <div className="px-4 pb-4 space-y-3">
                           {/* ── Coding question: submitted code + test results ── */}
-                          {ans.question_type === 'coding' && (
+                          {['coding','sql'].includes(ans.question_type) && (
                             <div className="space-y-3">
                               {/* Summary bar */}
                               <div className="flex items-center gap-2 flex-wrap">
@@ -465,7 +507,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                           )}
 
                           {/* ── MCQ / fill-up: options grid ── */}
-                          {ans.question_type !== 'coding' && ans.options?.length > 0 && (
+                          {!['coding','sql'].includes(ans.question_type) && ans.options?.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {ans.options.map(opt => {
                                 const isCorrectOpt = Array.isArray(ans.correct_answer) ? ans.correct_answer.includes(opt.label) : ans.correct_answer === opt.label;
@@ -678,10 +720,15 @@ const AssessmentAttempts = () => {
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [proctoringModalAttempt, setProctoringModalAttempt] = useState(null);
 
-  useEffect(() => { fetchData(); }, [assessmentId, page]);
+  useEffect(() => {
+    fetchData();                                          // initial load (shows spinner)
+    const pollId = setInterval(() => fetchData(true), 10_000); // silent poll every 10s
+    return () => clearInterval(pollId);
+  }, [assessmentId, page]);
 
-  const fetchData = async () => {
-    setLoading(true); setError('');
+  const fetchData = async (silent = false) => {
+    if (!silent) { setLoading(true); }
+    setError('');
     try {
       const [assRes, attRes] = await Promise.all([
         assessmentAPI.getAssessment(assessmentId),
@@ -697,7 +744,7 @@ const AssessmentAttempts = () => {
     } catch (err) {
       setError(err.message || 'Failed to load data');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

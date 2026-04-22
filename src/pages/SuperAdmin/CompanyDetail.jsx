@@ -23,22 +23,22 @@ const JD_STATUS_CONFIG = {
 const SHead = ({ icon: Icon, title, sub, action, onAction, badge }) => (
   <div className="flex items-center justify-between mb-4">
     <div className="flex items-center gap-2">
-      <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
         <Icon className="w-3 h-3 text-white" />
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
+          <h3 className="text-sm font-bold text-slate-800 leading-none">{title}</h3>
           {badge != null && (
-            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md border border-blue-100">{badge}</span>
+            <span className="text-[10px] font-black text-[#003399] bg-[#003399]/5 px-1.5 py-0.5 rounded-md border border-[#003399]/10">{badge}</span>
           )}
         </div>
-        {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+        {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
       </div>
     </div>
     {action && (
       <button onClick={onAction}
-        className="text-[10px] font-bold text-blue-600 flex items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors">
+        className="text-[10px] font-black text-[#003399] flex items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-[#003399]/5 transition-colors uppercase tracking-widest">
         {action} <ChevronRight className="w-3 h-3" />
       </button>
     )}
@@ -47,9 +47,9 @@ const SHead = ({ icon: Icon, title, sub, action, onAction, badge }) => (
 
 /* ─── Info row ────────────────────────────── */
 const InfoRow = ({ icon: Icon, label, value, href, mono }) => (
-  <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
-    <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-      <Icon className="w-3.5 h-3.5 text-blue-500" />
+  <div className="flex items-start gap-3 py-2.5 border-b border-slate-50 last:border-0">
+    <div className="w-7 h-7 bg-[#003399]/5 border border-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+      <Icon className="w-3.5 h-3.5 text-[#003399]" />
     </div>
     <div className="flex-1 min-w-0">
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">{label}</p>
@@ -65,18 +65,19 @@ const InfoRow = ({ icon: Icon, label, value, href, mono }) => (
 
 /* ─── Stat pill ───────────────────────────── */
 const StatPill = ({ icon: Icon, label, value, color }) => {
-  const c = {
-    blue:   'bg-blue-50 border-blue-100 text-blue-600',
-    cyan:   'bg-cyan-50 border-cyan-100 text-cyan-600',
-    indigo: 'bg-indigo-50 border-indigo-100 text-indigo-600',
-    violet: 'bg-violet-50 border-violet-100 text-violet-600',
-  }[color] || 'bg-blue-50 border-blue-100 text-blue-600';
+  const themes = {
+    blue:   { bg: 'bg-[#003399]/5', border: 'border-[#003399]/10', text: 'text-[#003399]' },
+    cyan:   { bg: 'bg-[#00A9CE]/5', border: 'border-[#00A9CE]/10', text: 'text-[#00A9CE]' },
+    indigo: { bg: 'bg-indigo-50',   border: 'border-indigo-100',   text: 'text-indigo-600' },
+    violet: { bg: 'bg-amber-50',    border: 'border-amber-100',    text: 'text-amber-600' },
+  };
+  const t = themes[color] || themes.blue;
   return (
-    <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${c} w-full`}>
-      <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
+    <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${t.bg} ${t.border} w-full`}>
+      <Icon className={`w-4 h-4 flex-shrink-0 ${t.text}`} />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-black leading-none">{value}</p>
-        <p className="text-[9px] font-medium opacity-60 mt-0.5 leading-none truncate">{label}</p>
+        <p className={`text-sm font-black leading-none ${t.text}`}>{value}</p>
+        <p className="text-[9px] font-medium text-slate-400 mt-0.5 leading-none truncate">{label}</p>
       </div>
     </div>
   );
@@ -160,7 +161,7 @@ const CompanyDetail = () => {
           <p className="text-sm font-semibold text-gray-600 mb-4">Company not found</p>
           <button onClick={() => navigate('/dashboard/super-admin/companies')}
             className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm hover:scale-105 transition-all">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Companies
+            Go to Companies List
           </button>
         </div>
       </SuperAdminDashboardLayout>
@@ -172,72 +173,49 @@ const CompanyDetail = () => {
 
   return (
     <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+            {company.name}
+          </h1>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {company.industry && (
+              <span className="inline-flex items-center gap-1 bg-[#003399]/5 text-[#003399] border border-[#003399]/10 rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                <Briefcase className="w-3 h-3" /> {company.industry}
+              </span>
+            )}
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border ${
+              company.isActive ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20' : 'bg-rose-50 text-rose-500 border-rose-100'
+            }`}>
+              {company.isActive ? <><CheckCircle className="w-3 h-3" /> Active</> : <><XCircle className="w-3 h-3" /> Inactive</>}
+            </span>
+          </div>
         </div>
-        <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <button onClick={() => navigate('/dashboard/super-admin/companies')}
-                className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors">
-                <ArrowLeft className="w-3 h-3" /> Back to Companies
-              </button>
-              <h1 className="text-white font-black text-lg leading-tight">{company.name}</h1>
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {company.industry && (
-                  <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                    <Briefcase className="w-3 h-3" /> {company.industry}
-                  </span>
-                )}
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
-                  company.isActive
-                    ? 'bg-white/15 text-white border-white/20'
-                    : 'bg-white/10 text-white/60 border-white/10'
-                }`}>
-                  {company.isActive
-                    ? <><CheckCircle className="w-3 h-3" /> Active</>
-                    : <><XCircle className="w-3 h-3" /> Inactive</>}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={handleToggleStatus}
-              className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all hover:scale-105 ${
-                company.isActive
-                  ? 'bg-amber-500/20 hover:bg-amber-500/30 text-white border-amber-300/30'
-                  : 'bg-green-500/20 hover:bg-green-500/30 text-white border-green-300/30'
-              }`}>
-              {company.isActive
-                ? <><ToggleRight className="w-3.5 h-3.5" /> Active</>
-                : <><ToggleLeft className="w-3.5 h-3.5" /> Inactive</>}
-            </button>
-            <button onClick={() => navigate(`/dashboard/super-admin/companies/edit/${companyId}`)}
-              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/20 transition-all hover:scale-105">
-              <Edit className="w-3.5 h-3.5" /> Edit
-            </button>
-            <button onClick={handleDelete}
-              className="inline-flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-red-300/30 transition-all hover:scale-105">
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </button>
-          </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={handleToggleStatus}
+            className={`inline-flex items-center gap-1.5 text-[11px] font-black px-3 py-2 rounded-xl border transition-all ${
+              company.isActive ? 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100'
+            }`}>
+            {company.isActive ? <><ToggleRight className="w-3.5 h-3.5" /> Deactivate</> : <><ToggleLeft className="w-3.5 h-3.5" /> Activate</>}
+          </button>
+          <button onClick={() => navigate(`/dashboard/super-admin/companies/edit/${companyId}`)}
+            className="inline-flex items-center gap-1.5 bg-white text-[#003399] text-[11px] font-black px-3 py-2 rounded-xl border border-slate-100 hover:border-[#003399] shadow-sm transition-all">
+            <Edit className="w-3.5 h-3.5" /> Edit
+          </button>
+          <button onClick={handleDelete}
+            className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-600 text-[11px] font-black px-3 py-2 rounded-xl border border-rose-100 hover:bg-rose-100 transition-all">
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </button>
         </div>
       </div>
 
-      {/* ══ STAT PILLS ══ */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      {/* STAT PILLS */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatPill icon={FileText}   label="Total JDs"        value={jobs.length}          color="blue"   />
           <StatPill icon={CheckCircle} label="Active JDs"      value={activeJobs}           color="cyan"   />
           <StatPill icon={Users}      label="Total Applicants" value={totalApplications}    color="indigo" />
@@ -245,22 +223,18 @@ const CompanyDetail = () => {
         </div>
       </div>
 
-      {/* ══ MAIN GRID ══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* ── LEFT (2 cols) ── */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
+      {/* MAIN GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-6">
 
           {/* About */}
           {company.description && (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
               <SHead icon={FileText} title="About" sub="Company overview" />
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{company.description}</p>
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{company.description}</p>
             </div>
           )}
-
-          {/* Contact */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Mail} title="Contact Information" sub="How to reach this company" />
             <div className="space-y-0.5">
               {company.email && (
@@ -279,8 +253,8 @@ const CompanyDetail = () => {
           </div>
 
           {/* Job Descriptions */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-50">
               <SHead icon={Briefcase} title="Job Descriptions" sub="All JDs linked to this company" badge={jobs.length} />
             </div>
 
@@ -312,8 +286,8 @@ const CompanyDetail = () => {
                   return (
                     <div key={job._id}
                       onClick={() => navigate(`/dashboard/super-admin/jobs/view/${job._id}`)}
-                      className="group flex items-start gap-3 px-4 py-3.5 hover:bg-blue-50/30 transition-colors cursor-pointer">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      className="group flex items-start gap-3 px-4 py-3.5 hover:bg-[#003399]/[0.02] transition-colors cursor-pointer">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
                         <Briefcase className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -391,10 +365,8 @@ const CompanyDetail = () => {
         </div>
 
         {/* ── RIGHT (1 col) ── */}
-        <div className="flex flex-col gap-4">
-
-          {/* Quick Info */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+        <div className="flex flex-col gap-6">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Building2} title="Quick Info" />
             <div className="space-y-0.5">
               {company.industry && (
@@ -409,104 +381,93 @@ const CompanyDetail = () => {
                   <span className="text-xs font-bold text-gray-700">{company.companySize} employees</span>
                 </div>
               )}
-              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
-                <span className="text-xs text-gray-500 flex items-center gap-1.5"><Shield className="w-3 h-3" /> Status</span>
-                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+                <span className="text-xs text-slate-500 flex items-center gap-1.5"><Shield className="w-3 h-3" /> Status</span>
+                <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full border ${
                   company.isActive
-                    ? 'bg-blue-50 text-blue-600 border-blue-100'
-                    : 'bg-gray-50 text-gray-500 border-gray-200'
+                    ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20'
+                    : 'bg-rose-50 text-rose-500 border-rose-100'
                 }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${company.isActive ? 'bg-blue-500' : 'bg-gray-400'}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${company.isActive ? 'bg-[#10b981]' : 'bg-rose-400'}`} />
                   {company.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
               <div className="flex items-center justify-between py-1.5">
-                <span className="text-xs text-gray-500 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Total JDs</span>
-                <span className="text-xs font-black text-blue-600">{jobs.length}</span>
+                <span className="text-xs text-slate-500 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Total JDs</span>
+                <span className="text-xs font-black text-[#003399]">{jobs.length}</span>
               </div>
             </div>
           </div>
 
           {/* JD Breakdown */}
           {jobs.length > 0 && (
-            <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-cyan-500 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-              <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
-              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
-              <div className="relative">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <p className="text-xs font-bold text-white">JD Breakdown</p>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
+                  <BarChart3 className="w-3.5 h-3.5 text-white" />
                 </div>
-                <div className="space-y-2">
-                  {['Active', 'Draft', 'Closed', 'Cancelled'].map((status) => {
-                    const count = jobs.filter((j) => j.status === status).length;
-                    if (!count) return null;
-                    return (
-                      <div key={status} className="flex justify-between items-center">
-                        <span className="text-[11px] text-blue-100">{status}</span>
-                        <span className="text-xs font-black text-white">{count}</span>
-                      </div>
-                    );
-                  })}
-                  <div className="border-t border-white/20 pt-2 flex justify-between items-center">
-                    <span className="text-[11px] text-blue-100">Total Applied</span>
-                    <span className="text-base font-black text-white">{totalApplications}</span>
-                  </div>
+                <p className="text-sm font-bold text-slate-800">JD Breakdown</p>
+              </div>
+              <div className="space-y-2">
+                {['Active', 'Draft', 'Closed', 'Cancelled'].map((status) => {
+                  const count = jobs.filter((j) => j.status === status).length;
+                  if (!count) return null;
+                  return (
+                    <div key={status} className="flex justify-between items-center py-1">
+                      <span className="text-[11px] text-slate-500 font-medium">{status}</span>
+                      <span className="text-xs font-black text-[#003399]">{count}</span>
+                    </div>
+                  );
+                })}
+                <div className="border-t border-slate-100 pt-2 flex justify-between items-center">
+                  <span className="text-[11px] text-slate-500 font-medium">Total Applied</span>
+                  <span className="text-base font-black text-[#003399]">{totalApplications}</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Metadata */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Calendar} title="Metadata" />
             <div className="space-y-0.5">
-              <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
-                <span className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar className="w-3 h-3" /> Created</span>
-                <span className="text-xs font-bold text-gray-700">{new Date(company.createdAt).toLocaleDateString()}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-slate-50">
+                <span className="text-xs text-slate-500 flex items-center gap-1.5"><Calendar className="w-3 h-3" /> Created</span>
+                <span className="text-xs font-bold text-slate-700">{new Date(company.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center justify-between py-1.5">
-                <span className="text-xs text-gray-500 flex items-center gap-1.5"><Calendar className="w-3 h-3" /> Updated</span>
-                <span className="text-xs font-bold text-gray-700">{new Date(company.updatedAt).toLocaleDateString()}</span>
+                <span className="text-xs text-slate-500 flex items-center gap-1.5"><Calendar className="w-3 h-3" /> Updated</span>
+                <span className="text-xs font-bold text-slate-700">{new Date(company.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Shield} title="Quick Actions" />
             <div className="space-y-2">
               <button onClick={() => navigate(`/dashboard/super-admin/companies/edit/${companyId}`)}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 text-xs font-semibold transition-all hover:scale-[1.02]">
-                <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Edit className="w-3 h-3" />
-                </div>
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#003399]/5 hover:bg-[#003399]/10 border border-[#003399]/10 text-[#003399] text-xs font-black transition-all">
+                <div className="w-6 h-6 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0"><Edit className="w-3 h-3" /></div>
                 Edit Company
               </button>
               <button onClick={handleToggleStatus}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all hover:scale-[1.02] ${
-                  company.isActive
-                    ? 'bg-amber-50 hover:bg-amber-100 border-amber-100 text-amber-700'
-                    : 'bg-green-50 hover:bg-green-100 border-green-100 text-green-700'
+                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-xs font-black transition-all ${
+                  company.isActive ? 'bg-amber-50 hover:bg-amber-100 border-amber-100 text-amber-700' : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 text-emerald-700'
                 }`}>
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${company.isActive ? 'bg-amber-100' : 'bg-green-100'}`}>
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${company.isActive ? 'bg-amber-100' : 'bg-emerald-100'}`}>
                   {company.isActive ? <ToggleLeft className="w-3 h-3" /> : <ToggleRight className="w-3 h-3" />}
                 </div>
                 {company.isActive ? 'Deactivate Company' : 'Activate Company'}
               </button>
               <button onClick={handleDelete}
-                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-100 text-red-700 text-xs font-semibold transition-all hover:scale-[1.02]">
-                <div className="w-6 h-6 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Trash2 className="w-3 h-3" />
-                </div>
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-700 text-xs font-black transition-all">
+                <div className="w-6 h-6 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0"><Trash2 className="w-3 h-3" /></div>
                 Delete Company
               </button>
             </div>
           </div>
-
         </div>
+      </div>
       </div>
     </SuperAdminDashboardLayout>
   );

@@ -37,14 +37,20 @@ const STATUS_OPTIONS = [
   { value: 'Inactive', label: 'Inactive', color: 'text-red-500', hint: 'Hidden from students' },
 ];
 
-const SHead = ({ icon: Icon, title, sub }) => (
+const SHead = ({ icon: Icon, title, sub, color = '#003399', noBg }) => (
   <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
-    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icon className="w-3 h-3 text-white" />
+    <div
+      className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${noBg ? '' : 'border'}`}
+      style={noBg ? {} : {
+        backgroundColor: `${color}15`,
+        borderColor: `${color}30`,
+      }}
+    >
+      <Icon className="w-3.5 h-3.5" style={{ color }} />
     </div>
     <div>
-      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      <h3 className="text-sm font-bold text-slate-800 leading-none">{title}</h3>
+      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
     </div>
   </div>
 );
@@ -135,8 +141,8 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
   return (
     <div className="border border-blue-100 rounded-xl p-3 bg-blue-50/30">
       <div className="flex items-start gap-2.5">
-        <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-          <span className="text-[10px] font-black text-white">{index + 1}</span>
+        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span className="text-xs font-black text-[#003399]">{index + 1}</span>
         </div>
         <div className="flex-1 space-y-3">
           <div className="flex gap-2">
@@ -224,9 +230,9 @@ const ModuleItem = ({ mod, index, onChange, onRemove }) => {
   );
 };
 
-const Section = ({ children, title, icon, sub }) => (
-  <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-    <SHead icon={icon} title={title} sub={sub} />
+const Section = ({ children, title, icon, sub, noBg }) => (
+  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+    <SHead icon={icon} title={title} sub={sub} noBg={noBg} />
     <div className="space-y-4">{children}</div>
   </div>
 );
@@ -431,44 +437,29 @@ const SuperAdminCourseForm = () => {
 
   return (
     <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-      {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold border backdrop-blur-xl ${toast.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-          {toast.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
-          {toast.msg}
-        </div>
-      )}
-
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-        </div>
-        <div className="relative flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <button onClick={() => navigate('/dashboard/super-admin/courses')}
-                className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors">
-                <ArrowLeft className="w-3 h-3" /> Back to Courses
-              </button>
-              <h1 className="text-white font-black text-lg leading-tight">{isEdit ? 'Edit Course' : 'Create New Course'}</h1>
-              <p className="text-blue-200 text-[11px] mt-0.5">{isEdit ? 'Update course content and settings' : 'Starts as Draft — publish when ready'}</p>
-            </div>
+        {toast && (
+          <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold border backdrop-blur-xl ${toast.type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+            {toast.type === 'error' ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+            {toast.msg}
           </div>
-          <button onClick={handleSubmit} disabled={saving}
-            className="inline-flex items-center gap-2 bg-white text-blue-600 text-xs font-black px-4 py-2.5 rounded-xl shadow-sm hover:bg-blue-50 hover:scale-105 transition-all disabled:opacity-50 flex-shrink-0">
-            {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {saving ? 'Saving…' : isEdit ? 'Update' : 'Create'}
-          </button>
-        </div>
-      </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Brand Header */}
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+              {isEdit ? 'Edit Course' : 'Create New Course'}
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 font-medium">
+              {isEdit ? 'Update existing course details and curriculum' : 'Fill in the details to launch a new course'}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
 
         {/* Platform Scope */}
         <Section title="Platform Scope" icon={Globe} sub="Select which colleges can access this course">
@@ -584,7 +575,7 @@ const SuperAdminCourseForm = () => {
         </Section>
 
         {/* Curriculum */}
-        <Section title="Course Curriculum" icon={Layers} sub="Modules, topics, and video resources">
+        <Section title="Course Curriculum" icon={Layers} sub="Modules, topics, and video resources" noBg>
           <p className="text-[10px] text-gray-400 -mt-2">Paste any YouTube URL (watch or share link) — the player handles conversion automatically.</p>
           <div className="space-y-3">
             {form.curriculum.map((mod, i) => (
@@ -661,11 +652,12 @@ const SuperAdminCourseForm = () => {
             <X className="w-3.5 h-3.5" /> Cancel
           </button>
           <button type="submit" disabled={saving}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+            className="inline-flex items-center gap-2 bg-[#003399] hover:bg-[#002d8b] text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-sm hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
             {saving ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Saving…</> : <><Save className="w-3.5 h-3.5" />{isEdit ? 'Update Course' : 'Create Course'}</>}
           </button>
         </div>
       </form>
+      </div>
 
     </SuperAdminDashboardLayout>
   );

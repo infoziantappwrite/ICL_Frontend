@@ -21,8 +21,7 @@ import {
   DollarSign,
   Award,
 } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
 
 const ApplicationDetail = () => {
   const toast = useToast();
@@ -123,260 +122,192 @@ const ApplicationDetail = () => {
   };
 
   if (loading) {
-    return <LoadingSpinner message="Loading Application Details..." />;
+    return (
+      <SuperAdminDashboardLayout>
+        <div className="p-8 flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-[#003399] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </SuperAdminDashboardLayout>
+    );
   }
 
   if (!application) {
     return (
-      <DashboardLayout title="Application Not Found">
-        <div className="text-center py-16">
-          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">Application not found</p>
-          <button
-            onClick={() => navigate('/dashboard/super-admin/applications')}
-            className="mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700"
-          >
-            Back to Applications
+      <SuperAdminDashboardLayout>
+        <div className="p-8 text-center">
+          <FileText className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+          <p className="text-slate-500 text-lg font-medium">Application not found</p>
+          <button onClick={() => navigate('/dashboard/super-admin/applications')}
+            className="mt-6 px-6 py-3 bg-[#003399] text-white rounded-xl font-bold hover:bg-[#002d8b] transition-all">
+            Go to Applications List
           </button>
         </div>
-      </DashboardLayout>
+      </SuperAdminDashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Application Details">
-      {/* Header */}
-      <div className="mb-8">
-        <button
-          onClick={() => navigate('/dashboard/super-admin/applications')}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Applications
-        </button>
+    <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 font-sans space-y-5">
 
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 rounded-3xl p-8 shadow-2xl shadow-blue-500/30">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div className="text-white">
-              <h1 className="text-3xl font-bold mb-2">Application Details</h1>
-              <p className="text-blue-100 text-lg">
-                {application.student?.fullName} - {application.job?.title}
-              </p>
-            </div>
-            <div className={`px-6 py-3 rounded-xl font-semibold text-lg border-2 ${getStatusColor(application.status)}`}>
+        {/* Header */}
+        <div className="mb-2">
+
+
+
+
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+            Application Details
+          </h1>
+          <p className="text-sm text-slate-400 font-medium mt-1">
+            {application.student?.fullName} — {application.job?.title}
+          </p>
+        </div>
+
+        {/* Status + Update Actions */}
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <h3 className="text-sm font-black text-slate-800">Application Status</h3>
+            <span className={`px-3 py-1.5 rounded-lg font-black text-xs border ${getStatusColor(application.status)}`}>
               {application.status?.charAt(0).toUpperCase() + application.status?.slice(1)}
-            </div>
+            </span>
           </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="mb-8">
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-          <h3 className="font-semibold text-gray-900 mb-4">Update Application Status</h3>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => updateApplicationStatus('shortlisted')}
-              disabled={updating || application.status === 'shortlisted'}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-            >
-              <FileText className="w-5 h-5" />
-              Shortlist
+          <p className="text-xs font-bold text-slate-500 mb-3">Update Status</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => updateApplicationStatus('shortlisted')} disabled={updating || application.status === 'shortlisted'}
+              className="px-4 py-2 bg-[#003399] text-white rounded-xl text-xs font-black hover:bg-[#002d8b] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> Shortlist
             </button>
-            <button
-              onClick={() => updateApplicationStatus('accepted')}
-              disabled={updating || application.status === 'accepted'}
-              className="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-            >
-              <CheckCircle className="w-5 h-5" />
-              Accept
+            <button onClick={() => updateApplicationStatus('accepted')} disabled={updating || application.status === 'accepted'}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-black hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5" /> Accept
             </button>
-            <button
-              onClick={() => updateApplicationStatus('rejected')}
-              disabled={updating || application.status === 'rejected'}
-              className="px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-            >
-              <XCircle className="w-5 h-5" />
-              Reject
+            <button onClick={() => updateApplicationStatus('rejected')} disabled={updating || application.status === 'rejected'}
+              className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-black hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5">
+              <XCircle className="w-3.5 h-3.5" /> Reject
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Student Information */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Student Information</h3>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-5">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Full Name</label>
-                <p className="text-gray-900 font-semibold">{application.student?.fullName || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Roll Number</label>
-                <p className="text-gray-900 font-semibold">{application.student?.rollNumber || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Email</label>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-700">{application.student?.email || 'N/A'}</p>
+            {/* Student Info */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
+                  <User className="w-3.5 h-3.5 text-white" />
                 </div>
+                <h3 className="text-sm font-black text-slate-800">Student Information</h3>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Phone</label>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-700">{application.student?.phone || 'N/A'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Branch</label>
-                <p className="text-gray-700">{application.student?.branch || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Graduation Year</label>
-                <p className="text-gray-700">{application.student?.graduationYear || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">CGPA</label>
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-yellow-500" />
-                  <p className="text-gray-900 font-semibold">{application.student?.cgpa || 'N/A'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">College</label>
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-blue-500" />
-                  <p className="text-gray-700">{application.college?.name || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Job Information */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Briefcase className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900">Job Information</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Job Title</label>
-                <p className="text-gray-900 font-semibold">{application.job?.title || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Company</label>
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-700">{application.job?.company?.name || 'N/A'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Location</label>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-700">{application.job?.location || 'N/A'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Salary</label>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-500" />
-                  <p className="text-gray-900 font-semibold">{application.job?.salary || 'N/A'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Job Type</label>
-                <p className="text-gray-700">{application.job?.type || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-1 block">Applied Date</label>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <p className="text-gray-700">
-                    {application.appliedDate ? new Date(application.appliedDate).toLocaleDateString() : 'N/A'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Cover Letter */}
-          {application.coverLetter && (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Cover Letter</h3>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{application.coverLetter}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Resume */}
-          {application.resumeUrl && (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Resume</h3>
-              <a
-                href={application.resumeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg hover:shadow-xl"
-              >
-                <Download className="w-5 h-5" />
-                Download Resume
-              </a>
-            </div>
-          )}
-
-          {/* Skills & Additional Info */}
-          {application.additionalInfo && (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Additional Information</h3>
-              
-              {application.additionalInfo.skills && (
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-600 mb-2 block">Skills</label>
-                  <div className="flex flex-wrap gap-2">
-                    {application.additionalInfo.skills.map((skill, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                        {skill}
-                      </span>
-                    ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[
+                  {label:'Full Name', value: application.student?.fullName},
+                  {label:'Roll Number', value: application.student?.rollNumber},
+                  {label:'Email', value: application.student?.email, icon: Mail},
+                  {label:'Phone', value: application.student?.phone, icon: Phone},
+                  {label:'Branch', value: application.student?.branch},
+                  {label:'Graduation Year', value: application.student?.graduationYear},
+                  {label:'CGPA', value: application.student?.cgpa, icon: Award},
+                  {label:'College', value: application.college?.name, icon: GraduationCap},
+                ].map(({label, value, icon: Icon}) => (
+                  <div key={label}>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+                    <div className="flex items-center gap-1.5">
+                      {Icon && <Icon className="w-3.5 h-3.5 text-slate-400" />}
+                      <p className="text-sm font-semibold text-slate-800">{value || 'N/A'}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {application.additionalInfo.experience && (
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-600 mb-1 block">Experience</label>
-                  <p className="text-gray-700">{application.additionalInfo.experience}</p>
-                </div>
-              )}
-
-              {application.additionalInfo.projects && (
-                <div>
-                  <label className="text-sm font-medium text-gray-600 mb-1 block">Projects</label>
-                  <p className="text-gray-900 font-semibold">{application.additionalInfo.projects} Projects</p>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
-          )}
+
+            {/* Job Info */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
+                  <Briefcase className="w-3.5 h-3.5 text-white" />
+                </div>
+                <h3 className="text-sm font-black text-slate-800">Job Information</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {[
+                  {label:'Job Title', value: application.job?.title},
+                  {label:'Company', value: application.job?.company?.name, icon: Building2},
+                  {label:'Location', value: application.job?.location, icon: MapPin},
+                  {label:'Salary', value: application.job?.salary, icon: DollarSign},
+                  {label:'Job Type', value: application.job?.type},
+                  {label:'Applied Date', value: application.appliedDate ? new Date(application.appliedDate).toLocaleDateString() : null, icon: Calendar},
+                ].map(({label, value, icon: Icon}) => (
+                  <div key={label}>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+                    <div className="flex items-center gap-1.5">
+                      {Icon && <Icon className="w-3.5 h-3.5 text-slate-400" />}
+                      <p className="text-sm font-semibold text-slate-800">{value || 'N/A'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Cover Letter */}
+            {application.coverLetter && (
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <h3 className="text-sm font-black text-slate-800 mb-3">Cover Letter</h3>
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{application.coverLetter}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-5">
+            {/* Resume */}
+            {application.resumeUrl && (
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <h3 className="text-sm font-black text-slate-800 mb-3">Resume</h3>
+                <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#003399] text-white rounded-xl text-xs font-black hover:bg-[#002d8b] transition-all">
+                  <Download className="w-3.5 h-3.5" /> Download Resume
+                </a>
+              </div>
+            )}
+
+            {/* Additional Info */}
+            {application.additionalInfo && (
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+                <h3 className="text-sm font-black text-slate-800 mb-4">Additional Information</h3>
+                {application.additionalInfo.skills && (
+                  <div className="mb-4">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Skills</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {application.additionalInfo.skills.map((skill, index) => (
+                        <span key={index} className="px-2.5 py-1 bg-[#003399]/5 text-[#003399] border border-[#003399]/10 rounded-full text-xs font-bold">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {application.additionalInfo.experience && (
+                  <div className="mb-4">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Experience</p>
+                    <p className="text-sm text-slate-700">{application.additionalInfo.experience}</p>
+                  </div>
+                )}
+                {application.additionalInfo.projects && (
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Projects</p>
+                    <p className="text-sm font-black text-slate-800">{application.additionalInfo.projects} Projects</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </DashboardLayout>
+    </SuperAdminDashboardLayout>
   );
 };
 

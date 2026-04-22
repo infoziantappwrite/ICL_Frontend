@@ -1,19 +1,19 @@
 // src/pages/SuperAdmin/StudentManagement.jsx
 // FIXED: MHead onClose props, live student list, export preview, response normalization
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboardLayout';
 import { useToast } from '../../context/ToastContext';
 import { superAdminStudentAPI } from '../../api/studentAPI';
-import apiCall from '../../api/Api';
 import {
-  GraduationCap, CloudUpload, FileDown, Download, RefreshCw, X,
+  GraduationCap, CloudUpload, FileDown, Download, X,
   CheckCircle, AlertTriangle, AlertCircle, FileText, Info,
   Upload, Building2, ChevronRight, UserPlus, UsersRound,
   Plus, Mail, Hash, BookOpen, Star, Calendar, Phone, Eye,
   Trash2, ArrowLeft, Check, UploadCloud, Loader2, Search,
-  ChevronLeft, Users, Filter, SortAsc, SortDesc, TrendingUp, KeyRound,
+  ChevronLeft, ChevronDown, Users, Filter, SortAsc, SortDesc, TrendingUp, KeyRound, RefreshCw,
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════
@@ -22,14 +22,6 @@ import {
 const BRANCHES = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AI/ML', 'DS', 'Other'];
 const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8'];
 const REQUIRED_COLS = ['name', 'email', 'roll_number'];
-
-// Inline API helper for student list (uses existing /colleges/:id/students endpoint)
-const getCollegeStudents = (collegeId, params = {}) => {
-  const qs = new URLSearchParams(
-    Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v != null))
-  ).toString();
-  return apiCall(`/super-admin/colleges/${collegeId}/students${qs ? `?${qs}` : ''}`);
-};
 
 /* ══════════════════════════════════════════════════════════
    HELPERS
@@ -40,11 +32,13 @@ const Spin = ({ size = 'md', color = 'white' }) => {
   return <div className={`${sz} ${cl} border-2 border-t-transparent rounded-full animate-spin flex-shrink-0`} />;
 };
 
-const BASE_INPUT = 'w-full text-sm border rounded-xl py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition placeholder:text-slate-300';
+const BASE_INPUT = 'w-full text-sm border-0 rounded-xl py-2.5 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white border border-slate-200/50 focus:border-blue-400 transition-all placeholder:text-slate-300';
 const I_ICON = `${BASE_INPUT} pl-9 pr-3`;
 const I_PLAIN = `${BASE_INPUT} px-3`;
-const OK_CLS = 'border-slate-200';
-const ERR_CLS = 'border-red-300 bg-red-50/40';
+const OK_CLS = 'border-slate-200/50';
+const ERR_CLS = 'border-red-200 bg-red-50/30';
+const BTN_PRI = 'bg-[#003399] text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-2.5 rounded-xl hover:bg-[#002d8b] transition-all shadow-lg shadow-blue-500/10 active:scale-95 inline-flex items-center gap-2 whitespace-nowrap';
+const BTN_SEC = 'bg-white text-slate-500 text-[10px] font-black uppercase tracking-wider px-3.5 py-2.5 rounded-xl border border-slate-100 hover:border-[#003399]/30 hover:text-[#003399] transition-all inline-flex items-center gap-2 whitespace-nowrap';
 
 const Field = ({ label, required, icon: Icon, error, hint, children }) => (
   <div>
@@ -64,7 +58,6 @@ const Field = ({ label, required, icon: Icon, error, hint, children }) => (
 const Modal = ({ children, onClose, size = 'lg' }) => {
   const w = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-2xl', xl: 'max-w-4xl', full: 'max-w-6xl' }[size];
 
-  // Close on Escape key
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
     window.addEventListener('keydown', handler);
@@ -73,13 +66,12 @@ const Modal = ({ children, onClose, size = 'lg' }) => {
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center p-4"
-      style={{ zIndex: 9999 }}
+      className="fixed inset-0 flex items-center justify-center p-4 z-[9999]"
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-all animate-in fade-in" />
       <div
-        className={`relative w-full ${w} max-h-[92vh] flex flex-col`}
+        className={`relative w-full ${w} max-h-[92vh] flex flex-col bg-white rounded-[32px] shadow-2xl border border-white/20 animate-in zoom-in-95 duration-200`}
         onClick={e => e.stopPropagation()}
       >
         {children}
@@ -90,22 +82,25 @@ const Modal = ({ children, onClose, size = 'lg' }) => {
 };
 
 /* ── Gradient modal header ── */
-const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-blue-700 via-blue-600 to-cyan-500' }) => (
-  <div className={`bg-gradient-to-r ${gradient} px-6 py-5 flex-shrink-0 rounded-t-2xl`}>
+const MHead = ({ icon: Icon, title, sub, onClose, color = '#003399' }) => (
+  <div className="px-6 py-6 border-b border-slate-50 flex-shrink-0 bg-white/50 backdrop-blur-sm rounded-t-[32px]">
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-4">
+        <div
+          className="w-11 h-11 rounded-2xl flex items-center justify-center border flex-shrink-0 shadow-sm"
+          style={{ backgroundColor: `${color}15`, borderColor: `${color}30` }}
+        >
+          <Icon className="w-5 h-5" style={{ color }} />
         </div>
         <div>
-          <h2 className="text-white font-black text-base leading-tight">{title}</h2>
-          {sub && <p className="text-blue-200 text-xs mt-0.5">{sub}</p>}
+          <h2 className="text-slate-900 font-black text-lg tracking-tight leading-tight">{title}</h2>
+          {sub && <p className="text-slate-400 text-xs font-medium mt-0.5">{sub}</p>}
         </div>
       </div>
       {onClose && (
         <button
           onClick={onClose}
-          className="w-8 h-8 bg-white/10 hover:bg-white/25 rounded-lg flex items-center justify-center text-white transition-colors flex-shrink-0"
+          className="w-9 h-9 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border border-slate-200/50"
         >
           <X className="w-4 h-4" />
         </button>
@@ -115,24 +110,43 @@ const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-blue-700 via-
 );
 
 /* ── Preview field ── */
-const PField = ({ label, value, full }) => (
-  <div className={full ? 'col-span-2' : ''}>
-    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">{label}</p>
-    <p className="text-sm font-semibold text-slate-800 break-all">
-      {value != null && value !== '' ? value : <span className="text-slate-300 italic text-xs">—</span>}
-    </p>
+const PField = ({ label, value, full, icon: Icon }) => (
+  <div className={`p-4 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-start gap-3 ${full ? 'col-span-2' : ''}`}>
+    {Icon && (
+      <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center flex-shrink-0 border border-slate-100">
+        <Icon className="w-4 h-4 text-slate-400" />
+      </div>
+    )}
+    <div className="min-w-0 flex-1">
+      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 leading-none">{label}</p>
+      <p className="text-sm font-black text-slate-800 break-all leading-tight">
+        {value != null && value !== '' ? value : <span className="text-slate-300 italic font-medium text-xs">—</span>}
+      </p>
+    </div>
   </div>
 );
 
 /* ── Section heading ── */
-const SHead = ({ icon: Icon, title, sub }) => (
-  <div className="flex items-center gap-2">
-    <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icon className="w-3.5 h-3.5 text-white" />
+const SHead = ({ icon: Icon, title, sub, color = '#003399' }) => (
+  <div className="flex items-center gap-3">
+    <div
+      className="w-8 h-8 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-sm transition-all"
+      style={{ backgroundColor: `${color}15`, borderColor: `${color}30` }}
+    >
+      <Icon className="w-4 h-4" style={{ color }} />
     </div>
-    <div>
-      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+    <div className="min-w-0">
+      <h3 className="text-sm font-black text-slate-800 leading-none tracking-tight">{title}</h3>
+      {sub && <p className="text-[10px] text-slate-400 font-medium mt-1 leading-none">{sub}</p>}
+    </div>
+  </div>
+);
+
+const Section = ({ icon, title, sub, color, children, className = "" }) => (
+  <div className={`space-y-4 ${className}`}>
+    <SHead icon={icon} title={title} sub={sub} color={color} />
+    <div className="pl-0 sm:pl-11">
+      {children}
     </div>
   </div>
 );
@@ -241,53 +255,71 @@ function AddSingleModal({ colleges, onClose, onDone }) {
   /* DONE */
   if (step === 'done') return (
     <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={CheckCircle} title="Student Created!" sub="Temporary password sent to student's email" onClose={onClose} />
-        <div className="p-6 space-y-4">
-          {/* Student identity card */}
-          <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
-              {result?.fullName?.charAt(0)?.toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="font-black text-slate-800">{result?.fullName}</p>
-              <p className="text-xs text-slate-500 mt-0.5 truncate">{result?.email}</p>
-              {result?.rollNumber && <p className="text-xs text-blue-600 font-mono mt-0.5">{result?.rollNumber}</p>}
-            </div>
+      <MHead icon={CheckCircle} title="Student Created!" sub="A welcome email has been sent" onClose={onClose} color="#10b981" />
+      <div className="p-8 space-y-6 overflow-y-auto">
+        <div className="flex items-center gap-5 p-6 bg-slate-50 border border-slate-100 rounded-3xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-8 -mt-8 transition-all group-hover:scale-110" />
+          <div className="w-16 h-16 bg-gradient-to-br from-[#003399] to-[#00A9CE] rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg flex-shrink-0">
+            {result?.fullName?.charAt(0)?.toUpperCase()}
           </div>
-          {/* Temporary password amber box with copy button */}
-          {result?.temporaryPassword && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+          <div className="min-w-0">
+            <h4 className="text-xl font-black text-slate-800 leading-tight">{result?.fullName}</h4>
+            <p className="text-sm text-slate-500 mt-1 truncate font-medium">{result?.email}</p>
+            {result?.rollNumber && <p className="text-xs text-blue-600 font-black mt-2 tracking-widest uppercase">{result?.rollNumber}</p>}
+          </div>
+        </div>
+
+        {result?.temporaryPassword && (
+          <div className="bg-amber-50/50 border border-amber-100 rounded-3xl p-6 relative">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
                 <KeyRound size={12} /> Temporary Password
               </p>
-              <div className="flex items-center justify-between gap-2">
-                <code className="text-lg font-mono font-black text-amber-900 tracking-widest">
-                  {result.temporaryPassword}
-                </code>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(result.temporaryPassword); toast.success('Copied!'); }}
-                  className="text-xs px-3 py-1 bg-amber-200 text-amber-800 rounded-lg hover:bg-amber-300 transition font-bold flex-shrink-0">
-                  Copy
-                </button>
-              </div>
-              <p className="text-xs text-amber-700 mt-2">Share with student. They'll be prompted to change on first login.</p>
+              <button
+                onClick={() => { navigator.clipboard.writeText(result.temporaryPassword); toast.success('Copied!'); }}
+                className="text-[10px] font-black px-3 py-1 bg-white border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-100 transition-all shadow-sm">
+                COPY PASSWORD
+              </button>
             </div>
-          )}
-          {/* Email delivery status */}
-          <div className={`flex items-center gap-2 text-sm p-3 rounded-xl ${result?.emailSent ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
-            <Mail size={14} className="flex-shrink-0" />
-            {result?.emailSent ? 'Welcome email with password delivered.' : 'Email delivery failed — share credentials manually.'}
+            <code className="text-2xl font-mono font-black text-amber-900 tracking-[0.2em] block text-center py-2">
+              {result.temporaryPassword}
+            </code>
+            <div className="mt-4 flex items-center gap-2 text-[10px] text-amber-600 font-medium">
+              <Info size={12} />
+              Share this password with the student manually if needed.
+            </div>
           </div>
-          {/* Download Excel */}
+        )}
+
+        <div className={`flex items-start gap-3 p-4 rounded-2xl border ${result?.emailSent ? 'bg-emerald-50/50 border-emerald-100 text-emerald-700' : 'bg-amber-50/50 border-amber-100 text-amber-700'}`}>
+          {result?.emailSent ? <CheckCircle size={16} className="mt-0.5" /> : <AlertTriangle size={16} className="mt-0.5" />}
+          <p className="text-xs font-semibold leading-relaxed">
+            {result?.emailSent
+              ? 'Credentials and login instructions have been successfully sent to the student.'
+              : 'Email delivery failed. Please provide the temporary password to the student manually.'}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 pt-2">
           <button
             onClick={() => downloadResultsAsExcel([result], `student_${result?.rollNumber || Date.now()}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
-            <Download size={14} /> Download Student Details (Excel)
+            className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-black rounded-2xl transition-all shadow-sm group">
+            <Download size={16} className="text-slate-400 group-hover:text-[#003399]" />
+            Download Student Record (Excel)
           </button>
-          <div className="flex gap-3">
-            <button onClick={() => { setForm(EMPTY_FORM); setResult(null); setStep('form'); }} className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">Add Another</button>
-            <button onClick={onClose} className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
+          <div className="flex gap-3 mt-2">
+            <button
+              onClick={() => { setForm(EMPTY_FORM); setResult(null); setStep('form'); }}
+              className="flex-1 py-3.5 bg-slate-100/50 hover:bg-slate-100 text-slate-600 text-sm font-black rounded-2xl transition-all"
+            >
+              Add Another
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 py-3.5 bg-[#003399] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-200 hover:bg-[#002d8b] transition-all uppercase tracking-widest"
+            >
+              Finish
+            </button>
           </div>
         </div>
       </div>
@@ -296,53 +328,63 @@ function AddSingleModal({ colleges, onClose, onDone }) {
 
   /* PREVIEW */
   if (step === 'preview') return (
-    <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={Eye} title="Preview — Confirm Details" sub="Review before saving to database" onClose={onClose} />
-        <div className="overflow-y-auto flex-1 p-6 space-y-5">
-          <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
-              {form.fullName.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="font-black text-slate-800 text-base">{form.fullName}</p>
-              <p className="text-slate-400 text-xs mt-0.5 truncate">{form.email}</p>
-            </div>
+    <Modal onClose={onClose} size="lg">
+      <MHead icon={Eye} title="Preview Details" sub="Double check student information" onClose={onClose} />
+      <div className="p-8 space-y-6 overflow-y-auto">
+        <div className="flex items-center gap-5 p-6 bg-slate-50 border border-slate-100 rounded-3xl">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#003399] to-[#00A9CE] rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg flex-shrink-0">
+            {form.fullName.charAt(0).toUpperCase()}
           </div>
-          <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-xl">
-            <PField label="Roll Number" value={form.rollNumber} />
-            <PField label="College" value={college?.name} />
-            <PField label="Branch" value={form.branch} />
-            <PField label="Batch" value={form.batch} />
-            <PField label="Semester" value={form.semester} />
-            <PField label="CGPA" value={form.cgpa} />
-            <PField label="Phone" value={form.phone} full />
-          </div>
-          <div className="flex items-center gap-2 text-xs text-amber-700 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <Mail size={13} className="flex-shrink-0" />
-            A <strong>temporary password</strong> is auto-generated and emailed after confirmation.
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xl font-black text-slate-800 leading-tight">{form.fullName}</h4>
+            <p className="text-sm text-slate-400 mt-1 truncate font-medium">{form.email}</p>
           </div>
         </div>
-        <div className="flex gap-3 p-5 border-t border-slate-100 bg-blue-50/30 flex-shrink-0">
-          <button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
-            <ArrowLeft size={14} /> Edit
-          </button>
-          <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
-            {saving ? <><Spin size="sm" />Saving…</> : <><Check size={14} />Confirm & Add Student</>}
-          </button>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <PField label="Registration Details" value={form.rollNumber} icon={Hash} />
+          <PField label="Assigned Institution" value={college?.name} icon={Building2} />
+          <PField label="Academic Branch" value={form.branch} icon={BookOpen} />
+          <PField label="Target Batch" value={form.batch} icon={Calendar} />
+          <PField label="Current Semester" value={form.semester} icon={TrendingUp} />
+          <PField label="Academic CGPA" value={form.cgpa} icon={Star} />
+          <PField label="Contact Info" value={form.phone} icon={Phone} full />
         </div>
+
+        <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-2xl flex items-start gap-3">
+          <Mail size={16} className="text-amber-600 mt-0.5" />
+          <p className="text-xs text-amber-700 font-medium leading-relaxed">
+            Upon confirmation, a <strong>temporary password</strong> will be auto-generated and emailed to the student immediately.
+          </p>
+        </div>
+      </div>
+      <div className="p-6 border-t border-slate-50 bg-slate-50/30 flex items-center gap-3">
+        <button
+          onClick={() => setStep('form')}
+          className="flex items-center gap-2 px-6 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-black rounded-2xl transition-all shadow-sm"
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <button
+          onClick={confirm}
+          disabled={saving}
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#003399] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-200 hover:bg-[#002d8b] disabled:opacity-50 transition-all uppercase tracking-widest"
+        >
+          {saving ? <><Spin size="sm" />Saving Student...</> : <><Check size={16} />Confirm & Create Account</>}
+        </button>
       </div>
     </Modal>
   );
 
   /* FORM */
   return (
-    <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={UserPlus} title="Add Single Student" sub="Fill details, preview, then confirm" onClose={onClose} />
-        <div className="overflow-y-auto flex-1 p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+    <Modal onClose={onClose} size="lg">
+      <MHead icon={UserPlus} title="Add Single Student" sub="Complete the student profile" onClose={onClose} />
+      <div className="p-8 space-y-8 overflow-y-auto">
+        {/* Personal Details */}
+        <Section icon={UserPlus} title="Personal Information" sub="Base student identification" color="#2563eb">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <Field label="Full Name" required icon={GraduationCap} error={errs.fullName}>
                 <input className={`${I_ICON} ${errs.fullName ? ERR_CLS : OK_CLS}`} placeholder="e.g. Rahul Sharma" value={form.fullName} onChange={e => set('fullName', e.target.value)} />
               </Field>
@@ -353,49 +395,71 @@ function AddSingleModal({ colleges, onClose, onDone }) {
             <Field label="Roll Number" required icon={Hash} error={errs.rollNumber}>
               <input className={`${I_ICON} ${errs.rollNumber ? ERR_CLS : OK_CLS}`} placeholder="e.g. CS2024001" value={form.rollNumber} onChange={e => set('rollNumber', e.target.value)} />
             </Field>
-            <div className="col-span-2">
-              <Field label="College" required icon={Building2} error={errs.collegeId}>
+          </div>
+        </Section>
+
+        {/* Academic Details */}
+        <Section icon={Building2} title="Academic Association" sub="College and course details" color="#003399">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Field label="Target College" required icon={Building2} error={errs.collegeId}>
                 <select className={`${I_ICON} ${errs.collegeId ? ERR_CLS : OK_CLS} appearance-none`} value={form.collegeId} onChange={e => set('collegeId', e.target.value)}>
                   <option value="">Select college…</option>
                   {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </select>
               </Field>
             </div>
-            <Field label="Branch" icon={BookOpen}>
+            <Field label="Branch / Stream" icon={BookOpen}>
               <select className={`${I_ICON} ${OK_CLS} appearance-none`} value={form.branch} onChange={e => set('branch', e.target.value)}>
                 <option value="">Select branch…</option>
                 {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </Field>
             <Field label="Batch Year" icon={Calendar}>
-              <input className={`${I_ICON} ${OK_CLS}`} placeholder="e.g. 2026" value={form.batch} onChange={e => set('batch', e.target.value)} />
+              <select className={`${I_ICON} ${OK_CLS} appearance-none`} value={form.batch} onChange={e => set('batch', e.target.value)}>
+                <option value="">Select batch...</option>
+                {[2023, 2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
             </Field>
-            <Field label="Semester" icon={BookOpen} error={errs.semester}>
+            <Field label="Current Semester" icon={TrendingUp} error={errs.semester}>
               <select className={`${I_ICON} ${errs.semester ? ERR_CLS : OK_CLS} appearance-none`} value={form.semester} onChange={e => set('semester', e.target.value)}>
-                <option value="">Select…</option>
+                <option value="">Select semester…</option>
                 {SEMESTERS.map(s => <option key={s} value={s}>Semester {s}</option>)}
               </select>
             </Field>
-            <Field label="CGPA" icon={Star} error={errs.cgpa}>
-              <input className={`${I_ICON} ${errs.cgpa ? ERR_CLS : OK_CLS}`} placeholder="0.0–10.0" value={form.cgpa} onChange={e => set('cgpa', e.target.value)} />
+            <Field label="Academic CGPA" icon={Star} error={errs.cgpa}>
+              <input className={`${I_ICON} ${errs.cgpa ? ERR_CLS : OK_CLS}`} placeholder="e.g. 8.5" value={form.cgpa} onChange={e => set('cgpa', e.target.value)} />
             </Field>
-            <div className="col-span-2">
-              <Field label="Phone Number" icon={Phone} error={errs.phone}>
-                <input className={`${I_ICON} ${errs.phone ? ERR_CLS : OK_CLS}`} placeholder="10-digit mobile number" value={form.phone} onChange={e => set('phone', e.target.value)} />
-              </Field>
-            </div>
           </div>
-          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700">
-            <Info size={13} className="flex-shrink-0 mt-0.5" />
-            Password is auto-generated and emailed to the student. They must change it on first login.
-          </div>
+        </Section>
+
+        {/* Other Info */}
+        <Section icon={Phone} title="Additional Information" sub="Contact and other records" color="#7c3aed">
+          <Field label="Contact Phone Number" icon={Phone} error={errs.phone}>
+            <input className={`${I_ICON} ${errs.phone ? ERR_CLS : OK_CLS}`} placeholder="10-digit mobile number" value={form.phone} onChange={e => set('phone', e.target.value)} />
+          </Field>
+        </Section>
+
+        <div className="bg-blue-50/50 p-4 rounded-2xl flex items-start gap-3 border border-blue-100/50">
+          <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+          <p className="text-[11px] text-blue-600 font-medium leading-relaxed">
+            The student's login password will be automatically generated and delivered to their email address upon confirmation.
+          </p>
         </div>
-        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
-          <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">Cancel</button>
-          <button onClick={goPreview} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity">
-            <Eye size={14} /> Preview Details
-          </button>
-        </div>
+      </div>
+      <div className="p-6 border-t border-slate-50 bg-slate-50/30 flex items-center justify-end gap-3">
+        <button
+          onClick={onClose}
+          className="px-8 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-black rounded-2xl transition-all shadow-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={goPreview}
+          className="px-10 py-3.5 bg-[#003399] hover:bg-[#002d8b] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-200 transition-all flex items-center gap-3 uppercase tracking-widest"
+        >
+          Preview Details <ChevronRight size={18} />
+        </button>
       </div>
     </Modal>
   );
@@ -406,13 +470,13 @@ function AddSingleModal({ colleges, onClose, onDone }) {
 ══════════════════════════════════════════════════════════ */
 const TC = React.memo(function TC({ id, field, value, placeholder, options, error, setCell }) {
   return (
-    <td className={`p-1 ${error ? 'bg-red-50' : ''}`} style={{ minWidth: options ? 90 : 100 }}>
-      <div className="relative group">
+    <td className={`p-1.5 transition-colors ${error ? 'bg-red-50/50' : 'group-hover:bg-slate-50/50'}`}>
+      <div className="relative group/input">
         {options ? (
           <select
             value={value || ""}
             onChange={e => setCell(id, field, e.target.value)}
-            className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${error ? 'border-red-400' : 'border-slate-200'
+            className={`w-full text-[11px] border rounded-xl px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all ${error ? 'border-red-300 ring-2 ring-red-500/10' : 'border-slate-200 focus:border-blue-400'
               }`}
           >
             <option value="">—</option>
@@ -423,12 +487,12 @@ const TC = React.memo(function TC({ id, field, value, placeholder, options, erro
             value={value || ""}
             placeholder={placeholder}
             onChange={e => setCell(id, field, e.target.value)}
-            className={`w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${error ? 'border-red-400' : 'border-slate-200'
+            className={`w-full text-[11px] border rounded-xl px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 ${error ? 'border-red-300 ring-2 ring-red-500/10' : 'border-slate-200 focus:border-blue-400'
               }`}
           />
         )}
         {error && (
-          <div className="absolute bottom-full left-0 mb-1 z-20 bg-red-700 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none shadow-lg">
+          <div className="absolute bottom-full left-0 mb-2 z-30 bg-slate-900 text-white text-[9px] font-black px-2 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover/input:opacity-100 transition-opacity shadow-xl pointer-events-none border border-white/10 uppercase tracking-widest">
             {error}
           </div>
         )}
@@ -522,38 +586,57 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
   /* ── DONE ─────────────────────────────────────────────── */
   if (step === 'done') return (
     <Modal onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={CheckCircle} title={`${result?.length ?? 0} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose} />
-        <div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
+      <MHead icon={CheckCircle} title={`${result?.length ?? 0} Students Created!`} sub="Batch operation completed successfully" onClose={onClose} color="#10b981" />
+      <div className="p-8 space-y-6 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="overflow-y-auto flex-1 space-y-3 pr-2 custom-scrollbar">
           {result?.map((s, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+            <div key={i} className="flex items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl group transition-all hover:bg-white hover:shadow-sm">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#003399] to-[#00A9CE] rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm leading-none">
                   {s.fullName?.charAt(0)?.toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-800 truncate">{s.fullName}</p>
-                  <p className="text-xs text-slate-400 truncate">{s.email} · {s.rollNumber}</p>
+                  <p className="text-sm font-black text-slate-800 truncate leading-tight">{s.fullName}</p>
+                  <p className="text-[10px] text-slate-400 font-bold tracking-wider truncate mt-1 uppercase">
+                    {s.rollNumber} • {s.email.split('@')[0]}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-3 flex-shrink-0">
                 {s.temporaryPassword && (
-                  <span className="text-xs font-mono bg-amber-50 text-amber-700 px-2 py-0.5 rounded-lg border border-amber-200">{s.temporaryPassword}</span>
+                  <div className="group/pass relative">
+                    <span className="text-[10px] font-mono font-black bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg border border-amber-100 cursor-help transition-all group-hover/pass:bg-amber-100">
+                      {s.temporaryPassword}
+                    </span>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(s.temporaryPassword); toast.success(`Copied for ${s.fullName}`); }}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-amber-200 text-amber-800 rounded-full flex items-center justify-center opacity-0 group-hover/pass:opacity-100 transition-all shadow-sm"
+                    >
+                      <Plus size={8} className="rotate-45" />
+                    </button>
+                  </div>
                 )}
                 {s.emailSent
-                  ? <CheckCircle size={14} className="text-green-500" />
-                  : <AlertTriangle size={14} className="text-amber-500" />}
+                  ? <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center border border-emerald-100"><CheckCircle size={14} className="text-emerald-500" /></div>
+                  : <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center border border-amber-100"><AlertTriangle size={14} className="text-amber-500" /></div>}
               </div>
             </div>
           ))}
         </div>
-        <div className="p-5 border-t border-slate-100 space-y-2">
+
+        <div className="pt-4 border-t border-slate-50 space-y-3">
           <button
-            onClick={() => downloadResultsAsExcel(result || [], `students_${Date.now()}.xlsx`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
-            <Download size={14} /> Download All Students + Passwords (Excel)
+            onClick={() => downloadResultsAsExcel(result || [], `students_batch_${Date.now()}.xlsx`)}
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-black rounded-2xl transition-all shadow-sm group">
+            <Download size={18} className="text-slate-300 group-hover:text-[#003399] transition-colors" />
+            Export Batch Result (Excel)
           </button>
-          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
+          <button
+            onClick={onClose}
+            className="w-full py-4 bg-[#003399] text-white text-sm font-black rounded-2xl hover:bg-[#002d8b] shadow-lg shadow-blue-200 transition-all uppercase tracking-widest"
+          >
+            Return to Dashboard
+          </button>
         </div>
       </div>
     </Modal>
@@ -562,43 +645,54 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
   /* ── PREVIEW ──────────────────────────────────────────── */
   if (step === 'preview') return (
     <Modal onClose={onClose} size="xl">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={Eye} title={`Preview — ${filledRows.length} Students`} sub={`College: ${college?.name || '—'} · Passwords auto-generated on confirm`} onClose={onClose} />
-        <div className="overflow-auto flex-1">
-          <table className="w-full text-xs border-collapse">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-blue-700 text-white">
-                {['#', 'Full Name', 'Email', 'Roll No.', 'Branch', 'Batch', 'Sem.', 'CGPA', 'Phone'].map(h => (
-                  <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-blue-500 last:border-r-0">{h}</th>
+      <MHead icon={Eye} title={`Review Batch — ${filledRows.length} Students`} sub={`Assigned Institution: ${college?.name || '—'}`} onClose={onClose} />
+      <div className="overflow-auto flex-1 custom-scrollbar">
+        <table className="w-full text-[11px] border-collapse bg-white">
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-slate-50 border-b border-slate-100">
+              <th className="py-4 px-4 text-left font-black text-slate-400 uppercase tracking-widest w-12">#</th>
+              {['Full Name', 'Email Address', 'Roll Number', 'Branch', 'Batch', 'Sem.', 'CGPA', 'Phone'].map(h => (
+                <th key={h} className="text-left py-4 px-4 font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {filledRows.map((r, i) => (
+              <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="py-3 px-4 text-slate-300 font-bold">{i + 1}</td>
+                <td className="py-3 px-4 font-black text-slate-800">{r.fullName}</td>
+                <td className="py-3 px-4 text-slate-500 font-medium">{r.email}</td>
+                <td className="py-3 px-4 font-black text-blue-600 tracking-wider uppercase">{r.rollNumber}</td>
+                {['branch', 'batch', 'semester', 'cgpa', 'phone'].map(f => (
+                  <td key={f} className="py-3 px-4 text-slate-500 font-medium italic">{r[f] || '—'}</td>
                 ))}
               </tr>
-            </thead>
-            <tbody>
-              {filledRows.map((r, i) => (
-                <tr key={r.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
-                  <td className="py-2.5 px-3 text-slate-400 font-mono">{i + 1}</td>
-                  <td className="py-2.5 px-3 font-semibold text-slate-800">{r.fullName}</td>
-                  <td className="py-2.5 px-3 text-slate-600">{r.email}</td>
-                  <td className="py-2.5 px-3 font-mono text-slate-700">{r.rollNumber}</td>
-                  {['branch', 'batch', 'semester', 'cgpa', 'phone'].map(f => (
-                    <td key={f} className="py-2.5 px-3 text-slate-500">{r[f] || <span className="text-slate-300">—</span>}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-6 py-3 bg-amber-50/50 border-t border-amber-100 flex items-center gap-3">
+        <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 animate-pulse">
+          <Mail size={14} className="text-amber-600" />
         </div>
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 flex-shrink-0">
-          <Mail size={13} className="flex-shrink-0" />Each student will receive a temporary password by email after confirmation.
-        </div>
-        <div className="flex gap-3 p-5 border-t border-slate-100 flex-shrink-0">
-          <button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">
-            <ArrowLeft size={14} /> Edit
-          </button>
-          <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
-            {saving ? <><Spin size="sm" />Adding…</> : <><Check size={14} />Confirm & Add {filledRows.length} Students</>}
-          </button>
-        </div>
+        <p className="text-[10px] text-amber-900 font-black tracking-wide uppercase leading-none">
+          Automatic email delivery: <span className="font-normal normal-case text-amber-700 ml-1">Temporary passwords will be generated and dispatched instantly upon confirmation.</span>
+        </p>
+      </div>
+      <div className="flex gap-4 p-6 border-t border-slate-50 flex-shrink-0 bg-white shadow-[0_-8px_30px_rgb(0,0,0,0.02)]">
+        <button
+          onClick={() => setStep('form')}
+          className="flex items-center gap-2 px-8 py-3.5 bg-slate-100/80 hover:bg-slate-100 text-slate-600 text-sm font-black rounded-2xl transition-all shadow-sm"
+        >
+          <ArrowLeft size={18} /> Modify List
+        </button>
+        <button
+          onClick={confirm}
+          disabled={saving}
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-200 hover:opacity-90 disabled:opacity-50 transition-all uppercase tracking-widest"
+        >
+          {saving ? <><Spin size="sm" />Creating Accounts...</> : <><Check size={18} />Confirm & Create Batch</>}
+        </button>
       </div>
     </Modal>
   );
@@ -606,65 +700,76 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
   /* ── FORM ─────────────────────────────────────────────── */
   return (
     <Modal onClose={onClose} size="full">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={UsersRound} title="Add Multiple Students" sub="Fill the table, preview, then confirm" onClose={onClose} />
-        <div className="px-5 pt-4 pb-3 flex-shrink-0 flex items-end gap-4 flex-wrap border-b border-slate-100">
-          <div className="w-80">
-            <label className="text-xs font-bold text-slate-700 block mb-1">College <span className="text-red-500">*</span></label>
-            <div className="relative">
-              <Building2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select
-                className={`${I_ICON} appearance-none ${!collegeId && topErr ? ERR_CLS : OK_CLS}`}
-                value={collegeId}
-                onChange={e => { setCollegeId(e.target.value); setTopErr(''); }}
-              >
-                <option value="">Select college for all students…</option>
-                {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-              </select>
-            </div>
+      <MHead icon={UsersRound} title="Add Multiple Students" sub="Enter details manually in the interactive grid" onClose={onClose} />
+
+      <div className="px-8 pt-6 pb-4 flex-shrink-0 flex items-center justify-between border-b border-slate-50 bg-slate-50/30">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="w-80 relative group">
+            <Building2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 z-10 transition-colors group-focus-within:text-[#003399]" />
+            <select
+              className={`w-full text-xs font-black border-0 rounded-2xl pl-10 pr-10 py-3 bg-white shadow-sm ring-1 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none ${!collegeId && topErr ? 'ring-red-300' : 'ring-slate-200 focus:ring-blue-400'}`}
+              value={collegeId}
+              onChange={e => { setCollegeId(e.target.value); setTopErr(''); }}
+            >
+              <option value="">Select college for all students…</option>
+              {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+            </select>
+            <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
           {topErr && (
-            <p className="text-xs text-red-500 flex items-center gap-1 mb-0.5">
-              <AlertCircle size={11} />{topErr}
+            <p className="text-xs text-red-500 font-bold animate-in slide-in-from-left-2 flex items-center gap-2">
+              <AlertCircle size={14} /> {topErr}
             </p>
           )}
         </div>
-        <div className="overflow-auto flex-1 px-5 py-3">
-          <table className="w-full border-collapse text-xs">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-blue-700 text-white">
-                <th className="py-2 px-2 text-left text-[11px] font-semibold w-8">#</th>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end mr-3">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filled Rows</span>
+            <span className="text-sm font-black text-[#003399] tracking-tighter">{filledRows.length}</span>
+          </div>
+          <button onClick={addRow} className="flex items-center gap-2 px-6 py-3 bg-[#003399] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-blue-200 hover:bg-[#002d8b] transition-all">
+            <Plus size={14} /> Add Row
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-auto flex-1 p-6 custom-scrollbar">
+        <div className="rounded-2xl border border-slate-100 overflow-hidden shadow-sm bg-white">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="py-4 px-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest w-12 border-r border-slate-100/50">#</th>
                 {[
-                  { k: 'fullName', l: 'Full Name *', w: 'min-w-[140px]' },
-                  { k: 'email', l: 'Email *', w: 'min-w-[160px]' },
-                  { k: 'rollNumber', l: 'Roll No. *', w: 'min-w-[110px]' },
-                  { k: 'branch', l: 'Branch', w: 'min-w-[95px]' },
-                  { k: 'batch', l: 'Batch', w: 'min-w-[80px]' },
-                  { k: 'semester', l: 'Sem.', w: 'min-w-[70px]' },
-                  { k: 'cgpa', l: 'CGPA', w: 'min-w-[70px]' },
-                  { k: 'phone', l: 'Phone', w: 'min-w-[110px]' },
+                  { k: 'fullName', l: 'Full Name *', w: 'min-w-[180px]' },
+                  { k: 'email', l: 'Email Address *', w: 'min-w-[200px]' },
+                  { k: 'rollNumber', l: 'Roll Number *', w: 'min-w-[130px]' },
+                  { k: 'branch', l: 'Branch', w: 'min-w-[100px]' },
+                  { k: 'batch', l: 'Batch', w: 'min-w-[100px]' },
+                  { k: 'semester', l: 'Sem.', w: 'min-w-[80px]' },
+                  { k: 'cgpa', l: 'CGPA', w: 'min-w-[80px]' },
+                  { k: 'phone', l: 'Phone', w: 'min-w-[130px]' },
                 ].map(h => (
-                  <th key={h.k} className={`py-2 px-2 text-left text-[11px] font-semibold whitespace-nowrap ${h.w}`}>{h.l}</th>
+                  <th key={h.k} className={`py-4 px-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap ${h.w} border-r border-slate-100/50 last:border-r-0`}>{h.l}</th>
                 ))}
-                <th className="py-2 px-2 w-8" />
+                <th className="py-4 px-3 w-12" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-50">
               {rows.map((r, i) => (
-                <tr key={r.id} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
-                  <td className="py-1 px-2 text-slate-400 font-mono text-center">{i + 1}</td>
-                  <TC id={r.id} field="fullName" value={r.fullName} placeholder="Full name" setCell={setCell} error={rowErrs[r.id]?.fullName} />
-                  <TC id={r.id} field="email" value={r.email} placeholder="email@…" setCell={setCell} error={rowErrs[r.id]?.email} />
-                  <TC id={r.id} field="rollNumber" value={r.rollNumber} placeholder="Roll no." setCell={setCell} error={rowErrs[r.id]?.rollNumber} />
+                <tr key={r.id} className="group transition-colors odd:bg-white even:bg-slate-50/30">
+                  <td className="py-2 px-2 text-slate-300 font-black text-[10px] text-center border-r border-slate-100/50">{i + 1}</td>
+                  <TC id={r.id} field="fullName" value={r.fullName} placeholder="Ex: Sanjay S" setCell={setCell} error={rowErrs[r.id]?.fullName} />
+                  <TC id={r.id} field="email" value={r.email} placeholder="sanjay@icl.com" setCell={setCell} error={rowErrs[r.id]?.email} />
+                  <TC id={r.id} field="rollNumber" value={r.rollNumber} placeholder="21MID0228" setCell={setCell} error={rowErrs[r.id]?.rollNumber} />
                   <TC id={r.id} field="branch" value={r.branch} options={BRANCHES} setCell={setCell} error={rowErrs[r.id]?.branch} />
                   <TC id={r.id} field="batch" value={r.batch} placeholder="2026" setCell={setCell} error={rowErrs[r.id]?.batch} />
                   <TC id={r.id} field="semester" value={r.semester} options={SEMESTERS} setCell={setCell} error={rowErrs[r.id]?.semester} />
-                  <TC id={r.id} field="cgpa" value={r.cgpa} placeholder="0–10" setCell={setCell} error={rowErrs[r.id]?.cgpa} />
-                  <TC id={r.id} field="phone" value={r.phone} placeholder="10 digits" setCell={setCell} error={rowErrs[r.id]?.phone} />
-                  <td className="py-1 px-1">
+                  <TC id={r.id} field="cgpa" value={r.cgpa} placeholder="0–10.0" setCell={setCell} error={rowErrs[r.id]?.cgpa} />
+                  <TC id={r.id} field="phone" value={r.phone} placeholder="10 Digits" setCell={setCell} error={rowErrs[r.id]?.phone} />
+                  <td className="py-2 px-2 text-center">
                     {rows.length > 1 && (
-                      <button onClick={() => delRow(r.id)} className="p-1 text-slate-300 hover:text-red-500 transition-colors rounded">
-                        <Trash2 size={12} />
+                      <button onClick={() => delRow(r.id)} className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all border border-slate-100 hover:border-red-100 group/del">
+                        <Trash2 size={14} className="group-hover/del:scale-110 transition-transform" />
                       </button>
                     )}
                   </td>
@@ -672,16 +777,16 @@ function AddMultipleModal({ colleges, onClose, onDone }) {
               ))}
             </tbody>
           </table>
-          <button onClick={addRow} className="mt-3 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors border border-dashed border-blue-200">
-            <Plus size={13} /> Add Row
+          <button onClick={addRow} className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100/50 hover:bg-white text-[#003399] text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-[#003399]/20 hover:border-[#003399] hover:shadow-sm group">
+            <Plus size={14} className="group-hover:rotate-90 transition-transform" /> Add Row
           </button>
         </div>
         <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
           <span className="text-xs text-slate-400">{filledRows.length} filled row(s)</span>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
-            <button onClick={goPreview} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
-              <Eye size={14} /> Preview
+            <button onClick={goPreview} className="flex items-center gap-3 px-8 py-3.5 bg-[#003399] hover:bg-[#002d8b] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-200 transition-all uppercase tracking-widest">
+              <Eye size={18} /> Preview Selection
             </button>
           </div>
         </div>
@@ -917,27 +1022,34 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
   /* DONE */
   if (step === 'done') return (
     <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose} />
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { l: 'Total Rows', v: uploadResult?.totalRows || parsedRows.length, bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
-              { l: 'Inserted', v: uploadResult?.inserted || 0, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
-              { l: 'Updated', v: uploadResult?.updated || 0, bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
-            ].map(s => (
-              <div key={s.l} className={`p-4 text-center rounded-xl ${s.bg} border ${s.border}`}>
-                <p className={`text-2xl font-black ${s.text}`}>{s.v}</p>
-                <p className={`text-xs ${s.text} font-semibold opacity-70 mt-0.5`}>{s.l}</p>
+      <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="System records have been updated" onClose={onClose} color="#10b981" />
+      <div className="p-8 space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { l: 'Processed', v: uploadResult?.totalRows || parsedRows.length, color: '#31572c', bg: '#ecf39e', icon: FileText },
+            { l: 'Inserted', v: uploadResult?.inserted || 0, color: '#065f46', bg: '#dcfce7', icon: UserPlus },
+            { l: 'Updated', v: uploadResult?.updated || 0, color: '#92400e', bg: '#fef3c7', icon: RefreshCw },
+          ].map(s => (
+            <div key={s.l} className="p-5 text-center rounded-[24px] border border-white shadow-sm flex flex-col items-center gap-2" style={{ backgroundColor: s.bg }}>
+              <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center mb-1">
+                <s.icon size={14} style={{ color: s.color }} />
               </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-blue-700 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-            <Mail size={14} className="flex-shrink-0" />Welcome emails with temporary passwords sent to all students.
-          </div>
+              <p className="text-2xl font-black leading-none" style={{ color: s.color }}>{s.v}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest leading-none" style={{ color: s.color, opacity: 0.6 }}>{s.l}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-start gap-3 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
+          <Mail size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+          <p className="text-xs font-semibold text-blue-700 leading-relaxed">
+            Onboarding emails containing temporary passwords and platform instructions have been successfully dispatched to all new students.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 pt-2">
           <button
             onClick={() => {
-              // Use actual temporary passwords returned by the server if available
               const rows = (uploadResult?.students && uploadResult.students.length > 0)
                 ? uploadResult.students
                 : parsedRows.map(r => ({
@@ -947,16 +1059,18 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
                   branch: r['branch'] || '',
                   batch: r['batch'] || '',
                   phone: r['phone'] || '',
-                  temporaryPassword: '(check email)',
+                  temporaryPassword: '(System Generated)',
                   emailSent: true,
                 }));
-              downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
+              downloadResultsAsExcel(rows, `bulk_upload_report_${Date.now()}.xlsx`);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors"
-          >
-            <Download size={14} /> Download Uploaded Students + Passwords (Excel)
+            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-black rounded-2xl transition-all shadow-sm group">
+            <Download size={18} className="text-slate-400 group-hover:text-[#003399]" />
+            Download Manifest (Excel)
           </button>
-          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
+          <button onClick={onClose} className="w-full py-4 bg-[#003399] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-200 hover:bg-[#002d8b] transition-all uppercase tracking-[0.2em]">
+            Back to Students
+          </button>
         </div>
       </div>
     </Modal>
@@ -967,116 +1081,89 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
     const displayHdrs = headers.filter(h => !h.startsWith('_'));
     return (
       <Modal onClose={onClose} size="full">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-6 py-4 flex-shrink-0 rounded-t-2xl">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileText className="w-4 h-4 text-white" /></div>
-                <div>
-                  <h2 className="text-white font-black text-sm">{fileName}</h2>
-                  <p className="text-blue-200 text-[11px] mt-0.5">{parsedRows.length} rows · {errorCount} error(s) · {validCount} valid</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {errorCount > 0
-                  ? <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-500/20 border border-red-400/30 text-white rounded-xl text-xs font-bold"><AlertTriangle size={12} />{errorCount} errors</span>
-                  : <span className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-500/20 border border-green-400/30 text-white rounded-xl text-xs font-bold"><CheckCircle size={12} />All valid</span>
-                }
-                <button onClick={onClose} className="w-8 h-8 bg-white/10 hover:bg-white/25 rounded-lg flex items-center justify-center text-white transition-colors"><X className="w-4 h-4" /></button>
-              </div>
-            </div>
-          </div>
+        <MHead icon={FileText} title={fileName} sub={`${parsedRows.length} total rows detected in archive`} onClose={onClose} />
 
-          <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex-shrink-0 flex items-center gap-3 flex-wrap">
-            <Building2 size={14} className="text-slate-400 flex-shrink-0" />
-            <div className="relative w-72">
+        <div className="px-8 py-5 flex-shrink-0 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="w-80 relative group">
+              <Building2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 z-10 group-focus-within:text-blue-500 transition-colors" />
               <select
-                className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
+                className="w-full text-xs font-black border border-slate-200 rounded-2xl pl-10 pr-10 py-3 bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 appearance-none shadow-sm transition-all"
                 value={collegeId}
                 onChange={e => { setCollegeId(e.target.value); setServerValidated(false); }}
               >
-                <option value="">Select college for all rows…</option>
+                <option value="">Select target institution…</option>
                 {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
+              <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
-            {college && <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-lg">{college.name}</span>}
             {validating && (
-              <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Spin size="sm" color="slate" /> Checking database for conflicts…
-              </span>
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-100 rounded-xl shadow-sm">
+                <Spin size="sm" color="blue" />
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Syncing with database…</span>
+              </div>
             )}
-            {!validating && collegeId && serverValidated && errorCount === 0 && (
-              <span className="flex items-center gap-1.5 text-xs text-green-700 font-semibold">
-                <CheckCircle size={12} /> Database check passed
-              </span>
-            )}
-            {!validating && !collegeId && (
-              <span className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle size={11} />Select a college to validate & enable upload</span>
+            {serverValidated && !validating && (
+              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-black text-[10px] uppercase tracking-widest ${errorCount > 0 ? 'bg-red-50 border-red-100 text-red-600' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                {errorCount > 0 ? <><AlertTriangle size={14} /> Conflicts Detected</> : <><CheckCircle size={14} /> Database Ready</>}
+              </div>
             )}
           </div>
 
-          {errorCount > 0 && (
-            <div className="px-5 py-2.5 flex flex-col gap-1 bg-red-50 border-b border-red-100 flex-shrink-0">
-              <div className="flex items-start gap-2">
-                <AlertTriangle size={13} className="text-red-500 flex-shrink-0 mt-0.5" />
-                <span className="text-xs text-red-700 font-medium">
-                  <strong>{errorCount} row(s) have errors</strong> — highlighted in red. Hover any red cell to see details.
-                  {dbConflictCount > 0 && <span className="text-red-600"> <strong>{dbConflictCount}</strong> row(s) conflict with existing DB records.</span>}
-                </span>
-              </div>
-              <p className="text-xs text-red-600 ml-5">Fix the source file and re-upload. Confirm is disabled until all errors are resolved.</p>
+          <div className="flex items-center gap-3">
+            <div className="px-4 py-2 bg-white rounded-xl border border-slate-100 flex flex-col items-center">
+              <span className="font-black text-slate-400 text-[9px] uppercase tracking-tighter">Valid</span>
+              <span className="font-black text-emerald-600 text-sm leading-none">{validCount}</span>
             </div>
-          )}
+            <div className="px-4 py-2 bg-white rounded-xl border border-slate-100 flex flex-col items-center">
+              <span className="font-black text-slate-400 text-[9px] uppercase tracking-tighter">Errors</span>
+              <span className="font-black text-red-600 text-sm leading-none">{errorCount}</span>
+            </div>
+          </div>
+        </div>
 
-          <div className="overflow-auto flex-1">
-            <table className="w-full text-xs border-collapse">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-blue-800 text-white">
-                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-blue-600">Row</th>
-                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-blue-600">✓</th>
+        <div className="overflow-auto flex-1 p-6 custom-scrollbar">
+          <div className="rounded-3xl border border-slate-100 overflow-hidden shadow-sm bg-white">
+            <table className="w-full border-collapse text-[11px]">
+              <thead className="sticky top-0 z-20">
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="text-center py-4 px-4 font-black text-slate-400 uppercase tracking-widest w-16 border-r border-slate-100/50">Row</th>
+                  <th className="text-center py-4 px-4 font-black text-slate-400 uppercase tracking-widest w-12 border-r border-slate-100/50">Stat</th>
                   {displayHdrs.map(h => (
-                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-blue-600 last:border-r-0 ${REQUIRED_COLS.includes(h) ? 'text-yellow-300' : ''}`}>
-                      {h.replace(/_/g, ' ').toUpperCase()}{REQUIRED_COLS.includes(h) && <span className="ml-1 opacity-60">*</span>}
+                    <th key={h} className="text-left py-4 px-4 font-black text-slate-400 uppercase tracking-widest whitespace-nowrap border-r border-slate-100/50">
+                      {h.replace(/_/g, ' ')}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-50">
                 {parsedRows.map((row, i) => {
                   const rowErr = rowErrors[i] || {};
                   const hasErr = Object.keys(rowErr).length > 0;
                   const hasDbConflict = Object.values(rowErr).some(m => m?.includes('⚠'));
                   return (
-                    <tr key={i} className={`border-b ${hasErr
-                        ? (hasDbConflict ? 'border-orange-100 bg-orange-50/20' : 'border-red-100 bg-red-50/20')
-                        : 'border-slate-100 ' + (i % 2 === 0 ? 'bg-white' : 'bg-slate-50/30')
-                      }`}>
-                      <td className="py-2 px-3 text-slate-400 font-mono text-[11px] border-r border-slate-100">{row._rowIndex || i + 2}</td>
-                      <td className="py-2 px-2 text-center border-r border-slate-100">
+                    <tr key={i} className={`group transition-all hover:bg-slate-50/50 ${hasErr ? (hasDbConflict ? 'bg-amber-50/20' : 'bg-red-50/20') : ''}`}>
+                      <td className="py-2.5 px-4 text-center text-slate-300 font-bold border-r border-slate-100/50">{row._rowIndex || i + 2}</td>
+                      <td className="py-2.5 px-4 text-center border-r border-slate-100/50">
                         {hasErr
                           ? (hasDbConflict
-                            ? <AlertTriangle size={12} className="text-orange-500 mx-auto" />
-                            : <AlertCircle size={12} className="text-red-500 mx-auto" />)
-                          : <CheckCircle size={12} className="text-green-500 mx-auto" />}
+                            ? <AlertTriangle size={14} className="text-amber-500 mx-auto" />
+                            : <AlertCircle size={14} className="text-red-500 mx-auto" title={Object.values(rowErr).join('\n')} />)
+                          : <CheckCircle size={14} className="text-emerald-500 mx-auto" />}
                       </td>
                       {displayHdrs.map(h => {
-                        const cellErr = rowErr[h]
-                          || (h === 'roll_number' && (rowErr['rollnumber'] || rowErr['roll_no']))
-                          || rowErr['_general'];
-                        const val = row[h] || '';
+                        const cellErr = rowErr[h] || (h === 'roll_number' && (rowErr['rollnumber'] || rowErr['roll_no'])) || rowErr['_general'];
                         const isDbConflict = cellErr?.includes('⚠');
                         return (
-                          <td key={h} className={`py-2 px-3 border-r border-slate-50 last:border-r-0 ${cellErr
-                              ? (isDbConflict ? 'bg-orange-100 border border-orange-300' : 'bg-red-100 border border-red-300')
-                              : ''
-                            }`}>
-                            <div className="relative group">
-                              <span className={cellErr ? (isDbConflict ? 'text-orange-800 font-semibold' : 'text-red-700 font-semibold') : 'text-slate-700'}>
-                                {val || <span className="text-slate-300 text-[10px]">—</span>}
+                          <td key={h} className={`py-2.5 px-4 border-r border-slate-100/30 last:border-r-0 ${cellErr ? 'relative group/err' : ''}`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-medium ${cellErr ? (isDbConflict ? 'text-amber-700 font-bold' : 'text-red-700 font-bold') : 'text-slate-600'}`}>
+                                {row[h] || <span className="opacity-20 italic">null</span>}
                               </span>
                               {cellErr && (
-                                <div className={`absolute bottom-full left-0 mb-1 z-30 text-white text-[10px] px-2.5 py-1.5 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none shadow-xl transition-opacity max-w-xs ${isDbConflict ? 'bg-orange-700' : 'bg-red-700'}`}>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-40 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 text-white text-[10px] font-bold shadow-2xl opacity-0 group-hover/err:opacity-100 pointer-events-none transition-all scale-95 group-hover/err:scale-100 translate-y-1">
                                   {cellErr}
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
                                 </div>
                               )}
                             </div>
@@ -1089,50 +1176,32 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
               </tbody>
             </table>
           </div>
+        </div>
 
-          <div className="flex items-center justify-between gap-3 p-4 border-t border-slate-100 flex-shrink-0 bg-slate-50">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 px-2.5 py-1 rounded-lg border border-green-200">
-                <CheckCircle size={11} />{validCount} valid
-              </span>
-              {errorCount > 0 && (
-                <span className="flex items-center gap-1.5 text-xs text-red-700 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
-                  <AlertCircle size={11} />{errorCount} errors
-                </span>
-              )}
-              {dbConflictCount > 0 && (
-                <span className="flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
-                  <AlertTriangle size={11} />{dbConflictCount} DB conflicts
-                </span>
-              )}
-              <span className="text-xs text-slate-400">{parsedRows.length} total</span>
+        <div className="flex items-center justify-between gap-6 p-8 border-t border-slate-100 bg-white shadow-[0_-8px_30px_rgb(0,0,0,0.02)]">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200">
+              <Info size={18} className="text-slate-400" />
             </div>
-            <div className="flex gap-2">
-              <button onClick={resetUpload} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
-                <ArrowLeft size={13} /> Re-upload
-              </button>
-              <button
-                onClick={confirmUpload}
-                disabled={!canUpload || uploading}
-                title={
-                  !collegeId ? 'Select a college first'
-                    : !serverValidated ? 'Wait for database validation…'
-                      : errorCount > 0 ? 'Fix all errors before uploading'
-                        : ''
-                }
-                className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl transition-all ${canUpload && !uploading
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white shadow-md shadow-blue-500/20'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }`}
-              >
-                {uploading
-                  ? <><Spin size="sm" />Uploading…</>
-                  : validating
-                    ? <><Spin size="sm" color="slate" />Validating…</>
-                    : <><UploadCloud size={14} />Confirm Upload ({validCount})</>
-                }
-              </button>
-            </div>
+            <p className="text-[11px] text-slate-500 font-medium max-w-md leading-relaxed">
+              System validation checks for email syntax, roll number formatting, and database conflicts.
+              <span className="font-black text-red-500"> Rows with conflicts cannot be uploaded.</span>
+            </p>
+          </div>
+          <div className="flex gap-4">
+            <button onClick={resetUpload} className="px-8 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-black rounded-2xl transition-all shadow-sm flex items-center gap-3">
+              <ArrowLeft size={18} /> Re-upload File
+            </button>
+            <button
+              onClick={confirmUpload}
+              disabled={!canUpload || uploading}
+              className={`flex items-center gap-3 px-10 py-4 text-sm font-black rounded-2xl shadow-lg transition-all uppercase tracking-widest ${canUpload && !uploading
+                ? 'bg-[#003399] hover:bg-[#002d8b] text-white shadow-blue-200'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200'
+                }`}
+            >
+              {uploading ? <><Spin size="sm" />Uploading...</> : <><UploadCloud size={20} />Initialize Upload ({validCount})</>}
+            </button>
           </div>
         </div>
       </Modal>
@@ -1142,57 +1211,79 @@ function BulkUploadModal({ colleges, onClose, onDone }) {
   /* DROP ZONE */
   return (
     <Modal onClose={onClose} size="lg">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <MHead icon={CloudUpload} title="Bulk Excel Upload" sub="Client-side preview + DB conflict detection before saving" onClose={onClose} />
-        <div className="overflow-y-auto flex-1 p-6 space-y-4">
-          <div
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center gap-4 cursor-pointer transition-all ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
-              <Upload size={28} className="text-blue-600" />
-            </div>
-            <div className="text-center">
-              <p className="font-bold text-slate-700">Drop your Excel file here, or <span className="text-blue-600">click to browse</span></p>
-              <p className="text-xs text-slate-400 mt-1.5">Supports .xlsx, .xls, .csv · Up to 5,000 students</p>
-            </div>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f); e.target.value = ''; }} />
+      <MHead icon={CloudUpload} title="Bulk Student Upload" sub="High-velocity data ingestion with validation" onClose={onClose} />
+      <div className="p-8 space-y-6 overflow-y-auto">
+        <div
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => fileRef.current?.click()}
+          className={`group border-3 border-dashed rounded-[40px] p-12 flex flex-col items-center gap-6 cursor-pointer transition-all duration-300 relative overflow-hidden ${dragOver ? 'border-[#003399] bg-blue-50/50 scale-[0.98]' : 'border-slate-200 hover:border-blue-400/50 hover:bg-slate-50'}`}
+        >
+          <div className={`absolute inset-0 bg-gradient-to-br from-[#003399]/5 to-[#00A9CE]/5 opacity-0 group-hover:opacity-100 transition-opacity`} />
+
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-xl border border-slate-100 group-hover:scale-110 transition-transform duration-500 z-10">
+            <Upload size={32} className="text-[#003399]" />
           </div>
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+
+          <div className="text-center z-10">
+            <h4 className="text-lg font-black text-slate-800 tracking-tight">Drop your manifest here</h4>
+            <p className="text-sm text-slate-400 mt-2 font-medium">Excel (.xlsx, .xls) or CSV files supported</p>
+          </div>
+
+          <div className="px-6 py-2 bg-[#003399] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full z-10 shadow-lg group-hover:scale-105 transition-transform">
+            Browse Locals
+          </div>
+
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f); e.target.value = ''; }} />
+        </div>
+
+        <div className="flex items-center justify-between p-6 bg-slate-50 border border-slate-100 rounded-3xl group cursor-pointer hover:bg-white hover:shadow-md transition-all" onClick={() => superAdminStudentAPI.downloadTemplate()}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+              <FileText size={20} className="text-blue-500" />
+            </div>
             <div>
-              <p className="text-sm font-bold text-slate-700">Download Template</p>
-              <p className="text-xs text-slate-400 mt-0.5">Excel with correct columns and sample rows</p>
+              <p className="text-sm font-black text-slate-800 leading-none">Standard Template</p>
+              <p className="text-[11px] text-slate-400 mt-1.5 font-medium">Download template with pre-defined headers</p>
             </div>
-            <button onClick={() => superAdminStudentAPI.downloadTemplate()} className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition-colors">
-              <Download size={13} /> Template
-            </button>
           </div>
-          <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-1.5 text-xs text-blue-700">
-            <p className="font-bold flex items-center gap-1.5"><Info size={12} />How validation works:</p>
-            <p>1. File is parsed instantly in the browser — no upload needed to preview</p>
-            <p>2. Every cell is validated (format, required fields, duplicates within file)</p>
-            <p>3. After selecting a college, the database is checked for existing emails/roll numbers</p>
-            <p>4. <strong>Confirm Upload is only enabled when zero errors remain</strong></p>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-slate-100 text-[#003399] group-hover:bg-[#003399] group-hover:text-white transition-all">
+            <Download size={16} />
           </div>
-          <div className="grid grid-cols-2 gap-4 p-4 bg-white border border-slate-100 rounded-xl text-xs">
-            <div>
-              <p className="text-[10px] font-black text-red-500 uppercase tracking-wider mb-2">Required Columns</p>
-              {[['name', 'Full student name'], ['email', 'Unique — existing emails blocked'], ['roll_number', 'Unique per college']].map(([c, d]) => (
-                <div key={c} className="flex items-start gap-2 mb-1.5">
-                  <code className="px-1.5 py-0.5 bg-red-50 text-red-700 rounded text-[10px] font-mono border border-red-100 whitespace-nowrap mt-0.5">{c}</code>
-                  <span className="text-slate-400">{d}</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
+            <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <AlertCircle size={12} /> Key Constraints
+            </p>
+            <div className="space-y-3">
+              {[
+                { k: 'name', d: 'Legal student identity' },
+                { k: 'email', d: 'Unique credential' },
+                { k: 'roll_no', d: 'Primary registry ID' }
+              ].map(x => (
+                <div key={x.k} className="flex items-center gap-3">
+                  <code className="text-[10px] font-mono font-black bg-red-50 text-red-600 px-2 py-0.5 rounded-lg border border-red-100">{x.k}</code>
+                  <span className="text-[10px] font-bold text-slate-400 leading-none">{x.d}</span>
                 </div>
               ))}
             </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Optional Columns</p>
-              {[['phone', '10-digit'], ['branch', 'CSE/ECE/…'], ['batch', 'e.g. 2026'], ['semester', '1–10'], ['cgpa', '0.0–10.0']].map(([c, d]) => (
-                <div key={c} className="flex items-center gap-2 mb-1.5">
-                  <code className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-mono border border-slate-200 whitespace-nowrap">{c}</code>
-                  <span className="text-slate-400">{d}</span>
+          </div>
+          <div className="p-5 bg-white border border-slate-100 rounded-3xl shadow-sm">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Plus size={12} /> Extended Data
+            </p>
+            <div className="space-y-3">
+              {[
+                { k: 'branch', d: 'Academic stream' },
+                { k: 'batch', d: 'Pass-out year' },
+                { k: 'cgpa', d: 'Performance metric' }
+              ].map(x => (
+                <div key={x.k} className="flex items-center gap-3">
+                  <code className="text-[10px] font-mono font-black bg-slate-50 text-slate-600 px-2 py-0.5 rounded-lg border border-slate-200">{x.k}</code>
+                  <span className="text-[10px] font-bold text-slate-400 leading-none">{x.d}</span>
                 </div>
               ))}
             </div>
@@ -1224,7 +1315,6 @@ function ExportModal({ colleges, onClose }) {
     finally { setPL(false); }
   }, [f, toast]);
 
-  // Only fetch preview when user explicitly clicks the button, not on mount
   const doExport = async () => {
     setEx(true);
     try {
@@ -1237,62 +1327,66 @@ function ExportModal({ colleges, onClose }) {
 
   return (
     <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-blue-700 via-blue-600 to-cyan-500" onClose={onClose} />
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="text-xs font-bold text-slate-700 block mb-1">College</label>
-              <select className={`${I_PLAIN} ${OK_CLS}`} value={f.collegeId} onChange={e => setF('collegeId', e.target.value)}>
-                <option value="">All Colleges</option>
+      <MHead icon={FileDown} title="Export Student Records" sub="Generate custom datasets from the platform" onClose={onClose} />
+      <div className="p-8 space-y-6">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <Field label="Filter by Institution" icon={Building2}>
+              <select className={`${I_ICON} appearance-none ${OK_CLS}`} value={f.collegeId} onChange={e => setF('collegeId', e.target.value)}>
+                <option value="">All Institutions</option>
                 {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Branch</label>
-              <select className={`${I_PLAIN} ${OK_CLS}`} value={f.branch} onChange={e => setF('branch', e.target.value)}>
-                <option value="">All</option>{BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Placement</label>
-              <select className={`${I_PLAIN} ${OK_CLS}`} value={f.isPlaced} onChange={e => setF('isPlaced', e.target.value)}>
-                <option value="">All</option><option value="true">Placed</option><option value="false">Unplaced</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Format</label>
-              <select className={`${I_PLAIN} ${OK_CLS}`} value={f.format} onChange={e => setF('format', e.target.value)}>
-                <option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV (.csv)</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button onClick={fetchPreview} disabled={prevLoad} className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl disabled:opacity-60 transition-colors">
-                {prevLoad ? <Spin size="sm" color="slate" /> : <RefreshCw size={13} />} Preview Count
-              </button>
-            </div>
+            </Field>
           </div>
-          {preview && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-sm font-black text-blue-700">{(preview.totalRecords || 0).toLocaleString()} records match</p>
-              <p className="text-xs text-blue-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
-            </div>
-          )}
-          {!preview && (
-            <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs text-slate-400">
-              Click "Preview Count" to see how many records match your filters
-            </div>
-          )}
-          <div className="flex gap-3">
-            <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
-            <button
-              onClick={doExport}
-              disabled={exporting || prevLoad}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50"
-            >
-              {exporting ? <><Spin size="sm" />Downloading…</> : <><FileDown size={14} />Export{preview?.totalRecords ? ` (${preview.totalRecords})` : ''}</>}
+          <Field label="Academic Branch" icon={BookOpen}>
+            <select className={`${I_ICON} appearance-none ${OK_CLS}`} value={f.branch} onChange={e => setF('branch', e.target.value)}>
+              <option value="">All Branches</option>{BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </Field>
+          <Field label="Placement Status" icon={GraduationCap}>
+            <select className={`${I_ICON} appearance-none ${OK_CLS}`} value={f.isPlaced} onChange={e => setF('isPlaced', e.target.value)}>
+              <option value="">All Students</option><option value="true">Placed Only</option><option value="false">Unplaced Only</option>
+            </select>
+          </Field>
+          <Field label="Output Format" icon={FileText}>
+            <select className={`${I_ICON} appearance-none ${OK_CLS}`} value={f.format} onChange={e => setF('format', e.target.value)}>
+              <option value="xlsx">Microsoft Excel (.xlsx)</option><option value="csv">Comma Separated (.csv)</option>
+            </select>
+          </Field>
+          <div className="flex items-end">
+            <button onClick={fetchPreview} disabled={prevLoad} className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-2xl disabled:opacity-60 transition-all border border-slate-200/50">
+              {prevLoad ? <Spin size="sm" color="slate" /> : <RefreshCw size={14} />} Refresh Count
             </button>
           </div>
+        </div>
+
+        {preview ? (
+          <div className="p-5 bg-blue-50 border border-blue-100 rounded-3xl animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center shadow-sm">
+                <Users size={18} className="text-[#003399]" />
+              </div>
+              <div>
+                <p className="text-xl font-black text-[#003399] leading-none tracking-tight">{(preview.totalRecords || 0).toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Students ready for export</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 bg-slate-50 border border-slate-100 rounded-3xl text-center">
+            <p className="text-xs font-semibold text-slate-400">Configure filters and refresh to see matches</p>
+          </div>
+        )}
+
+        <div className="flex gap-4 pt-2">
+          <button onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-black rounded-[20px] transition-all">Cancel</button>
+          <button
+            onClick={doExport}
+            disabled={exporting || prevLoad}
+            className="flex-[2] flex items-center justify-center gap-3 py-4 bg-[#003399] hover:bg-[#002d8b] text-white text-sm font-black rounded-[20px] shadow-lg shadow-blue-200 transition-all uppercase tracking-widest"
+          >
+            {exporting ? <><Spin size="sm" />Encoding...</> : <><Download size={20} />Download Dataset</>}
+          </button>
         </div>
       </div>
     </Modal>
@@ -1301,23 +1395,34 @@ function ExportModal({ colleges, onClose }) {
 
 /* ══════════════════════════════════════════════════════════
    STUDENT LIST SECTION — live data from DB
+   Displays all students across colleges with college-wise grouping
 ══════════════════════════════════════════════════════════ */
 function StudentListSection({ colleges }) {
   const toast = useToast();
-  const [selectedCollege, setSelectedCollege] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState('');
-  const [branch, setBranch] = useState('');
-  const [batch, setBatch] = useState('');
   const [branches, setBranches] = useState([]);
   const [batches, setBatches] = useState([]);
   const [collegeStats, setCollegeStats] = useState(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const limit = 15;
+
+  // Read filter values from URL query params
+  const selectedCollege = searchParams.get('college') || '';
+  const search = searchParams.get('search') || '';
+  const branch = searchParams.get('branch') || '';
+  const batch = searchParams.get('batch') || '';
+  const page = parseInt(searchParams.get('page') || '1', 10);
+
+  // Build college map for quick lookup
+  const collegeMap = useMemo(() => {
+    const map = {};
+    colleges.forEach(c => { map[c._id] = c; });
+    return map;
+  }, [colleges]);
 
   // Debounce search input
   useEffect(() => {
@@ -1326,10 +1431,10 @@ function StudentListSection({ colleges }) {
   }, [search]);
 
   const fetchStudents = useCallback(async () => {
-    if (!selectedCollege) { setStudents([]); setTotal(0); setCollegeStats(null); return; }
     setLoading(true);
     try {
-      const res = await getCollegeStudents(selectedCollege, {
+      const res = await superAdminStudentAPI.getStudents({
+        ...(selectedCollege && { collegeId: selectedCollege }),
         page,
         limit,
         ...(debouncedSearch && { search: debouncedSearch }),
@@ -1350,111 +1455,114 @@ function StudentListSection({ colleges }) {
     }
   }, [selectedCollege, page, debouncedSearch, branch, batch, toast]);
 
-  useEffect(() => { setPage(1); }, [selectedCollege, debouncedSearch, branch, batch]);
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
+  // Update URL params helper
+  const updateParams = (updates) => {
+    const newParams = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === '' || value === null || value === undefined) {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, String(value));
+      }
+    });
+    setSearchParams(newParams);
+  };
+
   const handleCollegeChange = (id) => {
-    setSelectedCollege(id);
+    updateParams({ college: id || null, branch: null, batch: null, search: null, page: null });
     setBranches([]); setBatches([]); setBranch(''); setBatch('');
     setSearch(''); setStudents([]); setCollegeStats(null);
+  };
+
+  const handleSearchChange = (value) => {
+    updateParams({ search: value || null, page: null });
+  };
+
+  const handleBranchChange = (value) => {
+    updateParams({ branch: value || null, page: null });
+  };
+
+  const handleBatchChange = (value) => {
+    updateParams({ batch: value || null, page: null });
+  };
+
+  const handlePageChange = (newPage) => {
+    updateParams({ page: newPage });
   };
 
   if (!colleges.length) return null;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-      {/* Section header */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-            <Users size={18} className="text-white" />
-          </div>
-          <div>
-            <h3 className="text-sm font-black text-white">Student Directory</h3>
-            <p className="text-blue-200 text-[11px] mt-0.5">
-              {selectedCollege && total > 0 ? `${total.toLocaleString()} student${total !== 1 ? 's' : ''} found` : 'Select a college to view students'}
-            </p>
-          </div>
-        </div>
-        {selectedCollege && (
-          <button
-            onClick={fetchStudents}
-            disabled={loading}
-            className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all"
-          >
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Refresh
-          </button>
-        )}
-      </div>
 
       {/* Filters row */}
       <div className="p-4 border-b border-slate-100 flex items-center gap-3 flex-wrap bg-slate-50/50">
         {/* College picker */}
-        <div className="relative min-w-[220px]">
+        <div className="relative min-w-[200px]">
           <Building2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <select
             className="w-full text-sm border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
             value={selectedCollege}
             onChange={e => handleCollegeChange(e.target.value)}
           >
-            <option value="">Select college…</option>
+            <option value="">All Colleges</option>
             {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
           </select>
         </div>
 
         {/* Search */}
-        {selectedCollege && (
-          <>
-            <div className="relative flex-1 min-w-[180px]">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input
-                className="w-full text-sm border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="Search name, email, roll no…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
+        <div className="relative flex-1 min-w-[180px]">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            className="w-full text-sm border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="Search name, email, roll no…"
+            value={search}
+            onChange={e => handleSearchChange(e.target.value)}
+          />
+        </div>
 
-            {/* Branch filter */}
-            <select
-              className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
-              value={branch}
-              onChange={e => setBranch(e.target.value)}
-            >
-              <option value="">All Branches</option>
-              {(branches.length ? branches : BRANCHES).map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
+        {/* Branch filter */}
+        <select
+          className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
+          value={branch}
+          onChange={e => handleBranchChange(e.target.value)}
+        >
+          <option value="">All Branches</option>
+          {(branches.length ? branches : BRANCHES).map(b => <option key={b} value={b}>{b}</option>)}
+        </select>
 
-            {/* Batch filter */}
-            {batches.length > 0 && (
-              <select
-                className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
-                value={batch}
-                onChange={e => setBatch(e.target.value)}
-              >
-                <option value="">All Batches</option>
-                {batches.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-            )}
-          </>
+        {/* Batch filter */}
+        {batches.length > 0 && (
+          <select
+            className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none"
+            value={batch}
+            onChange={e => handleBatchChange(e.target.value)}
+          >
+            <option value="">All Batches</option>
+            {batches.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
         )}
       </div>
 
       {/* Stats bar */}
       {collegeStats && (
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
             {[
-              { icon: Users, label: 'Total', value: collegeStats.totalStudents, c: 'bg-blue-50 border-blue-100 text-blue-600' },
-              { icon: CheckCircle, label: 'Active', value: collegeStats.totalActive, c: 'bg-green-50 border-green-100 text-green-600' },
-              { icon: GraduationCap, label: 'Placed', value: collegeStats.totalPlaced, c: 'bg-amber-50 border-amber-100 text-amber-600' },
-              { icon: TrendingUp, label: 'Rate', value: `${collegeStats.placementRate}%`, c: 'bg-violet-50 border-violet-100 text-violet-600' },
-            ].map(({ icon: Icon, label, value, c }) => (
-              <div key={label} className={`flex items-center gap-2 px-3 py-2 border rounded-xl ${c}`}>
-                <Icon className="w-4 h-4 flex-shrink-0 opacity-70" />
+              { icon: Users, label: 'Total Students', value: collegeStats.totalStudents, bg: 'bg-[#003399]/5', border: 'border-[#003399]/10', text: 'text-[#003399]' },
+              { icon: CheckCircle, label: 'Active Students', value: collegeStats.totalActive, bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
+              { icon: GraduationCap, label: 'Placed Students', value: collegeStats.totalPlaced, bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-600' },
+              { icon: TrendingUp, label: 'Placement Rate', value: `${collegeStats.placementRate}%`, bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-600' },
+            ].map(({ icon: Icon, label, value, bg, border, text }) => (
+              <div key={label} className={`flex items-center gap-4 px-4 py-3 rounded-2xl border ${bg} ${border}`}>
+                <div className="w-10 h-10 bg-white border border-white/50 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Icon className={`w-5 h-5 ${text}`} />
+                </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-black leading-none">{value}</p>
-                  <p className="text-[9px] font-medium opacity-60 mt-0.5 leading-none truncate">{label}</p>
+                  <p className={`text-xl font-black ${text} leading-none tracking-tight`}>{value}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{label}</p>
                 </div>
               </div>
             ))}
@@ -1469,61 +1577,71 @@ function StudentListSection({ colleges }) {
             <Spin size="md" color="blue" />
             <span className="text-sm text-slate-500">Loading students…</span>
           </div>
-        ) : !selectedCollege ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-            <Building2 size={40} className="mb-3 opacity-30" />
-            <p className="text-sm font-semibold">Select a college above to view students</p>
-          </div>
         ) : students.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-400">
             <GraduationCap size={40} className="mb-3 opacity-30" />
             <p className="text-sm font-semibold">No students found</p>
-            <p className="text-xs mt-1">{(search || branch || batch) ? 'Try adjusting your filters' : 'Add students using the buttons above'}</p>
+            <p className="text-xs mt-1">{(search || selectedCollege || branch || batch) ? 'Try adjusting your filters' : 'Add students using the buttons above'}</p>
           </div>
         ) : (
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                {['Name', 'Email', 'Roll No.', 'Branch', 'Batch', 'Sem.', 'CGPA', 'Status', 'Joined'].map(h => (
-                  <th key={h} className="text-left py-2.5 px-3 font-bold text-[11px] text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
-                ))}
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[60px]">S.No</th>
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Name</th>
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[120px] hidden lg:table-cell">Roll No.</th>
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[100px] hidden md:table-cell">Branch</th>
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[100px] hidden xl:table-cell">Batch</th>
+                {!selectedCollege && <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[150px] hidden lg:table-cell">College</th>}
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[100px]">Status</th>
+                <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[120px] hidden xl:table-cell">Joined</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {students.map((s, i) => {
                 const si = s.studentInfo || {};
+                const sNo = (page - 1) * limit + i + 1;
+                const college = s.collegeId;
                 return (
-                  <tr key={s._id} className={`border-b border-slate-50 hover:bg-blue-50/30 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'}`}>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center text-white font-black text-[11px] flex-shrink-0">
-                          {s.fullName?.charAt(0)?.toUpperCase()}
-                        </div>
-                        <span className="font-semibold text-slate-800 whitespace-nowrap">{s.fullName}</span>
+                  <tr key={s._id} className="hover:bg-blue-50/10 transition-colors group">
+                    <td className="px-5 py-4 text-xs font-bold text-slate-400">
+                      {String(sNo).padStart(2, '0')}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-800 truncate" title={s.fullName}>
+                          {s.fullName || '—'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate max-w-[140px]">{s.email}</p>
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-slate-500 max-w-[160px] truncate">{s.email}</td>
-                    <td className="py-2.5 px-3 font-mono text-slate-600">{si.rollNumber || '—'}</td>
-                    <td className="py-2.5 px-3">
+                    <td className="px-5 py-4 font-mono text-slate-600 font-medium tracking-tight truncate hidden lg:table-cell">
+                      {si.rollNumber || '—'}
+                    </td>
+                    <td className="px-5 py-4 hidden md:table-cell">
                       {si.branch
-                        ? <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[10px] font-semibold">{si.branch}</span>
-                        : <span className="text-slate-300">—</span>}
+                        ? <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[10px] font-bold">{si.branch}</span>
+                        : <span className="text-slate-300 italic">—</span>}
                     </td>
-                    <td className="py-2.5 px-3 text-slate-500">{si.batch || '—'}</td>
-                    <td className="py-2.5 px-3 text-slate-500 text-center">{si.semester || '—'}</td>
-                    <td className="py-2.5 px-3 text-slate-500">{si.cgpa ?? '—'}</td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-1.5">
+                    <td className="px-5 py-4 text-slate-500 font-medium hidden xl:table-cell">
+                      {si.batch || '—'}
+                    </td>
+                    {!selectedCollege && (
+                      <td className="px-5 py-4 hidden lg:table-cell">
+                        {college?.name
+                          ? <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-md text-[10px] font-bold">{college.name}</span>
+                          : <span className="text-slate-300 italic">—</span>}
+                      </td>
+                    )}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
                         <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.isActive ? 'bg-green-400' : 'bg-red-400'}`} />
-                        <span className={`text-[10px] font-semibold ${s.isActive ? 'text-green-600' : 'text-red-500'}`}>
-                          {s.isActive ? 'Active' : 'Inactive'}
+                        <span className={`text-[10px] font-bold ${s.isActive ? 'text-green-600' : 'text-red-500'} uppercase tracking-tight`}>
+                          {s.isActive ? (si.isPlaced ? 'Placed' : 'Active') : 'Inactive'}
                         </span>
-                        {si.isPlaced && (
-                          <span className="ml-1 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[10px] font-semibold">Placed</span>
-                        )}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-slate-400 whitespace-nowrap">
+                    <td className="px-5 py-4 text-slate-400 font-medium whitespace-nowrap hidden xl:table-cell">
                       {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                     </td>
                   </tr>
@@ -1535,6 +1653,8 @@ function StudentListSection({ colleges }) {
       </div>
 
       {/* Pagination */}
+
+      {/* Pagination */}
       {totalPages > 1 && !loading && students.length > 0 && (
         <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/50">
           <span className="text-xs text-slate-400">
@@ -1543,7 +1663,7 @@ function StudentListSection({ colleges }) {
           <div className="flex items-center gap-2">
             <button
               disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => handlePageChange(page - 1)}
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft size={14} />
@@ -1551,7 +1671,7 @@ function StudentListSection({ colleges }) {
             <span className="text-xs font-bold text-slate-600">{page} / {totalPages}</span>
             <button
               disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => handlePageChange(page + 1)}
               className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight size={14} />
@@ -1619,170 +1739,40 @@ export default function SuperAdminStudentManagement() {
 
   return (
     <SuperAdminDashboardLayout>
-      <div className="w-full space-y-5">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-        {/* Hero */}
-        <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-6 py-5 shadow-xl shadow-blue-500/25 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+        {/* ══ HEADER SECTION ══ */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+              Student Management
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 font-medium italic">Global student operations across {colleges.length} registered colleges.</p>
           </div>
-          <div className="relative flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center border border-white/20 flex-shrink-0">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-white font-black text-xl">Student Management</h1>
-                <p className="text-blue-200 text-xs mt-0.5">Global student operations across all colleges</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={loadColleges} disabled={loading} className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all disabled:opacity-50">
-                <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Refresh
-              </button>
-              <button onClick={() => setModal('export')} className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
-                <FileDown size={13} /> Export
-              </button>
-              <button onClick={() => setModal('single')} className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
-                <UserPlus size={13} /> Add Student
-              </button>
-              <button onClick={() => setModal('multiple')} className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/20 transition-all">
-                <UsersRound size={13} /> Add Multiple
-              </button>
-              <button onClick={() => setModal('upload')} className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-white/30 transition-all">
-                <CloudUpload size={13} /> Bulk Upload
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* Colleges bar */}
-        <div className="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-          <div className="w-9 h-9 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Building2 size={16} className="text-blue-600" />
-          </div>
-          {loading ? (
-            <div className="flex items-center gap-2"><Spin size="sm" color="blue" /><span className="text-sm text-slate-500">Loading colleges…</span></div>
-          ) : (
-            <div className="flex-1 min-w-0 flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-sm font-black text-slate-800">{colleges.length} College{colleges.length !== 1 ? 's' : ''} Available</p>
-                <p className="text-xs text-slate-400 mt-0.5 truncate">
-                  {colleges.length > 0
-                    ? colleges.slice(0, 4).map(c => c.name).join(' · ') + (colleges.length > 4 ? ` · +${colleges.length - 4} more` : '')
-                    : 'No colleges found — check backend connection'}
-                </p>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {colleges.slice(0, 4).map(c => (
-                  <span key={c._id} className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[11px] font-semibold">{c.name}</span>
-                ))}
-                {colleges.length > 4 && <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-[11px] font-semibold">+{colleges.length - 4} more</span>}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Action cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {CARDS.map(card => (
-            <div key={card.title} className={`bg-white rounded-2xl border ${card.border} shadow-sm overflow-hidden hover:shadow-md transition-shadow`}>
-              <div className={`bg-gradient-to-r ${card.gradient} px-5 py-4 flex items-center gap-3`}>
-                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><card.icon size={18} className="text-white" /></div>
-                <h3 className="text-sm font-black text-white">{card.title}</h3>
-              </div>
-              <div className={`bg-gradient-to-b ${card.light} p-5 space-y-4`}>
-                <p className="text-sm text-slate-600 leading-relaxed">{card.desc}</p>
-                <ul className="space-y-2">
-                  {card.tips.map((t, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-xs text-slate-600">
-                      <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center text-[9px] font-black text-slate-500 flex-shrink-0 mt-0.5 shadow-sm border border-slate-100">{i + 1}</div>
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-                <button onClick={card.action} className={`w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-gradient-to-r ${card.gradient} hover:opacity-90 rounded-xl transition-opacity shadow-md`}>
-                  <card.icon size={13} /> {card.btnLabel}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Export card */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center gap-3">
-            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileDown size={18} className="text-white" /></div>
-            <div>
-              <h3 className="text-sm font-black text-white">Export Students</h3>
-              <p className="text-blue-100 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
-            </div>
-          </div>
-          <div className="p-5 flex items-center gap-5 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-slate-600">Export across all colleges or filter by college, branch, batch, or placement status.</p>
-              <div className="flex items-center gap-4 mt-3 flex-wrap">
-                {['Filter by college/branch/batch', 'Preview count before download', 'Excel or CSV format'].map((t, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-xs text-slate-400"><ChevronRight size={11} className="text-slate-300 flex-shrink-0" />{t}</span>
-                ))}
-              </div>
-            </div>
-            <button onClick={() => setModal('export')} className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-500/20">
-              <FileDown size={14} /> Open Export
+          <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+            <button onClick={() => setModal('export')} className={BTN_SEC}>
+              <FileDown className="w-3.5 h-3.5" /> Export
+            </button>
+            <button onClick={() => setModal('single')} className={BTN_SEC}>
+              <UserPlus className="w-3.5 h-3.5" /> Add Student
+            </button>
+            <button onClick={() => setModal('multiple')} className={BTN_SEC}>
+              <UsersRound className="w-3.5 h-3.5" /> Add Multiple
+            </button>
+            <button onClick={() => setModal('upload')} className={BTN_PRI}>
+              <CloudUpload className="w-4 h-4" /> Bulk Upload
             </button>
           </div>
         </div>
 
+        {/* Colleges bar */}
+
+
+
         {/* ── LIVE STUDENT LIST ── */}
         <StudentListSection colleges={colleges} key={refreshList} />
-
-        {/* Column reference */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <div className="mb-5">
-            <SHead icon={Info} title="Excel Upload — Column Reference" sub="Use exact header names in your spreadsheet" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <p className="text-[10px] font-black text-red-500 uppercase tracking-wider mb-3">Required Columns</p>
-              <div className="space-y-2">
-                {[
-                  ['name', 'Full student name (min 2 chars)'],
-                  ['email', 'Unique — existing emails will be BLOCKED'],
-                  ['roll_number', 'Unique per college — duplicates blocked'],
-                ].map(([c, d]) => (
-                  <div key={c} className="flex items-start gap-3">
-                    <code className="px-2 py-0.5 bg-red-50 text-red-700 rounded-md text-xs font-mono border border-red-100 flex-shrink-0 mt-0.5">{c}</code>
-                    <span className="text-xs text-slate-400">{d}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">Optional Columns</p>
-              <div className="space-y-2">
-                {[
-                  ['phone', '10-digit mobile number'],
-                  ['branch', 'CSE/ECE/EEE/MECH/CIVIL/IT/AI/ML/DS/Other'],
-                  ['batch', 'Graduation year e.g. 2026'],
-                  ['semester', 'Integer 1–8'],
-                  ['cgpa', 'Decimal 0.0–10.0'],
-                ].map(([c, d]) => (
-                  <div key={c} className="flex items-start gap-3">
-                    <code className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-mono border border-slate-200 flex-shrink-0 mt-0.5">{c}</code>
-                    <span className="text-xs text-slate-400">{d}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-5 flex items-start gap-2 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-            <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
-            <span>
-              <strong>No password column needed</strong> — passwords are auto-generated and emailed.
-              Existing emails and roll numbers are <strong>automatically detected and blocked</strong> before the Confirm button is enabled.
-            </span>
-          </div>
-        </div>
       </div>
 
       {/* ── Modals render via portal above sidebar ── */}

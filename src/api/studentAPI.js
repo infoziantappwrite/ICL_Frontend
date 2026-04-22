@@ -100,6 +100,12 @@ export const collegeAdminStudentAPI = {
 };
 
 export const superAdminStudentAPI = {
+  // ── Fetch ──────────────────────────────────────────────────────
+  getStudents: (params = {}) => {
+    const q = buildQS(params);
+    return apiCall(`/super-admin/students${q ? `?${q}` : ''}`);
+  },
+
   // ── Manual Add ─────────────────────────────────────────────────
   addStudent: (data) =>
     apiCall('/super-admin/students', {

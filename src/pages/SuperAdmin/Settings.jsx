@@ -281,20 +281,15 @@ const Settings = () => {
 
   return (
     <SuperAdminDashboardLayout>
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full"/>
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full"/>
-          <div className="absolute inset-0 opacity-[0.04]" style={{backgroundImage:'radial-gradient(circle,white 1px,transparent 1px)',backgroundSize:'18px 18px'}}/>
-        </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"><SettingsIcon className="w-5 h-5 text-white"/></div>
-          <div>
-            <h1 className="text-white font-black text-lg leading-tight">Settings & Preferences</h1>
-            <p className="text-blue-200 text-[11px] mt-0.5">Manage your account settings, security & notifications</p>
-          </div>
-        </div>
+      <div className="px-6 py-4 md:px-8 md:py-6 font-sans space-y-5">
+
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+          Settings &amp; Preferences
+        </h1>
+        <p className="text-sm text-slate-400 font-medium mt-1">Manage your account settings, security &amp; notifications</p>
       </div>
 
       {/* Success/Error Messages */}
@@ -316,21 +311,18 @@ const Settings = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar Tabs */}
         <div className="lg:col-span-1">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-4 space-y-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-2">
             {tabs.map((tab) => {
               const TabIcon = tab.icon;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                   className={`w-full px-4 py-3 rounded-xl flex items-center gap-3 transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    activeTab === tab.id ? 'text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'
                   }`}
+                  style={activeTab === tab.id ? {background:'linear-gradient(135deg,#003399,#00A9CE)'} : {}}
                 >
                   <TabIcon className="w-5 h-5" />
-                  <span className="font-medium">{tab.label}</span>
+                  <span className="font-semibold">{tab.label}</span>
                 </button>
               );
             })}
@@ -339,7 +331,7 @@ const Settings = () => {
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
             {/* Profile Settings */}
             {activeTab === 'profile' && (
               <div>
@@ -970,8 +962,10 @@ const Settings = () => {
           </div>
         </div>
       </div>
+      </div>
     </SuperAdminDashboardLayout>
   );
 };
+
 
 export default Settings;

@@ -27,12 +27,12 @@ import { companyAPI } from '../../api/Api';
 /* ─── Section heading ─────────────────────── */
 const SHead = ({ icon: Icon, title, sub }) => (
   <div className="flex items-center gap-2 mb-4">
-    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
       <Icon className="w-3 h-3 text-white" />
     </div>
     <div>
-      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      <h3 className="text-sm font-bold text-slate-800 leading-none">{title}</h3>
+      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
     </div>
   </div>
 );
@@ -57,7 +57,7 @@ const Field = ({ label, icon: Icon, required, error, hint, children }) => (
 );
 
 const inputBase =
-  'w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white placeholder-gray-400';
+  'w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-[#003399]/20 focus:border-[#003399]/30 transition-all bg-white placeholder-slate-400';
 
 const CompanyForm = () => {
   const toast = useToast();
@@ -235,42 +235,22 @@ const CompanyForm = () => {
 
   return (
     <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-        </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <button onClick={() => navigate('/dashboard/super-admin/companies')}
-              className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors">
-              <ArrowLeft className="w-3 h-3" /> Back to Companies
-            </button>
-            <h1 className="text-white font-black text-lg leading-tight">
-              {isEditMode ? 'Edit Company' : 'Add New Company'}
-            </h1>
-            <p className="text-blue-200 text-[11px] mt-0.5">
-              {isEditMode ? 'Update company information' : 'Fill in the details to register a new company'}
-            </p>
-          </div>
-        </div>
+      {/* Header */}
+      <div className="mb-4">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+          {isEditMode ? 'Edit Company' : 'Add New Company'}
+        </h1>
+        <p className="text-sm text-slate-400 font-medium mt-1">
+          {isEditMode ? 'Update company information' : 'Fill in the details to register a new company'}
+        </p>
       </div>
 
-      {/* ══ FORM ══ */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* ── LEFT: Main fields (2 cols) ── */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-
-          {/* College Assignment */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={GraduationCap} title="College Assignment" sub="Associate this company with a college" />
             <Field label="Select College" icon={GraduationCap} required error={errors.collegeId}
               hint={isEditMode ? 'College cannot be changed after creation' : undefined}>
@@ -300,8 +280,7 @@ const CompanyForm = () => {
             )}
           </div>
 
-          {/* Basic Information */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Building2} title="Basic Information" sub="Core company identity details" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -350,8 +329,7 @@ const CompanyForm = () => {
             </div>
           </div>
 
-          {/* Contact Information */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Mail} title="Contact Information" sub="How to reach this company" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -390,8 +368,7 @@ const CompanyForm = () => {
             </div>
           </div>
 
-          {/* Description */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={FileText} title="Company Description" sub="Brief overview visible to students" />
             <Field label="About the Company">
               <textarea
@@ -404,20 +381,14 @@ const CompanyForm = () => {
           </div>
         </div>
 
-        {/* ── RIGHT: Sidebar ── */}
-        <div className="flex flex-col gap-4">
-
-          {/* Company Status */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+        <div className="flex flex-col gap-6">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={Shield} title="Company Status" sub="Visibility in the platform" />
-            <div
-              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                formData.isActive ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-200'
-              }`}
-              onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
-            >
+            <div className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+              formData.isActive ? 'bg-[#003399]/5 border-[#003399]/10' : 'bg-slate-50 border-slate-200'
+            }`} onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}>
               <div className={`relative w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200 ${
-                formData.isActive ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gray-300'
+                formData.isActive ? 'bg-[#003399]' : 'bg-slate-300'
               }`}>
                 <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
                   formData.isActive ? 'translate-x-[18px]' : 'translate-x-0.5'
@@ -428,87 +399,57 @@ const CompanyForm = () => {
                 />
               </div>
               <div>
-                <p className={`text-xs font-bold ${formData.isActive ? 'text-blue-700' : 'text-gray-600'}`}>
+                <p className={`text-xs font-black ${formData.isActive ? 'text-[#003399]' : 'text-slate-600'}`}>
                   {formData.isActive ? 'Active' : 'Inactive'}
                 </p>
-                <p className="text-[10px] text-gray-400 mt-0.5">
-                  {formData.isActive
-                    ? 'Company is visible and accepting applications'
-                    : 'Company is hidden from students'}
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {formData.isActive ? 'Company is visible and accepting applications' : 'Company is hidden from students'}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Save / Cancel */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <SHead icon={CheckCircle2} title="Save Changes" />
             <div className="space-y-2">
-              <button
-                type="submit" disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-sm hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
+              <button type="submit" disabled={saving}
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#003399] hover:bg-[#002d8b] text-white text-xs font-black px-4 py-3 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 {saving ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    {isEditMode ? 'Updating…' : 'Creating…'}
-                  </>
+                  <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />{isEditMode ? 'Updating…' : 'Creating…'}</>
                 ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    {isEditMode ? 'Update Company' : 'Create Company'}
-                  </>
+                  <><Save className="w-3.5 h-3.5" />{isEditMode ? 'Update Company' : 'Create Company'}</>
                 )}
               </button>
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard/super-admin/companies')}
-                className="w-full inline-flex items-center justify-center gap-2 border border-gray-200 bg-white text-gray-600 text-xs font-semibold px-4 py-3 rounded-xl hover:bg-gray-50 transition-all"
-              >
+              <button type="button" onClick={() => navigate('/dashboard/super-admin/companies')}
+                className="w-full inline-flex items-center justify-center gap-2 border border-slate-100 bg-white text-slate-600 text-xs font-black px-4 py-3 rounded-xl hover:bg-slate-50 transition-all">
                 <X className="w-3.5 h-3.5" /> Cancel
               </button>
             </div>
           </div>
 
           {/* Tips */}
-          <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-cyan-500 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-3.5 h-3.5 text-white" />
-                </div>
-                <p className="text-xs font-bold text-white">
-                  {isEditMode ? 'Editing Tips' : 'Creation Tips'}
-                </p>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{background:'linear-gradient(135deg,#003399,#00A9CE)'}}>
+                <AlertCircle className="w-3.5 h-3.5 text-white" />
               </div>
-              <ul className="space-y-1.5">
-                {(isEditMode
-                  ? [
-                      'College assignment cannot be changed',
-                      'Email should stay consistent for tracking',
-                      'Toggle status to hide from students',
-                    ]
-                  : [
-                      'Use official company email address',
-                      'Website must include http:// or https://',
-                      'A detailed description helps students',
-                      'Industry and size aid in filtering',
-                    ]
-                ).map((tip, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="w-1 h-1 bg-cyan-300 rounded-full mt-1.5 flex-shrink-0" />
-                    <p className="text-[10px] text-blue-100 leading-relaxed">{tip}</p>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-sm font-bold text-slate-800">{isEditMode ? 'Editing Tips' : 'Creation Tips'}</p>
             </div>
+            <ul className="space-y-1.5">
+              {(isEditMode
+                ? ['College assignment cannot be changed', 'Email should stay consistent for tracking', 'Toggle status to hide from students']
+                : ['Use official company email address', 'Website must include http:// or https://', 'A detailed description helps students', 'Industry and size aid in filtering']
+              ).map((tip, i) => (
+                <li key={i} className="flex items-start gap-1.5">
+                  <span className="w-1 h-1 bg-[#00A9CE] rounded-full mt-1.5 flex-shrink-0" />
+                  <p className="text-[10px] text-slate-500 leading-relaxed">{tip}</p>
+                </li>
+              ))}
+            </ul>
           </div>
-
         </div>
       </form>
-
+      </div>
     </SuperAdminDashboardLayout>
   );
 };

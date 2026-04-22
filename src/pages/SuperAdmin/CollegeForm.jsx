@@ -25,14 +25,20 @@ import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboa
 import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ─── Section heading ─────────────────────── */
-const SHead = ({ icon: Icon, title, sub }) => (
-  <div className="flex items-center gap-2 mb-4">
-    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icon className="w-3 h-3 text-white" />
+const SHead = ({ icon: Icon, title, sub, color = '#003399' }) => (
+  <div className="flex items-center gap-3 mb-5">
+    <div
+      className="w-8 h-8 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-sm"
+      style={{
+        backgroundColor: `${color}12`,
+        borderColor: `${color}25`,
+      }}
+    >
+      <Icon className="w-4 h-4" style={{ color }} />
     </div>
     <div>
-      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      <h3 className="text-sm font-black text-slate-800 leading-none">{title}</h3>
+      {sub && <p className="text-[10px] text-slate-400 mt-1 font-medium italic">{sub}</p>}
     </div>
   </div>
 );
@@ -51,7 +57,7 @@ const Field = ({ label, icon: Icon, required, hint, children }) => (
 );
 
 const inputBase =
-  'w-full px-3 py-2.5 text-sm border border-gray-200 hover:border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white placeholder-gray-400';
+  'w-full px-3 py-2.5 text-sm border border-slate-100 hover:border-slate-200 rounded-xl focus:ring-2 focus:ring-[#003399]/20 focus:border-[#003399]/30 transition-all bg-white placeholder-slate-400';
 
 const DEFAULT_COUNTRY = { name: 'India', isoCode: 'IN' };
 const selectStyles = {
@@ -59,10 +65,10 @@ const selectStyles = {
     ...base,
     minHeight: 46,
     borderRadius: 12,
-    borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
-    boxShadow: state.isFocused ? '0 0 0 2px rgba(59, 130, 246, 0.15)' : 'none',
+    borderColor: state.isFocused ? '#003399' : '#f1f5f9',
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(0, 51, 153, 0.12)' : 'none',
     '&:hover': {
-      borderColor: state.isFocused ? '#3b82f6' : '#d1d5db',
+      borderColor: state.isFocused ? '#003399' : '#e2e8f0',
     },
   }),
   placeholder: (base) => ({
@@ -82,8 +88,8 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     fontSize: '0.875rem',
-    backgroundColor: state.isFocused ? '#eff6ff' : state.isSelected ? '#dbeafe' : '#fff',
-    color: '#111827',
+    backgroundColor: state.isFocused ? '#eff6ff' : state.isSelected ? '#eef2ff' : '#fff',
+    color: '#0f172a',
   }),
   menuPortal: (base) => ({
     ...base,
@@ -458,44 +464,24 @@ const CollegeForm = () => {
 
   return (
     <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-        </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <button
-              onClick={() => navigate('/dashboard/super-admin/colleges')}
-              className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" /> Back to Colleges
-            </button>
-            <h1 className="text-white font-black text-lg leading-tight">
-              {isEditMode ? 'Edit College' : 'Add New College'}
-            </h1>
-            <p className="text-blue-200 text-[11px] mt-0.5">
-              {isEditMode
-                ? 'Update college information and settings'
-                : 'Register a new college on the platform'}
-            </p>
-          </div>
-        </div>
+      {/* Header */}
+      <div className="mb-4">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+          {isEditMode ? 'Edit College' : 'Add New College'}
+        </h1>
+        <p className="text-sm text-slate-400 font-medium mt-1">
+          {isEditMode ? 'Update college information and settings' : 'Register a new college on the platform'}
+        </p>
       </div>
 
-      {/* ══ FORM ══ */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
 
         {/* Basic Information */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-          <SHead icon={Building2} title="Basic Information" sub="Core college identity details" />
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <SHead icon={Building2} title="Basic Information" sub="Core college identity details" color="#003399" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <Field label="College Name" required>
@@ -539,8 +525,8 @@ const CollegeForm = () => {
         </div>
 
         {/* Location Details */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-          <SHead icon={MapPin} title="Location Details" sub="Address and geographical information" />
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <SHead icon={MapPin} title="Location Details" sub="Address and geographical information" color="#00A9CE" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <Field label="Street Address">
@@ -615,8 +601,8 @@ const CollegeForm = () => {
         </div>
 
         {/* College Details */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-          <SHead icon={GraduationCap} title="College Details" sub="Academic affiliation and credentials" />
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <SHead icon={GraduationCap} title="College Details" sub="Academic affiliation and credentials" color="#6366f1" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             <Field label="University" required>
@@ -661,7 +647,7 @@ const CollegeForm = () => {
                 />
                 <button
                   type="button" onClick={addAccreditation}
-                  className="px-3 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold rounded-xl hover:scale-105 transition-all"
+                  className="px-3 py-2 bg-[#003399] text-white text-xs font-black rounded-xl hover:bg-[#002d8b] transition-all"
                 >
                   Add
                 </button>
@@ -669,10 +655,10 @@ const CollegeForm = () => {
               {formData.accreditation?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {formData.accreditation.map((acc, index) => (
-                    <span key={index} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-cyan-50 text-cyan-700 border border-cyan-100 rounded-full text-[11px] font-bold">
+                    <span key={index} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#00A9CE]/10 text-[#00A9CE] border border-[#00A9CE]/20 rounded-full text-[11px] font-bold">
                       {acc}
                       <button type="button" onClick={() => removeAccreditation(index)}
-                        className="text-cyan-500 hover:text-cyan-800 transition-colors">
+                        className="text-[#00A9CE] hover:text-[#003399] transition-colors">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
@@ -684,11 +670,11 @@ const CollegeForm = () => {
         </div>
 
         {/* Departments */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-          <SHead icon={Users} title="Departments" sub="Academic departments and their heads" />
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+          <SHead icon={Users} title="Departments" sub="Academic departments and their heads" color="#10b981" />
 
           {/* Add department row */}
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-3 p-3 bg-blue-50/40 rounded-xl border border-blue-100/60">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 mb-3 p-3 bg-[#003399]/[0.03] rounded-xl border border-[#003399]/10">
             <input
               type="text" value={newDepartment.name}
               onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
@@ -711,31 +697,30 @@ const CollegeForm = () => {
             />
             <button
               type="button" onClick={addDepartment}
-              className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-3 py-2.5 rounded-xl hover:scale-[1.02] transition-all"
-            >
+              className="inline-flex items-center justify-center gap-1.5 bg-[#003399] text-white text-xs font-black px-3 py-2.5 rounded-xl hover:bg-[#002d8b] transition-all">
               <Plus className="w-3.5 h-3.5" /> Add
             </button>
           </div>
 
           {formData.departments?.length > 0 ? (
-            <div className="overflow-x-auto rounded-xl border border-gray-100">
+            <div className="overflow-x-auto rounded-xl border border-slate-100">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
                     {['Department', 'Code', 'HOD Name', 'HOD Email', ''].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-[9px] font-black text-gray-400 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-3 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-slate-50">
                   {formData.departments.map((dept, index) => (
-                    <tr key={index} className="hover:bg-blue-50/20 transition-colors">
-                      <td className="px-3 py-2.5 text-xs font-semibold text-gray-800">{dept.name}</td>
+                    <tr key={index} className="hover:bg-[#003399]/[0.02] transition-colors">
+                      <td className="px-3 py-2.5 text-xs font-semibold text-slate-800">{dept.name}</td>
                       <td className="px-3 py-2.5">
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">{dept.code}</span>
+                        <span className="text-[10px] font-black text-[#003399] bg-[#003399]/5 px-1.5 py-0.5 rounded-md border border-[#003399]/10">{dept.code}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-xs text-gray-600">{dept.hodName || '—'}</td>
-                      <td className="px-3 py-2.5 text-xs text-gray-500 font-mono">{dept.hodEmail || '—'}</td>
+                      <td className="px-3 py-2.5 text-xs text-slate-600">{dept.hodName || '—'}</td>
+                      <td className="px-3 py-2.5 text-xs text-slate-500 font-mono">{dept.hodEmail || '—'}</td>
                       <td className="px-3 py-2.5">
                         <button type="button" onClick={() => removeDepartment(index)}
                           className="w-6 h-6 flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-colors">
@@ -748,42 +733,30 @@ const CollegeForm = () => {
               </table>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-6 text-gray-400">
-              <GraduationCap className="w-8 h-8 mb-2 text-gray-200" />
-              <p className="text-xs font-medium text-gray-400">No departments added yet</p>
+            <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+              <GraduationCap className="w-8 h-8 mb-2 text-slate-200" />
+              <p className="text-xs font-medium text-slate-400">No departments added yet</p>
             </div>
           )}
         </div>
 
         {/* Submit Buttons */}
-        <div className="flex gap-3 justify-end pb-4">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard/super-admin/colleges')}
-            className="inline-flex items-center gap-2 border border-gray-200 bg-white text-gray-600 text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-all"
-          >
+        <div className="flex gap-3 justify-end pb-6">
+          <button type="button" onClick={() => navigate('/dashboard/super-admin/colleges')}
+            className="inline-flex items-center gap-2 border border-slate-100 bg-white text-slate-600 text-xs font-black px-5 py-2.5 rounded-xl hover:bg-slate-50 transition-all">
             <X className="w-3.5 h-3.5" /> Cancel
           </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-sm hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
+          <button type="submit" disabled={submitting}
+            className="inline-flex items-center gap-2 bg-[#003399] hover:bg-[#002d8b] text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
             {submitting ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {isEditMode ? 'Updating...' : 'Creating...'}
-              </>
+              <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />{isEditMode ? 'Updating...' : 'Creating...'}</>
             ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                {isEditMode ? 'Update College' : 'Create College'}
-              </>
+              <><Save className="w-3.5 h-3.5" />{isEditMode ? 'Update College' : 'Create College'}</>
             )}
           </button>
         </div>
       </form>
-
+      </div>
     </SuperAdminDashboardLayout>
   );
 };

@@ -8,6 +8,7 @@ import {
     Home, Briefcase, BookOpen, ClipboardList,
     Clock, FileText, Star, Users, ArrowRight
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 const navLinks = [
     { label: 'Home', path: '/dashboard/student' },
@@ -75,20 +76,14 @@ const StudentLayout = ({ children }) => {
                 Desktop: [Logo] [Nav links] ─── [Bell] [Avatar]
             ═══════════════════════════════════════ */}
             <header className="bg-white border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
-                <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 h-[56px] md:h-[65px] flex items-center justify-between gap-3">
+                <div className="max-w-[1240px] mx-auto pl-2 sm:pl-4 lg:pl-0 pr-4 sm:pr-6 lg:pr-8 h-[56px] md:h-[65px] flex items-center justify-between gap-3">
 
                     {/* ── Brand / Logo ── */}
                     <button
                         onClick={() => navigate('/dashboard/student')}
-                        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity flex-shrink-0"
+                        className="flex items-center hover:opacity-80 transition-opacity flex-shrink-0"
                     >
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-base md:text-xl leading-none">I</span>
-                        </div>
-                        <div className="text-left">
-                            <h1 className="text-[16px] md:text-[18px] font-bold text-gray-900 leading-tight">ICL</h1>
-                            <p className="text-[10px] md:text-[12px] text-gray-500 leading-tight hidden sm:block">Student Dashboard</p>
-                        </div>
+                        <img src={logo} alt="ICL Logo" className="h-10 md:h-14 w-auto object-contain" />
                     </button>
 
                     {/* ── Desktop Nav (center-right) ── */}

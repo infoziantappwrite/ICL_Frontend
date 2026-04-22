@@ -9,8 +9,9 @@ import {
   Building2, Users, Briefcase, BookOpen, Activity,
   ChevronLeft, ChevronRight, GraduationCap, Search,
   ChevronDown, FileText, UsersRound, ClipboardList,
-  ALargeSmall,
+  ALargeSmall, Layers,
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 const MENU_GROUPS = [
   {
@@ -26,7 +27,7 @@ const MENU_GROUPS = [
       { icon: Building2,      label: 'Companies',    path: '/dashboard/college-admin/companies' },
       { icon: Briefcase,      label: 'Jobs',         path: '/dashboard/college-admin/jobs' },
       { icon: Users,          label: 'Students',     path: '/dashboard/college-admin/students' },
-
+      { icon: Layers,         label: 'Groups',       path: '/dashboard/college-admin/groups' },
     ],
   },
   {
@@ -47,7 +48,10 @@ const CollegeAdminLayout = ({ children }) => {
   const toast = useToast();
   const { fontSize, zoom, label: fontLabel, setSize, SIZE_STEPS } = useFontSize();
 
-  const [sidebarOpen,  setSidebarOpen]  = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [showMobile,   setShowMobile]   = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFontMenu, setShowFontMenu] = useState(false);
@@ -77,6 +81,10 @@ const CollegeAdminLayout = ({ children }) => {
     document.body.style.overflow = (showMobile && isMobile) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [showMobile, isMobile]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
 
   useEffect(() => {
     const h = (e) => {
@@ -160,27 +168,29 @@ const CollegeAdminLayout = ({ children }) => {
         <div className="flex flex-col h-full">
 
           {/* Logo */}
-          <div className="flex items-center gap-2.5 px-3.5 py-3.5 border-b border-gray-100 flex-shrink-0">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard/college-admin')}
-              className="w-8 h-8 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-md shadow-blue-500/30 flex-shrink-0 hover:opacity-90 transition-opacity"
+              className="flex-1 flex items-center justify-center hover:opacity-90 transition-opacity"
             >
-              <GraduationCap className="w-4 h-4 text-white" />
+              <img src={logo} alt="ICL Logo" className={sidebarOpen ? "h-12 w-auto object-contain" : "h-8 w-8 object-contain"} />
             </button>
             {sidebarOpen && (
-              <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-black bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent leading-none">
-                  ICL
-                </h1>
-                <p className="text-[10px] text-gray-400 font-medium mt-0.5">College Admin</p>
-              </div>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all ml-auto flex-shrink-0"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
             )}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden lg:flex p-1 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all ml-auto flex-shrink-0"
-            >
-              {sidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-            </button>
+            {!sidebarOpen && (
+               <button
+                 onClick={() => setSidebarOpen(!sidebarOpen)}
+                 className="hidden lg:flex p-1 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all mx-auto mt-2"
+               >
+                 <ChevronRight className="w-3.5 h-3.5" />
+               </button>
+            )}
           </div>
 
           {/* Search */}
@@ -301,12 +311,8 @@ const CollegeAdminLayout = ({ children }) => {
               {showMobile ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            {/* Mobile logo */}
-            <div className="lg:hidden flex items-center gap-2">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-sm font-black bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">ICL</span>
+            <div className="lg:hidden flex items-center">
+              <img src={logo} alt="ICL Logo" className="h-9 w-auto object-contain" />
             </div>
 
             {/* Breadcrumb */}

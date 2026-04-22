@@ -96,7 +96,6 @@ import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
 import SuperAdminNotifications from './pages/SuperAdmin/Notification';
 import SuperAdminSettings from './pages/SuperAdmin/Settings';
 import SubscriptionManagement from './pages/SuperAdmin/SubscriptionManagement';
-import SuperAdminGroupManagement from './pages/SuperAdmin/GroupManagement';
 import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 
 // ==================== ROLE-BASED REDIRECTS ====================
@@ -241,7 +240,6 @@ function App() {
             {/* ===== SUPER ADMIN ===== */}
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/students" element={<ProtectedRoute><SuperAdminStudentManagement /></ProtectedRoute>} />
-            <Route path="/dashboard/super-admin/groups" element={<ProtectedRoute><SuperAdminGroupManagement /></ProtectedRoute>} />
 
             {/* Colleges */}
             <Route path="/dashboard/super-admin/colleges" element={<ProtectedRoute><SuperAdminCollegeManagement /></ProtectedRoute>} />

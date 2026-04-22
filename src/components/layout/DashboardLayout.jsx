@@ -9,6 +9,7 @@ import {
   Building2, Users, Activity, BarChart3, Crown, GraduationCap,
   CreditCard, BookOpen, ClipboardList,
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) => {
   const navigate  = useNavigate();
@@ -18,7 +19,10 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
   const toast = useToast();
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [sidebarOpen,    setSidebarOpen]    = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [showUserMenu,   setShowUserMenu]   = useState(false);
   const userMenuRef = useRef(null);
 
@@ -30,6 +34,10 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
 
   const handleLogout = () => {
     toast.success('Signed Out', 'You have been signed out successfully.');
@@ -138,7 +146,7 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
 
       {/* Fixed Header */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-white/50 shadow-lg fixed top-0 left-0 right-0 z-50">
-        <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-2">
           <div className="flex justify-between items-center">
 
             {/* Left: toggle + logo */}
@@ -155,19 +163,9 @@ const DashboardLayout = ({ children, title = 'Dashboard', showSidebar = true }) 
               )}
               <button
                 onClick={() => navigate(getDashboardPath())}
-                className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+                className="flex items-center hover:opacity-80 transition-opacity"
               >
-                <div className={`w-9 h-9 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <Crown className="w-5 h-5 text-white" />
-                </div>
-                <div className="text-left hidden sm:block">
-                  <h1 className="text-base font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent leading-tight">
-                    {getHeaderBrandName()}
-                  </h1>
-                  <p className="text-[11px] text-gray-500 truncate max-w-[160px] leading-tight">
-                    {getHeaderSubtitle()}
-                  </p>
-                </div>
+                <img src={logo} alt="ICL Logo" className="h-10 md:h-12 w-auto object-contain" />
               </button>
             </div>
 

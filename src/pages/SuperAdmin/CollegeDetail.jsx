@@ -146,7 +146,7 @@ const CollegeDetail = () => {
             onClick={() => navigate('/dashboard/super-admin/colleges')}
             className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm hover:scale-105 transition-all"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Colleges
+            Go to Colleges List
           </button>
         </div>
       </SuperAdminDashboardLayout>
@@ -163,70 +163,43 @@ const CollegeDetail = () => {
 
   return (
     <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
-        </div>
-        <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <button
-                onClick={() => navigate('/dashboard/super-admin/colleges')}
-                className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors"
-              >
-                <ArrowLeft className="w-3 h-3" /> Back to Colleges
-              </button>
-              <h1 className="text-white font-black text-lg leading-tight">{college.name}</h1>
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                  <Hash className="w-3 h-3" /> {college.code}
+      {/* Brand Header */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3 justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+              {college.name}
+            </h1>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              <span className="inline-flex items-center gap-1 bg-[#003399]/5 text-[#003399] border border-[#003399]/10 rounded-full px-2.5 py-0.5 text-[10px] font-black">
+                <Hash className="w-3 h-3" /> {college.code}
+              </span>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-black border ${
+                college.isActive
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                  : 'bg-rose-50 text-rose-600 border-rose-100'
+              }`}>
+                {college.isActive
+                  ? <><CheckCircle className="w-3 h-3" /> Active</>
+                  : <><XCircle className="w-3 h-3" /> Inactive</>}
+              </span>
+              {college.type && (
+                <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 border border-slate-100 rounded-full px-2.5 py-0.5 text-[10px] font-bold">
+                  <Shield className="w-3 h-3" /> {college.type}
                 </span>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
-                  college.isActive
-                    ? 'bg-white/15 text-white border-white/20'
-                    : 'bg-white/10 text-white/60 border-white/10'
-                }`}>
-                  {college.isActive
-                    ? <><CheckCircle className="w-3 h-3" /> Active</>
-                    : <><XCircle className="w-3 h-3" /> Inactive</>}
-                </span>
-                {college.type && (
-                  <span className="inline-flex items-center gap-1 bg-white/15 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white border border-white/20">
-                    <Shield className="w-3 h-3" /> {college.type}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
-
-          {/* Action buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => fetchCollegeDetails(true)}
-              disabled={refreshing}
-              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/20 transition-all hover:scale-105 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-            <button
-              onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/edit`)}
-              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-white/20 transition-all hover:scale-105"
-            >
+            <button onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/edit`)}
+              className="inline-flex items-center gap-1.5 bg-[#003399] hover:bg-[#002d8b] text-white text-xs font-black px-3 py-2 rounded-xl transition-all">
               <Edit className="w-3.5 h-3.5" /> Edit
             </button>
-            <button
-              onClick={handleDelete}
-              className="inline-flex items-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 text-white text-xs font-bold px-3 py-2 rounded-xl border border-red-300/30 transition-all hover:scale-105"
-            >
+            <button onClick={handleDelete}
+              className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black px-3 py-2 rounded-xl transition-all">
               <Trash2 className="w-3.5 h-3.5" /> Delete
             </button>
           </div>
@@ -234,7 +207,7 @@ const CollegeDetail = () => {
       </div>
 
       {/* ══ LIVE STAT PILLS ══ */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 mb-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <StatPill icon={Users}    label="Total Students"   value={liveCounts.totalStudents}  color="blue"   onClick={() => navigate(`/dashboard/super-admin/colleges/${collegeId}/students`)} />
           <StatPill icon={Briefcase} label="Companies"       value={liveCounts.totalCompanies} color="cyan"   />
@@ -250,7 +223,7 @@ const CollegeDetail = () => {
         <div className="lg:col-span-2 flex flex-col gap-4">
 
           {/* Contact Information */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
             <SHead icon={Mail} title="Contact Information" sub="How to reach this institution" />
             <div className="space-y-0.5">
               <InfoRow icon={Mail}   label="Email Address" value={college.email} mono />
@@ -264,7 +237,7 @@ const CollegeDetail = () => {
 
           {/* Departments */}
           {college.departments && college.departments.length > 0 && (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
@@ -307,7 +280,7 @@ const CollegeDetail = () => {
         <div className="flex flex-col gap-4">
 
           {/* College Details */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
             <SHead icon={Building2} title="College Details" />
             <div className="space-y-3">
               <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
@@ -344,7 +317,7 @@ const CollegeDetail = () => {
           </div>
 
           {/* Placement Configuration */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
             <SHead icon={TrendingUp} title="Placement Config" sub="Academic placement settings" />
             <div className="space-y-0.5">
               <div className="flex items-center justify-between py-1.5 border-b border-gray-50">
@@ -377,7 +350,7 @@ const CollegeDetail = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
             <SHead icon={Shield} title="Quick Actions" />
             <div className="space-y-2">
               <button
@@ -412,9 +385,10 @@ const CollegeDetail = () => {
 
         </div>
       </div>
+      </div>
 
     </SuperAdminDashboardLayout>
   );
 };
 
-export default CollegeDetail;
+export default CollegeDetail;

@@ -22,14 +22,20 @@ import SuperAdminDashboardLayout from '../../components/layout/SuperAdminDashboa
 import { DetailSkeleton } from '../../components/common/SkeletonLoader';
 
 /* ─── Section heading ─────────────────────── */
-const SHead = ({ icon: Icon, title, sub }) => (
-  <div className="flex items-center gap-2 mb-4">
-    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
-      <Icon className="w-3 h-3 text-white" />
+const SHead = ({ icon: Icon, title, sub, color = '#003399' }) => (
+  <div className="flex items-center gap-3 mb-5">
+    <div
+      className="w-8 h-8 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-sm"
+      style={{
+        backgroundColor: `${color}12`,
+        borderColor: `${color}25`,
+      }}
+    >
+      <Icon className="w-4 h-4" style={{ color }} />
     </div>
     <div>
-      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      <h3 className="text-sm font-black text-slate-800 leading-none">{title}</h3>
+      {sub && <p className="text-[10px] text-slate-400 mt-1 font-medium italic">{sub}</p>}
     </div>
   </div>
 );
@@ -54,7 +60,7 @@ const Field = ({ label, icon: Icon, required, error, children, hint }) => (
 );
 
 const inputBase =
-  'w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white placeholder-gray-400';
+  'w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-[#003399]/30 focus:border-[#003399]/30 transition-all bg-white placeholder-slate-400';
 
 const AdminForm = () => {
   const toast = useToast();
@@ -253,47 +259,26 @@ const AdminForm = () => {
 
   return (
     <SuperAdminDashboardLayout>
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
-      {/* ══ HERO BANNER ══ */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div
-            className="absolute inset-0 opacity-[0.04]"
-            style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }}
-          />
-        </div>
-        <div className="relative flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <button
-              onClick={() => navigate('/dashboard/super-admin/admins')}
-              className="text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1 mb-1 transition-colors"
-            >
-              <ArrowLeft className="w-3 h-3" /> Back to Admins
-            </button>
-            <h1 className="text-white font-black text-lg leading-tight">
-              {isEditMode ? 'Edit College Admin' : 'Create College Admin'}
-            </h1>
-            <p className="text-blue-200 text-[11px] mt-0.5">
-              {isEditMode ? 'Update administrator account details' : 'Register a new college administrator account'}
-            </p>
-          </div>
-        </div>
+      {/* Header */}
+      <div className="mb-4">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full" />
+          {isEditMode ? 'Edit College Admin' : 'Create College Admin'}
+        </h1>
+        <p className="text-sm text-slate-400 mt-1 font-medium">
+          {isEditMode ? 'Update administrator account details' : 'Register a new college administrator account'}
+        </p>
       </div>
 
-      {/* ══ FORM BODY ══ */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* ── LEFT: Main fields (2 cols) ── */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-6">
 
           {/* Personal Details */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-            <SHead icon={Users} title="Personal Details" sub="Administrator's basic information" />
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <SHead icon={Users} title="Personal Details" sub="Administrator's basic information" color="#003399" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
               <Field label="Full Name" icon={Users} required error={errors.fullName}>
@@ -364,11 +349,12 @@ const AdminForm = () => {
 
           {/* Password Section */}
           {(!isEditMode || formData.password !== undefined) && (
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
               <SHead
                 icon={Lock}
                 title={isEditMode ? 'Change Password' : 'Set Password'}
                 sub={isEditMode ? 'Leave blank to keep current password' : 'Create a secure password for this account'}
+                color="#6366f1"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -431,40 +417,31 @@ const AdminForm = () => {
         </div>
 
         {/* ── RIGHT: Sidebar ── */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
 
           {/* Account Settings */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-            <SHead icon={Shield} title="Account Settings" sub="Access and permissions" />
-
-            {/* Active toggle */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <SHead icon={Shield} title="Account Settings" sub="Access and permissions" color="#f59e0b" />
             <div className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
               formData.isActive
-                ? 'bg-blue-50 border-blue-100'
-                : 'bg-gray-50 border-gray-200'
+                ? 'bg-[#003399]/5 border-[#003399]/10'
+                : 'bg-slate-50 border-slate-200'
             }`}
               onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}
             >
               <div className={`relative w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200 ${
-                formData.isActive ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gray-300'
+                formData.isActive ? 'bg-[#003399]' : 'bg-slate-300'
               }`}>
                 <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
                   formData.isActive ? 'translate-x-[18px]' : 'translate-x-0.5'
                 }`} />
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleInputChange}
-                  className="sr-only"
-                />
+                <input type="checkbox" id="isActive" name="isActive" checked={formData.isActive} onChange={handleInputChange} className="sr-only" />
               </div>
               <div>
-                <p className={`text-xs font-bold ${formData.isActive ? 'text-blue-700' : 'text-gray-600'}`}>
+                <p className={`text-xs font-black ${formData.isActive ? 'text-[#003399]' : 'text-slate-600'}`}>
                   {formData.isActive ? 'Account Active' : 'Account Inactive'}
                 </p>
-                <p className="text-[10px] text-gray-400 mt-0.5">
+                <p className="text-[10px] text-slate-400 mt-0.5">
                   {formData.isActive ? 'Admin can log in and access the system' : 'Access is currently restricted'}
                 </p>
               </div>
@@ -472,67 +449,23 @@ const AdminForm = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
-            <SHead icon={CheckCircle2} title="Save Changes" />
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <SHead icon={CheckCircle2} title="Save Changes" color="#10b981" />
             <div className="space-y-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-sm hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
+              <button type="submit" disabled={saving}
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#003399] hover:bg-[#002d8b] text-white text-xs font-black px-4 py-3 rounded-xl shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 <Save className="w-3.5 h-3.5" />
                 {saving ? 'Saving...' : isEditMode ? 'Update Admin' : 'Create Admin'}
               </button>
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard/super-admin/admins')}
-                className="w-full inline-flex items-center justify-center gap-2 border border-gray-200 bg-white text-gray-600 text-xs font-semibold px-4 py-3 rounded-xl hover:bg-gray-50 transition-all"
-              >
-                <X className="w-3.5 h-3.5" />
-                Cancel
+              <button type="button" onClick={() => navigate('/dashboard/super-admin/admins')}
+                className="w-full inline-flex items-center justify-center gap-2 border border-slate-100 bg-white text-slate-600 text-xs font-black px-4 py-3 rounded-xl hover:bg-slate-50 transition-all">
+                <X className="w-3.5 h-3.5" /> Cancel
               </button>
             </div>
           </div>
-
-          {/* Form Tips */}
-          <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-cyan-500 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="w-3.5 h-3.5 text-white" />
-                </div>
-                <p className="text-xs font-bold text-white">
-                  {isEditMode ? 'Editing Tips' : 'Creation Tips'}
-                </p>
-              </div>
-              <ul className="space-y-1.5">
-                {(isEditMode
-                  ? [
-                      'Email address cannot be changed',
-                      'College assignment is permanent',
-                      'Leave password blank to keep current',
-                    ]
-                  : [
-                      'Use a valid institutional email',
-                      'Password must be at least 8 characters',
-                      'Only active colleges are shown',
-                      'Admin can be activated/deactivated later',
-                    ]
-                ).map((tip, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="w-1 h-1 bg-cyan-300 rounded-full mt-1.5 flex-shrink-0" />
-                    <p className="text-[10px] text-blue-100 leading-relaxed">{tip}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
         </div>
       </form>
-
+      </div>
     </SuperAdminDashboardLayout>
   );
 };

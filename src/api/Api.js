@@ -7,9 +7,17 @@ let _accessToken = null;
 
 export const tokenStore = {
   get: () => _accessToken,
-  set: (token) => { _accessToken = token; },
+  set: (token) => {
+    _accessToken = token;
+    // Broadcast so groupAPI.js (no circular dep) can sync its local copy
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth:tokenSet', { detail: { token } }));
+    }
+  },
   clear: () => { _accessToken = null; },
 };
+// Expose globally so aux API files can share the same token without a circular import
+if (typeof window !== 'undefined') window.__tokenStore = tokenStore;
 
 // ─── Refresh logic ─────────────────────────────────────────────────────────────
 // Prevents multiple parallel refresh calls when several requests expire at once.
@@ -971,6 +979,49 @@ export const collegeAdminAPI = {
   getAnalytics: async () => {
     console.log('📊 Fetching college admin analytics...');
     return apiCall('/college-admin/analytics');
+  },
+
+  // ── Groups ──────────────────────────────────────────────────────────────────
+  getGroups: async () => {
+    return apiCall('/groups');
+  },
+
+  getGroupById: async (id) => {
+    return apiCall(`/groups/${id}`);
+  },
+
+  getGroupStudents: async (id) => {
+    return apiCall(`/groups/${id}/students`);
+  },
+
+  getGroupsDropdown: async () => {
+    return apiCall('/groups/dropdown');
+  },
+
+  createGroup: async (data) => {
+    return apiCall('/groups', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  updateGroup: async (id, data) => {
+    return apiCall(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  },
+
+  addStudentsToGroup: async (id, students) => {
+    return apiCall(`/groups/${id}/add-students`, {
+      method: 'PATCH',
+      body: JSON.stringify({ students }),
+    });
+  },
+
+  removeStudentsFromGroup: async (id, userIds) => {
+    return apiCall(`/groups/${id}/remove-students`, {
+      method: 'PATCH',
+      body: JSON.stringify({ userIds }),
+    });
+  },
+
+  deleteGroup: async (id) => {
+    return apiCall(`/groups/${id}`, { method: 'DELETE' });
   },
 };
 

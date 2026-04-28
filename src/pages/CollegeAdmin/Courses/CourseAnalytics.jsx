@@ -11,7 +11,7 @@ import { AnalyticsSkeleton } from '../../../components/common/SkeletonLoader';
 import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
 
 const StatCard = ({ icon: Icon, label, value, subtext, gradient }) => (
-  <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5">
     <div className="flex items-start justify-between mb-3">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${gradient}`}>
         <Icon className="w-5 h-5 text-white" />
@@ -90,37 +90,32 @@ const CourseAnalytics = () => {
 
   return (
     <CollegeAdminLayout>
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            Course <span className="text-blue-600">Analytics</span>
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+            {course.title} · {course.category} · {course.level}
+          </p>
         </div>
-        <div className="relative flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-white font-black text-lg leading-tight">{course.title}</h1>
-              <p className="text-blue-200 text-[11px] mt-0.5">{course.category} · {course.level} · Course Analytics</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={fetchAnalytics}
-              className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
-            </button>
-            <button
-              onClick={() => navigate('/dashboard/college-admin/courses')}
-              className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-3 py-2 rounded-xl shadow-md hover:bg-blue-50 transition-all"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" /> Back
-            </button>
-          </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={fetchAnalytics}
+            className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" /> Refresh
+          </button>
+          <button
+            onClick={() => navigate('/dashboard/college-admin/courses')}
+            className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
         </div>
       </div>
 
@@ -158,7 +153,7 @@ const CourseAnalytics = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Enrollment Status Breakdown */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5">
           <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-50">
             <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <Target className="w-3.5 h-3.5 text-white" />
@@ -214,7 +209,7 @@ const CourseAnalytics = () => {
         </div>
 
         {/* Performance Summary */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5">
           <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-50">
             <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center">
               <BarChart3 className="w-3.5 h-3.5 text-white" />
@@ -250,7 +245,7 @@ const CourseAnalytics = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center">
             <Target className="w-3 h-3 text-white" />
@@ -276,6 +271,8 @@ const CourseAnalytics = () => {
           >
             <Target className="w-4 h-4" /> Assign to Batch
           </button>
+        </div>
+      </div>
         </div>
       </div>
     </CollegeAdminLayout>

@@ -48,13 +48,13 @@ const Card = ({ children, className = '' }) => (
 
 // ── Question Status Pill (left sidebar) ──────────────────────────
 const QuestionPill = ({ number, status, onClick, isCurrent }) => {
-  const base = 'w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-bold cursor-pointer transition-all duration-150 select-none border';
+  const base = 'w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold cursor-pointer transition-all duration-150 select-none';
   const styles = {
-    current:    'bg-blue-600 text-white border-blue-600 shadow-[0_0_0_2px_rgba(37,99,235,0.25)]',
-    answered:   'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-400',
-    unanswered: 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600',
-    flagged:    'bg-amber-50 text-amber-600 border-amber-300',
-    skipped:    'bg-orange-50 text-orange-500 border-orange-200 hover:border-orange-400',
+    current:    'bg-blue-600 text-white shadow-md shadow-blue-300 scale-110 ring-2 ring-blue-200',
+    answered:   'bg-blue-100 text-blue-700 hover:bg-blue-200',
+    unanswered: 'bg-white text-gray-400 border border-gray-200 hover:border-blue-300 hover:text-blue-500',
+    flagged:    'bg-amber-100 text-amber-700 ring-1 ring-amber-400',
+    skipped:    'bg-orange-50 text-orange-500 border border-orange-200',
   };
   const style = isCurrent ? styles.current : styles[status] || styles.unanswered;
   return (
@@ -1209,6 +1209,47 @@ const TakeAssessment = () => {
             </div>
           </div>
 
+          {/* Centre: Section tabs — always visible, works for both quiz and coding */}
+          {(() => {
+            const secs = [];
+            let prev = null;
+            questions.forEach((sq, idx) => {
+              const sec = sq._section;
+              const sid = sec?.section_id ?? '__nosection__';
+              if (!prev || prev !== sid) { secs.push({ sec, firstIdx: idx }); prev = sid; }
+            });
+            if (secs.length < 2) return null;
+            const activeSid = questions[currentIdx]?._section?.section_id ?? null;
+            return (
+              <div className="flex items-center gap-1.5 bg-gray-100 rounded-xl p-1 shrink-0">
+                {secs.map(({ sec, firstIdx }, i) => {
+                  const isCoding = sec?.section_type === 'coding';
+                  const isActive = sec?.section_id === activeSid;
+                  return (
+                    <button
+                      key={sec?.section_id ?? i}
+                      onClick={() => setCurrentIdx(firstIdx)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all
+                        ${isActive
+                          ? isCoding
+                            ? 'bg-violet-600 text-white shadow-sm'
+                            : 'bg-blue-600 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-800 hover:bg-white'
+                        }`}
+                    >
+                      <span className={`text-[9px] w-4 h-4 rounded flex items-center justify-center font-black
+                        ${isActive ? 'bg-white/25' : isCoding ? 'bg-violet-100 text-violet-600' : 'bg-blue-100 text-blue-600'}`}>
+                        {i + 1}
+                      </span>
+                      <span>{sec?.section_title || `Section ${i + 1}`}</span>
+                      <span className="opacity-60 text-[10px]">{isCoding ? '⌨' : '📝'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* Right: badges + timer + actions */}
           <div className="flex items-center gap-2 shrink-0">
             <ProctoringBadge
@@ -1259,99 +1300,78 @@ const TakeAssessment = () => {
       ══════════════════════════════════════════════════════ */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* ── LEFT SIDEBAR: Question Number Navigator ── */}
-        <aside
-          className="flex flex-col items-center py-3 gap-2 shrink-0 overflow-y-auto border-r border-gray-200 bg-gray-50"
-          style={{ width: '56px' }}
-        >
-          {questions.map((sq, idx) => {
-            const prevSec = idx > 0 ? questions[idx - 1]?._section : null;
-            const thisSec = sq._section;
-            const showDivider = thisSec && (idx === 0 || thisSec.section_id !== prevSec?.section_id);
-            return (
-              <div key={sq.question_id} className="flex flex-col items-center gap-1 w-full">
-                {showDivider && (
-                  <div className="w-full px-1" title={thisSec.section_title}>
-                    <div className={`h-0.5 w-full rounded ${thisSec.section_type === 'coding' ? 'bg-violet-300' : 'bg-blue-300'}`} />
-                    <span className={`text-[8px] font-bold text-center block truncate px-1 mt-0.5 ${thisSec.section_type === 'coding' ? 'text-violet-500' : 'text-blue-500'}`}>
-                      S{thisSec.section_order}
-                    </span>
-                  </div>
-                )}
-                <QuestionPill
-                  number={idx + 1}
-                  status={getStatus(sq)}
-                  isCurrent={idx === currentIdx}
-                  onClick={() => setCurrentIdx(idx)}
-                />
-              </div>
-            );
-          })}
-          {/* Legend */}
-          <div className="mt-auto pt-3 border-t border-gray-200 w-full flex flex-col items-center gap-2 pb-2">
-            <div className="w-2 h-2 rounded-sm bg-blue-600"                         title="Current"    />
-            <div className="w-2 h-2 rounded-sm bg-blue-100 border border-blue-300"  title="Answered"   />
-            <div className="w-2 h-2 rounded-sm bg-white border border-gray-300"     title="Unanswered" />
-            <div className="w-2 h-2 rounded-sm bg-amber-100 border border-amber-400" title="Flagged"   />
-            <div className="w-2 h-2 rounded-sm bg-orange-100 border border-orange-300" title="Skipped" />
-          </div>
-        </aside>
-
         {/* ── MIDDLE: Question Content (scrollable) ── */}
-        <main ref={questionScrollRef} className="flex-1 overflow-y-auto min-h-0 bg-white">
-          <div className="max-w-[680px] mx-auto px-6 py-5 pb-16">
+        <main ref={questionScrollRef} className="flex-1 overflow-y-auto min-h-0 bg-gray-50/40">
+          <div className="max-w-[720px] mx-auto px-8 py-6">
 
             {/* Section banner — shown when section changes or on first question */}
             {currentSection && (currentIdx === 0 || sectionChanged) && (
-              <div className={`mb-4 px-4 py-2.5 rounded-xl flex items-center gap-2 border text-sm font-semibold
+              <div className={`mb-5 rounded-2xl overflow-hidden shadow-sm border
                 ${currentSection.section_type === 'coding'
-                  ? 'bg-violet-50 border-violet-200 text-violet-800'
-                  : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-                <span className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold text-white
-                  ${currentSection.section_type === 'coding' ? 'bg-violet-500' : 'bg-blue-500'}`}>
-                  {currentSection.section_order}
-                </span>
-                <span>Section {currentSection.section_order}: {currentSection.section_title}</span>
-                <span className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded
+                  ? 'border-violet-200'
+                  : 'border-blue-200'}`}>
+                <div className={`px-5 py-3 flex items-center justify-between
                   ${currentSection.section_type === 'coding'
-                    ? 'bg-violet-100 text-violet-700'
-                    : 'bg-blue-100 text-blue-700'}`}>
-                  {currentSection.section_type === 'coding' ? 'Coding' : 'Quiz'}
-                </span>
+                    ? 'bg-gradient-to-r from-violet-600 to-purple-600'
+                    : 'bg-gradient-to-r from-blue-600 to-cyan-600'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center text-white font-black text-sm">
+                      {currentSection.section_order}
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-[14px] leading-tight">
+                        Section {currentSection.section_order}: {currentSection.section_title}
+                      </p>
+                      <p className="text-white/70 text-[11px] font-medium">
+                        {currentSection.section_type === 'coding' ? 'Coding Challenge' : 'Multiple Choice Quiz'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider
+                    ${currentSection.section_type === 'coding'
+                      ? 'bg-white/20 text-white border border-white/30'
+                      : 'bg-white/20 text-white border border-white/30'}`}>
+                    {currentSection.section_type === 'coding' ? '⌨ Code' : '📝 Quiz'}
+                  </span>
+                </div>
               </div>
             )}
 
-            {/* Question header */}
-            <div className="mb-5">
-              <div className="flex items-start justify-between gap-3 mb-2">
+            {/* Question header — for coding questions only (quiz questions have their header inside the card below) */}
+            {isCodingQ && (
+            <div className="mb-6">
+              <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                  <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                    <div className="flex items-center gap-1.5 bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-black">
                       Q{currentIdx + 1}
-                    </span>
-                    <span className="text-[11px] text-gray-400 font-medium">
-                      {q.marks ?? 1} Mark{(q.marks ?? 1) !== 1 ? 's' : ''}
+                      <span className="text-blue-200 font-medium">/ {total}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                      {q.marks ?? 1} mark{(q.marks ?? 1) !== 1 ? 's' : ''}
                     </span>
                     {q.type === 'multiple_answer' && (
-                      <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
-                        Multiple Choice
+                      <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-1 rounded-lg">
+                        Multi-select
                       </span>
                     )}
                     {flagged[qid] && (
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded">
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2 py-1 rounded-lg">
                         <Flag className="w-3 h-3" /> Flagged
                       </span>
                     )}
                   </div>
-                  <h1 className="text-[20px] font-bold text-gray-900 leading-snug">{questionText}</h1>
+                  <h1 className="text-[18px] font-bold text-gray-900 leading-snug">{questionText}</h1>
                 </div>
                 <button
                   onClick={() => toggleFlag(qid)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-colors shrink-0 ${
-                    flagged[qid] ? 'bg-amber-50 text-amber-600 border-amber-300' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all shrink-0 ${
+                    flagged[qid]
+                      ? 'bg-amber-50 text-amber-600 border-amber-300 shadow-sm shadow-amber-100'
+                      : 'bg-white text-gray-400 border-gray-200 hover:border-amber-300 hover:text-amber-600 hover:bg-amber-50'
                   }`}
                 >
-                  <Flag className="w-3.5 h-3.5" /> {flagged[qid] ? 'Flagged' : 'Flag'}
+                  <Flag className="w-3.5 h-3.5" /> {flagged[qid] ? 'Unflag' : 'Flag'}
                 </button>
               </div>
 
@@ -1362,6 +1382,7 @@ const TakeAssessment = () => {
                 {q.algorithm_tags?.map(t => <TagChip key={t} label={t} />)}
               </div>
             </div>
+            )}
 
             {/* ── Coding / SQL Question Details ── */}
             {isCodingQ && (
@@ -1451,66 +1472,120 @@ const TakeAssessment = () => {
               </>
             )}
 
-            {/* ── MCQ Options ── */}
-            {(q.type === 'single_answer' || q.type === 'multiple_answer') && opts.length > 0 && (
-              <div className="space-y-3 mb-5">
-                {opts.map((opt, oIdx) => {
-                  const sel = q.type === 'multiple_answer'
-                    ? (Array.isArray(answers[qid]) && answers[qid].includes(opt.label))
-                    : answers[qid] === opt.label;
-
-                  const click = () => {
-                    if (q.type === 'multiple_answer') {
-                      const cur  = Array.isArray(answers[qid]) ? answers[qid] : [];
-                      const next = sel ? cur.filter(l => l !== opt.label) : [...cur, opt.label];
-                      setAnswers(p  => ({ ...p, [qid]: next.length ? next : null }));
-                      setStatuses(p => ({ ...p, [qid]: flagged[qid] ? 'flagged' : next.length ? 'answered' : 'unanswered' }));
-                    } else {
-                      setAnswer(qid, opt.label);
-                    }
-                  };
-
-                  return (
-                    <button key={opt.label} onClick={click}
-                      className={`w-full text-left flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition-all
-                        ${sel ? 'border-blue-500 bg-blue-50/40 shadow-[0_2px_8px_rgba(59,130,246,0.1)]'
-                              : 'border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50'}`}>
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold shrink-0 transition-colors
-                        ${sel ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {String.fromCharCode(65 + oIdx)}
-                      </span>
-                      <span className={`font-medium text-[15px] flex-1 ${sel ? 'text-blue-900' : 'text-gray-700'}`}>{opt.text}</span>
-                      {sel && (
-                        <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+            {/* ── MCQ Card wrapper for quiz questions ── */}
+            {!isCodingQ && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5 mb-4">
+                {/* Question header inside card */}
+                <div className="mb-5 pb-4 border-b border-gray-100">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-black">
+                          Q{currentIdx + 1}
+                          <span className="text-blue-200 font-medium">/ {total}</span>
                         </div>
-                      )}
+                        <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                          {q.marks ?? 1} mark{(q.marks ?? 1) !== 1 ? 's' : ''}
+                        </span>
+                        {q.type === 'multiple_answer' && (
+                          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-1 rounded-lg">
+                            Multi-select
+                          </span>
+                        )}
+                        {flagged[qid] && (
+                          <span className="flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-300 px-2 py-1 rounded-lg">
+                            <Flag className="w-3 h-3" /> Flagged
+                          </span>
+                        )}
+                      </div>
+                      <h1 className="text-[18px] font-bold text-gray-900 leading-snug">{questionText}</h1>
+                    </div>
+                    <button
+                      onClick={() => toggleFlag(qid)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all shrink-0 ${
+                        flagged[qid]
+                          ? 'bg-amber-50 text-amber-600 border-amber-300 shadow-sm shadow-amber-100'
+                          : 'bg-white text-gray-400 border-gray-200 hover:border-amber-300 hover:text-amber-600 hover:bg-amber-50'
+                      }`}
+                    >
+                      <Flag className="w-3.5 h-3.5" /> {flagged[qid] ? 'Unflag' : 'Flag'}
                     </button>
-                  );
-                })}
-                {q.type === 'multiple_answer' && (
-                  <p className="text-[12px] font-medium text-gray-500 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" /> Select all applicable options.
-                  </p>
+                  </div>
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {q.algorithm_tags?.map(t => <TagChip key={t} label={t} />)}
+                  </div>
+                </div>
+
+                {/* ── MCQ Options ── */}
+                {(q.type === 'single_answer' || q.type === 'multiple_answer') && opts.length > 0 && (
+                  <div className="space-y-2.5 mb-0">
+                    {opts.map((opt, oIdx) => {
+                      const sel = q.type === 'multiple_answer'
+                        ? (Array.isArray(answers[qid]) && answers[qid].includes(opt.label))
+                        : answers[qid] === opt.label;
+
+                      const click = () => {
+                        if (q.type === 'multiple_answer') {
+                          const cur  = Array.isArray(answers[qid]) ? answers[qid] : [];
+                          const next = sel ? cur.filter(l => l !== opt.label) : [...cur, opt.label];
+                          setAnswers(p  => ({ ...p, [qid]: next.length ? next : null }));
+                          setStatuses(p => ({ ...p, [qid]: flagged[qid] ? 'flagged' : next.length ? 'answered' : 'unanswered' }));
+                        } else {
+                          setAnswer(qid, opt.label);
+                        }
+                      };
+
+                      const letter = String.fromCharCode(65 + oIdx);
+                      return (
+                        <button key={opt.label} onClick={click}
+                          className={`w-full text-left flex items-center gap-4 px-4 py-3.5 rounded-2xl border-2 transition-all duration-150 group
+                            ${sel
+                              ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-100'
+                              : 'border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-sm'}`}>
+                          <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-black shrink-0 transition-all
+                            ${sel
+                              ? 'bg-blue-600 text-white shadow-sm shadow-blue-300'
+                              : 'bg-gray-100 text-gray-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                            {letter}
+                          </span>
+                          <span className={`font-medium text-[15px] flex-1 leading-snug ${sel ? 'text-blue-900' : 'text-gray-700'}`}>
+                            {opt.text}
+                          </span>
+                          {sel && (
+                            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-sm">
+                              <CheckCircle2 className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                    {q.type === 'multiple_answer' && (
+                      <p className="text-[12px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg flex items-center gap-2 mt-3">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Select all applicable options.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Fill-up ── */}
+                {q.type === 'fill_up' && (
+                  <div>
+                    <input type="text"
+                      value={typeof answers[qid] === 'string' ? answers[qid] : ''}
+                      onChange={e => setAnswer(qid, e.target.value)}
+                      placeholder="Type your answer here..."
+                      className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 text-[15px] font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all bg-gray-50 focus:bg-white"
+                      autoComplete="off" spellCheck="false"
+                    />
+                  </div>
                 )}
               </div>
             )}
 
-            {/* ── Fill-up ── */}
-            {q.type === 'fill_up' && (
-              <div className="mb-5">
-                <input type="text"
-                  value={typeof answers[qid] === 'string' ? answers[qid] : ''}
-                  onChange={e => setAnswer(qid, e.target.value)}
-                  placeholder="Type your answer here..."
-                  className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 text-[15px] font-medium text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all bg-gray-50 focus:bg-white"
-                  autoComplete="off" spellCheck="false"
-                />
-              </div>
-            )}
-
-            {/* ── Bottom navigation ── */}
-            <div className="flex items-center justify-between pt-2">
+            {/* ── Bottom navigation — sits right below the question card ── */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-3">
               <button onClick={() => setCurrentIdx(i => Math.max(0, i - 1))} disabled={currentIdx === 0}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-[12px] font-bold text-gray-500 hover:border-gray-400 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors bg-white shadow-sm">
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
@@ -1531,6 +1606,7 @@ const TakeAssessment = () => {
                     Submit <Send className="w-3.5 h-3.5" />
                   </button>
                 )}
+              </div>
               </div>
             </div>
           </div>
@@ -1559,58 +1635,116 @@ const TakeAssessment = () => {
             </div>
           </aside>
         ) : (
-          <aside className="hidden lg:flex flex-col bg-white border-l border-gray-200 shadow-[0_0_15px_rgba(0,0,0,0.03)] shrink-0 overflow-hidden" style={{ width: '280px' }}>
+          <aside className="hidden lg:flex flex-col bg-white border-l border-gray-100 shadow-[inset_1px_0_0_rgba(0,0,0,0.04)] shrink-0 overflow-hidden" style={{ width: '280px' }}>
             <div className="w-[280px] flex flex-col h-full overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
-                <h3 className="font-bold text-[13px] text-gray-900 mb-0.5 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-gray-500" /> Question Palette
+              {/* Palette header */}
+              <div className="px-4 py-3.5 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+                <h3 className="font-bold text-[13px] text-gray-900 flex items-center gap-2 mb-1">
+                  <div className="w-5 h-5 rounded-md bg-blue-600 flex items-center justify-center">
+                    <BookOpen className="w-3 h-3 text-white" />
+                  </div>
+                  Question Palette
                 </h3>
-                <p className="text-[12px] font-medium text-gray-500">{answeredCount} of {total} Answered</p>
+                <div className="flex items-center gap-2 text-[11px] font-medium text-gray-500">
+                  <span className="text-blue-700 font-bold">{answeredCount}</span> answered
+                  <span className="text-gray-300">·</span>
+                  <span>{total - answeredCount}</span> remaining
+                </div>
               </div>
 
               {/* Legend counts */}
-              <div className="px-4 py-3 grid grid-cols-2 gap-2 border-b border-gray-100 bg-white text-[11px] font-medium">
+              <div className="px-3 py-2.5 grid grid-cols-2 gap-1.5 border-b border-gray-100 bg-gray-50/50">
                 {[
-                  { label: 'Answered', s: 'answered',   bg: 'bg-blue-600',   text: 'text-white',      border: 'border-transparent' },
-                  { label: 'Skipped',  s: 'skipped',    bg: 'bg-orange-100', text: 'text-orange-600', border: 'border-orange-200'  },
-                  { label: 'Flagged',  s: 'flagged',    bg: 'bg-amber-100',  text: 'text-amber-700',  border: 'border-amber-200'   },
-                  { label: 'Pending',  s: 'unanswered', bg: 'bg-white',      text: 'text-gray-600',   border: 'border-gray-200'    },
+                  { label: 'Answered', s: 'answered',   pill: 'bg-blue-600 text-white' },
+                  { label: 'Skipped',  s: 'skipped',    pill: 'bg-orange-100 text-orange-600 border border-orange-200' },
+                  { label: 'Flagged',  s: 'flagged',    pill: 'bg-amber-100 text-amber-700 border border-amber-300' },
+                  { label: 'Pending',  s: 'unanswered', pill: 'bg-white text-gray-400 border border-gray-200' },
                 ].map(l => (
-                  <div key={l.label} className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold border ${l.bg} ${l.text} ${l.border}`}>
+                  <div key={l.label} className="flex items-center gap-1.5 bg-white rounded-lg px-2 py-1.5 border border-gray-100">
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black ${l.pill}`}>
                       {Object.values(statuses).filter(s => s === l.s).length}
                     </span>
-                    <span className="text-gray-600">{l.label}</span>
+                    <span className="text-[10px] font-semibold text-gray-500">{l.label}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Question grid */}
-              <div className="p-4 flex-1 overflow-y-auto bg-gray-50/30">
-                <div className="grid grid-cols-5 gap-2">
-                  {questions.map((sq, idx) => {
-                    const st = statuses[sq.question_id] || 'unanswered';
-                    let styleClass = '';
-                    if      (st === 'answered') styleClass = 'bg-blue-600 text-white border-transparent';
-                    else if (st === 'skipped')  styleClass = 'bg-orange-50 text-orange-500 border-orange-200';
-                    else if (st === 'flagged')  styleClass = 'bg-amber-50 text-amber-600 border-amber-300';
-                    else                        styleClass = 'bg-white text-gray-400 border-gray-200 hover:border-gray-400';
+              {/* Question grid — grouped by section */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {(() => {
+                  // Group questions by section
+                  const sections = [];
+                  let currentSec = null;
+                  questions.forEach((sq, idx) => {
+                    const sec = sq._section;
+                    const secId = sec?.section_id ?? '__nosection__';
+                    if (!currentSec || currentSec.id !== secId) {
+                      currentSec = { id: secId, section: sec, questions: [] };
+                      sections.push(currentSec);
+                    }
+                    currentSec.questions.push({ sq, idx });
+                  });
 
+                  return sections.map((group, gIdx) => {
+                    const isCoding = group.section?.section_type === 'coding';
+                    const firstIdx = group.questions[0]?.idx;
+                    const isActiveSection = group.questions.some(({ idx }) => idx === currentIdx);
                     return (
-                      <button key={sq.question_id} onClick={() => setCurrentIdx(idx)}
-                        className={`w-9 h-9 rounded-lg text-[12px] font-bold border transition-all flex items-center justify-center
-                          ${currentIdx === idx ? 'ring-2 ring-blue-600 ring-offset-1 scale-110' : 'hover:scale-105'}
-                          ${styleClass}`}>
-                        {idx + 1}
-                      </button>
+                      <div key={group.id} className={`rounded-xl overflow-hidden border transition-all ${
+                        isActiveSection
+                          ? isCoding ? 'border-violet-400 shadow-sm shadow-violet-100' : 'border-blue-400 shadow-sm shadow-blue-100'
+                          : isCoding ? 'border-violet-200' : 'border-blue-100'
+                      }`}>
+                        {group.section && (
+                          <button
+                            onClick={() => setCurrentIdx(firstIdx)}
+                            title={`Jump to start of ${group.section.section_title}`}
+                            className={`w-full px-3 py-2 flex items-center gap-2 transition-colors text-left ${
+                              isCoding
+                                ? 'bg-violet-50 hover:bg-violet-100'
+                                : 'bg-blue-50 hover:bg-blue-100'
+                            }`}>
+                            <div className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black text-white shrink-0 ${isCoding ? 'bg-violet-500' : 'bg-blue-500'}`}>
+                              {group.section.section_order}
+                            </div>
+                            <span className={`text-[10px] font-bold truncate flex-1 ${isCoding ? 'text-violet-700' : 'text-blue-700'}`}>
+                              {group.section.section_title}
+                            </span>
+                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full ${isCoding ? 'bg-violet-100 text-violet-600' : 'bg-blue-100 text-blue-600'}`}>
+                              {isCoding ? 'Code' : 'Quiz'}
+                            </span>
+                          </button>
+                        )}
+                        <div className="p-2 bg-white">
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {group.questions.map(({ sq, idx }) => {
+                              const st = statuses[sq.question_id] || 'unanswered';
+                              let styleClass = '';
+                              if      (st === 'answered') styleClass = 'bg-blue-600 text-white';
+                              else if (st === 'skipped')  styleClass = 'bg-orange-50 text-orange-500 border border-orange-200';
+                              else if (st === 'flagged')  styleClass = 'bg-amber-50 text-amber-600 border border-amber-300';
+                              else                        styleClass = 'bg-gray-50 text-gray-400 border border-gray-200 hover:border-blue-300 hover:text-blue-600';
+
+                              return (
+                                <button key={sq.question_id} onClick={() => setCurrentIdx(idx)}
+                                  className={`w-full aspect-square rounded-xl text-[11px] font-bold transition-all flex items-center justify-center
+                                    ${currentIdx === idx ? 'ring-2 ring-blue-600 ring-offset-1 scale-110 shadow-md' : 'hover:scale-105'}
+                                    ${styleClass}`}>
+                                  {idx + 1}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
                     );
-                  })}
-                </div>
+                  });
+                })()}
               </div>
 
               {/* Proctoring alerts in palette */}
               {(guard.warningCount > 0 || camViolationCount > 0) && (
-                <div className="mx-4 mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <div className="mx-3 mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-1">
                     <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
                     <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Proctoring Alerts</p>
@@ -1624,10 +1758,10 @@ const TakeAssessment = () => {
                 </div>
               )}
 
-              <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="p-3 border-t border-gray-100 bg-white">
                 <button
                   onClick={() => setSubmitConfirm(true)}
-                  className="w-full py-3 bg-blue-600 text-white rounded-xl text-[13px] font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-sm">
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl text-[13px] font-bold hover:shadow-md hover:shadow-blue-200 transition-all flex items-center justify-center gap-2">
                   <Send className="w-4 h-4" /> Submit Assessment
                 </button>
               </div>

@@ -90,32 +90,25 @@ const CourseEnrollments = () => {
 
   return (
     <CollegeAdminLayout>
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-blue-500/20 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            Enrolled <span className="text-blue-600">Students</span>
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+            {courseTitle || 'Course'} · {stats.total} total · {stats.active} active · {stats.completed} completed · {stats.certs} certified
+          </p>
         </div>
-        <div className="relative flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-white font-black text-lg leading-tight">Enrolled Students</h1>
-              <p className="text-blue-200 text-[11px] mt-0.5">
-                {courseTitle || 'Course'} · {stats.total} total · {stats.active} active · {stats.completed} completed · {stats.certs} certified
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/dashboard/college-admin/courses')}
-            className="inline-flex items-center gap-1.5 bg-white text-blue-600 text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-blue-50 transition-all flex-shrink-0"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/dashboard/college-admin/courses')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex-shrink-0"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
       </div>
 
       {/* Summary Cards */}
@@ -126,7 +119,7 @@ const CourseEnrollments = () => {
           { label: 'Avg Progress',   value: `${stats.avgProgress}%`, gradient: 'from-purple-500 to-purple-600', icon: BarChart3    },
           { label: 'Certificates',   value: stats.certs,             gradient: 'from-amber-400 to-orange-500',  icon: Award        },
         ].map(s => (
-          <div key={s.label} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4">
+          <div key={s.label} className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-4">
             <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center mb-3`}>
               <s.icon className="w-4 h-4 text-white" />
             </div>
@@ -137,7 +130,7 @@ const CourseEnrollments = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-3 mb-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-3">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -179,7 +172,7 @@ const CourseEnrollments = () => {
       )}
 
       {/* Table */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
           <p className="font-semibold text-gray-800">{filtered.length} Students</p>
           <button
@@ -268,6 +261,8 @@ const CourseEnrollments = () => {
             </table>
           </div>
         )}
+      </div>
+        </div>
       </div>
     </CollegeAdminLayout>
   );

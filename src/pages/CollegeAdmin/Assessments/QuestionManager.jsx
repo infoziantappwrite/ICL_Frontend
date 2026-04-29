@@ -1,4 +1,4 @@
-// pages/CollegeAdmin/Assessments/QuestionManager.jsx
+﻿// pages/CollegeAdmin/Assessments/QuestionManager.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -15,7 +15,7 @@ import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI, collegeAdminAPI, sectionAPI } from '../../../api/Api';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
-const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
+const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#003399]/30 focus:border-[#003399] bg-white transition-colors placeholder:text-slate-400";
 
 const questionToForm = (q) => ({
   question: q.question || '',
@@ -596,7 +596,7 @@ const CompletionChecklistModal = ({
               {!item.done && item.id === 'students' && (
                 <button
                   onClick={() => { onClose(); onAssignStudents(); }}
-                  className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap shrink-0">
+                  className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 bg-[#003399] text-white rounded-lg hover:bg-[#003399] transition-colors whitespace-nowrap shrink-0">
                   Assign Now <ArrowRight className="w-3 h-3" />
                 </button>
               )}
@@ -605,7 +605,7 @@ const CompletionChecklistModal = ({
         </div>
         <div className="px-5 pb-5 flex gap-3">
           <button onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-all">
+            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm transition-all">
             Stay Here
           </button>
           {!hardBlocked ? (
@@ -616,7 +616,7 @@ const CompletionChecklistModal = ({
           ) : (
             <button
               onClick={() => { onClose(); onAssignStudents(); }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90 transition-all">
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl font-bold text-sm shadow-md shadow-[#003399]/15 hover:opacity-90 transition-all">
               <Users className="w-4 h-4" /> Assign Students
             </button>
           )}
@@ -638,22 +638,22 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false
       <div className="p-4">
         <div className="flex items-start gap-3">
           <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 text-white shadow-sm
-            ${staged ? 'bg-amber-400' : 'bg-gradient-to-br from-blue-600 to-cyan-500'}`}>
+            ${staged ? 'bg-amber-400' : 'bg-[#003399]'}`}>
             {idx + 1}
           </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full font-semibold capitalize">
+              <span className="text-[10px] bg-[#003399]/5 text-[#003399] border border-[#003399]/10 px-2 py-0.5 rounded-full font-semibold capitalize">
                 {q.type?.replace('_', ' ')}
               </span>
               <span className="text-[10px] bg-cyan-50 text-cyan-600 border border-cyan-100 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
-              <span className="text-[10px] text-gray-400 font-medium">{q.marks} mark{q.marks !== 1 ? 's' : ''}</span>
+              <span className="text-[10px] text-slate-400 font-medium">{q.marks} mark{q.marks !== 1 ? 's' : ''}</span>
               {staged && <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold">Staged</span>}
             </div>
             <p className="font-semibold text-gray-900 text-sm leading-snug">{q.question}</p>
             {(q.type === 'single_answer' || q.type === 'multiple_answer') && q.options?.length > 0 && (
               <button onClick={() => setOpen(v => !v)}
-                className="mt-2 flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-medium">
+                className="mt-2 flex items-center gap-1 text-xs text-[#00A9CE] hover:text-[#003399] font-medium">
                 {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 {open ? 'Hide options' : 'Show options'}
               </button>
@@ -664,20 +664,20 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false
                   const correct = isCorrect(opt.label);
                   return (
                     <div key={opt.label} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs
-                      ${correct ? 'bg-blue-50 border border-blue-200 text-blue-800 font-medium' : 'bg-gray-50 border border-gray-100 text-gray-600'}`}>
+                      ${correct ? 'bg-[#003399]/5 border border-[#003399]/20 text-[#003399] font-medium' : 'bg-gray-50 border border-slate-100 text-gray-600'}`}>
                       <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0
-                        ${correct ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                        ${correct ? 'bg-[#003399] text-white' : 'bg-gray-200 text-gray-500'}`}>
                         {opt.label}
                       </span>
                       <span className="flex-1 truncate">{opt.text}</span>
-                      {correct && <Check className="w-3 h-3 text-blue-600 shrink-0" />}
+                      {correct && <Check className="w-3 h-3 text-[#003399] shrink-0" />}
                     </div>
                   );
                 })}
               </div>
             )}
             {q.type === 'fill_up' && (
-              <p className="mt-2 text-xs text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg inline-block">
+              <p className="mt-2 text-xs text-[#003399] bg-[#003399]/5 border border-[#003399]/20 px-3 py-1.5 rounded-lg inline-block">
                 ✓ {q.correct_answer}
               </p>
             )}
@@ -707,11 +707,11 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false
                 )}
               </div>
             )}
-            {q.explanation && <p className="mt-1.5 text-xs text-gray-400 italic">💡 {q.explanation}</p>}
+            {q.explanation && <p className="mt-1.5 text-xs text-slate-400 italic">💡 {q.explanation}</p>}
           </div>
           <div className="flex gap-1 shrink-0">
             {onEdit && (
-              <button onClick={() => onEdit(idx)} className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
+              <button onClick={() => onEdit(idx)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
                 <Edit className="w-3.5 h-3.5" />
               </button>
             )}
@@ -723,7 +723,7 @@ const QuestionCard = ({ q, idx, onEdit, onRemove, staged = false, locked = false
                 className={`p-2 rounded-lg transition-all ${
                   locked
                     ? 'text-gray-200 cursor-not-allowed'
-                    : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                    : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
                 }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -863,10 +863,10 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 max-w-2xl w-full my-8">
-        <div className="px-5 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-t-2xl flex items-center justify-between">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 max-w-2xl w-full my-8">
+        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center">
               {question ? <Edit className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-white" />}
             </div>
             <h3 className="font-bold text-white">{question ? 'Edit Question' : 'Add Question'}</h3>
@@ -876,13 +876,13 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
         <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Question <span className="text-red-500">*</span></label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Question <span className="text-red-500">*</span></label>
             <textarea rows={3} value={form.question} onChange={e => setForm(prev => ({ ...prev, question: e.target.value }))} placeholder="Enter the question..." className={`${inp} resize-none`} />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Type</label>
               <select value={form.type}
                 onChange={e => setForm(prev => ({ ...prev, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))}
                 disabled={allowedTypes.length === 1}
@@ -890,7 +890,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                 {allowedTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
               {forcedType && (
-                <p className="text-[10px] text-gray-400 mt-1">
+                <p className="text-[10px] text-slate-400 mt-1">
                   {forcedType === 'coding' ? '⚡ Coding section — Coding questions only'
                    : forcedType === 'sql'  ? '🗄️ SQL section — SQL questions only'
                    : '📝 Quiz section — MCQ and fill-in-blank only'}
@@ -898,25 +898,25 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               )}
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Level</label>
               <select value={form.level} onChange={e => setForm(prev => ({ ...prev, level: e.target.value }))} className={inp}>
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Marks</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Marks</label>
               <input type="number" min={1} value={form.marks} readOnly
                 className={`${inp} bg-gray-50 cursor-not-allowed text-gray-500`}
                 title="Marks are auto-assigned based on assessment settings" />
-              <p className="text-[10px] text-gray-400 mt-1">Auto-assigned from assessment</p>
+              <p className="text-[10px] text-slate-400 mt-1">Auto-assigned from assessment</p>
             </div>
           </div>
 
           {isChoice && (
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-2">
                 Options <span className="text-red-500">*</span>{' '}
-                <span className="text-xs text-gray-400 font-normal">({form.type === 'multiple_answer' ? 'check all correct' : 'click radio for correct'})</span>
+                <span className="text-xs text-slate-400 font-normal">({form.type === 'multiple_answer' ? 'check all correct' : 'click radio for correct'})</span>
               </label>
               <div className="space-y-2">
                 {OPTION_LABELS.map((label, idx) => {
@@ -924,11 +924,11 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                     ? (Array.isArray(form.correct_answer) ? form.correct_answer.includes(label) : false)
                     : form.correct_answer === label;
                   return (
-                    <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isCorr ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
+                    <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${isCorr ? 'border-[#003399]/40 bg-[#003399]/5' : 'border-gray-100 bg-gray-50'}`}>
                       {form.type === 'multiple_answer'
-                        ? <input type="checkbox" checked={isCorr} onChange={() => toggleMulti(label)} className="w-4 h-4 text-blue-600 rounded" />
-                        : <input type="radio" name="correctAnswer" checked={isCorr} onChange={() => setForm(prev => ({ ...prev, correct_answer: label }))} className="w-4 h-4 text-blue-600" />}
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCorr ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{label}</span>
+                        ? <input type="checkbox" checked={isCorr} onChange={() => toggleMulti(label)} className="w-4 h-4 text-[#003399] rounded" />
+                        : <input type="radio" name="correctAnswer" checked={isCorr} onChange={() => setForm(prev => ({ ...prev, correct_answer: label }))} className="w-4 h-4 text-[#003399]" />}
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isCorr ? 'bg-[#003399] text-white' : 'bg-gray-200 text-gray-600'}`}>{label}</span>
                       <input type="text" value={form.options[idx]} onChange={e => setOpt(idx, e.target.value)} placeholder={`Option ${label}`} className="flex-1 bg-transparent text-sm focus:outline-none text-gray-700 placeholder-gray-400" />
                     </div>
                   );
@@ -939,7 +939,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
           {isFill && (
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Correct Answer <span className="text-red-500">*</span></label>
               <input type="text" value={typeof form.correct_answer === 'string' ? form.correct_answer : ''} onChange={e => setForm(prev => ({ ...prev, correct_answer: e.target.value }))} placeholder="Enter the exact correct answer" className={inp} />
             </div>
           )}
@@ -956,20 +956,20 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
               {/* SQL language locked indicator — so admin knows what students will see */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Default Language <span className="text-xs font-normal text-gray-400">(pre-selected in student editor)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Default Language <span className="text-xs font-normal text-slate-400">(pre-selected in student editor)</span>
                 </label>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-amber-200 bg-amber-50 text-amber-700 text-sm font-bold">
                   <span>🗄️</span>
                   <span>SQL (SQLite 3)</span>
                   <span className="ml-auto text-[10px] font-semibold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full border border-amber-200">locked</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Students will see a SQL editor locked to SQLite 3. No other language can be selected.</p>
+                <p className="text-xs text-slate-400 mt-1">Students will see a SQL editor locked to SQLite 3. No other language can be selected.</p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Problem Description <span className="text-xs font-normal text-gray-400">(shown to student)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Problem Description <span className="text-xs font-normal text-slate-400">(shown to student)</span>
                 </label>
                 <textarea rows={4} value={form.problem_description}
                   onChange={e => setForm(prev => ({ ...prev, problem_description: e.target.value }))}
@@ -978,8 +978,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Starter Query <span className="text-xs font-normal text-gray-400">(optional — pre-filled in student editor)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Starter Query <span className="text-xs font-normal text-slate-400">(optional — pre-filled in student editor)</span>
                 </label>
                 <textarea rows={3} value={form.boilerplate_code}
                   onChange={e => setForm(prev => ({ ...prev, boilerplate_code: e.target.value }))}
@@ -991,16 +991,16 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-semibold text-gray-700">
                     Test Cases <span className="text-red-500">*</span>
-                    <span className="text-xs font-normal text-gray-400 ml-1">(setup_sql + expected output per case)</span>
+                    <span className="text-xs font-normal text-slate-400 ml-1">(setup_sql + expected output per case)</span>
                   </label>
                   <button onClick={addTC} type="button"
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-[#003399] bg-[#003399]/5 hover:bg-slate-100 rounded-lg border border-[#003399]/20 transition-colors">
                     <Plus className="w-3 h-3" /> Add Case
                   </button>
                 </div>
                 <div className="space-y-3">
                   {form.test_cases.map((tc, idx) => (
-                    <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-gray-50/50'}`}>
+                    <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-slate-50/50'}`}>
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
                           {tc.is_hidden
@@ -1020,7 +1020,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                         </div>
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">
                           Setup SQL <span className="text-gray-300">(CREATE TABLE + INSERT — sent as stdin to Judge0)</span>
                         </label>
                         <textarea rows={5} value={tc.setup_sql || ''}
@@ -1029,7 +1029,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                           className={`${inp} font-mono text-xs resize-none leading-relaxed`} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">
                           Expected Output <span className="text-gray-300">(exact plain-text stdout from the correct query)</span>
                         </label>
                         <textarea rows={3} value={tc.expected_output}
@@ -1038,7 +1038,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                           className={`${inp} font-mono text-xs resize-none`} />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Explanation (optional)</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Explanation (optional)</label>
                         <input type="text" value={tc.explanation || ''}
                           onChange={e => setTC(idx, 'explanation', e.target.value)}
                           placeholder="e.g. Returns employees with salary above 80000"
@@ -1057,8 +1057,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
           {isCoding && (
             <>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Default Language <span className="text-xs font-normal text-gray-400">(pre-selected in student editor)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Default Language <span className="text-xs font-normal text-slate-400">(pre-selected in student editor)</span>
                 </label>
                 <select value={form.default_coding_language || 'python'}
                   onChange={e => setForm(prev => ({ ...prev, default_coding_language: e.target.value }))}
@@ -1072,8 +1072,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Problem Description <span className="text-xs font-normal text-gray-400">(shown to student)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Problem Description <span className="text-xs font-normal text-slate-400">(shown to student)</span>
                 </label>
                 <textarea rows={4} value={form.problem_description}
                   onChange={e => setForm(prev => ({ ...prev, problem_description: e.target.value }))}
@@ -1083,8 +1083,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Input Format <span className="text-xs font-normal text-gray-400">(optional)</span>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                    Input Format <span className="text-xs font-normal text-slate-400">(optional)</span>
                   </label>
                   <textarea rows={3} value={form.input_format}
                     onChange={e => setForm(prev => ({ ...prev, input_format: e.target.value }))}
@@ -1092,8 +1092,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                     className={`${inp} resize-none text-xs`} />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Output Format <span className="text-xs font-normal text-gray-400">(optional)</span>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                    Output Format <span className="text-xs font-normal text-slate-400">(optional)</span>
                   </label>
                   <textarea rows={3} value={form.output_format}
                     onChange={e => setForm(prev => ({ ...prev, output_format: e.target.value }))}
@@ -1103,8 +1103,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Constraints <span className="text-xs font-normal text-gray-400">(optional)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Constraints <span className="text-xs font-normal text-slate-400">(optional)</span>
                 </label>
                 <textarea rows={2} value={form.constraints}
                   onChange={e => setForm(prev => ({ ...prev, constraints: e.target.value }))}
@@ -1113,15 +1113,15 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Algorithm Tags <span className="text-xs font-normal text-gray-400">(optional)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Algorithm Tags <span className="text-xs font-normal text-slate-400">(optional)</span>
                 </label>
                 <div className="flex gap-2">
                   <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
                     placeholder="e.g. arrays, sorting, dp…" className={`${inp} flex-1`} />
                   <button type="button" onClick={addTag}
-                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-xl border border-blue-200 transition-colors whitespace-nowrap">
+                    className="px-3 py-2 bg-[#003399]/5 hover:bg-slate-100 text-[#003399] text-xs font-bold rounded-xl border border-[#003399]/20 transition-colors whitespace-nowrap">
                     + Add
                   </button>
                 </div>
@@ -1138,8 +1138,8 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Boilerplate / Starter Code <span className="text-xs font-normal text-gray-400">(optional)</span>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
+                  Boilerplate / Starter Code <span className="text-xs font-normal text-slate-400">(optional)</span>
                 </label>
                 <textarea rows={5} value={form.boilerplate_code}
                   onChange={e => setForm(prev => ({ ...prev, boilerplate_code: e.target.value }))}
@@ -1151,16 +1151,16 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-semibold text-gray-700">
                     Test Cases <span className="text-red-500">*</span>
-                    <span className="text-xs font-normal text-gray-400 ml-1">(at least 1 visible + 1 hidden recommended)</span>
+                    <span className="text-xs font-normal text-slate-400 ml-1">(at least 1 visible + 1 hidden recommended)</span>
                   </label>
                   <button onClick={addTC} type="button"
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-[#003399] bg-[#003399]/5 hover:bg-slate-100 rounded-lg border border-[#003399]/20 transition-colors">
                     <Plus className="w-3 h-3" /> Add Case
                   </button>
                 </div>
                 <div className="space-y-3">
                   {form.test_cases.map((tc, idx) => (
-                    <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-gray-50/50'}`}>
+                    <div key={idx} className={`p-3 border rounded-xl space-y-2.5 ${tc.is_hidden ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-slate-50/50'}`}>
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
                           {tc.is_hidden
@@ -1181,31 +1181,31 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Input (stdin)</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Input (stdin)</label>
                           <textarea rows={3} value={tc.input} onChange={e => setTC(idx, 'input', e.target.value)} placeholder="5 3" className={`${inp} font-mono text-xs resize-none`} />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Expected Output (stdout)</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Expected Output (stdout)</label>
                           <textarea rows={3} value={tc.expected_output} onChange={e => setTC(idx, 'expected_output', e.target.value)} placeholder="8" className={`${inp} font-mono text-xs resize-none`} />
                         </div>
                       </div>
                       {tc.is_hidden ? (
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Marks Weightage</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Marks Weightage</label>
                             <input type="number" readOnly value={marksPerHiddenTC}
                               className={`${inp} text-xs bg-purple-50 cursor-not-allowed text-purple-700 font-semibold`}
                               title={`Auto: ${form.marks} marks ÷ ${hiddenTCCount} hidden cases`} />
                             <p className="text-[9px] text-purple-400 mt-0.5">Auto ({form.marks}÷{hiddenTCCount})</p>
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Time Limit (ms)</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Time Limit (ms)</label>
                             <input type="number" min={500} step={500} value={tc.time_limit_ms}
                               onChange={e => setTC(idx, 'time_limit_ms', e.target.value)}
                               className={`${inp} text-xs`} />
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Explanation</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Explanation</label>
                             <input type="text" value={tc.explanation}
                               onChange={e => setTC(idx, 'explanation', e.target.value)}
                               placeholder="Why this output?"
@@ -1214,7 +1214,7 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                         </div>
                       ) : (
                         <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Explanation</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider block mb-1">Explanation</label>
                           <input type="text" value={tc.explanation}
                             onChange={e => setTC(idx, 'explanation', e.target.value)}
                             placeholder="Why this output?"
@@ -1225,14 +1225,14 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
                   ))}
                 </div>
                 {form.test_cases.length > 0 && (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
-                    <Zap className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 bg-[#003399]/5 border border-[#003399]/20 rounded-xl px-3 py-2">
+                    <Zap className="w-3.5 h-3.5 text-[#00A9CE] shrink-0" />
                     <span>
                       {hiddenTCCount > 0 ? (
                         <>
-                          <strong className="text-blue-700">{hiddenTCCount}</strong> hidden case{hiddenTCCount !== 1 ? 's' : ''} ·{' '}
+                          <strong className="text-[#003399]">{hiddenTCCount}</strong> hidden case{hiddenTCCount !== 1 ? 's' : ''} ·{' '}
                           <strong className="text-purple-700">{marksPerHiddenTC}</strong> marks each ·{' '}
-                          Total: <strong className="text-blue-700">{form.marks} marks</strong>
+                          Total: <strong className="text-[#003399]">{form.marks} marks</strong>
                         </>
                       ) : (
                         <>No hidden test cases — add hidden cases to enable scoring</>
@@ -1246,16 +1246,16 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
           {!isCoding && (
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Explanation (optional)</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Explanation (optional)</label>
               <input type="text" value={form.explanation} onChange={e => setForm(prev => ({ ...prev, explanation: e.target.value }))} placeholder="Brief explanation…" className={inp} />
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 p-5 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+        <div className="flex gap-3 p-5 border-t border-slate-100">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">Cancel</button>
           <button onClick={handleSave} disabled={!canSave}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-[#003399]/15">
             <Save className="w-4 h-4" />{question ? 'Update' : 'Stage Question'}
           </button>
         </div>
@@ -1282,19 +1282,19 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 max-w-2xl w-full my-8">
-        <div className="px-5 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-t-2xl flex items-center justify-between">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 max-w-2xl w-full my-8">
+        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"><ClipboardPaste className="w-4 h-4 text-white" /></div>
+            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center"><ClipboardPaste className="w-4 h-4 text-[#003399]" /></div>
             <div>
               <h3 className="font-bold text-white">Bulk Paste MCQ Questions</h3>
-              <p className="text-blue-200 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
+              <p className="text-white/60 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 space-y-4">
-          <button onClick={() => setShowFormat(v => !v)} className="w-full flex items-center justify-between px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-all">
+          <button onClick={() => setShowFormat(v => !v)} className="w-full flex items-center justify-between px-4 py-3 bg-[#003399]/5 border border-[#003399]/20 rounded-xl text-sm font-semibold text-[#003399] hover:bg-slate-100 transition-all">
             <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Paste Format Guide</span>
             {showFormat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -1314,7 +1314,7 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
           {!parsed ? (
             <>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Questions Here</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Paste Questions Here</label>
                 <textarea rows={14} value={text} onChange={e => setText(e.target.value)}
                   placeholder={`1. What is React?\nA. A JavaScript library\nB. A CSS framework\nAnswer: A`}
                   className={`${inp} resize-none font-mono text-xs leading-relaxed`} />
@@ -1326,9 +1326,9 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
                 </div>
               )}
               <div className="flex gap-3">
-                <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+                <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">Cancel</button>
                 <button onClick={handleParse} disabled={!text.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-[#003399]/15">
                   <Eye className="w-4 h-4" /> Parse & Preview
                 </button>
               </div>
@@ -1345,21 +1345,21 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
                   <pre className="whitespace-pre-wrap font-sans">{parsed.errors.join('\n')}</pre>
                 </div>
               )}
-              <div className="max-h-60 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
+              <div className="max-h-60 overflow-y-auto space-y-2 border border-slate-100 rounded-xl p-3 bg-gray-50">
                 {parsed.questions.map((q, idx) => (
                   <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-200">
-                    <span className="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
+                    <span className="w-6 h-6 bg-[#003399] text-white rounded-lg flex items-center justify-center text-xs font-bold shrink-0">{idx + 1}</span>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{q.question}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Answer: <strong className="text-blue-600">{Array.isArray(q.correct_answer) ? q.correct_answer.join(', ') : q.correct_answer}</strong>{' · '}{q.marks} mark{q.marks !== 1 ? 's' : ''}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Answer: <strong className="text-[#003399]">{Array.isArray(q.correct_answer) ? q.correct_answer.join(', ') : q.correct_answer}</strong>{' · '}{q.marks} mark{q.marks !== 1 ? 's' : ''}</p>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
+                <button onClick={() => setParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">← Re-edit</button>
                 <button onClick={() => onAdd(parsed.questions)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-blue-500/20">
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-[#003399]/15">
                   <Plus className="w-4 h-4" /> Add {parsed.questions.length} to Staging
                 </button>
               </div>
@@ -1432,7 +1432,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
             ? 'bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-500'
             : 'bg-gradient-to-r from-amber-600 via-orange-500 to-yellow-500'}`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center">
               {isCoding ? <Code2 className="w-4 h-4 text-white" /> : <span className="text-white text-base leading-none">🗄️</span>}
             </div>
             <div>
@@ -1450,14 +1450,14 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-slate-100">
           {!lockTab && (
             <button
               onClick={() => setTab('coding')}
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
                 ${tab === 'coding'
                   ? 'border-purple-600 text-purple-700 bg-purple-50/40'
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
+                  : 'border-transparent text-slate-400 hover:text-gray-600 hover:bg-slate-50'}`}>
               <Code2 className="w-4 h-4" /> Coding
             </button>
           )}
@@ -1467,7 +1467,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
               className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-bold border-b-2 transition-all
                 ${tab === 'sql'
                   ? 'border-amber-500 text-amber-700 bg-amber-50/40'
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}>
+                  : 'border-transparent text-slate-400 hover:text-gray-600 hover:bg-slate-50'}`}>
               <span className="text-base leading-none">🗄️</span> SQL
             </button>
           )}
@@ -1501,7 +1501,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
             {!codingParsed ? (
               <>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste Coding Problems Here</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Paste Coding Problems Here</label>
                   <textarea
                     rows={16}
                     value={codingText}
@@ -1517,7 +1517,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+                  <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">Cancel</button>
                   <button onClick={handleParseCoding} disabled={!codingText.trim()}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-purple-500/20">
                     <Eye className="w-4 h-4" /> Parse & Preview
@@ -1539,7 +1539,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
                     <pre className="whitespace-pre-wrap font-sans">{codingParsed.errors.join('\n')}</pre>
                   </div>
                 )}
-                <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
+                <div className="max-h-72 overflow-y-auto space-y-2 border border-slate-100 rounded-xl p-3 bg-gray-50">
                   {codingParsed.questions.map((q, idx) => {
                     const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
                     const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
@@ -1551,16 +1551,16 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             <span className="text-[10px] bg-purple-50 text-purple-600 border border-purple-100 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
                             <span className="text-[10px] text-gray-500">{visibleTC} visible · {hiddenTC} hidden TC{q.test_cases.length !== 1 ? 's' : ''}</span>
-                            {q.algorithm_tags?.length > 0 && <span className="text-[10px] text-gray-400">Tags: {q.algorithm_tags.join(', ')}</span>}
+                            {q.algorithm_tags?.length > 0 && <span className="text-[10px] text-slate-300 italic">Tags: {q.algorithm_tags.join(', ')}</span>}
                           </div>
-                          {q.problem_description && <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>}
+                          {q.problem_description && <p className="text-xs text-slate-400 mt-0.5 truncate">{q.problem_description}</p>}
                         </div>
                       </div>
                     );
                   })}
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setCodingParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
+                  <button onClick={() => setCodingParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">← Re-edit</button>
                   <button onClick={() => onAdd(codingParsed.questions)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-purple-500/20">
                     <Plus className="w-4 h-4" /> Add {codingParsed.questions.length} to Staging
@@ -1599,7 +1599,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
             {!sqlParsed ? (
               <>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Paste SQL Problems Here</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Paste SQL Problems Here</label>
                   <textarea
                     rows={16}
                     value={sqlText}
@@ -1615,7 +1615,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+                  <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">Cancel</button>
                   <button onClick={handleParseSql} disabled={!sqlText.trim()}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-amber-500/20">
                     <Eye className="w-4 h-4" /> Parse & Preview
@@ -1637,7 +1637,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
                     <pre className="whitespace-pre-wrap font-sans">{sqlParsed.errors.join('\n')}</pre>
                   </div>
                 )}
-                <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-100 rounded-xl p-3 bg-gray-50">
+                <div className="max-h-72 overflow-y-auto space-y-2 border border-slate-100 rounded-xl p-3 bg-gray-50">
                   {sqlParsed.questions.map((q, idx) => {
                     const visibleTC = q.test_cases.filter(tc => !tc.is_hidden).length;
                     const hiddenTC  = q.test_cases.filter(tc => tc.is_hidden).length;
@@ -1651,14 +1651,14 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
                             <span className="text-[10px] bg-gray-100 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-semibold">{q.level}</span>
                             <span className="text-[10px] text-gray-500">{visibleTC} visible · {hiddenTC} hidden TC{q.test_cases.length !== 1 ? 's' : ''}</span>
                           </div>
-                          {q.problem_description && <p className="text-xs text-gray-400 mt-0.5 truncate">{q.problem_description}</p>}
+                          {q.problem_description && <p className="text-xs text-slate-400 mt-0.5 truncate">{q.problem_description}</p>}
                         </div>
                       </div>
                     );
                   })}
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setSqlParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">← Re-edit</button>
+                  <button onClick={() => setSqlParsed(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">← Re-edit</button>
                   <button onClick={() => onAdd(sqlParsed.questions)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm hover:opacity-90 shadow-md shadow-amber-500/20">
                     <Plus className="w-4 h-4" /> Add {sqlParsed.questions.length} to Staging
@@ -1801,43 +1801,43 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
   const StudentRow = ({ s, checked, onToggle, matchPct }) => {
     const id = s._id || s.userId;
     return (
-      <label className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all border ${checked ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-100 hover:bg-gray-50'}`}>
-        <input type="checkbox" checked={checked} onChange={() => onToggle(id)} className="w-4 h-4 text-blue-600 rounded" />
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+      <label className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all border ${checked ? 'bg-[#003399]/5 border-[#003399]/20' : 'bg-white border-gray-100 hover:bg-slate-50'}`}>
+        <input type="checkbox" checked={checked} onChange={() => onToggle(id)} className="w-4 h-4 text-[#003399] rounded" />
+        <div className="w-8 h-8 bg-[#003399] rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">
           {(s.fullName || s.studentName || 'S').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">{s.fullName || s.studentName || '—'}</p>
-          <p className="text-[10px] text-gray-400 truncate">{s.email}{s.studentInfo?.branch && <span className="ml-2 text-blue-500 font-medium">{s.studentInfo.branch}</span>}</p>
+          <p className="text-[10px] text-slate-400 truncate">{s.email}{s.studentInfo?.branch && <span className="ml-2 text-[#00A9CE] font-medium">{s.studentInfo.branch}</span>}</p>
         </div>
         {matchPct !== undefined && (
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${matchPct >= 80 ? 'bg-green-100 text-green-700' : matchPct >= 50 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{matchPct}%</span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${matchPct >= 80 ? 'bg-green-100 text-green-700' : matchPct >= 50 ? 'bg-[#003399]/10 text-[#003399]' : 'bg-gray-100 text-gray-500'}`}>{matchPct}%</span>
         )}
-        {checked && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
+        {checked && <Check className="w-4 h-4 text-[#003399] shrink-0" />}
       </label>
     );
   };
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 max-w-lg w-full my-8">
-        <div className="px-5 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-t-2xl flex items-center justify-between">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 max-w-lg w-full my-8">
+        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"><UserPlus className="w-4 h-4 text-white" /></div>
+            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center"><UserPlus className="w-4 h-4 text-[#003399]" /></div>
             <div>
               <h3 className="font-bold text-white">Assign Students</h3>
               {alreadyAssignedCount > 0 && (
-                <p className="text-blue-200 text-[11px] mt-0.5">{alreadyAssignedCount} already assigned</p>
+                <p className="text-white/60 text-[11px] mt-0.5">{alreadyAssignedCount} already assigned</p>
               )}
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
         </div>
 
-        <div className="flex border-b border-gray-100 overflow-x-auto">
+        <div className="flex border-b border-slate-100 overflow-x-auto">
           {tabs.map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); setErr(''); setResult(null); setSelIds(new Set()); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap px-2 ${tab === t.id ? 'border-blue-600 text-blue-700 bg-blue-50/40' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-all border-b-2 whitespace-nowrap px-2 ${tab === t.id ? 'border-[#003399] text-[#003399] bg-[#003399]/5' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
               <t.icon className="w-3.5 h-3.5" />{t.label}
             </button>
           ))}
@@ -1847,20 +1847,20 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
           {tab === 'all' && (
             <>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                <input value={searchAll} onChange={e => setSearchAll(e.target.value)} placeholder="Search students…" className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input value={searchAll} onChange={e => setSearchAll(e.target.value)} placeholder="Search students…" className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003399]/30 bg-white/80" />
               </div>
               <div className="flex items-center justify-between text-xs text-gray-500 px-1">
-                <button onClick={() => toggleAll(filteredAll.map(s => s._id), selIds, setSelIds)} className="font-semibold text-blue-600 hover:text-blue-700">
+                <button onClick={() => toggleAll(filteredAll.map(s => s._id), selIds, setSelIds)} className="font-semibold text-[#003399] hover:text-[#003399]">
                   {selIds.size === filteredAll.length && filteredAll.length > 0 ? '☑ Deselect All' : '☐ Select All'}
                 </button>
                 <span>{selIds.size} selected · {filteredAll.length} remaining</span>
               </div>
-              <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
+              <div className="max-h-60 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2 bg-gray-50">
                 {loadingAll
                   ? <InlineSkeleton rows={3} className="py-6" />
                   : filteredAll.length === 0
-                  ? <p className="text-center text-gray-400 text-sm py-8">No students found</p>
+                  ? <p className="text-center text-slate-400 text-sm py-8">No students found</p>
                   : filteredAll.map(s => <StudentRow key={s._id} s={s} checked={selIds.has(s._id)} onToggle={id => setSelIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}
               </div>
             </>
@@ -1869,9 +1869,9 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
           {tab === 'branch' && (
             <>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Select Branch</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Select Branch</label>
                 <select value={selBranch} onChange={e => { setSelBranch(e.target.value); setSelIds(new Set()); }}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#003399]/30 bg-white">
                   <option value="">— All Branches —</option>
                   {branches.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
@@ -1879,28 +1879,28 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
               {selBranch && (
                 <>
                   <div className="flex items-center justify-between text-xs text-gray-500 px-1">
-                    <button onClick={() => toggleAll(filteredBranch.map(s => s._id), selIds, setSelIds)} className="font-semibold text-blue-600 hover:text-blue-700">
+                    <button onClick={() => toggleAll(filteredBranch.map(s => s._id), selIds, setSelIds)} className="font-semibold text-[#003399] hover:text-[#003399]">
                       {selIds.size === filteredBranch.length && filteredBranch.length > 0 ? '☑ Deselect All' : '☐ Select All'}
                     </button>
                     <span>{selIds.size} selected · {filteredBranch.length} students</span>
                   </div>
-                  <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2 bg-gray-50">
                     {loadingAll
                       ? <InlineSkeleton rows={3} />
                       : filteredBranch.length === 0
-                      ? <p className="text-center text-gray-400 text-sm py-8">No students in this branch</p>
+                      ? <p className="text-center text-slate-400 text-sm py-8">No students in this branch</p>
                       : filteredBranch.map(s => <StudentRow key={s._id} s={s} checked={selIds.has(s._id)} onToggle={id => setSelIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />)}
                   </div>
                 </>
               )}
-              {!selBranch && <p className="text-center text-gray-400 text-sm py-4">Select a branch above to see students</p>}
+              {!selBranch && <p className="text-center text-slate-400 text-sm py-4">Select a branch above to see students</p>}
             </>
           )}
 
           {tab === 'group' && (
             <>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Select Group</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Select Group</label>
                 {loadingGroups
                   ? <InlineSkeleton rows={1} />
                   : groups.length === 0
@@ -1911,14 +1911,14 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
                     </div>
                   ) : (
                     <select value={selGroup} onChange={e => setSelGroup(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#003399]/30 bg-white">
                       <option value="">— Select a group —</option>
                       {groups.map(g => <option key={g._id} value={g._id}>{g.name || g.groupName}</option>)}
                     </select>
                   )}
               </div>
               {selGroup && (
-                <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+                <div className="flex items-center gap-3 bg-[#003399]/5 border border-[#003399]/20 rounded-xl px-4 py-3 text-sm text-[#003399]">
                   <Users className="w-4 h-4 shrink-0" />
                   All students in this group will be assigned to the assessment.
                 </div>
@@ -1941,24 +1941,24 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
                 <div className="flex flex-col items-center py-8 text-center">
                   <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-3"><CheckCircle2 className="w-6 h-6 text-green-500" /></div>
                   <p className="font-bold text-gray-700 text-sm mb-1">{jdStudents.length === 0 ? 'No eligible students found' : 'All eligible students already assigned'}</p>
-                  <p className="text-xs text-gray-400">{jdStudents.length === 0 ? `No students match ${jdTitle}` : `All ${jdStudents.length} eligible students are assigned`}</p>
+                  <p className="text-xs text-slate-400">{jdStudents.length === 0 ? `No students match ${jdTitle}` : `All ${jdStudents.length} eligible students are assigned`}</p>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
-                    <span className="text-xs text-blue-700 font-semibold">{filteredJD.length} eligible remaining</span>
-                    <button onClick={() => toggleAll(filteredJD.map(s => s._id || s.userId), selJdIds, setSelJdIds)} className="text-xs text-blue-600 font-semibold hover:text-blue-700">
+                  <div className="flex items-center justify-between bg-[#003399]/5 border border-[#003399]/20 rounded-xl px-3 py-2">
+                    <span className="text-xs text-[#003399] font-semibold">{filteredJD.length} eligible remaining</span>
+                    <button onClick={() => toggleAll(filteredJD.map(s => s._id || s.userId), selJdIds, setSelJdIds)} className="text-xs text-[#003399] font-semibold hover:text-[#003399]">
                       {selJdIds.size === filteredJD.length ? 'Deselect All' : 'Select All'}
                     </button>
                   </div>
-                  <div className="max-h-60 overflow-y-auto space-y-1.5 border border-gray-100 rounded-xl p-2 bg-gray-50">
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2 bg-gray-50">
                     {filteredJD.map(s => {
                       const id = s._id || s.userId;
                       return <StudentRow key={id} s={s} checked={selJdIds.has(id)} matchPct={s.matchPercentage}
                         onToggle={id => setSelJdIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })} />;
                     })}
                   </div>
-                  <p className="text-xs text-gray-400 px-1">{selJdIds.size} selected</p>
+                  <p className="text-xs text-slate-400 px-1">{selJdIds.size} selected</p>
                 </>
               )}
             </>
@@ -1968,11 +1968,11 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
           {result && <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl p-3"><CheckCircle2 className="w-4 h-4 shrink-0" />{result}</div>}
 
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold text-sm hover:bg-gray-50">Close</button>
+            <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold text-sm hover:bg-slate-50">Close</button>
             {!result && (
               <button onClick={handleAssign}
                 disabled={loading || (tab === 'jd' && !assessment?.jd_id) || (tab === 'group' && !selGroup)}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-blue-500/20">
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl font-bold text-sm disabled:opacity-60 hover:opacity-90 shadow-md shadow-[#003399]/15">
                 {loading
                   ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   : <UserPlus className="w-4 h-4" />}
@@ -2017,21 +2017,21 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 w-full max-w-lg flex flex-col max-h-[85vh]">
-        <div className="px-5 py-4 bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 rounded-t-2xl flex items-center justify-between shrink-0">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 w-full max-w-lg flex flex-col max-h-[85vh]">
+        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center"><Users className="w-4 h-4 text-white" /></div>
+            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center"><Users className="w-4 h-4 text-[#003399]" /></div>
             <div>
               <h3 className="font-bold text-white">Assigned Students</h3>
-              <p className="text-blue-200 text-[11px] mt-0.5">{assessmentName} · {level} · {total} student{total !== 1 ? 's' : ''}</p>
+              <p className="text-white/60 text-[11px] mt-0.5">{assessmentName} · {level} · {total} student{total !== 1 ? 's' : ''}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
         </div>
-        <div className="px-5 py-3 border-b border-gray-100 shrink-0">
+        <div className="px-5 py-3 border-b border-slate-100 shrink-0">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email…" className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email…" className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003399]/30 bg-white/80" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
@@ -2042,15 +2042,15 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
             : filtered.length === 0
             ? (
               <div className="flex flex-col items-center py-10 text-center">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mb-3"><Users className="w-7 h-7 text-blue-400" /></div>
+                <div className="w-14 h-14 bg-[#003399]/10 rounded-2xl flex items-center justify-center mb-3"><Users className="w-7 h-7 text-[#003399]/40" /></div>
                 <p className="font-bold text-gray-700 mb-1">{search ? 'No match' : 'No students assigned yet'}</p>
-                <p className="text-gray-400 text-sm">{search ? 'Try different search' : 'Use Assign Students to add students'}</p>
+                <p className="text-slate-400 text-sm">{search ? 'Try different search' : 'Use Assign Students to add students'}</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {filtered.map((s, idx) => (
-                  <div key={s._id || idx} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50/60 rounded-xl border border-gray-100 hover:border-blue-200 transition-all">
-                    <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-xs">
+                  <div key={s._id || idx} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-slate-50/60 rounded-xl border border-slate-100 hover:border-[#003399]/20 transition-all">
+                    <div className="w-9 h-9 bg-[#003399] rounded-xl flex items-center justify-center shrink-0 text-white font-bold text-xs">
                       {(s.fullName || 'S').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -2060,23 +2060,23 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
                         {s.mobileNumber && <span className="flex items-center gap-1 text-xs text-gray-500"><Phone className="w-3 h-3" />{s.mobileNumber}</span>}
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold rounded-full shrink-0">Assigned</span>
+                    <span className="px-2.5 py-1 bg-[#003399]/5 text-[#003399] border border-[#003399]/10 text-[10px] font-bold rounded-full shrink-0">Assigned</span>
                   </div>
                 ))}
               </div>
             )}
         </div>
         {!loading && !error && total > 10 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 shrink-0 text-xs text-gray-400">
+          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 shrink-0 text-xs text-slate-400">
             <span>Page {page}/{totalPgs} · {total} total</span>
             <div className="flex gap-2">
-              <button onClick={() => fetchStudents(page - 1)} disabled={page <= 1} className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50"><ChevronLeft className="w-4 h-4" /></button>
-              <button onClick={() => fetchStudents(page + 1)} disabled={page >= totalPgs} className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50"><ChevronRight className="w-4 h-4" /></button>
+              <button onClick={() => fetchStudents(page - 1)} disabled={page <= 1} className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /></button>
+              <button onClick={() => fetchStudents(page + 1)} disabled={page >= totalPgs} className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-slate-50"><ChevronRight className="w-4 h-4" /></button>
             </div>
           </div>
         )}
-        <div className="px-5 py-4 border-t border-gray-100 shrink-0">
-          <button onClick={onClose} className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 text-sm">Close</button>
+        <div className="px-5 py-4 border-t border-slate-100 shrink-0">
+          <button onClick={onClose} className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-slate-50 text-sm">Close</button>
         </div>
       </div>
     </div>
@@ -2285,7 +2285,7 @@ const QuestionManager = () => {
 
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24 min-h-screen bg-[#f0f4f8]">
+      <div className="flex items-center justify-center py-24">
         <InlineSkeleton rows={4} />
       </div>
     </CollegeAdminLayout>
@@ -2293,7 +2293,7 @@ const QuestionManager = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1500px] mx-auto space-y-3 sm:space-y-4">
 
           {/* Toast */}
@@ -2309,7 +2309,7 @@ const QuestionManager = () => {
 
           {/* Back */}
           <button onClick={handleTryLeave}
-            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
+            className="flex items-center gap-2 text-gray-500 hover:text-[#003399] mb-2 transition-colors group text-[13px] font-bold">
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
           </button>
 
@@ -2357,13 +2357,13 @@ const QuestionManager = () => {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button onClick={() => setModal('view-students')}
-                className="inline-flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors">
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors">
                 <Eye className="w-4 h-4" /> View Students
                 {hasStudents && <span className="ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{assessment.eligible_students.length}</span>}
               </button>
               <button onClick={() => setModal('assign')}
                 className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
-                  ${!hasStudents ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                  ${!hasStudents ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-[#003399] hover:bg-[#003399]'}`}>
                 <Users className="w-4 h-4" /> {hasStudents ? 'Assign Students' : 'Assign Students ⚠'}
               </button>
             </div>
@@ -2380,9 +2380,9 @@ const QuestionManager = () => {
 
             {/* LEFT: Sections Sidebar */}
             {sections.length > 0 && (
-              <div className="w-56 flex-shrink-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-white" />
+              <div className="w-56 flex-shrink-0 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-gradient-to-r from-[#003399] to-[#003399]/80 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#003399]" />
                   <p className="text-xs font-bold text-white">Sections</p>
                 </div>
                 <div className="p-2 space-y-1">
@@ -2400,19 +2400,19 @@ const QuestionManager = () => {
                         className={`w-full text-left px-3 py-2.5 rounded-xl transition-all border ${isActive
                           ? isCoding ? 'bg-violet-50 border-violet-300 text-violet-800'
                             : isSql  ? 'bg-amber-50 border-amber-300 text-amber-800'
-                                     : 'bg-blue-50 border-blue-300 text-blue-800'
-                          : 'border-transparent hover:bg-gray-50 text-gray-600'}`}>
+                                     : 'bg-[#003399]/5 border-[#003399]/20 text-[#003399]'
+                          : 'border-transparent hover:bg-slate-50 text-gray-600'}`}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${isCoding ? 'bg-violet-100' : isSql ? 'bg-amber-100' : 'bg-blue-100'}`}>
-                            {isCoding ? <Code2 className="w-3 h-3 text-violet-600" /> : isSql ? <Database className="w-3 h-3 text-amber-600" /> : <BookOpen className="w-3 h-3 text-blue-600" />}
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${isCoding ? 'bg-violet-100' : isSql ? 'bg-amber-100' : 'bg-[#003399]/10'}`}>
+                            {isCoding ? <Code2 className="w-3 h-3 text-violet-600" /> : isSql ? <Database className="w-3 h-3 text-amber-600" /> : <BookOpen className="w-3 h-3 text-[#003399]" />}
                           </div>
                           <span className="text-xs font-semibold truncate flex-1">{sec.title}</span>
                         </div>
                         <div className="flex items-center gap-1.5 mt-1.5 ml-7">
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isCoding ? 'bg-violet-100 text-violet-600' : isSql ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isCoding ? 'bg-violet-100 text-violet-600' : isSql ? 'bg-amber-100 text-amber-600' : 'bg-[#003399]/10 text-[#003399]'}`}>
                             {isCoding ? 'Coding' : isSql ? 'SQL' : 'Quiz'}
                           </span>
-                          <span className="text-[9px] text-gray-400">{secSaved}{secStaged > 0 ? `+${secStaged}` : ''}/{sec.configuration?.question_count || '?'} Qs</span>
+                          <span className="text-[9px] text-slate-400">{secSaved}{secStaged > 0 ? `+${secStaged}` : ''}/{sec.configuration?.question_count || '?'} Qs</span>
                         </div>
                       </button>
                     );
@@ -2420,7 +2420,7 @@ const QuestionManager = () => {
                 </div>
                 <div className="px-3 pb-3">
                   <button onClick={() => navigate(`/dashboard/college-admin/assessments/${assessmentId}/sections`)}
-                    className="w-full py-2 text-[11px] font-semibold text-blue-600 hover:bg-blue-50 rounded-xl border border-dashed border-blue-200 transition-all">
+                    className="w-full py-2 text-[11px] font-semibold text-[#003399] hover:bg-slate-50 rounded-xl border border-dashed border-[#003399]/20 transition-all">
                     + Manage Sections
                   </button>
                 </div>
@@ -2434,18 +2434,18 @@ const QuestionManager = () => {
               {activeSection && (
                 <div className="space-y-2">
                   <div className={`rounded-2xl border-2 px-4 py-3 flex items-center justify-between gap-3 flex-wrap
-                    ${atLimit ? 'bg-red-50 border-red-200' : isCodingSection ? 'bg-violet-50 border-violet-200' : isSqlSection ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}`}>
+                    ${atLimit ? 'bg-red-50 border-red-200' : isCodingSection ? 'bg-violet-50 border-violet-200' : isSqlSection ? 'bg-amber-50 border-amber-200' : 'bg-[#003399]/5 border-[#003399]/20'}`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-                        ${atLimit ? 'bg-red-100' : isCodingSection ? 'bg-violet-100' : isSqlSection ? 'bg-amber-100' : 'bg-blue-100'}`}>
+                        ${atLimit ? 'bg-red-100' : isCodingSection ? 'bg-violet-100' : isSqlSection ? 'bg-amber-100' : 'bg-[#003399]/10'}`}>
                         {atLimit
                           ? <AlertCircle className="w-4 h-4 text-red-500" />
                           : isCodingSection ? <Code2 className="w-4 h-4 text-violet-600" />
                           : isSqlSection    ? <Database className="w-4 h-4 text-amber-600" />
-                          : <BookOpen className="w-4 h-4 text-blue-600" />}
+                          : <BookOpen className="w-4 h-4 text-[#003399]" />}
                       </div>
                       <div>
-                        <p className={`font-bold text-sm ${atLimit ? 'text-red-700' : isCodingSection ? 'text-violet-800' : isSqlSection ? 'text-amber-800' : 'text-blue-800'}`}>
+                        <p className={`font-bold text-sm ${atLimit ? 'text-red-700' : isCodingSection ? 'text-violet-800' : isSqlSection ? 'text-amber-800' : 'text-[#003399]'}`}>
                           {activeSection.title}
                           {atLimit && <span className="ml-2 text-[10px] bg-red-100 text-red-600 border border-red-200 px-1.5 py-0.5 rounded-full font-bold">FULL</span>}
                         </p>
@@ -2487,13 +2487,13 @@ const QuestionManager = () => {
                           )}
                           {isQuizSection && (
                             <button onClick={() => setModal('bulk')}
-                              className="inline-flex items-center gap-1.5 bg-white border border-blue-200 text-blue-700 text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
+                              className="inline-flex items-center gap-1.5 bg-white border border-[#003399]/20 text-[#003399] text-[13px] font-bold px-3 py-2 rounded-lg hover:bg-slate-50 shadow-sm transition-colors">
                               <ClipboardPaste className="w-4 h-4" /> Bulk MCQ
                             </button>
                           )}
                           <button onClick={() => setModal('add')}
                             className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
-                              ${isCodingSection ? 'bg-violet-600 hover:bg-violet-700' : isSqlSection ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                              ${isCodingSection ? 'bg-violet-600 hover:bg-violet-700' : isSqlSection ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#003399] hover:bg-[#003399]'}`}>
                             <Plus className="w-4 h-4" /> Add Question
                             {sectionRemaining !== Infinity && (
                               <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[10px]">{sectionRemaining} left</span>
@@ -2511,9 +2511,9 @@ const QuestionManager = () => {
                 <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center">
                   <Layers className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <h3 className="font-bold text-gray-600 mb-1">No sections set up</h3>
-                  <p className="text-sm text-gray-400 mb-4">Go to Section Manager to add Coding and Quiz sections first.</p>
+                  <p className="text-sm text-slate-400 mb-4">Go to Section Manager to add Coding and Quiz sections first.</p>
                   <button onClick={() => navigate(`/dashboard/college-admin/assessments/${assessmentId}/sections`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-sm">
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#003399] text-white rounded-xl font-bold text-sm hover:bg-[#003399] shadow-sm">
                     <Layers className="w-4 h-4" /> Go to Section Manager
                   </button>
                 </div>
@@ -2521,7 +2521,7 @@ const QuestionManager = () => {
 
               {/* Staged preview */}
               {sectionStagedQs.length > 0 && (
-                <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-amber-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-amber-200 overflow-hidden">
                   <div className="px-5 py-3 bg-amber-50/50 border-b border-amber-100 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Eye className="w-4 h-4 text-amber-500" />
@@ -2529,7 +2529,7 @@ const QuestionManager = () => {
                       <span className="text-xs text-amber-400">Not saved yet</span>
                     </div>
                     <button onClick={handleSubmitAll} disabled={submitting}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-xs font-bold disabled:opacity-60 hover:opacity-90">
+                      className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl text-xs font-bold disabled:opacity-60 hover:opacity-90">
                       {submitting
                         ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         : <Send className="w-3.5 h-3.5" />}
@@ -2551,9 +2551,9 @@ const QuestionManager = () => {
 
               {/* Saved questions */}
               {sectionSavedQs.length > 0 ? (
-                <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
-                  <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-blue-600" />
+                <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
+                    <ListChecks className="w-4 h-4 text-[#003399]" />
                     <p className="font-bold text-gray-800 text-sm">{sectionSavedQs.length} Saved Questions</p>
                   </div>
                   <div className="p-4 space-y-3">
@@ -2567,11 +2567,11 @@ const QuestionManager = () => {
                 </div>
               ) : sectionStagedQs.length === 0 && activeSection && (
                 <div className="bg-white rounded-xl border-2 border-dashed border-gray-200 p-10 text-center">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isCodingSection ? 'bg-violet-50' : isSqlSection ? 'bg-amber-50' : 'bg-blue-50'}`}>
-                    {isCodingSection ? <Code2 className="w-7 h-7 text-violet-400" /> : isSqlSection ? <Database className="w-7 h-7 text-amber-400" /> : <BookOpen className="w-7 h-7 text-blue-400" />}
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isCodingSection ? 'bg-violet-50' : isSqlSection ? 'bg-amber-50' : 'bg-[#003399]/5'}`}>
+                    {isCodingSection ? <Code2 className="w-7 h-7 text-violet-400" /> : isSqlSection ? <Database className="w-7 h-7 text-amber-400" /> : <BookOpen className="w-7 h-7 text-[#003399]/40" />}
                   </div>
                   <h3 className="font-bold text-gray-600 mb-1">No Questions in "{activeSection.title}"</h3>
-                  <p className="text-sm text-gray-400 mb-5">
+                  <p className="text-sm text-slate-400 mb-5">
                     {isCodingSection ? 'Add coding problems with test cases' : isSqlSection ? 'Add SQL problems — students get a locked SQL (SQLite 3) editor' : 'Add MCQ or fill-in-the-blank questions'}
                   </p>
                   <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -2589,13 +2589,13 @@ const QuestionManager = () => {
                     )}
                     {isQuizSection && (
                       <button onClick={() => setModal('bulk')}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-blue-200 text-blue-600 rounded-xl font-semibold text-sm hover:bg-blue-50">
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-[#003399]/20 text-[#003399] rounded-xl font-semibold text-sm hover:bg-slate-50">
                         <ClipboardPaste className="w-4 h-4" /> Bulk Paste MCQ
                       </button>
                     )}
                     <button onClick={() => setModal('add')}
                       className={`inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl font-bold text-sm shadow-md hover:opacity-90
-                        ${isCodingSection ? 'bg-gradient-to-r from-violet-600 to-purple-500 shadow-violet-500/20' : isSqlSection ? 'bg-gradient-to-r from-amber-600 to-orange-500 shadow-amber-500/20' : 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/20'}`}>
+                        ${isCodingSection ? 'bg-gradient-to-r from-violet-600 to-purple-500 shadow-violet-500/20' : isSqlSection ? 'bg-gradient-to-r from-amber-600 to-orange-500 shadow-amber-500/20' : 'bg-gradient-to-r from-[#003399] to-[#00A9CE] shadow-[#003399]/15'}`}>
                       <Plus className="w-4 h-4" /> Add Question
                     </button>
                   </div>
@@ -2604,21 +2604,21 @@ const QuestionManager = () => {
 
               {/* Finalize banner */}
               {isNewAssessment && savedQs.length > 0 && stagedQs.length === 0 && hasStudents && (
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap">
+                <div className="bg-slate-50 border border-[#003399]/20 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-[#003399]/10 rounded-xl flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-[#003399]" />
                     </div>
                     <div>
-                      <p className="font-bold text-blue-800 text-sm">Assessment is ready!</p>
-                      <p className="text-xs text-blue-600 mt-0.5">
+                      <p className="font-bold text-[#003399] text-sm">Assessment is ready!</p>
+                      <p className="text-xs text-[#003399] mt-0.5">
                         {savedQs.length} question{savedQs.length !== 1 ? 's' : ''} · {totalMarks} marks · {assessment?.eligible_students?.length} students assigned
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => { showToast('Assessment created successfully!'); setTimeout(() => navigate('/dashboard/college-admin/assessments'), 1200); }}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:opacity-90 transition-opacity whitespace-nowrap"
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md shadow-[#003399]/15 hover:opacity-90 transition-opacity whitespace-nowrap"
                     style={{ background: 'linear-gradient(135deg,#1d4ed8,#0284c7,#0891b2)' }}>
                     <CheckCircle2 className="w-4 h-4" /> Create Assessment
                   </button>
@@ -2632,7 +2632,7 @@ const QuestionManager = () => {
           {stagedQs.length > 0 && (
             <div className="sticky bottom-4">
               <button onClick={handleSubmitAll} disabled={submitting}
-                className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-white font-bold text-[15px] shadow-lg bg-blue-600 disabled:opacity-60 transition-colors hover:bg-blue-700">
+                className="w-full flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-white font-bold text-[15px] shadow-lg bg-[#003399] disabled:opacity-60 transition-colors hover:bg-[#003399]">
                 {submitting
                   ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   : <Send className="w-5 h-5" />}
@@ -2709,7 +2709,7 @@ const QuestionManager = () => {
           : 'This question will be permanently removed.';
         return (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm p-6 flex flex-col items-center text-center gap-4">
+            <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm p-6 flex flex-col items-center text-center gap-4">
 
               {/* Icon */}
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isLocked ? 'bg-amber-50' : 'bg-red-50'}`}>
@@ -2741,7 +2741,7 @@ const QuestionManager = () => {
                 <button
                   onClick={() => setConfirmDelete(null)}
                   disabled={deleting}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {isLocked ? 'Close' : 'Cancel'}
                 </button>

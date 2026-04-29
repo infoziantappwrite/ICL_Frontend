@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Target, Users, CheckCircle, XCircle, Star,
   Search, Download, TrendingUp, BookOpen, GraduationCap,
-  Filter, ChevronDown, ChevronUp, Award, Briefcase,
+  Filter, ChevronDown, ChevronUp, Award, Briefcase, X,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { TableSkeleton } from '../../components/common/SkeletonLoader';
@@ -17,7 +17,7 @@ const fmt = (n) => {
 const pct = (a, b) => (b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0);
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>
+  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
@@ -55,98 +55,94 @@ const ScoreBar = ({ label, value, max, color }) => (
 const StudentRow = ({ student, rank }) => {
   const [expanded, setExpanded] = useState(false);
   const p = student.matchPercentage;
-  const badgeCls = p >= 80 ? 'bg-emerald-50 text-emerald-700' : p >= 60 ? 'bg-amber-50 text-amber-700' : p >= 40 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-600';
+  const badgeCls = p >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : p >= 60 ? 'bg-amber-50 text-amber-700 border-amber-200' : p >= 40 ? 'bg-[#003399]/5 text-[#003399] border-[#003399]/20' : 'bg-red-50 text-red-600 border-red-200';
   const badgeLabel = p >= 80 ? 'Excellent' : p >= 60 ? 'Good' : p >= 40 ? 'Fair' : 'Low';
   const bd = student.breakdown || {};
 
   return (
     <>
-      <tr className={`hover:bg-gray-50/50 transition-colors border-b border-gray-50 ${rank <= 3 ? 'bg-[#fffdf5]' : 'bg-white'} group`}>
-        <td className="px-5 py-3 text-center w-10">
+      <tr className={`hover:bg-slate-50/30 transition-colors border-b border-slate-50 ${rank <= 3 ? 'bg-[#fffdf5]' : 'bg-white'} group`}>
+        <td className="px-5 py-4 text-xs font-bold text-slate-400">
           {rank <= 3 ? (
-            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-sm text-[12px] font-black ${['bg-amber-100 text-amber-700', 'bg-gray-200 text-gray-700', 'bg-amber-50 text-amber-900'][rank - 1]}`}>
+            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[12px] font-black ${['bg-amber-100 text-amber-700', 'bg-gray-200 text-gray-700', 'bg-amber-50 text-amber-900'][rank - 1]}`}>
               #{rank}
             </span>
           ) : (
-            <span className="text-[12px] text-gray-400 font-bold">#{rank}</span>
+            String(rank).padStart(2, '0')
           )}
         </td>
-        <td className="px-5 py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-[13px] shrink-0">
-              {student.fullName?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-            <div>
-              <p className="text-[13px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{student.fullName}</p>
-              <p className="text-[11px] text-gray-500">{student.email}</p>
-            </div>
+        <td className="px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-800 truncate w-full group-hover:text-[#003399] transition-colors">{student.fullName}</p>
+            <p className="text-[10px] text-slate-400 truncate w-full">{student.email}</p>
           </div>
         </td>
-        <td className="px-5 py-3">
-          <p className="text-[12px] font-bold text-gray-800">{student.studentInfo?.branch || '—'}</p>
-          <p className="text-[10px] text-gray-500">Batch: {student.studentInfo?.batch || '—'}</p>
+        <td className="px-5 py-4">
+          <p className="text-xs font-bold text-slate-700">{student.studentInfo?.branch || '—'}</p>
+          <p className="text-[10px] text-slate-400 font-medium">Batch: {student.studentInfo?.batch || '—'}</p>
         </td>
-        <td className="px-5 py-3 text-center">
-          <span className="text-[13px] font-black text-gray-800">{student.studentInfo?.cgpa ?? '—'}</span>
+        <td className="px-5 py-4 text-center">
+          <span className="text-xs font-black text-slate-700">{student.studentInfo?.cgpa ?? '—'}</span>
         </td>
-        <td className="px-5 py-3">
+        <td className="px-5 py-4">
           <div className="flex flex-wrap gap-1 max-w-[200px]">
             {(student.matchedSkills || []).slice(0, 3).map(s => (
-              <span key={s} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] rounded border border-transparent font-semibold">{s}</span>
+              <span key={s} className="px-2 py-0.5 bg-[#003399]/5 text-[#003399] text-[9px] rounded-md border border-[#003399]/10 font-black uppercase tracking-wider">{s}</span>
             ))}
             {(student.matchedSkills || []).length > 3 && (
-              <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded font-semibold">+{student.matchedSkills.length - 3}</span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] rounded-md font-bold">+{student.matchedSkills.length - 3}</span>
             )}
-            {!student.matchedSkills?.length && <span className="text-[12px] text-gray-400">—</span>}
+            {!student.matchedSkills?.length && <span className="text-[12px] text-slate-400">—</span>}
           </div>
         </td>
-        <td className="px-5 py-3 text-center">
+        <td className="px-5 py-4 text-center">
           {student.isEligible ? <CheckCircle className="w-5 h-5 text-emerald-500 mx-auto" /> : <XCircle className="w-5 h-5 text-red-500 mx-auto" />}
         </td>
-        <td className="px-5 py-3">
+        <td className="px-5 py-4">
           <div className="flex items-center gap-2">
             <MatchCircle pct={p} />
-            <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${badgeCls}`}>{badgeLabel}</span>
+            <span className={`px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border ${badgeCls}`}>{badgeLabel}</span>
           </div>
         </td>
-        <td className="px-5 py-3 text-center">
-          <button onClick={() => setExpanded(!expanded)} className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100">
+        <td className="px-5 py-4 text-center">
+          <button onClick={() => setExpanded(!expanded)} className="p-1.5 text-slate-400 hover:text-[#003399] hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-[#003399]/10">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </td>
       </tr>
 
       {expanded && (
-        <tr className="bg-gray-50/50">
-          <td colSpan={8} className="px-5 py-4 border-b border-gray-100">
-            <div className="ml-14 max-w-4xl bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3">Score Breakdown</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 mb-4">
-                <ScoreBar label="Skills" value={Math.round(bd.skills || 0)} max={30} color="bg-blue-500" />
-                <ScoreBar label="Branch" value={Math.round(bd.branch || 0)} max={25} color="bg-cyan-500" />
-                <ScoreBar label="CGPA" value={Math.round(bd.cgpa || 0)} max={20} color="bg-indigo-500" />
-                <ScoreBar label="Batch" value={Math.round(bd.batch || 0)} max={15} color="bg-sky-500" />
-                <ScoreBar label="Hygiene" value={Math.round(bd.hygiene || 0)} max={10} color="bg-teal-500" />
+        <tr className="bg-slate-50/50">
+          <td colSpan={8} className="px-5 py-6">
+            <div className="ml-10 max-w-4xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-5">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Score Breakdown</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                  <ScoreBar label="Skills" value={Math.round(bd.skills || 0)} max={30} color="bg-[#003399]" />
+                  <ScoreBar label="Branch" value={Math.round(bd.branch || 0)} max={25} color="bg-cyan-500" />
+                  <ScoreBar label="CGPA" value={Math.round(bd.cgpa || 0)} max={20} color="bg-indigo-500" />
+                  <ScoreBar label="Batch" value={Math.round(bd.batch || 0)} max={15} color="bg-sky-500" />
+                  <ScoreBar label="Hygiene" value={Math.round(bd.hygiene || 0)} max={10} color="bg-teal-500" />
+                </div>
               </div>
               
               {student.skills?.length > 0 && (
-                <div className="pt-3 border-t border-gray-100 mb-3">
-                  <p className="text-[10px] font-bold text-gray-500 mb-2">Student's Full Skillset</p>
+                <div className="pt-5 border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Student's Full Skillset</p>
                   <div className="flex flex-wrap gap-1.5">
                     {student.skills.map(s => (
-                      <span key={s} className={`px-2 py-1 text-[10px] rounded font-bold ${
-                        (student.matchedSkills || []).includes(s) ? 'bg-cyan-50 text-cyan-700 border border-transparent' : 'bg-gray-100 text-gray-600'
+                      <span key={s} className={`px-2.5 py-1 text-[10px] rounded-lg font-black uppercase tracking-wider border ${
+                        (student.matchedSkills || []).includes(s) ? 'bg-[#003399]/5 text-[#003399] border-[#003399]/10' : 'bg-slate-50 text-slate-500 border-slate-100'
                       }`}>{s}</span>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-4 text-[11px] text-gray-500 pt-3 border-t border-gray-100">
-                {student.studentInfo?.rollNumber && <span>Roll No: <b className="text-gray-900">{student.studentInfo.rollNumber}</b></span>}
+              <div className="flex flex-wrap gap-5 text-[11px] font-bold text-slate-400 pt-5 border-t border-slate-100">
+                {student.studentInfo?.rollNumber && <span>Roll No: <b className="text-slate-800 font-mono tracking-tight">{student.studentInfo.rollNumber}</b></span>}
                 <span>Active Backlogs: <b className="text-red-600">{student.studentInfo?.activeBacklogs ?? 0}</b></span>
-                <span>Total Backlogs: <b className="text-gray-900">{student.studentInfo?.totalBacklogs ?? 0}</b></span>
-                <span>Already Placed: <b className={student.studentInfo?.isPlaced ? 'text-emerald-600' : 'text-gray-900'}>{student.studentInfo?.isPlaced ? 'Yes' : 'No'}</b></span>
+                <span>Already Placed: <b className={student.studentInfo?.isPlaced ? 'text-emerald-600' : 'text-slate-800'}>{student.studentInfo?.isPlaced ? 'Yes' : 'No'}</b></span>
               </div>
             </div>
           </td>
@@ -225,47 +221,40 @@ const MatchedStudents = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
-          <button onClick={() => navigate('/dashboard/college-admin/jobs')} className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 transition-colors text-[13px] font-bold mb-2 w-max">
-            <ArrowLeft className="w-4 h-4" /> Back to Jobs
+          <button onClick={() => navigate('/dashboard/college-admin/jobs')} className="flex items-center gap-1.5 text-slate-400 hover:text-[#003399] transition-colors text-xs font-bold mb-2 w-max">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Jobs
           </button>
 
-          {/* ═════════ HEADER ═════════ */}
+          {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-                Skill Match <span className="text-blue-600">Analysis</span>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
+                Skill Match <span className="text-[#003399]">Analysis</span>
               </h1>
               {job && (
-                <p className="text-[12px] md:text-[14px] text-gray-500 mt-1 uppercase tracking-wider font-semibold">
+                <p className="text-[12px] md:text-[14px] text-slate-400 mt-1 uppercase tracking-wider font-bold">
                   {job.jobTitle} • {companyName} • {job.jobCode}
                 </p>
               )}
             </div>
-            <button onClick={handleExportCSV} className="bg-white border border-gray-200 text-blue-700 font-bold text-[13px] px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex flex-shrink-0 items-center justify-center gap-1.5">
+            <button onClick={handleExportCSV} className="inline-flex items-center gap-1.5 bg-white border border-slate-100 text-slate-500 hover:border-[#003399]/30 hover:text-[#003399] text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm">
               <Download className="w-4 h-4" /> Export CSV
             </button>
           </div>
 
-          {/* Error display */}
-          {error && (
-            <Card className="px-4 py-3 bg-red-50 border-red-100 flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-500 shrink-0" />
-              <span className="text-[13px] font-semibold text-red-700">{error}</span>
-            </Card>
-          )}
-
-          {/* ═════════ STATS PILLS ═════════ */}
+          {/* Stats Pills */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
             {[
-              { label: 'Total Students', value: summaryStats.total,    bg: 'bg-blue-50',    tc: 'text-blue-700',   Icon: Users },
+              { label: 'Total Students', value: summaryStats.total,    bg: 'bg-[#003399]/5',    tc: 'text-[#003399]',   Icon: Users },
               { label: 'Eligible',       value: summaryStats.eligible, bg: 'bg-emerald-50', tc: 'text-emerald-700',Icon: CheckCircle },
               { label: 'Avg Match %',    value: `${summaryStats.avg}%`,bg: 'bg-indigo-50',  tc: 'text-indigo-700', Icon: TrendingUp },
               { label: 'High Score (≥70%)',value: summaryStats.above70,cg: 'bg-cyan-50',    tc: 'text-cyan-700',   bg: 'bg-cyan-50', Icon: Award },
             ].map(({ label, value, bg, tc, Icon }) => (
-              <Card key={label} className="p-4 flex items-center justify-between">
+              <Card key={label} className="p-4 flex items-center justify-between border-slate-100 shadow-sm">
                 <div>
                   <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
                   <p className={`text-[24px] font-black ${tc} leading-none`}>{value}</p>
@@ -278,57 +267,57 @@ const MatchedStudents = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-            {/* Preferred Skills */}
             {job?.preferredSkills?.length > 0 && (
-              <Card className="p-4 md:col-span-2">
-                <div className="flex items-center gap-2 mb-3">
+              <Card className="p-5 md:col-span-2 border-slate-100 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
                   <Star className="w-4 h-4 text-amber-500" />
-                  <p className="text-[13px] font-bold text-gray-900">Required Skills from JD</p>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Required Skills from JD</p>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {job.preferredSkills.map(s => (
-                    <span key={s} className="px-2.5 py-1 bg-amber-50 text-amber-700 text-[11px] rounded font-bold">{s}</span>
+                    <span key={s} className="px-3 py-1 bg-amber-50 text-amber-700 text-[11px] rounded-lg font-black border border-amber-100 uppercase tracking-wider">{s}</span>
                   ))}
                 </div>
               </Card>
             )}
-
-            {/* Eligibility Criteria */}
             {job && (
-              <Card className="p-4 md:col-span-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <Filter className="w-4 h-4 text-blue-500" />
-                  <p className="text-[13px] font-bold text-gray-900">Eligibility Filters</p>
+              <Card className="p-5 md:col-span-1 border-slate-100 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="w-4 h-4 text-[#00A9CE]" />
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Eligibility Filters</p>
                 </div>
-                <div className="flex flex-wrap gap-2 text-[11px]">
-                  <span className="px-3 py-1 bg-gray-50 text-gray-700 rounded font-bold border border-gray-100">Min CGPA: {job.eligibility?.minCGPA || 0}</span>
-                  <span className="px-3 py-1 bg-gray-50 text-gray-700 rounded font-bold border border-gray-100">Branches: {(job.eligibility?.branches || []).join(', ') || 'All'}</span>
+                <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wider">
+                  <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg border border-slate-100">Min CGPA: {job.eligibility?.minCGPA || 0}</span>
+                  <span className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg border border-slate-100">Branches: {(job.eligibility?.branches || []).join(', ') || 'All'}</span>
                 </div>
               </Card>
             )}
           </div>
 
-          {/* ═════════ TABLE & CONTROLS ═════════ */}
-          <Card className="flex flex-col overflow-hidden">
-            
-            {/* Toolbar */}
-            <div className="p-4 border-b border-gray-100 bg-white flex flex-col md:flex-row gap-3">
+          {/* Table Panel */}
+          <Card className="flex flex-col overflow-hidden border-slate-100 shadow-sm">
+            <div className="p-4 border-b border-slate-100 bg-white flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input type="text" placeholder="Search by name, email, branch..."
                   value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-shadow" />
+                  className="w-full pl-10 pr-8 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white" />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gray-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2">
                 <select value={filterEligible} onChange={e => setFilterEligible(e.target.value)}
-                  className="px-4 py-2.5 text-[13px] font-bold text-gray-700 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer bg-white">
+                  className="px-4 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white appearance-none cursor-pointer min-w-[140px]">
                   <option value="all">All Students</option>
                   <option value="eligible">Eligible Only</option>
                   <option value="ineligible">Ineligible Only</option>
                 </select>
                 <select value={filterMinPct} onChange={e => setFilterMinPct(Number(e.target.value))}
-                  className="px-4 py-2.5 text-[13px] font-bold text-gray-700 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer bg-white">
-                  <option value={0}>Min Score 0% (All)</option>
+                  className="px-4 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white appearance-none cursor-pointer min-w-[160px]">
+                  <option value={0}>Min Score 0%</option>
                   <option value={40}>Min Score 40%+</option>
                   <option value={60}>Min Score 60%+</option>
                   <option value={70}>Min Score 70%+</option>
@@ -337,18 +326,22 @@ const MatchedStudents = () => {
               </div>
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto min-h-[300px]">
               {filtered.length > 0 ? (
-                <table className="w-full text-left border-collapse">
+                <table className="w-full table-fixed">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      {['#', 'Student', 'Branch/Batch', 'CGPA', 'Matched Skills', 'Eligible', 'Match %', ''].map(h => (
-                        <th key={h} className="px-5 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">{h}</th>
-                      ))}
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[60px]">Rank</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[220px]">Student</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[140px]">Branch/Batch</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-[80px]">CGPA</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[200px]">Matched Skills</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-[100px]">Eligible</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[150px]">Match %</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-[80px]">Details</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white">
+                  <tbody className="divide-y divide-slate-100">
                     {filtered.map((student, i) => (
                       <StudentRow key={student._id} student={student} rank={i + 1} />
                     ))}
@@ -356,23 +349,18 @@ const MatchedStudents = () => {
                 </table>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20">
-                  <GraduationCap className="w-12 h-12 text-gray-300 mb-3" />
-                  <p className="text-[15px] font-bold text-gray-900 mb-1">
-                    {allStudents.length === 0 ? 'No matched students' : 'No students match filters'}
-                  </p>
-                  <p className="text-[13px] text-gray-500">
-                    {allStudents.length === 0 ? 'Ensure students are registered in the system.' : 'Try adjusting the search query or minimum score.'}
-                  </p>
+                  <GraduationCap className="w-12 h-12 text-slate-200 mb-3" />
+                  <p className="text-sm font-black text-slate-800 tracking-tight">No students match filters</p>
                 </div>
               )}
             </div>
             
-            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 rounded-b-xl flex justify-between items-center text-[11px] font-bold text-gray-500">
-              <p>Showing {filtered.length} of {allStudents.length} students</p>
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" /> Skills 30%</span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block" /> Branch 25%</span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" /> CGPA 20%</span>
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 rounded-b-xl flex flex-col sm:flex-row justify-between items-center gap-3">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Showing <b className="text-slate-700">{filtered.length}</b> of <b className="text-slate-700">{allStudents.length}</b></p>
+              <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-widest">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#003399]" /> Skills 30%</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-500" /> Branch 25%</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> CGPA 20%</span>
               </div>
             </div>
           </Card>

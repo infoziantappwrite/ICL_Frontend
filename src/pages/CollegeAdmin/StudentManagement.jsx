@@ -42,11 +42,11 @@ const branchSelectStyles = {
     ...base,
     minHeight: 42,
     borderRadius: 12,
-    borderColor: state.isFocused ? '#60a5fa' : '#e2e8f0',
-    boxShadow: state.isFocused ? '0 0 0 2px rgba(96, 165, 250, 0.18)' : 'none',
+    borderColor: state.isFocused ? '#003399' : '#e2e8f0',
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(0, 51, 153, 0.18)' : 'none',
     paddingLeft: 28,
     '&:hover': {
-      borderColor: state.isFocused ? '#60a5fa' : '#cbd5e1',
+      borderColor: state.isFocused ? '#003399' : '#cbd5e1',
     },
   }),
   valueContainer: (base) => ({
@@ -89,11 +89,11 @@ const branchTableSelectStyles = {
     ...base,
     minHeight: 30,
     borderRadius: 8,
-    borderColor: state.isFocused ? '#60a5fa' : '#e2e8f0',
-    boxShadow: state.isFocused ? '0 0 0 1px rgba(96, 165, 250, 0.3)' : 'none',
+    borderColor: state.isFocused ? '#003399' : '#e2e8f0',
+    boxShadow: state.isFocused ? '0 0 0 1px rgba(0, 51, 153, 0.3)' : 'none',
     fontSize: '0.75rem',
     '&:hover': {
-      borderColor: state.isFocused ? '#60a5fa' : '#cbd5e1',
+      borderColor: state.isFocused ? '#003399' : '#cbd5e1',
     },
   }),
   valueContainer: (base) => ({
@@ -148,17 +148,17 @@ const branchTableSelectStyles = {
 
 /* ══════════════════════════════════════════════════════════
    ATOMS
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 const Spin = ({ size = 'md', color = 'blue' }) => {
   const sz = { sm:'w-3.5 h-3.5', md:'w-5 h-5', lg:'w-8 h-8' }[size];
-  const cl = { white:'border-white', blue:'border-blue-500', slate:'border-slate-400', green:'border-emerald-500', indigo:'border-indigo-500' }[color];
+  const cl = { white:'border-white', blue:'border-[#003399]', slate:'border-slate-400', green:'border-emerald-500', indigo:'border-indigo-500' }[color];
   return <div className={`${sz} ${cl} border-2 border-t-transparent rounded-full animate-spin flex-shrink-0`}/>;
 };
 
 const Tag = ({ children, variant = 'default' }) => {
   const v = {
     default: 'bg-slate-100 text-slate-600',
-    blue:    'bg-blue-50   text-blue-700   ring-1 ring-blue-200',
+    blue:    'bg-[#003399]/5   text-[#003399]   ring-1 ring-blue-200',
     green:   'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
     red:     'bg-red-50    text-red-600    ring-1 ring-red-200',
     amber:   'bg-amber-50  text-amber-700  ring-1 ring-amber-200',
@@ -191,20 +191,20 @@ const Modal = ({ children, onClose, size = 'lg' }) => {
 };
 
 /* ── Gradient modal header ── */
-const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-blue-700 via-blue-600 to-cyan-500' }) => (
-  <div className={`bg-gradient-to-r ${gradient} px-6 py-5 flex-shrink-0 rounded-t-2xl`}>
+const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-[#003399] via-[#003399]/80 to-[#00A9CE]' }) => (
+  <div className={"px-6 py-5 border-b border-slate-100 flex-shrink-0 bg-white rounded-t-2xl"}>
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-sm bg-[#003399]/10 border-[#003399]/20 flex-shrink-0">
           <Icon className="w-5 h-5 text-white"/>
         </div>
         <div>
-          <h2 className="text-white font-black text-base leading-none">{title}</h2>
-          {sub && <p className="text-blue-100 text-[11px] mt-1">{sub}</p>}
+          <h2 className="text-slate-900 font-black text-lg tracking-tight leading-tight">{title}</h2>
+          {sub && <p className="text-slate-400 text-xs font-medium mt-0.5">{sub}</p>}
         </div>
       </div>
       {onClose && (
-        <button onClick={onClose} className="w-8 h-8 bg-white/15 hover:bg-white/30 rounded-xl flex items-center justify-center text-white transition-colors">
+        <button onClick={onClose} className="w-8 h-8 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border border-slate-200/50">
           <X className="w-4 h-4"/>
         </button>
       )}
@@ -215,12 +215,12 @@ const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-blue-700 via-
 /* ── Section heading ── */
 const SHead = ({ icon: Icon, title, sub }) => (
   <div className="flex items-center gap-2 mb-1">
-    <div className="w-6 h-6 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center flex-shrink-0">
+    <div className="w-6 h-6 bg-[#003399] rounded-lg flex items-center justify-center flex-shrink-0">
       <Icon className="w-3 h-3 text-white"/>
     </div>
     <div>
       <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
-      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
     </div>
   </div>
 );
@@ -240,7 +240,7 @@ const Field = ({ label, required, icon: Icon, error, hint, children }) => (
   </div>
 );
 
-const BASE_INPUT = 'w-full text-sm border rounded-xl py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition placeholder:text-slate-300';
+const BASE_INPUT = 'w-full text-sm border rounded-xl py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#003399]/30 focus:border-transparent transition placeholder:text-slate-300';
 const I_ICON  = `${BASE_INPUT} pl-9 pr-3`;
 const I_PLAIN = `${BASE_INPUT} px-3`;
 const OK_CLS  = 'border-slate-200';
@@ -302,7 +302,7 @@ const validateRow = (row) => {
 
 /* ══════════════════════════════════════════════════════════
    MODAL 1 — ADD SINGLE STUDENT
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 const EMPTY_STUDENT = {
   fullName: '', email: '', rollNumber: '', branch: '',
   semester: '', cgpa: '', batch: '', phone: '',
@@ -381,14 +381,14 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
         <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
           <MHead icon={CheckCircle} title="Student Created!" sub="Temporary password sent to student's email" onClose={onClose}/>
           <div className="p-6 space-y-4">
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
+            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-[#003399]/10">
+              <div className="w-12 h-12 bg-[#003399] rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
                 {successData.fullName?.charAt(0)?.toUpperCase()}
               </div>
               <div>
                 <p className="font-black text-slate-800">{successData.fullName}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{successData.email}</p>
-                {successData.rollNumber && <p className="text-xs text-blue-600 font-mono mt-0.5">{successData.rollNumber}</p>}
+                {successData.rollNumber && <p className="text-xs text-[#003399] font-mono mt-0.5">{successData.rollNumber}</p>}
               </div>
             </div>
             {successData.temporaryPassword && (
@@ -409,13 +409,13 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
                 <p className="text-xs text-amber-700 mt-2">Share with student. They'll be prompted to change on first login.</p>
               </div>
             )}
-            <div className={`flex items-center gap-2 text-sm p-3 rounded-xl ${successData.emailSent ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+            <div className={`flex items-center gap-2 text-sm p-3 rounded-xl ${successData.emailSent ? 'bg-[#003399]/5 text-[#003399]' : 'bg-amber-50 text-amber-700'}`}>
               <Mail size={14} className="flex-shrink-0"/>
               {successData.emailSent ? 'Welcome email with password delivered.' : 'Email delivery failed — share credentials manually.'}
             </div>
             <button
               onClick={() => downloadResultsAsExcel([successData], `student_${successData.rollNumber || Date.now()}.xlsx`)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#003399] text-white text-sm font-bold rounded-xl transition-colors">
               <Download size={14}/> Download Student Details (Excel)
             </button>
             <div className="flex gap-3">
@@ -424,7 +424,7 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
                 Add Another
               </button>
               <button onClick={onClose}
-                className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">
+                className="flex-1 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white text-sm font-bold rounded-xl hover:opacity-90">
                 Done
               </button>
             </div>
@@ -441,8 +441,8 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
         <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
           <MHead icon={Eye} title="Preview — Confirm Details" sub="Review before saving to database" onClose={onClose}/>
           <div className="overflow-y-auto flex-1 p-6 space-y-5">
-            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
+            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-[#003399]/10">
+              <div className="w-12 h-12 bg-[#003399] rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
                 {form.fullName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
@@ -468,11 +468,11 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
               A <strong>temporary password</strong> is auto-generated and emailed after confirmation.
             </div>
           </div>
-          <div className="flex gap-3 p-5 border-t border-slate-100 bg-blue-50/30 flex-shrink-0">
+          <div className="flex gap-3 p-5 border-t border-slate-100 bg-[#003399]/5 flex-shrink-0">
             <button onClick={() => setStep('form')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">
               <ArrowLeft size={14}/> Edit
             </button>
-            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
+            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-opacity">
               {saving ? <><Spin size="sm" color="white"/>Saving…</> : <><Check size={14}/>Confirm & Add Student</>}
             </button>
           </div>
@@ -575,16 +575,16 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
           <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
             <input type="checkbox" id="eligible" checked={form.isEligibleForPlacements}
               onChange={e => setF('isEligibleForPlacements', e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600"/>
+              className="w-4 h-4 rounded text-[#003399]"/>
             <label htmlFor="eligible" className="text-sm font-medium text-slate-700 cursor-pointer">
               Eligible for Placements
             </label>
           </div>
         </div>
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-100 bg-blue-50/30 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-100 bg-[#003399]/5 flex-shrink-0">
           <button onClick={onClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 transition-colors">Cancel</button>
           <button onClick={goPreview}
-            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity shadow-sm shadow-blue-500/20">
+            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white text-sm font-bold rounded-xl transition-opacity shadow-sm shadow-[#003399]/15">
             <Eye size={14}/> Preview Details
           </button>
         </div>
@@ -595,7 +595,7 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
 
 /* ══════════════════════════════════════════════════════════
    MODAL 2 — ADD MULTIPLE STUDENTS
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 const EMPTY_ROW = () => ({
   id: Math.random().toString(36).slice(2),
   fullName: '', email: '', rollNumber: '', branch: '',
@@ -687,7 +687,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
             {result.students.length > 0 ? result.students.map((s, i) => (
               <div key={s.id || i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+                  <div className="w-8 h-8 bg-[#003399] rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0">
                     {s.fullName?.charAt(0)?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -706,7 +706,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
               </div>
             )) : (
               <div className="text-center py-8">
-                <UsersRound size={32} className="text-blue-500 mx-auto mb-3"/>
+                <UsersRound size={32} className="text-[#00A9CE] mx-auto mb-3"/>
                 <p className="text-2xl font-black text-slate-800">{result.count}</p>
                 <p className="text-sm text-slate-500">students added with auto-generated passwords</p>
               </div>
@@ -716,12 +716,12 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
             {result.students.length > 0 && (
               <button
                 onClick={() => downloadResultsAsExcel(result.students, `students_${Date.now()}.xlsx`)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#003399] text-white text-sm font-bold rounded-xl transition-colors">
                 <Download size={14}/> Download All Students + Passwords (Excel)
               </button>
             )}
             <button onClick={() => { onDone?.(); onClose(); }}
-              className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">
+              className="w-full py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white text-sm font-bold rounded-xl hover:opacity-90">
               Done
             </button>
           </div>
@@ -739,9 +739,9 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
           <div className="overflow-auto flex-1">
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-blue-700 text-white">
+                <tr className="bg-[#003399] text-white">
                   {['#','Full Name','Email','Roll No.','Branch','Batch','Sem.','CGPA','Phone'].map(h => (
-                    <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-blue-500 last:border-r-0">{h}</th>
+                    <th key={h} className="text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap border-r border-[#003399] last:border-r-0">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -767,7 +767,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
             <button onClick={() => setStep('table')} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">
               <ArrowLeft size={14}/> Edit
             </button>
-            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
+            <button onClick={confirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-60">
               {saving ? <><Spin size="sm" color="white"/>Adding Students…</> : <><Check size={14}/>Confirm & Add {filledRows.length} Students</>}
             </button>
           </div>
@@ -791,7 +791,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   return (
     <Modal onClose={onClose} size="full">
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
-        <MHead icon={UsersRound} title="Add Multiple Students" gradient="from-blue-700 via-blue-600 to-cyan-500"
+        <MHead icon={UsersRound} title="Add Multiple Students" gradient="from-[#003399] via-[#003399]/80 to-[#00A9CE]"
           sub="Fill the table, preview, then confirm — passwords auto-generated" onClose={onClose}/>
         <div className="mx-5 mt-4 flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl flex-shrink-0">
           <KeyRound size={13} className="text-amber-600 flex-shrink-0"/>
@@ -803,7 +803,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
         <div className="flex-1 overflow-auto px-5 py-4">
           <table className="w-full text-xs border-collapse">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-blue-700 text-white">
+              <tr className="bg-[#003399] text-white">
                 <th className="py-2 px-2 text-left text-[11px] font-semibold w-8">#</th>
                 {cols.map(c => (
                   <th key={c.key} className={`py-2 px-2 text-left text-[11px] font-semibold whitespace-nowrap ${c.width}`}>{c.label}</th>
@@ -817,7 +817,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
                   <td className="py-1 px-2 text-slate-400 font-mono text-center">{idx + 1}</td>
                   {cols.map(col => {
                     const err = rowErrors[row.id]?.[col.key];
-                    const cellBase = `w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 ${err ? 'border-red-400 bg-red-50' : 'border-slate-200'}`;
+                    const cellBase = `w-full text-xs border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#003399]/30 ${err ? 'border-red-400 bg-red-50' : 'border-slate-200'}`;
                     return (
                       <td key={col.key} className={`p-1 ${err ? 'bg-red-50' : ''}`} style={{minWidth: col.type==='select' ? 90 : 100}}>
                         <div className="relative group">
@@ -869,15 +869,15 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
               ))}
             </tbody>
           </table>
-          <button onClick={addRow} className="mt-3 flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 font-semibold px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors border border-dashed border-blue-200">
+          <button onClick={addRow} className="mt-3 flex items-center gap-2 text-xs text-[#003399] hover:text-[#003399] font-semibold px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors border border-dashed border-[#003399]/20">
             <Plus size={13}/> Add Row
           </button>
         </div>
-        <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-blue-50/40">
+        <div className="flex items-center justify-between gap-3 p-5 border-t border-slate-100 flex-shrink-0 bg-[#003399]/5">
           <span className="text-xs text-slate-400">{filledCount} filled row(s)</span>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
-            <button onClick={goPreview} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl">
+            <button onClick={goPreview} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white text-sm font-bold rounded-xl">
               <Eye size={14}/> Preview
             </button>
           </div>
@@ -890,7 +890,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
 /* ══════════════════════════════════════════════════════════
    MODAL 3 — BULK EXCEL UPLOAD
    Upgraded: inline DB conflict detection (same as SuperAdmin)
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 function BulkUploadModal({ onClose, onDone }) {
   const toast   = useToast();
   const fileRef = useRef(null);
@@ -1121,7 +1121,7 @@ function BulkUploadModal({ onClose, onDone }) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              {l:'Total Rows', v:uploadResult?.totalRows || parsedRows.length, bg:'bg-blue-50',    text:'text-blue-700',    border:'border-blue-100'},
+              {l:'Total Rows', v:uploadResult?.totalRows || parsedRows.length, bg:'bg-[#003399]/5',    text:'text-[#003399]',    border:'border-[#003399]/10'},
               {l:'Inserted',   v:uploadResult?.inserted  || 0,                  bg:'bg-emerald-50', text:'text-emerald-700', border:'border-emerald-100'},
               {l:'Updated',    v:uploadResult?.updated   || 0,                  bg:'bg-amber-50',   text:'text-amber-700',   border:'border-amber-100'},
             ].map(s => (
@@ -1131,7 +1131,7 @@ function BulkUploadModal({ onClose, onDone }) {
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-2 text-sm text-blue-700 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+          <div className="flex items-center gap-2 text-sm text-[#003399] p-3 bg-[#003399]/5 border border-[#003399]/20 rounded-xl">
             <Mail size={14} className="flex-shrink-0"/> Welcome emails with temporary passwords sent to all students.
           </div>
           <button
@@ -1151,10 +1151,10 @@ function BulkUploadModal({ onClose, onDone }) {
                   }));
               downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-bold rounded-xl transition-colors">
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#003399] text-white text-sm font-bold rounded-xl transition-colors">
             <Download size={14}/> Download Uploaded Students + Passwords (Excel)
           </button>
-          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
+          <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
         </div>
       </div>
     </Modal>
@@ -1167,13 +1167,13 @@ function BulkUploadModal({ onClose, onDone }) {
       <Modal onClose={onClose} size="full">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-6 py-4 flex-shrink-0 rounded-t-2xl">
+          <div className="px-6 py-5 border-b border-slate-100 flex-shrink-0 bg-white rounded-t-2xl">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileText className="w-4 h-4 text-white"/></div>
                 <div>
-                  <h2 className="text-white font-black text-sm">{fileName}</h2>
-                  <p className="text-blue-200 text-[11px] mt-0.5">{parsedRows.length} rows · {errorCount} error(s) · {validCount} valid</p>
+                  <h2 className="text-slate-900 font-black text-base tracking-tight">{fileName}</h2>
+                  <p className="text-white/60 text-[11px] mt-0.5">{parsedRows.length} rows · {errorCount} error(s) · {validCount} valid</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1223,11 +1223,11 @@ function BulkUploadModal({ onClose, onDone }) {
           <div className="overflow-auto flex-1">
             <table className="w-full text-xs border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="bg-blue-800 text-white">
-                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-blue-600">Row</th>
-                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-blue-600">✓</th>
+                <tr className="bg-[#003399] text-white">
+                  <th className="text-left py-2.5 px-3 font-semibold text-[11px] w-10 border-r border-[#003399]">Row</th>
+                  <th className="text-center py-2.5 px-2 font-semibold text-[11px] w-8 border-r border-[#003399]">✓</th>
                   {displayHdrs.map(h => (
-                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-blue-600 last:border-r-0 ${REQUIRED_COLS.includes(h) ? 'text-yellow-300' : ''}`}>
+                    <th key={h} className={`text-left py-2.5 px-3 font-semibold text-[11px] whitespace-nowrap min-w-[100px] border-r border-[#003399] last:border-r-0 ${REQUIRED_COLS.includes(h) ? 'text-yellow-300' : ''}`}>
                       {h.replace(/_/g, ' ').toUpperCase()}{REQUIRED_COLS.includes(h) && <span className="ml-1 opacity-60">*</span>}
                     </th>
                   ))}
@@ -1316,7 +1316,7 @@ function BulkUploadModal({ onClose, onDone }) {
                 }
                 className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-xl transition-all ${
                   canUpload && !uploading
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white shadow-md shadow-blue-500/20'
+                    ? 'bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white shadow-md shadow-[#003399]/15'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                 }`}>
                 {uploading
@@ -1344,13 +1344,13 @@ function BulkUploadModal({ onClose, onDone }) {
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center gap-4 cursor-pointer transition-all ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
+            className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center gap-4 cursor-pointer transition-all ${dragOver ? 'border-[#003399]/40 bg-[#003399]/5' : 'border-slate-200 hover:border-[#003399]/30 hover:bg-slate-50'}`}
           >
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
-              <Upload size={28} className="text-blue-600"/>
+            <div className="w-16 h-16 bg-[#003399]/10 rounded-2xl flex items-center justify-center">
+              <Upload size={28} className="text-[#003399]"/>
             </div>
             <div className="text-center">
-              <p className="font-bold text-slate-700">Drop your Excel file here, or <span className="text-blue-600">click to browse</span></p>
+              <p className="font-bold text-slate-700">Drop your Excel file here, or <span className="text-[#003399]">click to browse</span></p>
               <p className="text-xs text-slate-400 mt-1.5">Supports .xlsx, .xls, .csv · Up to 5,000 students</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
@@ -1363,12 +1363,12 @@ function BulkUploadModal({ onClose, onDone }) {
               <p className="text-xs text-slate-400 mt-0.5">Excel with correct columns and sample rows</p>
             </div>
             <button onClick={() => collegeAdminStudentAPI.downloadTemplate()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-xl transition-colors">
+              className="flex items-center gap-2 px-4 py-2 bg-[#003399] hover:bg-[#003399] text-white text-xs font-bold rounded-xl transition-colors">
               <Download size={13}/> Template
             </button>
           </div>
 
-          <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-1.5 text-xs text-blue-700">
+          <div className="p-4 bg-[#003399]/5 border border-[#003399]/20 rounded-xl space-y-1.5 text-xs text-[#003399]">
             <p className="font-bold flex items-center gap-1.5"><Info size={12}/>How validation works:</p>
             <p>1. File is parsed instantly in the browser — no upload needed to preview</p>
             <p>2. Every cell is validated (format, required fields, duplicates within file)</p>
@@ -1404,7 +1404,7 @@ function BulkUploadModal({ onClose, onDone }) {
 
 /* ══════════════════════════════════════════════════════════
    MODAL 4 — EXPORT
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 function ExportModal({ onClose }) {
   const toast = useToast();
   const [f, setF_]       = useState({ branch:'', batch:'', isPlaced:'', format:'xlsx' });
@@ -1436,7 +1436,7 @@ function ExportModal({ onClose }) {
   return (
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-blue-700 via-blue-600 to-cyan-500" onClose={onClose}/>
+        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-[#003399] via-[#003399]/80 to-[#00A9CE]" onClose={onClose}/>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1467,9 +1467,9 @@ function ExportModal({ onClose }) {
             {prevLoad ? <Spin size="sm" color="slate"/> : <RefreshCw size={13}/>} Preview Count
           </button>
           {preview ? (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <p className="text-sm font-black text-blue-700">{(preview.totalRecords || 0).toLocaleString()} records match</p>
-              <p className="text-xs text-blue-500 mt-0.5">Will download as {f.format.toUpperCase()}</p>
+            <div className="p-4 bg-[#003399]/5 border border-[#003399]/20 rounded-xl">
+              <p className="text-sm font-black text-[#003399]">{(preview.totalRecords || 0).toLocaleString()} records match</p>
+              <p className="text-xs text-[#00A9CE] mt-0.5">Will download as {f.format.toUpperCase()}</p>
             </div>
           ) : (
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center text-xs text-slate-400">
@@ -1479,7 +1479,7 @@ function ExportModal({ onClose }) {
           <div className="flex gap-3">
             <button onClick={onClose} className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl">Cancel</button>
             <button onClick={doExport} disabled={exporting || prevLoad}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white text-sm font-bold rounded-xl disabled:opacity-50">
               {exporting ? <><Spin size="sm"/>Downloading…</> : <><FileDown size={14}/>Export{preview?.totalRecords ? ` (${preview.totalRecords})` : ''}</>}
             </button>
           </div>
@@ -1491,38 +1491,49 @@ function ExportModal({ onClose }) {
 
 /* ══════════════════════════════════════════════════════════
    STUDENT TABLE ROW
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 function StudentRow({ s, n, onViewReport }) {
   const si = s.studentInfo || {};
-  const initial = (s.fullName || '?').charAt(0).toUpperCase();
+
   return (
-    <tr className="border-b border-slate-50 hover:bg-blue-50/30 transition-colors">
-      <td className="pl-4 pr-3 py-3 text-xs text-slate-300 font-mono w-10">{n}</td>
-      <td className="px-3 py-3">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center text-white text-xs font-black flex-shrink-0">
-            {initial}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{s.fullName || '—'}</p>
-            <p className="text-xs text-slate-400 truncate">{s.email}</p>
-          </div>
+    <tr className="hover:bg-slate-50/30 transition-colors group">
+      <td className="px-5 py-4 text-xs font-bold text-slate-400">
+        {String(n).padStart(2, '0')}
+      </td>
+      <td className="px-5 py-4">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-800 truncate w-full">{s.fullName || '—'}</p>
+          <p className="text-[10px] text-slate-400 truncate w-full">{s.email}</p>
         </div>
       </td>
-      <td className="px-3 py-3 font-mono text-xs text-blue-600 whitespace-nowrap">{si.rollNumber || '—'}</td>
-      <td className="px-3 py-3">{si.branch ? <Tag variant="blue">{si.branch}</Tag> : <span className="text-slate-300 text-xs">—</span>}</td>
-      <td className="px-3 py-3 text-xs text-slate-600 whitespace-nowrap">{si.batch || '—'}</td>
-      <td className="px-3 py-3 text-xs text-slate-600">{si.semester ? `Sem ${si.semester}` : '—'}</td>
-      <td className="px-3 py-3 text-xs font-bold text-slate-700">{si.cgpa != null ? si.cgpa : '—'}</td>
-      <td className="px-3 py-3">
+      <td className="px-5 py-4">
+        <span className="text-xs font-mono font-bold text-[#003399] whitespace-nowrap">
+          {si.rollNumber || '—'}
+        </span>
+      </td>
+      <td className="px-5 py-4">
+        {si.branch ? <Tag variant="blue">{si.branch}</Tag> : <span className="text-slate-300 text-xs">—</span>}
+      </td>
+      <td className="px-5 py-4 text-xs font-medium text-slate-600 whitespace-nowrap">
+        {si.batch || '—'}
+      </td>
+      <td className="px-5 py-4 text-xs font-medium text-slate-600">
+        {si.semester ? `Sem ${si.semester}` : '—'}
+      </td>
+      <td className="px-5 py-4 text-xs font-black text-slate-700">
+        {si.cgpa != null ? si.cgpa : '—'}
+      </td>
+      <td className="px-5 py-4">
         {si.isPlaced
           ? <Tag variant="green"><UserCheck size={9}/>Placed</Tag>
           : <Tag variant="slate"><UserX size={9}/>Unplaced</Tag>}
       </td>
-      <td className="px-3 py-3">
-        <ActionMenu actions={[
-          { label: 'View Report', icon: Eye, onClick: () => onViewReport(s._id), color: 'text-blue-600 hover:bg-blue-50' },
-        ]} />
+      <td className="px-5 py-4 text-center">
+        <div className="flex items-center justify-center">
+          <ActionMenu actions={[
+            { label: 'View Report', icon: Eye, onClick: () => onViewReport(s._id), color: 'text-[#003399] hover:bg-slate-50' },
+          ]} />
+        </div>
       </td>
     </tr>
   );
@@ -1530,7 +1541,7 @@ function StudentRow({ s, n, onViewReport }) {
 
 /* ══════════════════════════════════════════════════════════
    MAIN PAGE
-══════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════ */
 export default function StudentManagement() {
   const toast = useToast();
   const navigate = useNavigate();
@@ -1583,24 +1594,24 @@ export default function StudentManagement() {
 
   const CARDS = [
     {
-      icon: UserPlus, gradient: 'from-blue-600 to-cyan-500', border: 'border-blue-100',
-      light: 'from-blue-50 to-cyan-50/50',
+      icon: UserPlus, gradient: 'from-[#003399] to-[#00A9CE]', border: 'border-[#003399]/10',
+      light: 'bg-slate-50/50',
       title: 'Add Single Student',
       desc: 'Add one student with a form. Preview all details before saving to database.',
       tips: ['Full data preview before insert', 'Auto-generated temporary password', 'Welcome email sent instantly'],
       action: () => setModal('single'), btnLabel: 'Add Single Student',
     },
     {
-      icon: UsersRound, gradient: 'from-blue-600 to-cyan-500', border: 'border-blue-100',
-      light: 'from-blue-50 to-cyan-50/50',
+      icon: UsersRound, gradient: 'from-[#003399] to-[#00A9CE]', border: 'border-[#003399]/10',
+      light: 'bg-slate-50/50',
       title: 'Add Multiple Students',
       desc: 'Fill a spreadsheet-like table in the browser. Preview all rows before saving.',
       tips: ['Inline table — no file needed', 'Preview all rows before confirm', 'All students emailed passwords'],
       action: () => setModal('multiple'), btnLabel: 'Add Multiple Students',
     },
     {
-      icon: CloudUpload, gradient: 'from-blue-600 to-cyan-500', border: 'border-blue-100',
-      light: 'from-blue-50 to-cyan-50/50',
+      icon: CloudUpload, gradient: 'from-[#003399] to-[#00A9CE]', border: 'border-[#003399]/10',
+      light: 'bg-slate-50/50',
       title: 'Bulk Excel Upload',
       desc: 'Upload .xlsx or .csv. Full preview with inline error highlighting + DB conflict detection.',
       tips: ['Instant client-side Excel parsing', 'DB conflict detection before upload', 'Confirm only when all rows valid'],
@@ -1610,37 +1621,38 @@ export default function StudentManagement() {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4"><div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans"><div className="space-y-5">
 
         {/* ══ HEADER ══ */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-                Student <span className="text-blue-600">Management</span>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
+                Student <span className="text-[#003399]">Management</span>
               </h1>
-              <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+              <p className="text-sm text-slate-400 mt-1 font-medium">
                 {pagination.total > 0 ? `${pagination.total} students enrolled in the system` : 'Manage, add, and upload student records'}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={load} disabled={loading}
-                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-50">
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-slate-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-50">
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}/> Refresh
               </button>
               <button onClick={() => setModal('export')}
-                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-slate-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
                 <FileDown className="w-4 h-4"/> Export
               </button>
               <button onClick={() => setModal('single')}
-                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-slate-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
                 <UserPlus className="w-4 h-4"/> Add single
               </button>
               <button onClick={() => setModal('multiple')}
-                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-slate-50 text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
                 <UsersRound className="w-4 h-4"/> Add multiple
               </button>
               <button onClick={() => setModal('upload')}
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
+                className="inline-flex items-center gap-1.5 bg-[#003399] hover:bg-[#002d8b] text-white text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95">
                 <CloudUpload className="w-4 h-4"/> Bulk Upload
               </button>
             </div>
@@ -1650,12 +1662,12 @@ export default function StudentManagement() {
         <div className="">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { icon:Users,      label:'Total Students', value:pagination.total,  color:'text-blue-600'    },
+              { icon:Users,      label:'Total Students', value:pagination.total,  color:'text-[#003399]'    },
               { icon:UserCheck,  label:'Placed',         value:placed,            color:'text-emerald-600'  },
               { icon:Layers,     label:'This Page',      value:students.length,   color:'text-cyan-600'     },
               { icon:TrendingUp, label:'Total Pages',    value:pagination.pages,  color:'text-indigo-600'},
             ].map(({ icon:Icon, label, value, color }) => (
-              <div key={label} className={`flex items-center gap-3 p-4 rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] bg-white border border-gray-100`}>
+              <div key={label} className={`flex items-center gap-3 p-4 rounded-xl shadow-sm bg-white border border-slate-100`}>
                 
     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color.replace('text-', 'bg-').replace('600', '50')}`}>
         <Icon className={`w-5 h-5 ${color}`}/>
@@ -1702,11 +1714,11 @@ export default function StudentManagement() {
 {/* ══ EXPORT CARD ══ */}
 <div className="hidden">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 px-5 py-4 flex items-center gap-3">
+          <div className="bg-gradient-to-r from-[#003399] via-[#003399]/80 to-[#00A9CE] px-5 py-4 flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"><FileDown size={18} className="text-white"/></div>
             <div>
               <h3 className="text-sm font-black text-white">Export Students</h3>
-              <p className="text-blue-100 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
+              <p className="text-white/70 text-[11px] mt-0.5">Download filtered records as Excel or CSV</p>
             </div>
           </div>
           <div className="p-5 flex items-center gap-5 flex-wrap">
@@ -1719,7 +1731,7 @@ export default function StudentManagement() {
               </div>
             </div>
             <button onClick={() => setModal('export')}
-              className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-blue-500/20">
+              className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] hover:opacity-90 text-white text-sm font-bold rounded-xl shadow-md shadow-[#003399]/15">
               <FileDown size={14}/> Open Export
             </button>
           </div>
@@ -1727,27 +1739,27 @@ export default function StudentManagement() {
 
         </div>
 {/* ══ MAIN PANEL ══ */}
-<div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 flex flex-col">
-<div className="p-4 border-b border-gray-100">
+<div className="bg-white rounded-lg shadow-sm border border-slate-100 flex flex-col">
+<div className="p-4 border-b border-slate-100">
         <div className="">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative flex-1 min-w-48">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"/>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none"/>
               <input type="text" placeholder="Search name, email or roll number…"
                 value={filters.search} onChange={e => setF('search', e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"/>
+                className="w-full pl-9 pr-8 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white"/>
               {filters.search && (
-                <button onClick={() => setF('search', '')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <button onClick={() => setF('search', '')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gray-600">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               )}
             </div>
             <button onClick={() => setShowFilter(p => !p)}
               className={`inline-flex items-center gap-1.5 px-3 py-2.5 text-sm border rounded-xl transition-colors ${
-                showFilter || filterCount > 0 ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                showFilter || filterCount > 0 ? 'bg-[#003399]/5 border-[#003399]/20 text-[#003399]' : 'bg-white border-gray-200 text-gray-600 hover:bg-slate-50'}`}>
               <SlidersHorizontal className="w-3.5 h-3.5"/>
               Filters
-              {filterCount > 0 && <span className="w-4 h-4 bg-blue-600 text-white text-[9px] rounded-full flex items-center justify-center font-black">{filterCount}</span>}
+              {filterCount > 0 && <span className="w-4 h-4 bg-[#003399] text-white text-[9px] rounded-full flex items-center justify-center font-black">{filterCount}</span>}
             </button>
             {filterCount > 0 && (
               <button onClick={clearAll} className="inline-flex items-center gap-1 px-3 py-2.5 text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">
@@ -1756,11 +1768,11 @@ export default function StudentManagement() {
             )}
           </div>
           {showFilter && (
-            <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-end gap-3">
+            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-end gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1.5">Branch</label>
                 <select value={filters.branch} onChange={e => setF('branch', e.target.value)}
-                  className="text-sm border border-gray-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none">
+                  className="text-sm border border-gray-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#003399]/30 appearance-none">
                   <option value="">All Branches</option>
                   {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
@@ -1768,12 +1780,12 @@ export default function StudentManagement() {
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1.5">Batch Year</label>
                 <input type="text" placeholder="e.g. 2024" value={filters.batch} onChange={e => setF('batch', e.target.value)}
-                  className="text-sm border border-gray-200 bg-white rounded-xl px-3 py-2 w-28 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+                  className="text-sm border border-gray-200 bg-white rounded-xl px-3 py-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#003399]/30"/>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1.5">Placement</label>
                 <select value={filters.isPlaced} onChange={e => setF('isPlaced', e.target.value)}
-                  className="text-sm border border-gray-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 appearance-none">
+                  className="text-sm border border-gray-200 bg-white rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#003399]/30 appearance-none">
                   <option value="">All</option>
                   <option value="true">Placed</option>
                   <option value="false">Not Placed</option>
@@ -1788,28 +1800,28 @@ export default function StudentManagement() {
         <div className="flex-1 flex flex-col overflow-hidden">
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16">
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"/>
-              <p className="text-sm text-gray-400">Loading students…</p>
+              <div className="w-8 h-8 border-2 border-[#003399] border-t-transparent rounded-full animate-spin"/>
+              <p className="text-sm text-slate-400">Loading students…</p>
             </div>
           ) : students.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
-                <GraduationCap className="w-7 h-7 text-blue-200"/>
+              <div className="w-14 h-14 bg-[#003399]/10 rounded-2xl flex items-center justify-center">
+                <GraduationCap className="w-7 h-7 text-white/60"/>
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold text-gray-600">No students found</p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {Object.values(filters).some(Boolean) ? 'Try clearing your search or filters' : 'Add students using the buttons above'}
                 </p>
               </div>
               {!Object.values(filters).some(Boolean) && (
                 <div className="flex items-center gap-2 flex-wrap justify-center">
                   <button onClick={() => setModal('single')}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-colors">
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 border border-[#003399]/20 bg-[#003399]/5 hover:bg-slate-100 text-[#003399] rounded-xl transition-colors">
                     <UserPlus className="w-3.5 h-3.5"/> Add Single Student
                   </button>
                   <button onClick={() => setModal('upload')}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl shadow-sm hover:opacity-90 transition-all">
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl shadow-sm hover:opacity-90 transition-all">
                     <CloudUpload className="w-3.5 h-3.5"/> Bulk Upload
                   </button>
                 </div>
@@ -1818,15 +1830,39 @@ export default function StudentManagement() {
           ) : (
             <>
               <div className="overflow-auto flex-1">
-                <table className="w-full">
+                <table className="w-full table-fixed">
                   <thead>
-                    <tr className="bg-gray-50 border-y border-gray-100">
-                      {['#','Student','Roll No','Branch','Batch','Sem','CGPA','Placement','Actions'].map(h => (
-                        <th key={h} className={`py-2.5 text-left text-[10px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap ${h==='#' ? 'pl-4 pr-3 w-10' : 'px-3'}`}>{h}</th>
-                      ))}
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[60px]">
+                        S.No
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[200px]">
+                        Student
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[130px]">
+                        Roll No
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[100px]">
+                        Branch
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[90px]">
+                        Batch
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[90px]">
+                        Sem
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[80px]">
+                        CGPA
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[120px]">
+                        Placement
+                      </th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-[80px]">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {students.map((s, i) => (
                       <StudentRow key={s._id} s={s} n={(page-1)*PER_PAGE + i + 1} onViewReport={(id) => navigate(`/dashboard/college-admin/students/${id}/report`)}/>
                     ))}
@@ -1834,18 +1870,18 @@ export default function StudentManagement() {
                 </table>
               </div>
               {/* Pagination */}
-              <div className="px-4 py-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
-                <span className="text-[11px] text-gray-500">
+              <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between flex-shrink-0">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                   Showing <b className="text-gray-700">{(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, pagination.total)}</b> of <b className="text-gray-700">{pagination.total}</b>
                 </span>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1}
-                    className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 transition-colors">
+                    className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
                     <ChevronLeft className="w-3.5 h-3.5"/>
                   </button>
                   <span className="text-xs font-semibold text-gray-600 px-2">{page} / {pagination.pages}</span>
                   <button onClick={() => setPage(p => Math.min(pagination.pages, p+1))} disabled={page===pagination.pages}
-                    className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 transition-colors">
+                    className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
                     <ChevronRight className="w-3.5 h-3.5"/>
                   </button>
                 </div>
@@ -1902,6 +1938,3 @@ export default function StudentManagement() {
     </div></CollegeAdminLayout>
   );
 }
-
-
-

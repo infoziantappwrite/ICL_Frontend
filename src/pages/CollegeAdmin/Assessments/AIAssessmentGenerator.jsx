@@ -18,7 +18,7 @@ import { jobAPI } from '../../../api/Api';
 /* ─── Level config ───────────────────────────────────────────────────── */
 const LEVEL_CONFIG = {
   Beginner:     { Icon: Sprout, iconColor: 'text-cyan-600',   iconBg: 'bg-cyan-100',   desc: 'Foundational concepts & basic recall',     active: 'border-cyan-400 bg-cyan-50/80 text-cyan-800',     badge: 'bg-cyan-100 text-cyan-700' },
-  Intermediate: { Icon: Zap,    iconColor: 'text-blue-600',   iconBg: 'bg-blue-100',   desc: 'Applied knowledge & problem solving',       active: 'border-blue-400 bg-blue-50/80 text-blue-800',     badge: 'bg-blue-100 text-blue-700' },
+  Intermediate: { Icon: Zap,    iconcolor: 'text-[#003399]',   iconBg: 'bg-[#003399]/10',   desc: 'Applied knowledge & problem solving',       active: 'border-[#003399]/40 bg-[#003399]/5/80 text-[#003399]',     badge: 'bg-[#003399]/10 text-[#003399]' },
   Advanced:     { Icon: Flame,  iconColor: 'text-indigo-600', iconBg: 'bg-indigo-100', desc: 'Complex analysis & expert-level',           active: 'border-indigo-400 bg-indigo-50/80 text-indigo-800', badge: 'bg-indigo-100 text-indigo-700' },
 };
 
@@ -37,11 +37,11 @@ const PROBLEM_CATEGORIES = [
   'Hashing', 'Greedy', 'Bit Manipulation', 'Two Pointers',
 ];
 
-const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors placeholder:text-gray-400";
+const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#003399]/30 focus:border-[#003399] bg-white transition-colors placeholder:text-slate-400";
 
 /* ─── Shared UI atoms ─────────────────────────────────────────────────── */
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>{children}</div>
+  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>{children}</div>
 );
 
 const SectionHeader = ({ icon: Icon, iconBg, iconColor, title, subtitle }) => (
@@ -51,31 +51,31 @@ const SectionHeader = ({ icon: Icon, iconBg, iconColor, title, subtitle }) => (
     </div>
     <div>
       <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
-      {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
   </div>
 );
 
 const Field = ({ label, required, hint, children }) => (
   <div>
-    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
       {label}{required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
-    {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    {hint && <p className="text-xs text-slate-400 mt-1">{hint}</p>}
   </div>
 );
 
 const Toggle = ({ checked, onChange, label, desc }) => (
   <button type="button" onClick={() => onChange(!checked)}
     className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border-2 transition-all text-left
-      ${checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white/60 hover:border-gray-300'}`}>
-    <div className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-gradient-to-r from-blue-600 to-cyan-500' : 'bg-gray-200'}`}>
+      ${checked ? 'border-[#003399]/40 bg-[#003399]/5' : 'border-gray-200 bg-white/60 hover:border-gray-300'}`}>
+    <div className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-gradient-to-r from-[#003399] to-[#00A9CE]' : 'bg-gray-200'}`}>
       <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </div>
     <div>
-      <p className={`text-sm font-bold ${checked ? 'text-blue-700' : 'text-gray-600'}`}>{label}</p>
-      {desc && <p className="text-xs text-gray-400">{desc}</p>}
+      <p className={`text-sm font-bold ${checked ? 'text-[#003399]' : 'text-gray-600'}`}>{label}</p>
+      {desc && <p className="text-xs text-slate-400">{desc}</p>}
     </div>
   </button>
 );
@@ -90,9 +90,9 @@ const StepBar = ({ stage }) => {
         return (
           <div key={label} className="flex items-center gap-1">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all
-              ${active ? 'bg-blue-50 text-blue-700 border border-blue-200' : done ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'}`}>
+              ${active ? 'bg-[#003399]/5 text-[#003399] border border-[#003399]/20' : done ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-slate-400'}`}>
               <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold
-                ${active ? 'bg-blue-600 text-white' : done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                ${active ? 'bg-[#003399] text-white' : done ? 'bg-green-500 text-white' : 'bg-gray-200 text-slate-400'}`}>
                 {done ? '✓' : i + 1}
               </span>
               {label}
@@ -122,15 +122,15 @@ const AILoader = ({ numQuestions, subjectTitle, isCoding }) => {
   return (
     <Card className="overflow-hidden">
       <div className="h-1.5 bg-gray-100 rounded-t-2xl overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-500 transition-all duration-1000 rounded-full" style={{ width: `${pct}%` }} />
+        <div className="h-full bg-gradient-to-r from-[#003399] to-[#00A9CE] transition-all duration-1000 rounded-full" style={{ width: `${pct}%` }} />
       </div>
       <div className="p-12 flex flex-col items-center text-center gap-6">
         <div className="relative w-24 h-24 flex items-center justify-center">
           {[0,1,2].map(i => (
-            <div key={i} className="absolute inset-0 rounded-full border-2 border-blue-300/40"
+            <div key={i} className="absolute inset-0 rounded-full border-2 border-[#003399]/20/40"
               style={{ animation: `ripple 2.4s ease-out ${i * 0.6}s infinite` }} />
           ))}
-          <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/40 bg-blue-600">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/40 bg-[#003399]">
             {isCoding ? <Code2 className="w-9 h-9 text-white" /> : <Sparkles className="w-9 h-9 text-white" />}
           </div>
         </div>
@@ -138,21 +138,21 @@ const AILoader = ({ numQuestions, subjectTitle, isCoding }) => {
           <h3 className="text-xl font-bold text-gray-900">
             {isCoding ? 'Generating coding problems…' : 'Generating your assessment'}
           </h3>
-          {subjectTitle && <p className="text-sm font-semibold mt-1 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{subjectTitle}</p>}
-          {isCoding && <p className="text-xs text-gray-400 mt-1">Each problem takes ~8–15 s — AI builds full test cases</p>}
+          {subjectTitle && <p className="text-sm font-semibold mt-1 bg-gradient-to-r from-[#003399] to-[#00A9CE] bg-clip-text text-transparent">{subjectTitle}</p>}
+          {isCoding && <p className="text-xs text-slate-400 mt-1">Each problem takes ~8–15 s — AI builds full test cases</p>}
         </div>
         <div className="flex items-center gap-4">
           {[
             { value: completed, sub: `of ${numQuestions} ${isCoding ? 'problems' : 'questions'}` },
             { value: `${pct}%`, sub: 'complete' },
           ].map((s, i) => (
-            <div key={i} className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl px-6 py-4 text-center min-w-[110px]">
-              <div className="text-4xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent tabular-nums">{s.value}</div>
+            <div key={i} className="bg-slate-50 border border-[#003399]/10 rounded-2xl px-6 py-4 text-center min-w-[110px]">
+              <div className="text-4xl font-black bg-gradient-to-r from-[#003399] to-[#00A9CE] bg-clip-text text-transparent tabular-nums">{s.value}</div>
               <div className="text-xs text-gray-500 font-medium mt-0.5">{s.sub}</div>
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-400 max-w-xs">Please don't close this page.</p>
+        <p className="text-xs text-slate-400 max-w-xs">Please don't close this page.</p>
         <div className="flex gap-2">
           {[0,1,2,3,4].map(i => (
             <div key={i} className="w-2 h-2 rounded-full"
@@ -173,7 +173,7 @@ const QuestionCard = ({ question, index, onEdit, onRemove }) => {
   const isCorrect = (label) => Array.isArray(question.correct_answer) ? question.correct_answer.includes(label) : question.correct_answer === label;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
@@ -182,15 +182,15 @@ const QuestionCard = ({ question, index, onEdit, onRemove }) => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#003399]/5 text-[#003399] border border-[#003399]/10">
                 {TYPE_LABELS[question.type] || question.type}
               </span>
               <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${cfg.badge}`}>{question.level}</span>
-              <span className="text-xs text-gray-400 font-medium">{question.marks} mark{question.marks !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-slate-400 font-medium">{question.marks} mark{question.marks !== 1 ? 's' : ''}</span>
             </div>
             <p className="text-gray-900 font-medium text-sm leading-relaxed">{question.question}</p>
             {question.options?.length > 0 && (
-              <button onClick={() => setOpen(v => !v)} className="mt-2 flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-medium">
+              <button onClick={() => setOpen(v => !v)} className="mt-2 flex items-center gap-1 text-xs text-[#00A9CE] hover:text-[#003399] font-medium">
                 {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 {open ? 'Hide options' : 'Show options'}
               </button>
@@ -201,23 +201,23 @@ const QuestionCard = ({ question, index, onEdit, onRemove }) => {
                   const correct = isCorrect(opt.label);
                   return (
                     <div key={opt.label} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs
-                      ${correct ? 'bg-blue-50 border border-blue-200 text-blue-800 font-medium' : 'bg-gray-50 border border-gray-100 text-gray-600'}`}>
+                      ${correct ? 'bg-[#003399]/5 border border-[#003399]/20 text-[#003399] font-medium' : 'bg-gray-50 border border-slate-100 text-gray-600'}`}>
                       <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                        ${correct ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-gray-200 text-gray-500'}`}>{opt.label}</span>
+                        ${correct ? 'bg-[#003399] text-white' : 'bg-gray-200 text-gray-500'}`}>{opt.label}</span>
                       <span className="flex-1 leading-tight">{opt.text}</span>
-                      {correct && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                      {correct && <Check className="w-3.5 h-3.5 text-[#003399] shrink-0" />}
                     </div>
                   );
                 })}
               </div>
             )}
             {question.explanation && (
-              <p className="mt-2 text-xs text-gray-400 italic">💡 {question.explanation}</p>
+              <p className="mt-2 text-xs text-slate-400 italic">💡 {question.explanation}</p>
             )}
           </div>
           <div className="flex flex-col gap-1 shrink-0">
-            <button onClick={() => onEdit(index)} className="p-2 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><PenLine className="w-4 h-4" /></button>
-            <button onClick={() => onRemove(index)} className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-4 h-4" /></button>
+            <button onClick={() => onEdit(index)} className="p-2 rounded-xl text-slate-400 hover:text-[#003399] hover:bg-slate-50 transition-all"><PenLine className="w-4 h-4" /></button>
+            <button onClick={() => onRemove(index)} className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-4 h-4" /></button>
           </div>
         </div>
       </div>
@@ -234,7 +234,7 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
   const langLabel = CODING_LANGUAGES.find(l => l.id === question.language)?.label || question.language || 'Code';
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all">
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Index badge */}
@@ -250,7 +250,7 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
               </span>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{langLabel}</span>
               <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${cfg.badge}`}>{question.level}</span>
-              <span className="text-xs text-gray-400 font-medium">{question.marks} marks</span>
+              <span className="text-xs text-slate-400 font-medium">{question.marks} marks</span>
             </div>
 
             {/* Title */}
@@ -260,7 +260,7 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
             {question.algorithm_tags?.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {question.algorithm_tags.map(t => (
-                  <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium border border-blue-100">{t}</span>
+                  <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[#003399]/5 text-[#003399] font-medium border border-[#003399]/10">{t}</span>
                 ))}
               </div>
             )}
@@ -276,7 +276,7 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
             </div>
 
             {/* Expand/collapse */}
-            <button onClick={() => setOpen(v => !v)} className="mt-2 flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-medium">
+            <button onClick={() => setOpen(v => !v)} className="mt-2 flex items-center gap-1 text-xs text-[#00A9CE] hover:text-[#003399] font-medium">
               {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               {open ? 'Hide details' : 'Show problem details'}
             </button>
@@ -285,17 +285,17 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
               <div className="mt-3 space-y-3">
                 {/* Problem description */}
                 {question.problem_description && (
-                  <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Problem Statement</p>
+                  <div className="bg-gray-50 rounded-xl p-3 border border-slate-100">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Problem Statement</p>
                     <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">{question.problem_description}</p>
                   </div>
                 )}
                 {/* Input / Output / Constraints */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {question.input_format && (
-                    <div className="bg-blue-50 rounded-xl p-2.5 border border-blue-100">
-                      <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide mb-1">Input</p>
-                      <p className="text-xs text-blue-800 whitespace-pre-wrap">{question.input_format}</p>
+                    <div className="bg-[#003399]/5 rounded-xl p-2.5 border border-[#003399]/10">
+                      <p className="text-[10px] font-bold text-[#00A9CE] uppercase tracking-wide mb-1">Input</p>
+                      <p className="text-xs text-[#003399] whitespace-pre-wrap">{question.input_format}</p>
                     </div>
                   )}
                   {question.output_format && (
@@ -314,20 +314,20 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
                 {/* Sample test cases */}
                 {visibleTc.length > 0 && (
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Sample Test Cases</p>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Sample Test Cases</p>
                     <div className="space-y-2">
                       {visibleTc.map((tc, ti) => (
                         <div key={ti} className="grid grid-cols-2 gap-2">
                           <div className="bg-gray-900 rounded-xl p-2.5">
-                            <p className="text-[10px] font-bold text-gray-400 mb-1">Input</p>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1">Input</p>
                             <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">{tc.input}</pre>
                           </div>
                           <div className="bg-gray-900 rounded-xl p-2.5">
-                            <p className="text-[10px] font-bold text-gray-400 mb-1">Expected Output</p>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1">Expected Output</p>
                             <pre className="text-xs text-cyan-400 font-mono whitespace-pre-wrap">{tc.expected_output}</pre>
                           </div>
                           {tc.explanation && (
-                            <div className="col-span-2 text-[10px] text-gray-400 italic">{tc.explanation}</div>
+                            <div className="col-span-2 text-[10px] text-slate-400 italic">{tc.explanation}</div>
                           )}
                         </div>
                       ))}
@@ -337,14 +337,14 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
                 {/* Boilerplate */}
                 {question.boilerplate_code && (
                   <div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Starter Code</p>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">Starter Code</p>
                     <div className="bg-gray-900 rounded-xl p-3">
                       <pre className="text-xs text-purple-300 font-mono whitespace-pre-wrap">{question.boilerplate_code}</pre>
                     </div>
                   </div>
                 )}
                 {question.explanation && (
-                  <p className="text-xs text-gray-400 italic">💡 {question.explanation}</p>
+                  <p className="text-xs text-slate-400 italic">💡 {question.explanation}</p>
                 )}
               </div>
             )}
@@ -352,8 +352,8 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
 
           {/* Actions */}
           <div className="flex flex-col gap-1 shrink-0">
-            <button onClick={() => onEdit(index)} className="p-2 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"><PenLine className="w-4 h-4" /></button>
-            <button onClick={() => onRemove(index)} className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-4 h-4" /></button>
+            <button onClick={() => onEdit(index)} className="p-2 rounded-xl text-slate-400 hover:text-[#003399] hover:bg-slate-50 transition-all"><PenLine className="w-4 h-4" /></button>
+            <button onClick={() => onRemove(index)} className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-4 h-4" /></button>
           </div>
         </div>
       </div>
@@ -388,24 +388,24 @@ const EditModal = ({ question, onSave, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/20 border border-white/60 w-full max-w-lg my-8">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 w-full max-w-lg my-8">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
-              <PenLine className="w-4 h-4 text-blue-600" />
+            <div className="w-8 h-8 rounded-xl bg-[#003399]/10 flex items-center justify-center">
+              <PenLine className="w-4 h-4 text-[#003399]" />
             </div>
             <h3 className="font-bold text-gray-900">Edit Question</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 text-slate-400"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Question Text *</label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Question Text *</label>
             <textarea rows={3} value={form.question} onChange={e => setForm(p => ({ ...p, question: e.target.value }))} className={`${inp} resize-none`} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Type</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Type</label>
               <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value, correct_answer: e.target.value === 'multiple_answer' ? [] : 'A' }))} className={inp}>
                 <option value="single_answer">Single Answer</option>
                 <option value="multiple_answer">Multiple Answer</option>
@@ -413,7 +413,7 @@ const EditModal = ({ question, onSave, onClose }) => {
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Level</label>
               <select value={form.level} onChange={e => setForm(p => ({ ...p, level: e.target.value }))} className={inp}>
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
@@ -422,7 +422,7 @@ const EditModal = ({ question, onSave, onClose }) => {
           {isChoice && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Options * <span className="text-xs font-normal text-gray-400">({form.type === 'multiple_answer' ? 'check all correct' : 'select correct'})</span>
+                Options * <span className="text-xs font-normal text-slate-400">({form.type === 'multiple_answer' ? 'check all correct' : 'select correct'})</span>
               </label>
               <div className="space-y-2">
                 {LABELS.map((label, idx) => {
@@ -430,12 +430,12 @@ const EditModal = ({ question, onSave, onClose }) => {
                     ? (Array.isArray(form.correct_answer) && form.correct_answer.includes(label))
                     : form.correct_answer === label;
                   return (
-                    <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 ${correct ? 'border-blue-400 bg-blue-50' : 'border-gray-100 bg-gray-50'}`}>
+                    <div key={label} className={`flex items-center gap-3 p-3 rounded-xl border-2 ${correct ? 'border-[#003399]/40 bg-[#003399]/5' : 'border-gray-100 bg-gray-50'}`}>
                       {form.type === 'multiple_answer'
-                        ? <input type="checkbox" checked={correct} onChange={() => toggleMulti(label)} className="w-4 h-4 text-blue-600 rounded" />
-                        : <input type="radio" name="ca" checked={correct} onChange={() => setForm(p => ({ ...p, correct_answer: label }))} className="w-4 h-4 text-blue-600" />}
+                        ? <input type="checkbox" checked={correct} onChange={() => toggleMulti(label)} className="w-4 h-4 text-[#003399] rounded" />
+                        : <input type="radio" name="ca" checked={correct} onChange={() => setForm(p => ({ ...p, correct_answer: label }))} className="w-4 h-4 text-[#003399]" />}
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                        ${correct ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : 'bg-gray-200 text-gray-600'}`}>{label}</span>
+                        ${correct ? 'bg-[#003399] text-white' : 'bg-gray-200 text-gray-600'}`}>{label}</span>
                       <input type="text" value={form.options[idx]}
                         onChange={e => { const o = [...form.options]; o[idx] = e.target.value; setForm(p => ({ ...p, options: o })); }}
                         className="flex-1 bg-transparent text-sm focus:outline-none" placeholder={`Option ${label}`} />
@@ -447,17 +447,17 @@ const EditModal = ({ question, onSave, onClose }) => {
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Marks</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Marks</label>
               <input type="number" min={0.25} step={0.25} value={form.marks} onChange={e => setForm(p => ({ ...p, marks: e.target.value }))} className={inp} />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Explanation</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Explanation</label>
               <input type="text" value={form.explanation} onChange={e => setForm(p => ({ ...p, explanation: e.target.value }))} placeholder="Optional…" className={inp} />
             </div>
           </div>
         </div>
         <div className="flex gap-3 p-5 pt-0">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
           <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-bold hover:opacity-90"
             style={{ background: 'linear-gradient(135deg,#2563eb,#0891b2)' }}>
             <Save className="w-4 h-4" /> Save
@@ -511,46 +511,46 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-violet-500/20 border border-white/60 w-full max-w-2xl my-8">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-100 to-[#003399]/10 flex items-center justify-center">
               <Code2 className="w-4 h-4 text-violet-600" />
             </div>
             <h3 className="font-bold text-gray-900">Edit Coding Problem</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 text-slate-400"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Title */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Problem Title *</label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Problem Title *</label>
             <input type="text" value={form.question} onChange={e => setForm(p => ({ ...p, question: e.target.value }))} className={inp} placeholder="e.g. Two Sum, Longest Substring Without Repeating…" />
           </div>
 
           {/* Level / Language / Marks */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Level</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Level</label>
               <select value={form.level} onChange={e => setForm(p => ({ ...p, level: e.target.value }))} className={inp}>
                 <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Language</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Language</label>
               <select value={form.language} onChange={e => setForm(p => ({ ...p, language: e.target.value }))} className={inp}>
                 {CODING_LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Marks</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Marks</label>
               <input type="number" min={1} value={form.marks} onChange={e => setForm(p => ({ ...p, marks: e.target.value }))} className={inp} />
             </div>
           </div>
 
           {/* Problem Description */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Problem Description *</label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Problem Description *</label>
             <textarea rows={5} value={form.problem_description} onChange={e => setForm(p => ({ ...p, problem_description: e.target.value }))}
               className={`${inp} resize-none`} placeholder="Full problem statement with examples…" />
           </div>
@@ -558,17 +558,17 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
           {/* Input / Output / Constraints */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Input Format</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Input Format</label>
               <textarea rows={3} value={form.input_format} onChange={e => setForm(p => ({ ...p, input_format: e.target.value }))}
                 className={`${inp} resize-none`} placeholder="Describe input…" />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Output Format</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Output Format</label>
               <textarea rows={3} value={form.output_format} onChange={e => setForm(p => ({ ...p, output_format: e.target.value }))}
                 className={`${inp} resize-none`} placeholder="Describe expected output…" />
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Constraints</label>
+              <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Constraints</label>
               <textarea rows={3} value={form.constraints} onChange={e => setForm(p => ({ ...p, constraints: e.target.value }))}
                 className={`${inp} resize-none`} placeholder="e.g. 1 ≤ N ≤ 10^5" />
             </div>
@@ -576,14 +576,14 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
 
           {/* Algorithm tags */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Algorithm Tags <span className="font-normal text-gray-400">(comma-separated)</span></label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Algorithm Tags <span className="font-normal text-slate-400">(comma-separated)</span></label>
             <input type="text" value={form.algorithm_tags} onChange={e => setForm(p => ({ ...p, algorithm_tags: e.target.value }))}
               className={inp} placeholder="arrays, two-pointer, hashing" />
           </div>
 
           {/* Boilerplate */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Starter / Boilerplate Code</label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Starter / Boilerplate Code</label>
             <textarea rows={5} value={form.boilerplate_code} onChange={e => setForm(p => ({ ...p, boilerplate_code: e.target.value }))}
               className={`${inp} resize-none font-mono text-xs`} placeholder="def solution(...):\n    pass" />
           </div>
@@ -593,7 +593,7 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-semibold text-gray-700">Test Cases *</label>
               <button onClick={addTestCase}
-                className="flex items-center gap-1 text-xs text-blue-600 font-semibold hover:text-blue-700">
+                className="flex items-center gap-1 text-xs text-[#003399] font-semibold hover:text-[#003399]">
                 <PlusCircle className="w-3.5 h-3.5" /> Add Test Case
               </button>
             </div>
@@ -635,14 +635,14 @@ const CodingEditModal = ({ question, onSave, onClose }) => {
 
           {/* Explanation */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Solution Hint (optional)</label>
+            <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Solution Hint (optional)</label>
             <input type="text" value={form.explanation} onChange={e => setForm(p => ({ ...p, explanation: e.target.value }))}
               className={inp} placeholder="One-line approach hint…" />
           </div>
         </div>
 
-        <div className="flex gap-3 p-5 pt-3 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 text-sm font-semibold">Cancel</button>
+        <div className="flex gap-3 p-5 pt-3 border-t border-slate-100">
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
           <button onClick={handleSave}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-bold hover:opacity-90"
             style={{ background: 'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
@@ -914,24 +914,24 @@ const AIAssessmentGenerator = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
         {/* Back */}
         <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
+          className="flex items-center gap-2 text-gray-500 hover:text-[#003399] mb-2 transition-colors group text-[13px] font-bold">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
         </button>
 
         {/* ── HEADER ── */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
           <div>
-            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
               AI Assessment Generator
             </h1>
             <p className="text-[13px] text-gray-500 mt-1">Generate MCQ or Coding questions using AI — from a JD or a custom topic</p>
           </div>
-          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-2">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-2">
              <StepBar stage={stage} />
           </div>
         </div>
@@ -971,7 +971,7 @@ const AIAssessmentGenerator = () => {
                         title: 'Based on Job Description',
                         desc: 'MCQ questions tailored to a specific JD — skills, responsibilities and requirements',
                         badge: 'JD-linked',
-                        badgeColor: 'bg-blue-100 text-blue-700',
+                        badgeColor: 'bg-[#003399]/10 text-[#003399]',
                       },
                       {
                         id: 'topic',
@@ -995,25 +995,25 @@ const AIAssessmentGenerator = () => {
                           ${mode === opt.id
                             ? opt.id === 'coding'
                               ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-cyan-50 shadow-sm'
-                              : 'border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 shadow-sm'
+                              : 'border-[#003399] bg-slate-50 shadow-sm'
                             : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                         <div className="flex items-start gap-3">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
                             ${mode === opt.id
                               ? opt.id === 'coding'
                                 ? 'bg-gradient-to-br from-emerald-500 to-cyan-500'
-                                : 'bg-gradient-to-br from-blue-600 to-cyan-500'
+                                : 'bg-[#003399]'
                               : 'bg-gray-100'}`}>
                             <opt.icon className={`w-4 h-4 ${mode === opt.id ? 'text-white' : 'text-gray-500'}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <p className={`text-sm font-bold ${mode === opt.id ? (opt.id === 'coding' ? 'text-emerald-900' : 'text-blue-900') : 'text-gray-800'}`}>{opt.title}</p>
+                              <p className={`text-sm font-bold ${mode === opt.id ? (opt.id === 'coding' ? 'text-emerald-900' : 'text-[#003399]') : 'text-gray-800'}`}>{opt.title}</p>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${opt.badgeColor}`}>{opt.badge}</span>
                             </div>
                             <p className="text-xs text-gray-500 leading-relaxed">{opt.desc}</p>
                           </div>
-                          {mode === opt.id && <Check className={`w-5 h-5 shrink-0 mt-0.5 ${opt.id === 'coding' ? 'text-emerald-600' : 'text-blue-600'}`} />}
+                          {mode === opt.id && <Check className={`w-5 h-5 shrink-0 mt-0.5 ${opt.id === 'coding' ? 'text-emerald-600' : 'text-[#003399]'}`} />}
                         </div>
                       </button>
                     ))}
@@ -1025,8 +1025,8 @@ const AIAssessmentGenerator = () => {
             {/* ── JD Mode inputs ── */}
             {mode === 'jd' && (
               <Card>
-                <SectionHeader icon={Briefcase} iconBg="bg-gradient-to-br from-blue-100 to-cyan-100"
-                  iconColor="text-blue-600" title="Job Description" subtitle="AI will tailor questions to this role's skills and responsibilities" />
+                <SectionHeader icon={Briefcase} iconBg="bg-[#003399]/10"
+                  iconColor="text-[#003399]" title="Job Description" subtitle="AI will tailor questions to this role's skills and responsibilities" />
                 <div className="p-5 space-y-4">
                   <Field label="Select Job Description" required>
                     {jobs.length === 0 ? (
@@ -1035,7 +1035,7 @@ const AIAssessmentGenerator = () => {
                       </div>
                     ) : (
                       <div className="relative">
-                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <select value={jdId} onChange={e => handleJdChange(e.target.value)} className={`${inp} pl-10`}>
                           <option value="">— Choose a Job Description —</option>
                           {jobs.map(j => <option key={j._id} value={j._id}>{j.jobTitle}{j.jobCode ? ` (${j.jobCode})` : ''}</option>)}
@@ -1043,13 +1043,13 @@ const AIAssessmentGenerator = () => {
                       </div>
                     )}
                     {selectedJob && (
-                      <div className="mt-2 flex items-center gap-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-3">
-                        <Briefcase className="w-4 h-4 text-blue-600 shrink-0" />
+                      <div className="mt-2 flex items-center gap-3 bg-slate-50 border border-[#003399]/20 rounded-xl p-3">
+                        <Briefcase className="w-4 h-4 text-[#003399] shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-blue-900 text-sm">{selectedJob.jobTitle}</p>
-                          {selectedJob.jobRole && <p className="text-xs text-blue-500">{selectedJob.jobRole}</p>}
+                          <p className="font-bold text-[#003399] text-sm">{selectedJob.jobTitle}</p>
+                          {selectedJob.jobRole && <p className="text-xs text-[#00A9CE]">{selectedJob.jobRole}</p>}
                         </div>
-                        <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full border border-blue-200">✓</span>
+                        <span className="text-xs font-bold text-[#003399] bg-[#003399]/10 px-2.5 py-1 rounded-full border border-[#003399]/20">✓</span>
                       </div>
                     )}
                   </Field>
@@ -1062,7 +1062,7 @@ const AIAssessmentGenerator = () => {
               <Card>
                 <SectionHeader
                   icon={mode === 'coding' ? Code2 : BookMarked}
-                  iconBg={mode === 'coding' ? 'bg-gradient-to-br from-emerald-100 to-cyan-100' : 'bg-gradient-to-br from-violet-100 to-blue-100'}
+                  iconBg={mode === 'coding' ? 'bg-gradient-to-br from-emerald-100 to-cyan-100' : 'bg-gradient-to-br from-violet-100 to-[#003399]/10'}
                   iconColor={mode === 'coding' ? 'text-emerald-600' : 'text-violet-600'}
                   title={mode === 'coding' ? 'Topic / Domain for Coding Problems' : 'Topic / Skill'}
                   subtitle={mode === 'coding' ? 'What domain should the coding challenges be from?' : 'Define what subject the AI should generate questions about'} />
@@ -1075,14 +1075,14 @@ const AIAssessmentGenerator = () => {
                             ${topic === t && !customTopic
                               ? mode === 'coding'
                                 ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white border-transparent shadow-sm'
-                                : 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white border-transparent shadow-sm'
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600'}`}>
+                                : 'bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white border-transparent shadow-sm'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-[#003399]/30 hover:text-[#003399]'}`}>
                           {t}
                         </button>
                       ))}
                     </div>
                     <div className="relative">
-                      <Pencil className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Pencil className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input type="text" value={customTopic}
                         onChange={e => { setCustomTopic(e.target.value); setTopic(''); if (!title && e.target.value) setTitle(`${e.target.value} ${mode === 'coding' ? 'Coding Challenge' : 'Assessment'}`); }}
                         placeholder={mode === 'coding' ? "e.g. 'Data Structures', 'Backend Development'…" : "Or type a custom topic…"}
@@ -1107,14 +1107,14 @@ const AIAssessmentGenerator = () => {
                                 placeholder={`e.g. ${['useState & useEffect', 'Props & State', 'Component Lifecycle', 'Routing', 'Redux'][i % 5]}`}
                                 className={inp} />
                               {subtopics.length > 1 && (
-                                <button onClick={() => removeSubtopic(i)} className="p-2 text-gray-400 hover:text-red-500 transition-colors shrink-0">
+                                <button onClick={() => removeSubtopic(i)} className="p-2 text-slate-400 hover:text-red-500 transition-colors shrink-0">
                                   <XCircle className="w-4 h-4" />
                                 </button>
                               )}
                             </div>
                           ))}
                           <button onClick={addSubtopic}
-                            className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:text-blue-700 transition-colors">
+                            className="flex items-center gap-1.5 text-xs text-[#003399] font-semibold hover:text-[#003399] transition-colors">
                             <PlusCircle className="w-3.5 h-3.5" /> Add subtopic
                           </button>
                         </div>
@@ -1191,7 +1191,7 @@ const AIAssessmentGenerator = () => {
                     </Field>
                     <Field label="Marks per Problem" hint="Points awarded per coding problem">
                       <div className="relative">
-                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input type="number" min={1} max={100} value={marksPerProblem}
                           onChange={e => setMarksPerProblem(Number(e.target.value))}
                           className={`${inp} pl-10`} />
@@ -1209,12 +1209,12 @@ const AIAssessmentGenerator = () => {
 
             {/* ── Assessment title + tags ── */}
             <Card>
-              <SectionHeader icon={FileText} iconBg="bg-gradient-to-br from-gray-100 to-blue-50"
+              <SectionHeader icon={FileText} iconBg="bg-gradient-to-br from-gray-100 to-[#003399]/5"
                 iconColor="text-gray-600" title="Assessment Info" subtitle="Title and tags for this assessment" />
               <div className="p-5 space-y-4">
                 <Field label="Assessment Title" required hint="Auto-filled from topic — you can override">
                   <div className="relative">
-                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                       placeholder={mode === 'coding' ? 'e.g. Python Data Structures Coding Round' : 'e.g. React.js Mid-Semester Assessment'}
                       className={`${inp} pl-10`} />
@@ -1222,7 +1222,7 @@ const AIAssessmentGenerator = () => {
                 </Field>
                 <Field label="Tags" hint="Comma-separated — 'ai-generated' is always included">
                   <div className="relative">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input type="text" value={tags} onChange={e => setTags(e.target.value)}
                       placeholder={mode === 'coding' ? 'python, dsa, coding-round' : 'react, javascript, frontend'}
                       className={`${inp} pl-10`} />
@@ -1233,7 +1233,7 @@ const AIAssessmentGenerator = () => {
 
             {/* ── Difficulty & Volume ── */}
             <Card>
-              <SectionHeader icon={Layers} iconBg="bg-gradient-to-br from-indigo-100 to-blue-100"
+              <SectionHeader icon={Layers} iconBg="bg-gradient-to-br from-indigo-100 to-[#003399]/10"
                 iconColor="text-indigo-600" title="Difficulty & Volume" subtitle={mode === 'coding' ? 'Set challenge complexity and number of coding problems' : 'Configure AI question complexity and quantity'} />
               <div className="p-5 space-y-5">
                 {/* Level */}
@@ -1258,11 +1258,11 @@ const AIAssessmentGenerator = () => {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <HashIcon className="w-4 h-4 text-gray-400" /> Number of {mode === 'coding' ? 'Coding Problems' : 'Questions'}
+                      <HashIcon className="w-4 h-4 text-slate-400" /> Number of {mode === 'coding' ? 'Coding Problems' : 'Questions'}
                     </label>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent tabular-nums">{numQuestions}</span>
-                      <span className="text-xs text-gray-400 font-medium">{mode === 'coding' ? 'problems' : 'questions'}</span>
+                      <span className="text-3xl font-black bg-gradient-to-r from-[#003399] to-[#00A9CE] bg-clip-text text-transparent tabular-nums">{numQuestions}</span>
+                      <span className="text-xs text-slate-400 font-medium">{mode === 'coding' ? 'problems' : 'questions'}</span>
                     </div>
                   </div>
                   {mode === 'coding' ? (
@@ -1289,7 +1289,7 @@ const AIAssessmentGenerator = () => {
                       <style>{`input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#0891b2);border:3px solid white;box-shadow:0 2px 8px rgba(37,99,235,.4);cursor:pointer}`}</style>
                       <div className="flex justify-between text-xs text-gray-300 mt-1.5">
                         {[5,10,15,20,25,30,35,40,45,50].map(v => (
-                          <span key={v} className={numQuestions === v ? 'text-blue-500 font-bold' : ''}>{v}</span>
+                          <span key={v} className={numQuestions === v ? 'text-[#00A9CE] font-bold' : ''}>{v}</span>
                         ))}
                       </div>
                     </>
@@ -1300,7 +1300,7 @@ const AIAssessmentGenerator = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Total Marks" hint="Leave blank to auto-sum">
                     <div className="relative">
-                      <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input type="number" min={1} value={totalMarks}
                         onChange={e => setTotalMarks(e.target.value)}
                         placeholder={`~${mode === 'coding' ? numQuestions * marksPerProblem : numQuestions}`}
@@ -1309,7 +1309,7 @@ const AIAssessmentGenerator = () => {
                   </Field>
                   <Field label="Duration (minutes)">
                     <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input type="number" min={1} value={duration}
                         onChange={e => setDuration(e.target.value)}
                         placeholder={mode === 'coding' ? String(numQuestions * 15) : '60'}
@@ -1322,7 +1322,7 @@ const AIAssessmentGenerator = () => {
 
             {/* ── Schedule ── */}
             <Card>
-              <SectionHeader icon={Calendar} iconBg="bg-gradient-to-br from-cyan-100 to-blue-100"
+              <SectionHeader icon={Calendar} iconBg="bg-gradient-to-br from-cyan-100 to-[#003399]/10"
                 iconColor="text-cyan-600" title="Schedule (optional)" subtitle="Assessment auto-activates at start time and closes at end time" />
               <div className="p-5 space-y-4">
                 <Field label="Scheduled Date">
@@ -1337,7 +1337,7 @@ const AIAssessmentGenerator = () => {
 
             {/* ── Settings ── */}
             <Card>
-              <SectionHeader icon={Eye} iconBg="bg-gradient-to-br from-violet-100 to-blue-100"
+              <SectionHeader icon={Eye} iconBg="bg-gradient-to-br from-violet-100 to-[#003399]/10"
                 iconColor="text-violet-600" title="Assessment Settings" subtitle="Visibility and behaviour options" />
               <div className="p-5 space-y-3">
                 {!isCodingMode && (
@@ -1354,8 +1354,8 @@ const AIAssessmentGenerator = () => {
             <div className={`flex items-center gap-3 border rounded-xl p-4 text-sm
               ${isCodingMode
                 ? 'bg-gradient-to-r from-emerald-50 to-cyan-50 border-emerald-200 text-emerald-800'
-                : 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 text-blue-800'}`}>
-              {isCodingMode ? <Code2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <Zap className="w-4 h-4 text-blue-500 shrink-0" />}
+                : 'bg-slate-50 border-[#003399]/20 text-[#003399]'}`}>
+              {isCodingMode ? <Code2 className="w-4 h-4 text-emerald-500 shrink-0" /> : <Zap className="w-4 h-4 text-[#00A9CE] shrink-0" />}
               <span>
                 {isCodingMode
                   ? <>Coding problems include <strong>full test cases, I/O format, constraints and starter code</strong>. Saved as <strong>Draft</strong> — review before publishing.</>
@@ -1365,7 +1365,7 @@ const AIAssessmentGenerator = () => {
 
             <div className="flex gap-3">
               <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-                className="px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm bg-white/80">
+                className="px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm bg-white/80">
                 Cancel
               </button>
               <button onClick={handleGenerate} disabled={!canGenerate()}
@@ -1393,8 +1393,8 @@ const AIAssessmentGenerator = () => {
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <span className={`text-xs font-bold uppercase tracking-wide ${isCodingMode ? 'text-emerald-600' : 'text-blue-600'}`}>AI Generated</span>
+                      <div className="w-2 h-2 rounded-full bg-[#003399] animate-pulse" />
+                      <span className={`text-xs font-bold uppercase tracking-wide ${isCodingMode ? 'text-emerald-600' : 'text-[#003399]'}`}>AI Generated</span>
                     </div>
                     <h2 className="font-bold text-gray-900 text-lg">
                       {questions.length} {isCodingMode ? 'Coding Problems' : 'Questions'} Ready
@@ -1405,11 +1405,11 @@ const AIAssessmentGenerator = () => {
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     <button onClick={handleReset} disabled={stage === 'saving'}
-                      className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+                      className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-slate-50 disabled:opacity-50">
                       <RefreshCw className="w-4 h-4" /> Regenerate
                     </button>
                     <button onClick={handleSave} disabled={stage === 'saving'}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 shadow-lg ${isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}>
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 shadow-lg ${isCodingMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#003399] hover:bg-[#003399]"}`}>
                       {stage === 'saving' ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Assessment</>}
                     </button>
                   </div>
@@ -1424,10 +1424,10 @@ const AIAssessmentGenerator = () => {
                     { label: 'Total Marks', value: estMarks,                                            Icon: Trophy },
                     { label: 'Single',      value: questions.filter(q => q.type === 'single_answer').length, Icon: Check },
                   ].map(s => (
-                    <div key={s.label} className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-3 text-center">
-                      <div className="flex justify-center mb-0.5"><s.Icon className="w-4 h-4 text-blue-500" /></div>
+                    <div key={s.label} className="bg-slate-50 border border-[#003399]/10 rounded-xl p-3 text-center">
+                      <div className="flex justify-center mb-0.5"><s.Icon className="w-4 h-4 text-[#00A9CE]" /></div>
                       <div className="text-xl font-black text-gray-900">{s.value}</div>
-                      <div className="text-xs text-gray-400">{s.label}</div>
+                      <div className="text-xs text-slate-400">{s.label}</div>
                     </div>
                   ))}
                 </div>
@@ -1435,8 +1435,8 @@ const AIAssessmentGenerator = () => {
             </Card>
 
             <div className={`flex items-center gap-3 border rounded-xl p-3.5 text-sm
-              ${isCodingMode ? 'bg-gradient-to-r from-emerald-50 to-cyan-50 border-emerald-200 text-emerald-800' : 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 text-blue-800'}`}>
-              <PenLine className={`w-4 h-4 shrink-0 ${isCodingMode ? 'text-emerald-500' : 'text-blue-500'}`} />
+              ${isCodingMode ? 'bg-gradient-to-r from-emerald-50 to-cyan-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-[#003399]/20 text-[#003399]'}`}>
+              <PenLine className={`w-4 h-4 shrink-0 ${isCodingMode ? 'text-emerald-500' : 'text-[#00A9CE]'}`} />
               <span>Click <strong>edit</strong> on any {isCodingMode ? 'problem' : 'question'} to adjust test cases, code or details before saving.</span>
             </div>
 
@@ -1461,7 +1461,7 @@ const AIAssessmentGenerator = () => {
                   className={`flex items-center gap-2.5 px-8 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl ${
                     isCodingMode 
                       ? "bg-emerald-600 hover:bg-emerald-700" 
-                      : "bg-blue-600 hover:bg-blue-700"
+                      : "bg-[#003399] hover:bg-[#003399]"
                   }`}
                 >
                   <Save className="w-5 h-5" /> Save {questions.length} {isCodingMode ? 'Coding Problems' : 'Questions'} as Assessment
@@ -1483,10 +1483,10 @@ const AIAssessmentGenerator = () => {
               <p className="text-gray-500 max-w-sm mb-1">
                 {questions.length} AI-generated {isCodingMode ? 'coding problems' : 'questions'} saved as <strong>Draft</strong>.
               </p>
-              <p className={`text-sm font-bold bg-clip-text text-transparent mb-2 ${isCodingMode ? 'bg-gradient-to-r from-emerald-600 to-cyan-500' : 'bg-gradient-to-r from-blue-600 to-cyan-500'}`}>
+              <p className={`text-sm font-bold bg-clip-text text-transparent mb-2 ${isCodingMode ? 'bg-gradient-to-r from-emerald-600 to-cyan-500' : 'bg-gradient-to-r from-[#003399] to-[#00A9CE]'}`}>
                 {title || subjectTitle} · {level} · {estMarks} marks
               </p>
-              <p className="text-xs text-gray-400 mb-8">Schedule it from the Assessments list to go live for students.</p>
+              <p className="text-xs text-slate-400 mb-8">Schedule it from the Assessments list to go live for students.</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-sm">
                 {savedAssessmentId && (
                   <button onClick={() => navigate(`/dashboard/college-admin/assessments/${savedAssessmentId}/questions`)}
@@ -1496,19 +1496,18 @@ const AIAssessmentGenerator = () => {
                   </button>
                 )}
                 <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-                  className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">
+                  className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">
                   All Assessments
                 </button>
                 <button onClick={handleReset}
                   className={`flex items-center justify-center gap-2 px-6 py-3 border rounded-xl font-semibold text-sm
-                    ${isCodingMode ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-blue-200 text-blue-700 hover:bg-blue-50'}`}>
+                    ${isCodingMode ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 'border-[#003399]/20 text-[#003399] hover:bg-slate-50'}`}>
                   {isCodingMode ? <Code2 className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />} Generate Another
                 </button>
               </div>
             </div>
           </Card>
         )}
-      </div>
       </div>
 
       {/* Edit modal — MCQ or Coding */}

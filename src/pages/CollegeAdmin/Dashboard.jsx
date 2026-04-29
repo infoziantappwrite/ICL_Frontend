@@ -1,4 +1,4 @@
-// src/pages/CollegeAdmin/Dashboard.jsx
+﻿// src/pages/CollegeAdmin/Dashboard.jsx
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -26,7 +26,7 @@ const formatDate = (date) => {
 };
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>
+  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
@@ -35,7 +35,7 @@ const SectionHeader = ({ title, action, onAction }) => (
   <div className="flex items-center justify-between mb-3">
     <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-bold text-gray-900">{title}</h2>
     {action && (
-      <button onClick={onAction} className="text-[12px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+      <button onClick={onAction} className="text-[12px] font-semibold text-[#003399] hover:text-[#003399] flex items-center gap-1">
         {action} <ChevronRight className="w-3 h-3" />
       </button>
     )}
@@ -45,7 +45,7 @@ const SectionHeader = ({ title, action, onAction }) => (
 const MiniBar = ({ label, value, max, color, onClick }) => {
   const w = pct(value, max);
   return (
-    <button onClick={onClick} className="group w-full text-left hover:bg-gray-50 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+    <button onClick={onClick} className="group w-full text-left hover:bg-slate-50 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-gray-100">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[12px] text-gray-600 font-medium truncate max-w-[160px]">{label}</span>
         <span className="text-[12px] font-bold text-gray-900 ml-2">{fmt(value)}</span>
@@ -58,7 +58,7 @@ const MiniBar = ({ label, value, max, color, onClick }) => {
 };
 
 const ActivityItem = ({ icon: Icon, color, title, sub, time }) => (
-  <div className="flex items-start gap-2.5 py-2.5 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 px-2 rounded-lg transition-colors">
+  <div className="flex items-start gap-2.5 py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 px-2 rounded-lg transition-colors">
     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
       <Icon className="w-4 h-4" />
     </div>
@@ -66,7 +66,7 @@ const ActivityItem = ({ icon: Icon, color, title, sub, time }) => (
       <p className="text-[13px] font-bold text-gray-900 leading-snug">{title}</p>
       <p className="text-[11px] text-gray-500 mt-0.5 truncate">{sub}</p>
     </div>
-    <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5 whitespace-nowrap">{time}</span>
+    <span className="text-[10px] text-slate-400 flex-shrink-0 mt-0.5 whitespace-nowrap">{time}</span>
   </div>
 );
 
@@ -155,7 +155,7 @@ const CollegeAdminDashboard = () => {
   const activityFeed = [
     ...recentJDs.slice(0, 3).map((jd, i) => ({
       icon: Briefcase,
-      color: 'bg-blue-50 text-blue-600',
+      color: 'bg-[#003399]/5 text-[#003399]',
       title: `${jd.jobTitle || jd.title || 'New JD'} posted`,
       sub: `${jd.companyId?.name || jd.company || 'Company'} · ${jd.status || 'Draft'}`,
       time: `${i + 1}d ago`,
@@ -171,32 +171,32 @@ const CollegeAdminDashboard = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
           {/* ═════════ MOBILE HERO (hidden on md+) ═════════ */}
           <div className="md:hidden">
             <Card className="p-3">
               <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-12 h-12 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg font-bold text-blue-700">{firstName[0]}</span>
+                <div className="w-12 h-12 rounded-full bg-[#003399]/10 border-2 border-[#003399]/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg font-bold text-[#003399]">{firstName[0]}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-[15px] font-bold text-gray-900 leading-tight truncate">{collegeName}</h2>
                   <p className="text-[11px] text-gray-500 leading-snug mt-0.5 truncate">Welcome back, {firstName}</p>
                 </div>
-                <button onClick={fetchData} className="flex-shrink-0 w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50">
+                <button onClick={fetchData} className="flex-shrink-0 w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center hover:bg-slate-50">
                   <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
                 </button>
               </div>
               <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1">
                 <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${placementRate}%`, background: placementRate >= 80 ? '#22c55e' : '#3b82f6' }} />
               </div>
-              <div className="flex items-center justify-between text-[10px] text-gray-400">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span>Placement Rate</span>
-                <span className={`font-bold ${placementRate >= 80 ? 'text-green-600' : 'text-blue-600'}`}>{placementRate}%</span>
+                <span className={`font-bold ${placementRate >= 80 ? 'text-green-600' : 'text-[#003399]'}`}>{placementRate}%</span>
               </div>
-              <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center gap-3">
+              <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center gap-3">
                 <div className="flex gap-4 flex-1">
                   <div className="text-center">
                     <p className="text-[16px] font-bold text-gray-900">{fmt(stats.totalStudents)}</p>
@@ -216,10 +216,11 @@ const CollegeAdminDashboard = () => {
 
             {/* Welcome Note */}
             <div className="mb-2">
-              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-                Hi, <span className="text-blue-600">Welcome {firstName}!</span>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
+                Hi, <span className="text-[#003399]">Welcome {firstName}!</span>
               </h1>
-              <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+              <p className="text-sm text-slate-400 mt-1 font-medium">
                 Here's what's happening on your campus recruitment portal today.
               </p>
             </div>
@@ -227,7 +228,7 @@ const CollegeAdminDashboard = () => {
             {/* ═════════ STATS ROW ═════════ */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
               {[
-                { icon: Users, label: 'Students', value: fmt(stats.totalStudents), color: 'text-blue-600', bg: 'bg-blue-50' },
+                { icon: Users, label: 'Students', value: fmt(stats.totalStudents), color: 'text-[#003399]', bg: 'bg-[#003399]/5' },
                 { icon: UserCheck, label: 'Placed', value: fmt(stats.placedStudents), color: 'text-green-600', bg: 'bg-green-50' },
                 { icon: Briefcase, label: 'Live JDs', value: fmt(stats.activeJDs), color: 'text-cyan-600', bg: 'bg-cyan-50' },
                 { icon: Building2, label: 'Companies', value: fmt(stats.totalCompanies), color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -252,19 +253,19 @@ const CollegeAdminDashboard = () => {
             <Card className="p-4 md:p-5">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 rounded-lg bg-[#003399]/5 flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-[#003399]" />
                   </div>
                   <div>
                     <h3 className="text-[14px] font-bold text-gray-900">Placement Rate</h3>
-                    <p className="text-[11px] text-gray-500">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                       {fmt(stats.placedStudents)} of {fmt(stats.totalStudents)} students placed
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[20px] font-black ${placementRate >= 80 ? 'text-green-600' : 'text-blue-600'}`}>{placementRate}%</span>
-                  <button onClick={fetchData} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                  <span className={`text-[20px] font-black ${placementRate >= 80 ? 'text-green-600' : 'text-[#003399]'}`}>{placementRate}%</span>
+                  <button onClick={fetchData} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-slate-50/30 transition-colors">
                     <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${refreshing ? 'animate-spin' : ''}`} />
                   </button>
                 </div>
@@ -272,26 +273,26 @@ const CollegeAdminDashboard = () => {
               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${placementRate}%`, background: placementRate >= 80 ? '#22c55e' : '#3b82f6' }} />
               </div>
-              <p className="text-[10px] text-gray-400 mt-1.5 flex items-center gap-1">
+              <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
                 <Clock className="w-3 h-3" /> Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </Card>
 
             {/* Fast Action Banner */}
-            <div className="rounded-xl bg-gradient-to-r from-blue-700 to-cyan-600 p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="rounded-xl bg-gradient-to-r from-[#003399] to-[#00A9CE] p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
                   <Target className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-[15px] md:text-[17px] font-bold text-white">Placement Drive Goals</h3>
-                  <p className="text-[11px] md:text-[12px] text-blue-100 mt-1 leading-relaxed max-w-md">
+                  <p className="text-[11px] md:text-[12px] text-white/70 mt-1 leading-relaxed max-w-md">
                     Current drive targets to place all eligible students. You have {fmt(stats.activeJDs)} active jobs driving engagement.
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button onClick={() => navigate('/dashboard/college-admin/jobs/create')} className="bg-white text-blue-700 font-bold text-[12px] md:text-[13px] px-4 py-2 rounded-full hover:bg-gray-50 transition-colors shadow-sm">
+                <button onClick={() => navigate('/dashboard/college-admin/jobs/create')} className="bg-white text-[#003399] font-bold text-[12px] md:text-[13px] px-4 py-2 rounded-full hover:bg-slate-50/30 transition-colors shadow-sm">
                   Post New Job
                 </button>
               </div>
@@ -306,8 +307,8 @@ const CollegeAdminDashboard = () => {
                 {recentCompanies.length > 0 ? (
                   <div className="space-y-3">
                     {recentCompanies.slice(0, 5).map(company => (
-                      <div key={company._id} onClick={() => navigate(`/dashboard/college-admin/companies/${company._id}`)} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-[12px] font-bold flex-shrink-0">
+                      <div key={company._id} onClick={() => navigate(`/dashboard/college-admin/companies/${company._id}`)} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer border border-transparent hover:border-gray-100 transition-all">
+                        <div className="w-10 h-10 rounded-lg bg-[#003399]/5 text-[#003399] flex items-center justify-center text-[12px] font-bold flex-shrink-0">
                           {company.name?.substring(0, 2).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -363,7 +364,7 @@ const CollegeAdminDashboard = () => {
                   const selected = stats.selectedStudents ?? stats.placedStudents ?? 0;
                   const placed = stats.placedStudents ?? 0;
                   const steps = [
-                    { label: 'Enrolled', value: total, color: 'bg-blue-600', text: 'text-blue-700', w: 100 },
+                    { label: 'Enrolled', value: total, color: 'bg-[#003399]', text: 'text-[#003399]', w: 100 },
                     { label: 'Selected', value: selected, color: 'bg-cyan-500', text: 'text-cyan-700', w: total > 0 ? pct(selected, total) : 0 },
                     { label: 'Placed', value: placed, color: 'bg-emerald-500', text: 'text-emerald-700', w: total > 0 ? pct(placed, total) : 0 },
                   ];

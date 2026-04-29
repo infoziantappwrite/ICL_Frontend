@@ -1,4 +1,4 @@
-// pages/CollegeAdmin/Assessments/AssessmentForm.jsx
+﻿// pages/CollegeAdmin/Assessments/AssessmentForm.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -34,17 +34,17 @@ const INITIAL_FORM = {
 // ── Shared style tokens ───────────────────────────────────────────────────────
 const inp =
   'w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm ' +
-  'focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ' +
-  'bg-white transition-all placeholder:text-gray-400';
+  'focus:outline-none focus:ring-2 focus:ring-[#003399]/30 focus:border-[#003399] ' +
+  'bg-white transition-all placeholder:text-slate-400';
 
 // ── Reusable primitives ───────────────────────────────────────────────────────
 const Card = ({ children }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
     {children}
   </div>
 );
 
-const CardHead = ({ icon: Icon, title, color = 'from-blue-600 to-blue-500' }) => (
+const CardHead = ({ icon: Icon, title, color = 'from-[#003399] to-[#003399]/80' }) => (
   <div className={`bg-gradient-to-r ${color} px-5 py-3.5 flex items-center gap-3`}>
     <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center border border-white/20 flex-shrink-0">
       <Icon className="w-4 h-4 text-white" />
@@ -59,11 +59,11 @@ const CardBody = ({ children }) => (
 
 const Field = ({ label, children, required, hint }) => (
   <div>
-    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
       {label}{required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
     {children}
-    {hint && <p className="text-xs text-gray-400 mt-1 leading-relaxed">{hint}</p>}
+    {hint && <p className="text-xs text-slate-400 mt-1 leading-relaxed">{hint}</p>}
   </div>
 );
 
@@ -72,23 +72,23 @@ const Toggle = ({ checked, onChange, label, desc }) => (
     type="button"
     onClick={() => onChange(!checked)}
     className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border-2 transition-all text-left
-      ${checked ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+      ${checked ? 'border-[#003399]/40 bg-[#003399]/5' : 'border-gray-200 bg-white hover:border-gray-300'}`}
   >
     <div className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0
-      ${checked ? 'bg-blue-600' : 'bg-gray-200'}`}>
+      ${checked ? 'bg-[#003399]' : 'bg-gray-200'}`}>
       <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-transform
         ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
     </div>
     <div>
-      <p className={`text-sm font-bold ${checked ? 'text-blue-700' : 'text-gray-600'}`}>{label}</p>
-      {desc && <p className="text-xs text-gray-400 mt-0.5">{desc}</p>}
+      <p className={`text-sm font-bold ${checked ? 'text-[#003399]' : 'text-gray-600'}`}>{label}</p>
+      {desc && <p className="text-xs text-slate-400 mt-0.5">{desc}</p>}
     </div>
   </button>
 );
 
 // ── Step indicator (shared between Form and SectionManager) ───────────────────
 const Steps = ({ active }) => (
-  <div className="flex items-center bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
+  <div className="flex items-center bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
     {[
       { n: 1, label: 'Assessment Details' },
       { n: 2, label: 'Sections' },
@@ -100,13 +100,13 @@ const Steps = ({ active }) => (
             ${step.n < active
               ? 'bg-green-500 text-white'
               : step.n === active
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                : 'bg-gray-100 text-gray-400'
+                ? 'bg-[#003399] text-white shadow-lg shadow-blue-200'
+                : 'bg-gray-100 text-slate-400'
             }`}>
             {step.n < active ? <CheckCircle2 className="w-4 h-4" /> : step.n}
           </div>
           <span className={`text-xs font-bold truncate
-            ${step.n === active ? 'text-blue-700' : step.n < active ? 'text-green-600' : 'text-gray-400'}`}>
+            ${step.n === active ? 'text-[#003399]' : step.n < active ? 'text-green-600' : 'text-slate-400'}`}>
             {step.label}
           </span>
         </div>
@@ -231,7 +231,7 @@ const AssessmentForm = () => {
 
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24 min-h-screen bg-gray-50">
+      <div className="flex items-center justify-center py-24">
         <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
@@ -241,13 +241,13 @@ const AssessmentForm = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-10 xl:px-16 py-4 sm:py-6">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-5xl mx-auto space-y-4">
 
           {/* ── Back ── */}
           <button
             onClick={() => navigate('/dashboard/college-admin/assessments')}
-            className="flex items-center gap-1.5 text-gray-500 hover:text-blue-600 text-sm font-semibold transition-colors group"
+            className="flex items-center gap-1.5 text-gray-500 hover:text-[#003399] text-sm font-semibold transition-colors group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back to Assessments
@@ -257,7 +257,7 @@ const AssessmentForm = () => {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0
-                ${isAI ? 'bg-gradient-to-br from-violet-600 to-purple-500' : 'bg-gradient-to-br from-blue-600 to-blue-500'}`}>
+                ${isAI ? 'bg-gradient-to-br from-violet-600 to-purple-500' : 'bg-gradient-to-br from-[#003399] to-[#003399]/80'}`}>
                 {isAI
                   ? <Sparkles className="w-5 h-5 text-white" />
                   : isEdit
@@ -274,7 +274,7 @@ const AssessmentForm = () => {
               </div>
             </div>
             <div className={`hidden sm:flex px-2.5 py-1 rounded-full text-[10px] font-bold items-center gap-1.5 border flex-shrink-0
-              ${isAI ? 'bg-violet-50 border-violet-200 text-violet-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+              ${isAI ? 'bg-violet-50 border-violet-200 text-violet-700' : 'bg-[#003399]/5 border-[#003399]/20 text-[#003399]'}`}>
               {isAI ? <><Sparkles className="w-3 h-3" /> AI</> : <><SquarePen className="w-3 h-3" /> Manual</>}
             </div>
           </div>
@@ -312,7 +312,7 @@ const AssessmentForm = () => {
                     <Field label="Assessment Title" required
                       hint={form.jd_id ? 'Auto-filled from the linked Job Description — you can override it' : 'Give a clear, descriptive name'}>
                       <div className="relative">
-                        <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
                         <input
                           type="text"
                           value={form.title}
@@ -327,7 +327,7 @@ const AssessmentForm = () => {
                     <Field label="Link to Job Description (optional)"
                       hint="Linking a JD auto-assigns eligible students and prefills the title">
                       <div className="relative">
-                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
                         <select value={form.jd_id} onChange={e => handleJdChange(e.target.value)} className={`${inp} pl-10`}>
                           <option value="">— No JD linked —</option>
                           {jobs.map(j => (
@@ -344,7 +344,7 @@ const AssessmentForm = () => {
                       <div className="grid grid-cols-3 gap-3">
                         {[
                           { value: 'Beginner',     sel: 'border-emerald-400 bg-emerald-50 text-emerald-700 ring-emerald-300' },
-                          { value: 'Intermediate', sel: 'border-blue-400 bg-blue-50 text-blue-700 ring-blue-300' },
+                          { value: 'Intermediate', sel: 'border-[#003399]/40 bg-[#003399]/5 text-[#003399] ring-[#003399]/30' },
                           { value: 'Advanced',     sel: 'border-violet-400 bg-violet-50 text-violet-700 ring-violet-300' },
                         ].map(({ value, sel }) => (
                           <label key={value}
@@ -361,7 +361,7 @@ const AssessmentForm = () => {
                     {/* Tags */}
                     <Field label="Tags" hint="Comma-separated — e.g. frontend, javascript, react">
                       <div className="relative">
-                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
                         <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
                           placeholder="react, hooks, components" className={`${inp} pl-10`} />
                       </div>
@@ -371,12 +371,12 @@ const AssessmentForm = () => {
 
                 {/* CARD 2 — Overall Marks */}
                 <Card>
-                  <CardHead icon={Award} title="Overall Marks" color="from-blue-600 to-cyan-500" />
+                  <CardHead icon={Award} title="Overall Marks" color="from-[#003399] to-[#00A9CE]" />
                   <CardBody>
                     <Field label="Total Marks" required
                       hint="Enter the overall marks. You will distribute these across sections in the next step.">
                       <div className="relative">
-                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
                         <input
                           type="number"
                           min={1}
@@ -404,12 +404,12 @@ const AssessmentForm = () => {
 
                 {/* CARD 3 — Schedule & Duration */}
                 <Card>
-                  <CardHead icon={Calendar} title="Schedule & Duration" color="from-cyan-600 to-blue-500" />
+                  <CardHead icon={Calendar} title="Schedule & Duration" color="from-[#00A9CE] to-[#003399]" />
                   <CardBody>
 
                     <Field label="Duration (minutes)" required>
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none" />
                         <input type="number" min={1} max={600} value={form.duration_minutes}
                           onChange={e => set('duration_minutes', e.target.value)} className={`${inp} pl-10`} />
                       </div>
@@ -453,7 +453,7 @@ const AssessmentForm = () => {
 
                 {/* CARD 4 — Settings: only shuffle + camera (no show_results, no default_coding_language) */}
                 <Card>
-                  <CardHead icon={Eye} title="Assessment Settings" color="from-blue-700 to-blue-500" />
+                  <CardHead icon={Eye} title="Assessment Settings" color="from-[#003399] to-[#003399]/80" />
                   <CardBody>
                     <div className="space-y-3">
                       <Toggle
@@ -472,8 +472,8 @@ const AssessmentForm = () => {
                       />
                     </div>
 
-                    <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-sm text-blue-800 mt-3">
-                      <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+                    <div className="flex items-start gap-3 bg-[#003399]/5 border border-[#003399]/20 rounded-xl px-4 py-3 text-sm text-[#003399] mt-3">
+                      <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#003399]/40" />
                       <span>
                         The <strong>default coding language</strong> is configured per-question when you add
                         coding questions in Step 3 (Question Manager).
@@ -486,8 +486,8 @@ const AssessmentForm = () => {
             </div>
 
             {/* ── Info tip ── */}
-            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-4 text-sm text-blue-800">
-              <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-400" />
+            <div className="flex items-start gap-3 bg-[#003399]/5 border border-[#003399]/20 rounded-2xl px-4 py-4 text-sm text-[#003399]">
+              <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#003399]/40" />
               <span>
                 After saving, you'll go to the <strong>Section Manager</strong> to divide this assessment
                 into Coding &amp; Quiz sections. The assessment starts as a <strong>Draft</strong> — it
@@ -499,11 +499,11 @@ const AssessmentForm = () => {
             <div className="flex flex-col sm:flex-row justify-end gap-3 pb-6">
               <button type="button"
                 onClick={() => navigate('/dashboard/college-admin/assessments')}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-bold transition-all shadow-sm w-full sm:w-auto">
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-slate-50 text-sm font-bold transition-all shadow-sm w-full sm:w-auto">
                 Cancel
               </button>
               <button type="submit" disabled={saving}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl shadow-sm shadow-blue-200 hover:bg-blue-700 text-sm font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003399] text-white rounded-xl shadow-sm shadow-blue-200 hover:bg-[#003399] text-sm font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
                 {saving
                   ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   : <Save className="w-4 h-4" />}

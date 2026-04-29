@@ -1,4 +1,4 @@
-// src/pages/CollegeAdmin/StudentReport.jsx
+﻿// src/pages/CollegeAdmin/StudentReport.jsx
 // College admin view of a single student's performance report
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -13,36 +13,36 @@ import { reportAPI } from '../../api/Api';
 
 // ── Atoms ─────────────────────────────────────────────────────────
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm ${className}`}>
+  <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm ${className}`}>
     {children}
   </div>
 );
 
 const Stat = ({ label, value, sub, icon: Icon, color = 'blue' }) => {
   const colors = {
-    blue:   'bg-blue-50  text-blue-600  border-blue-100',
+    blue:   'bg-[#003399]/5  text-[#003399]  border-[#003399]/10',
     green:  'bg-green-50 text-green-600 border-green-100',
     purple: 'bg-purple-50 text-purple-600 border-purple-100',
     amber:  'bg-amber-50  text-amber-600 border-amber-100',
     red:    'bg-red-50    text-red-600   border-red-100',
   };
   return (
-    <div className="flex items-start gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+    <div className="flex items-start gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${colors[color]} shrink-0`}>
         <Icon className="w-6 h-6" />
       </div>
       <div>
-        <p className="text-2xl font-black text-gray-900">{value ?? '—'}</p>
+        <p className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">{value ?? '—'}</p>
         <p className="text-sm font-semibold text-gray-700">{label}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
       </div>
     </div>
   );
 };
 
 const ScoreBar = ({ pct }) => {
-  const color = pct >= 70 ? 'from-green-500 to-emerald-400' : pct >= 40 ? 'from-blue-400 to-cyan-400' : 'from-red-400 to-orange-400';
-  const text  = pct >= 70 ? 'text-green-700' : pct >= 40 ? 'text-blue-600' : 'text-red-600';
+  const color = pct >= 70 ? 'from-green-500 to-emerald-400' : pct >= 40 ? 'from-[#003399] to-[#00A9CE]' : 'from-red-400 to-orange-400';
+  const text  = pct >= 70 ? 'text-green-700' : pct >= 40 ? 'text-[#003399]' : 'text-red-600';
   return (
     <div className="flex items-center gap-3 w-40">
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -57,7 +57,7 @@ const Badge = ({ children, color = 'gray' }) => {
   const map = {
     green:  'bg-green-50 text-green-700 ring-1 ring-green-200',
     red:    'bg-red-50   text-red-700   ring-1 ring-red-200',
-    blue:   'bg-blue-50  text-blue-700  ring-1 ring-blue-200',
+    blue:   'bg-[#003399]/5  text-[#003399]  ring-1 ring-blue-200',
     amber:  'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
     purple: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200',
     gray:   'bg-gray-100 text-gray-600',
@@ -99,7 +99,7 @@ const StudentReport = () => {
       <CollegeAdminLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-3" />
+            <Loader2 className="w-10 h-10 text-[#003399] animate-spin mx-auto mb-3" />
             <p className="text-gray-500 font-medium">Loading student report…</p>
           </div>
         </div>
@@ -151,17 +151,18 @@ const StudentReport = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
           {/* Header */}
           <div className="flex items-center gap-4 mb-2">
             <button onClick={() => navigate(-1)}
-              className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-500 hover:text-gray-700 transition-colors shadow-sm">
+              className="p-2 rounded-xl border border-gray-200 bg-white hover:bg-slate-50 text-gray-500 hover:text-gray-700 transition-colors shadow-sm">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">Student <span className="text-blue-600">Report</span></h1>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />Student <span className="text-[#003399]">Report</span></h1>
               <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">Performance & activity overview</p>
             </div>
           </div>
@@ -169,8 +170,8 @@ const StudentReport = () => {
           {/* Student info card */}
           <Card className="p-5 md:p-6">
             <div className="flex items-start gap-4 md:gap-5">
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
-                <span className="text-blue-600 font-black text-xl md:text-2xl">
+              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-[#003399]/5 flex items-center justify-center shrink-0">
+                <span className="text-[#003399] font-black text-xl md:text-2xl">
                   {fullName.charAt(0).toUpperCase()}
                 </span>
               </div>
@@ -206,37 +207,37 @@ const StudentReport = () => {
           {/* Assessments table */}
           {assessments.length > 0 && (
             <Card>
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <BarChart2 className="w-4 h-4 text-blue-600" />
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center">
+                  <BarChart2 className="w-4 h-4 text-[#003399]" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Assessment Results</h3>
-                <span className="ml-auto text-[12px] font-bold text-gray-400">{assessments.length} attempts</span>
+                <span className="ml-auto text-[12px] font-bold text-slate-400">{assessments.length} attempts</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="text-left px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Assessment</th>
-                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Score</th>
-                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Progress</th>
-                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="text-left px-4 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider">Assessment</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider">Score</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider">Progress</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider">Status</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider">Date</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-slate-50">
                     {assessments.map((a, idx) => {
                       const pct    = Math.round(a.percentage ?? a.score_percentage ?? 0);
                       const passed = pct >= 50;
                       const date   = a.submittedAt || a.createdAt;
                       return (
-                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
                           <td className="px-5 py-3">
                             <p className="text-[13px] font-bold text-gray-900 leading-tight">
                               {a.assessmentTitle || a.title || `Assessment ${idx + 1}`}
                             </p>
                             {a.totalMarks && (
-                              <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                              <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
                                 {a.obtainedMarks ?? a.scored_marks ?? '—'} / {a.totalMarks} marks
                               </p>
                             )}
@@ -267,13 +268,13 @@ const StudentReport = () => {
           {/* Courses */}
           {courses.length > 0 && (
             <Card>
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
                   <BookOpen className="w-4 h-4 text-green-600" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Enrolled Courses</h3>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-slate-50">
                 {courses.map((c, idx) => {
                   const prog = c.progressPercentage ?? c.progress ?? 0;
                   return (
@@ -284,7 +285,7 @@ const StudentReport = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-bold text-gray-900">{c.title || c.courseTitle || `Course ${idx + 1}`}</p>
                         {c.completedModules !== undefined && (
-                          <p className="text-[12px] font-semibold text-gray-400 mt-0.5">
+                          <p className="text-[12px] font-semibold text-slate-400 mt-0.5">
                             {c.completedModules} / {c.totalModules ?? '?'} modules complete
                           </p>
                         )}
@@ -323,13 +324,13 @@ const StudentReport = () => {
           {/* Applications */}
           {applications.length > 0 && (
             <Card>
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
                   <FileText className="w-4 h-4 text-amber-600" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Job Applications</h3>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-slate-50">
                 {applications.map((ap, idx) => {
                   const statusColor = {
                     applied: 'blue', shortlisted: 'purple',
@@ -345,7 +346,7 @@ const StudentReport = () => {
                         {ap.status ? ap.status.charAt(0).toUpperCase() + ap.status.slice(1) : 'Applied'}
                       </Badge>
                       {ap.appliedAt && (
-                        <span className="text-[11px] font-bold text-gray-400 hidden sm:block">
+                        <span className="text-[11px] font-bold text-slate-400 hidden sm:block">
                           {new Date(ap.appliedAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}
                         </span>
                       )}

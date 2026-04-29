@@ -1,4 +1,4 @@
-// src/pages/CollegeAdmin/Settings.jsx
+﻿// src/pages/CollegeAdmin/Settings.jsx
 import { useToast } from '../../context/ToastContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,21 +14,21 @@ import { useAuth } from '../../context/AuthContext';
 const Toggle = ({ checked, onChange }) => (
   <button type="button" onClick={() => onChange(!checked)}
     className={`relative inline-flex items-center w-9 h-5 rounded-full flex-shrink-0 transition-colors duration-200 focus:outline-none ${
-      checked ? 'bg-blue-600' : 'bg-gray-300 hover:bg-gray-400'}`}>
+      checked ? 'bg-[#003399]' : 'bg-gray-300 hover:bg-gray-400'}`}>
     <span className={`inline-block w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ${checked ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
   </button>
 );
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>
+  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
 
 const SHead = ({ icon: Icon, title, sub }) => (
-  <div className="flex items-center gap-3 mb-5 border-b border-gray-100 pb-3">
-    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-      <Icon className="w-4 h-4 text-blue-600" />
+  <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+    <div className="w-8 h-8 rounded-lg bg-[#003399]/5 flex items-center justify-center flex-shrink-0">
+      <Icon className="w-4 h-4 text-[#003399]" />
     </div>
     <div>
       <h3 className="text-[16px] font-bold text-gray-900 leading-none">{title}</h3>
@@ -46,10 +46,10 @@ const Field = ({ label, required, children }) => (
   </div>
 );
 
-const inputCls = "w-full px-3 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors";
+const inputCls = "w-full px-3 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white";
 
 const ToggleRow = ({ label, checked, onChange }) => (
-  <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 px-2 rounded-lg transition-colors">
+  <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 hover:bg-slate-50/50 px-2 rounded-lg transition-colors">
     <span className="text-[13px] font-bold text-gray-700">{label}</span>
     <Toggle checked={checked} onChange={onChange} />
   </div>
@@ -141,15 +141,16 @@ const Settings = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
           {/* ═════════ HEADER ═════════ */}
           <div className="mb-4">
-            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-              Settings & <span className="text-blue-600">Preferences</span>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
+              Settings & <span className="text-[#003399]">Preferences</span>
             </h1>
-            <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+            <p className="text-sm text-slate-400 mt-1 font-medium">
               Manage your account settings, privacy, and preferences.
             </p>
           </div>
@@ -179,9 +180,9 @@ const Settings = () => {
                     <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                       className={`w-full px-4 py-3 rounded-lg flex items-center gap-3 transition-colors text-[13px] font-bold ${
                         activeTab === tab.id
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                          ? 'bg-[#003399]/5 text-[#003399]'
+                          : 'text-gray-600 hover:bg-slate-50 hover:text-gray-900'}`}>
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${activeTab === tab.id ? 'text-[#003399]' : 'text-slate-400'}`} />
                       {tab.label}
                     </button>
                   );
@@ -219,9 +220,9 @@ const Settings = () => {
                           onChange={e => setProfileData({ ...profileData, bio: e.target.value })}
                           className={inputCls} />
                       </Field>
-                      <div className="pt-4 border-t border-gray-100 flex justify-end">
+                      <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button type="submit" disabled={loading}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm">
                           <Save className="w-4 h-4" /> {loading ? 'Saving…' : 'Save Changes'}
                         </button>
                       </div>
@@ -247,16 +248,16 @@ const Settings = () => {
                               className={`${inputCls} pr-10`} />
                             <button type="button"
                               onClick={() => setShowPwd(p => ({ ...p, [key.replace('Password','').toLowerCase()||'current']: !p[key.replace('Password','').toLowerCase()||'current'] }))}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-white p-1 rounded-full">
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gray-600 bg-white p-1 rounded-full">
                               {showPwd[key.replace('Password','').toLowerCase()||'current'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                           </div>
-                          {hint && <p className="text-[11px] font-semibold text-gray-400 mt-1.5">{hint}</p>}
+                          {hint && <p className="text-[11px] font-semibold text-slate-400 mt-1.5">{hint}</p>}
                         </Field>
                       ))}
-                      <div className="pt-4 border-t border-gray-100">
+                      <div className="pt-4 border-t border-slate-100">
                         <button type="submit" disabled={loading}
-                          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm w-full justify-center">
+                          className="flex items-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm w-full justify-center">
                           <Lock className="w-4 h-4" /> {loading ? 'Changing…' : 'Change Password'}
                         </button>
                       </div>
@@ -272,10 +273,10 @@ const Settings = () => {
                       
                       <div>
                         <div className="flex items-center gap-2 mb-3">
-                          <Mail className="w-4 h-4 text-gray-400" />
+                          <Mail className="w-4 h-4 text-slate-400" />
                           <p className="text-[14px] font-bold text-gray-900">Email Notifications</p>
                         </div>
-                        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                        <div className="bg-white border border-slate-100 rounded-xl overflow-hidden">
                           {Object.entries(notifSettings.emailNotifications).map(([key, val]) => (
                             <ToggleRow key={key} label={key.replace(/([A-Z])/g,' $1').trim().replace(/^./, str => str.toUpperCase())}
                               checked={val} onChange={v => setNotifSettings(p => ({ ...p, emailNotifications:{ ...p.emailNotifications, [key]:v } }))} />
@@ -285,10 +286,10 @@ const Settings = () => {
 
                       <div>
                         <div className="flex items-center gap-2 mb-3">
-                          <Smartphone className="w-4 h-4 text-gray-400" />
+                          <Smartphone className="w-4 h-4 text-slate-400" />
                           <p className="text-[14px] font-bold text-gray-900">Push Notifications</p>
                         </div>
-                        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                        <div className="bg-white border border-slate-100 rounded-xl overflow-hidden">
                           {Object.entries(notifSettings.pushNotifications).map(([key, val]) => (
                             <ToggleRow key={key} label={key.replace(/([A-Z])/g,' $1').trim().replace(/^./, str => str.toUpperCase())}
                               checked={val} onChange={v => setNotifSettings(p => ({ ...p, pushNotifications:{ ...p.pushNotifications, [key]:v } }))} />
@@ -308,9 +309,9 @@ const Settings = () => {
                         </Field>
                       </div>
 
-                      <div className="pt-4 border-t border-gray-100 flex justify-end">
+                      <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button onClick={() => handleSavePrefs('Notification preferences updated!')} disabled={loading}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm">
                           <Save className="w-4 h-4" /> {loading ? 'Saving…' : 'Save Preferences'}
                         </button>
                       </div>
@@ -335,7 +336,7 @@ const Settings = () => {
                         </Field>
                       </div>
 
-                      <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+                      <div className="bg-white border border-slate-100 rounded-xl overflow-hidden">
                         {[
                           { key:'showEmail',       label:'Show Email Address publicly' },
                           { key:'showPhone',       label:'Show Phone Number publicly' },
@@ -349,9 +350,9 @@ const Settings = () => {
                         ))}
                       </div>
 
-                      <div className="pt-4 border-t border-gray-100 flex justify-end">
+                      <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button onClick={() => handleSavePrefs('Privacy settings updated!')} disabled={loading}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm">
                           <Save className="w-4 h-4" /> {loading ? 'Saving…' : 'Save Privacy Options'}
                         </button>
                       </div>
@@ -372,10 +373,10 @@ const Settings = () => {
                             <button key={value} onClick={() => setThemeSettings(p => ({ ...p, mode:value }))}
                               className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
                                 themeSettings.mode === value
-                                  ? 'border-blue-600 bg-blue-50/50'
+                                  ? 'border-[#003399] bg-[#003399]/5'
                                   : 'border-gray-100 hover:border-gray-200'}`}>
-                              <Icon className={`w-6 h-6 ${themeSettings.mode === value ? 'text-blue-600' : 'text-gray-400'}`} />
-                              <p className={`text-[13px] font-bold ${themeSettings.mode === value ? 'text-blue-700' : 'text-gray-700'}`}>{label}</p>
+                              <Icon className={`w-6 h-6 ${themeSettings.mode === value ? 'text-[#003399]' : 'text-slate-400'}`} />
+                              <p className={`text-[13px] font-bold ${themeSettings.mode === value ? 'text-[#003399]' : 'text-gray-700'}`}>{label}</p>
                             </button>
                           ))}
                         </div>
@@ -396,14 +397,14 @@ const Settings = () => {
                       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div>
                           <span className="text-[13px] font-bold text-gray-900 block">Compact Mode</span>
-                          <span className="text-[11px] text-gray-500">Reduce spacing and margins</span>
+                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Reduce spacing and margins</span>
                         </div>
                         <Toggle checked={themeSettings.compactMode} onChange={v => setThemeSettings(p => ({ ...p, compactMode:v }))} />
                       </div>
 
-                      <div className="pt-4 border-t border-gray-100 flex justify-end">
+                      <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button onClick={() => handleSavePrefs('Appearance settings saved!')}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] transition-colors shadow-sm">
                           <Save className="w-4 h-4" /> Save Appearance
                         </button>
                       </div>
@@ -416,13 +417,13 @@ const Settings = () => {
                   <div className="animate-in fade-in duration-300">
                     <SHead icon={SettingsIcon} title="Account Management" sub="Manage your account data and access" />
                     <div className="space-y-4 pt-2">
-                      <div className="flex items-start md:items-center justify-between gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors flex-col md:flex-row">
+                      <div className="flex items-start md:items-center justify-between gap-4 p-4 border border-slate-100 rounded-xl hover:bg-slate-50/30 transition-colors flex-col md:flex-row">
                         <div>
                           <p className="text-[14px] font-bold text-gray-900 mb-1">Export Your Data</p>
                           <p className="text-[12px] text-gray-500 max-w-md">Download a copy of your account data including profile, settings, and activity history.</p>
                         </div>
                         <button onClick={handleExportData} disabled={loading}
-                          className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-[12px] font-bold rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-sm w-full md:w-auto">
+                          className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-[12px] font-bold rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-sm w-full md:w-auto">
                           <Download className="w-4 h-4" /> {loading ? 'Exporting…' : 'Export Data'}
                         </button>
                       </div>

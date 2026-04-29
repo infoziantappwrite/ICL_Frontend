@@ -1,0 +1,61 @@
+<table className="w-full table-fixed">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  {['Company','Industry','Location','Website','Status','Actions'].map(h => (
+                    <th key={h} className="px-5 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {paginated.map((company, index) => (
+                  <tr key={company._id} className="hover:bg-slate-50/30 transition-colors group">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-[#003399] rounded-lg flex items-center justify-center text-white text-sm font-black flex-shrink-0 shadow-sm">
+                          {company.name?.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-800 truncate max-w-[140px]">{company.name}</p>
+                          {company.email && <p className="text-[10px] text-slate-400 truncate max-w-[140px]">{company.email}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-[#00A9CE]/5 text-[#00A9CE] rounded-md border border-[#00A9CE]/15">
+                        {company.industry || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 text-[11px] text-gray-500">
+                        <MapPin className="w-3 h-3 text-slate-300 flex-shrink-0" />
+                        {company.headquarters?.city
+                          ? [company.headquarters.city, company.headquarters.state].filter(Boolean).join(', ')
+                          : company.location || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {company.website
+                        ? <a href={company.website} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-black text-[#003399] hover:text-[#003399] hover:underline"
+                          ><Globe className="w-3 h-3" /> Visit</a>
+                        : <span className="text-[10px] text-slate-300 italic">N/A</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Toggle checked={company.isActive} onToggle={() => handleToggle(company._id, company.isActive)} />
+                        <span className={`text-[10px] font-bold ${company.isActive ? 'text-[#003399]' : 'text-slate-400'}`}>
+                          {company.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <ActionMenu actions={[
+                        { label: 'View', icon: Eye, onClick: () => navigate(`/dashboard/college-admin/companies/${company._id}`), color: 'text-[#003399] hover:bg-slate-50' },
+                        { label: 'Edit', icon: SquarePen, onClick: () => navigate(`/dashboard/college-admin/companies/edit/${company._id}`), color: 'text-emerald-600 hover:bg-emerald-50' },
+                        { label: 'Delete', icon: Trash2, onClick: () => handleDelete(company._id, company.name), danger: true },
+                      ]} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>

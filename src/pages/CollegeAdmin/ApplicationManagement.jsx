@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, Eye, CircleCheck, CircleX, Clock,
   FileText, Briefcase, Calendar, Building2,
-  ChevronLeft, ChevronRight, RefreshCw, ListFilter,
+  ChevronLeft, ChevronRight, RefreshCw, ListFilter, X,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -15,7 +15,7 @@ import { collegeAdminAPI } from '../../api/Api';
 const PER_PAGE = 10;
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 ${className}`}>
+  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
@@ -25,17 +25,17 @@ const Pagination = ({ page, totalPages, total, perPage, onPrev, onNext }) => {
   const from = (page - 1) * perPage + 1;
   const to = Math.min(page * perPage, total);
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white rounded-b-xl">
-      <span className="text-[12px] text-gray-500 font-medium">Showing {from}–{to} of {total}</span>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white rounded-b-xl">
+      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
+      <div className="flex items-center gap-1">
         <button onClick={onPrev} disabled={page === 1}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          <ChevronLeft className="w-3.5 h-3.5" /> Prev
+          className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
+          <ChevronLeft className="w-3.5 h-3.5" />
         </button>
         <span className="text-[12px] font-bold text-gray-700 px-2">{page} / {totalPages}</span>
         <button onClick={onNext} disabled={page === totalPages}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          Next <ChevronRight className="w-3.5 h-3.5" />
+          className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
+          <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
@@ -97,13 +97,13 @@ const ApplicationManagement = () => {
   };
 
   const getStatusBadge = (status) => ({
-    'Submitted':   'bg-blue-50 text-blue-700',
-    'Pending':     'bg-amber-50 text-amber-700',
-    'Selected':    'bg-emerald-50 text-emerald-700',
-    'Rejected':    'bg-red-50 text-red-700',
-    'Shortlisted': 'bg-indigo-50 text-indigo-700',
-    'Interviewing':'bg-fuchsia-50 text-fuchsia-700',
-  }[status] || 'bg-gray-50 text-gray-700');
+    'Submitted':   'bg-[#003399]/5 text-[#003399] border-[#003399]/10',
+    'Pending':     'bg-amber-50 text-amber-700 border-amber-200',
+    'Selected':    'bg-emerald-50 text-emerald-700 border-emerald-200',
+    'Rejected':    'bg-red-50 text-red-700 border-red-200',
+    'Shortlisted': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    'Interviewing':'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+  }[status] || 'bg-gray-50 text-gray-700 border-gray-200');
 
   const filteredApplications = applications.filter(application => {
     const matchesSearch =
@@ -122,16 +122,17 @@ const ApplicationManagement = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
           
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
             <div>
-              <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
-                Application <span className="text-blue-600">Management</span>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
+                Application <span className="text-[#003399]">Management</span>
               </h1>
-              <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+              <p className="text-sm text-slate-400 mt-1 font-medium">
                 Track, review, and manage student job applications.
               </p>
             </div>
@@ -140,7 +141,7 @@ const ApplicationManagement = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
             {[
-              { label: 'Total Applications', value: stats.total,    bg: 'bg-blue-50',     tc: 'text-blue-700',   Icon: FileText },
+              { label: 'Total Applications', value: stats.total,    bg: 'bg-[#003399]/5',     tc: 'text-[#003399]',   Icon: FileText },
               { label: 'In Progress',        value: stats.pending,  bg: 'bg-amber-50',    tc: 'text-amber-700',  Icon: Clock },
               { label: 'Selected',           value: stats.selected, bg: 'bg-emerald-50',  tc: 'text-emerald-700',Icon: CircleCheck },
               { label: 'Rejected',           value: stats.rejected, bg: 'bg-red-50',      tc: 'text-red-700',    Icon: CircleX },
@@ -161,94 +162,108 @@ const ApplicationManagement = () => {
           <Card className="flex flex-col overflow-hidden">
             
             {/* Toolbar */}
-            <div className="p-4 border-b border-gray-100 bg-white flex flex-col md:flex-row gap-3">
+            <div className="p-4 border-b border-slate-100 bg-white flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input type="text" placeholder="Search by student, job, or company..."
                   value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-shadow" />
+                  className="w-full pl-10 pr-8 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white" />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gray-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2.5 text-[13px] font-semibold text-gray-700 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer bg-white min-w-[140px]">
-                <option value="all">Check All Status</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Pending">Pending</option>
-                <option value="Shortlisted">Shortlisted</option>
-                <option value="Interviewing">Interviewing</option>
-                <option value="Selected">Selected</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-              <button onClick={fetchApplications} className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-[13px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-              </button>
+              <div className="flex gap-2">
+                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
+                  className="pl-4 pr-8 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white appearance-none cursor-pointer min-w-[160px]">
+                  <option value="all">Check All Status</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Shortlisted">Shortlisted</option>
+                  <option value="Interviewing">Interviewing</option>
+                  <option value="Selected">Selected</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                <button onClick={fetchApplications} className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-black bg-white text-slate-500 border border-slate-100 rounded-xl hover:border-[#003399]/30 hover:text-[#003399] transition-all">
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                </button>
+              </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
               {paginated.length > 0 ? (
-                <table className="w-full text-left border-collapse">
+                <table className="w-full table-fixed">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      {['Student','Job Title','Company','Applied Date','Status','Actions'].map(h => (
-                        <th key={h} className="px-5 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">{h}</th>
-                      ))}
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[60px]">S.No</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[200px]">Student</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[180px]">Job Title</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[150px]">Company</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[140px]">Applied Date</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left w-[130px]">Status</th>
+                      <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-[80px]">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {paginated.map((application) => (
-                      <tr key={application._id} className="hover:bg-gray-50/50 transition-colors group">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center font-black text-[13px] flex-shrink-0">
-                              {application.studentId?.fullName?.charAt(0) || 'S'}
-                            </div>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {paginated.map((application, index) => {
+                      const sNo = (page - 1) * PER_PAGE + index + 1;
+                      return (
+                        <tr key={application._id} className="hover:bg-slate-50/30 transition-colors group">
+                          <td className="px-5 py-4 text-xs font-bold text-slate-400">
+                            {String(sNo).padStart(2, '0')}
+                          </td>
+                          <td className="px-5 py-4">
                             <div className="min-w-0">
-                              <p className="font-bold text-gray-900 text-[13px] truncate">{application.studentId?.fullName || 'N/A'}</p>
-                              <p className="text-[11px] text-gray-500 truncate">{application.studentId?.email || 'N/A'}</p>
+                              <p className="text-sm font-bold text-slate-800 truncate w-full">{application.studentId?.fullName || 'N/A'}</p>
+                              <p className="text-[10px] text-slate-400 truncate w-full">{application.studentId?.email || 'N/A'}</p>
                               {application.studentId?.studentInfo?.rollNumber && (
-                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">{application.studentId.studentInfo.rollNumber}</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{application.studentId.studentInfo.rollNumber}</p>
                               )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Briefcase className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="text-[13px] font-bold text-gray-900 truncate max-w-[150px]">{application.jobId?.jobTitle || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="text-[12px] font-semibold text-gray-700 truncate max-w-[120px]">{application.companyId?.name || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5 text-gray-600">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="text-[12px] font-medium">
-                              {application.createdAt ? new Date(application.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'N/A'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <select value={application.status} onChange={(e) => handleStatusChange(application._id, e.target.value)}
-                            className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border border-transparent shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400 ${getStatusBadge(application.status)}`}>
-                            <option value="Submitted">Submitted</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Shortlisted">Shortlisted</option>
-                            <option value="Interviewing">Interviewing</option>
-                            <option value="Selected">Selected</option>
-                            <option value="Rejected">Rejected</option>
-                          </select>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <ActionMenu actions={[
-                            { label: 'View Details', icon: Eye, onClick: () => navigate(`/dashboard/college-admin/applications/${application._id}`), color: 'text-blue-600 hover:bg-blue-50' },
-                          ]} />
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Briefcase className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                              <span className="text-xs font-bold text-slate-800 truncate w-full">{application.jobId?.jobTitle || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                              <span className="text-xs font-semibold text-slate-700 truncate w-full">{application.companyId?.name || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-1.5 text-slate-400 min-w-0">
+                              <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="text-[11px] font-bold uppercase tracking-widest">
+                                {application.createdAt ? new Date(application.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : 'N/A'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <select value={application.status} onChange={(e) => handleStatusChange(application._id, e.target.value)}
+                              className={`px-2.5 py-1 text-[10px] font-black rounded-lg border shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#003399]/30 w-full ${getStatusBadge(application.status)}`}>
+                              <option value="Submitted">Submitted</option>
+                              <option value="Pending">Pending</option>
+                              <option value="Shortlisted">Shortlisted</option>
+                              <option value="Interviewing">Interviewing</option>
+                              <option value="Selected">Selected</option>
+                              <option value="Rejected">Rejected</option>
+                            </select>
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            <div className="flex items-center justify-center">
+                              <ActionMenu actions={[
+                                { label: 'View Details', icon: Eye, onClick: () => navigate(`/dashboard/college-admin/applications/${application._id}`), color: 'text-[#003399] hover:bg-slate-50' },
+                              ]} />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               ) : (

@@ -70,6 +70,7 @@ import SectionManager from './pages/CollegeAdmin/Assessments/SectionManager';
 import QuestionManager from './pages/CollegeAdmin/Assessments/QuestionManager';
 import AssessmentAttempts from './pages/CollegeAdmin/Assessments/AssessmentAttempts';
 import AIAssessmentGenerator from './pages/CollegeAdmin/Assessments/AIAssessmentGenerator';
+import AssessmentWizard from './pages/CollegeAdmin/Assessments/wizard/AssessmentWizard';
 
 // ==================== SUPER ADMIN COURSE PAGES ====================
 import SuperAdminCourseManagement from './pages/SuperAdmin/Courses/SuperAdminCourseManagement';
@@ -228,6 +229,8 @@ function App() {
             <Route path="/dashboard/college-admin/assessments/:assessmentId/questions" element={<ProtectedRoute><QuestionManager /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/:assessmentId/attempts" element={<ProtectedRoute><AssessmentAttempts /></ProtectedRoute>} />
             <Route path="/dashboard/college-admin/assessments/generate" element={<ProtectedRoute><AIAssessmentGenerator /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/wizard" element={<ProtectedRoute><AssessmentWizard /></ProtectedRoute>} />
+            <Route path="/dashboard/college-admin/assessments/wizard/:assessmentId" element={<ProtectedRoute><AssessmentWizard /></ProtectedRoute>} />
 
             {/* ===== SUPER ADMIN COURSES ===== */}
             <Route path="/dashboard/super-admin/courses" element={<ProtectedRoute><SuperAdminCourseManagement /></ProtectedRoute>} />

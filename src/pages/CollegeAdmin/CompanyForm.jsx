@@ -1,4 +1,4 @@
-// pages/CollegeAdmin/CompanyForm.jsx — redesigned to match SuperAdmin/CollegeAdmin theme
+﻿// pages/CollegeAdmin/CompanyForm.jsx — redesigned to match SuperAdmin/CollegeAdmin theme
 import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -11,14 +11,14 @@ import { companyAPI, collegeAdminAPI } from '../../api/Api';
 
 /* ─── Form field helpers ─────────────────────── */
 const FieldLabel = ({ children, required }) => (
-  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
     {children}{required && <span className="text-red-400 ml-0.5">*</span>}
   </label>
 );
 
 const TextInput = ({ error, ...props }) => (
   <input {...props}
-    className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-colors ${
+    className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-[#003399]/30 focus:border-transparent bg-white transition-colors ${
       error ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
     }`}
   />
@@ -26,7 +26,7 @@ const TextInput = ({ error, ...props }) => (
 
 const SelectInput = ({ error, children, ...props }) => (
   <select {...props}
-    className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-colors ${
+    className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-[#003399]/30 focus:border-transparent bg-white transition-colors ${
       error ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300'
     }`}>
     {children}
@@ -37,10 +37,10 @@ const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-[10px] mt-
 
 /* ─── Section card ─────────────────────────── */
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
+  <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-blue-600" />
+      <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-[#003399]" />
       </div>
       <h3 className="text-[15px] font-bold text-gray-900">{title}</h3>
     </div>
@@ -150,23 +150,24 @@ const CompanyForm = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
       {/* Back button */}
       <button onClick={() => navigate('/dashboard/college-admin/companies')}
-        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group text-sm font-semibold">
+        className="flex items-center gap-2 text-gray-500 hover:text-[#003399] transition-colors group text-sm font-semibold">
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Companies
       </button>
 
       {/* ══ HERO BANNER ══ */}
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Building2 className="w-6 h-6 text-blue-600" />
+        <div className="w-12 h-12 bg-[#003399]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Building2 className="w-6 h-6 text-[#003399]" />
         </div>
         <div>
-          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
             {isEditMode ? 'Edit Company' : 'Add New Company'}
           </h1>
           <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">
@@ -229,7 +230,7 @@ const CompanyForm = () => {
                   </SelectInput>
                   {formData.industry === 'Other' && (
                     <TextInput type="text" name="industryOther" placeholder="Specify industry..."
-                      className="w-full mt-2 px-3 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      className="w-full mt-2 px-3 py-2.5 text-xs font-bold border border-slate-100 rounded-xl focus:outline-none focus:border-[#003399]/30 bg-white"
                       value={formData.industryOther || ''} onChange={handleInputChange} />
                   )}
                   <FieldError msg={errors.industry} />
@@ -257,7 +258,7 @@ const CompanyForm = () => {
             <Section icon={FileText} title="Additional Information">
               <FieldLabel>Description</FieldLabel>
               <textarea name="description" value={formData.description} onChange={handleInputChange} rows="5"
-                className="w-full px-3 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 transition-colors resize-none bg-white"
+                className="w-full px-3 py-2.5 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 focus:border-[#003399] hover:border-gray-300 transition-colors resize-none bg-white"
                 placeholder="Enter company description..." />
             </Section>
 
@@ -267,10 +268,10 @@ const CompanyForm = () => {
           <div className="flex flex-col gap-4">
 
             {/* Status */}
-            <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Building2 className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-4 h-4 text-[#003399]" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Status</h3>
               </div>
@@ -280,7 +281,7 @@ const CompanyForm = () => {
                     onChange={handleInputChange} className="sr-only" />
                   <div onClick={() => setFormData(p => ({ ...p, isActive: !p.isActive }))}
                     className={`w-9 h-5 rounded-full cursor-pointer transition-colors duration-200 ${
-                      formData.isActive ? 'bg-gradient-to-r from-blue-500 to-cyan-400' : 'bg-gray-300'
+                      formData.isActive ? 'bg-gradient-to-r from-[#003399] to-[#00A9CE]' : 'bg-gray-300'
                     }`}>
                     <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${
                       formData.isActive ? 'translate-x-[18px]' : 'translate-x-[2px]'
@@ -289,36 +290,36 @@ const CompanyForm = () => {
                 </div>
                 <span className="text-sm font-semibold text-gray-700">Company is Active</span>
               </label>
-              <p className="text-[10px] text-gray-400 mt-2 ml-12">Active companies are visible to students</p>
+              <p className="text-[10px] text-slate-400 mt-2 ml-12">Active companies are visible to students</p>
             </div>
 
             {/* Actions */}
-            <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Save className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Save className="w-4 h-4 text-[#003399]" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Actions</h3>
               </div>
               <div className="space-y-2">
                 <button type="submit" disabled={saving}
-                  className="w-full inline-flex items-center justify-center gap-1.5 bg-blue-600 text-white text-[13px] font-bold px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                  className="w-full inline-flex items-center justify-center gap-1.5 bg-[#003399] text-white text-[13px] font-bold px-4 py-2.5 rounded-lg hover:bg-[#003399] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : isEditMode ? 'Update Company' : 'Create Company'}
                 </button>
                 <button type="button" onClick={() => navigate('/dashboard/college-admin/companies')}
-                  className="w-full inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+                  className="w-full inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg hover:bg-slate-50/30 transition-colors shadow-sm">
                   <X className="w-4 h-4" /> Cancel
                 </button>
               </div>
             </div>
 
             {/* Tips */}
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 relative overflow-hidden">
+            <div className="bg-[#003399]/5 border border-[#003399]/20 rounded-xl p-4 relative overflow-hidden">
               <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/10 rounded-full" />
               <div className="relative">
-                <p className="text-[13px] font-bold text-blue-800 mb-2">💡 Tips</p>
-                <ul className="text-[11px] font-medium text-blue-700 space-y-1.5">
+                <p className="text-[13px] font-bold text-[#003399] mb-2">💡 Tips</p>
+                <ul className="text-[11px] font-medium text-[#003399] space-y-1.5">
                   <li>• Industry helps students filter by sector</li>
                   <li>• Add a website for credibility</li>
                   <li>• Description improves student interest</li>

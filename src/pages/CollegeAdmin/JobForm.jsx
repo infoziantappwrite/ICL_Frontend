@@ -1,4 +1,4 @@
-// src/pages/CollegeAdmin/JobForm.jsx — redesigned to match SuperAdmin/CollegeAdmin theme
+﻿// src/pages/CollegeAdmin/JobForm.jsx — redesigned to match SuperAdmin/CollegeAdmin theme
 import Select from "react-select";
 import { useToast } from '../../context/ToastContext';
 import { useState, useEffect } from 'react';
@@ -22,26 +22,26 @@ const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
   const remove = (i) => onChange(values.filter((_, idx) => idx !== i));
   return (
     <div>
-      <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{label}</label>
-      {hint && <p className="text-[10px] text-gray-400 mb-2">{hint}</p>}
+      <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">{label}</label>
+      {hint && <p className="text-[10px] text-slate-400 mb-2">{hint}</p>}
       <div className="flex gap-2 mb-2">
         <input type="text" value={inputVal} onChange={e => setInputVal(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
           placeholder={placeholder || 'Type and press Enter or click Add'}
-          className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
+          className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 hover:border-gray-300 transition-colors bg-white" />
         <button type="button" onClick={add}
-          className="px-3 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-lg flex items-center gap-1 hover:bg-blue-700 transition-colors shadow-sm">
+          className="px-3 py-2 bg-[#003399] text-white text-[13px] font-bold rounded-lg flex items-center gap-1 hover:bg-[#003399] transition-colors shadow-sm">
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {values.map((v, i) => (
-          <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-semibold border border-blue-100">
+          <span key={i} className="flex items-center gap-1 px-2.5 py-1 bg-[#003399]/5 text-[#003399] text-xs rounded-full font-semibold border border-[#003399]/10">
             {v}
-            <button type="button" onClick={() => remove(i)} className="hover:text-blue-900 transition-colors"><X className="w-3 h-3" /></button>
+            <button type="button" onClick={() => remove(i)} className="hover:text-[#003399] transition-colors"><X className="w-3 h-3" /></button>
           </span>
         ))}
-        {values.length === 0 && <span className="text-[10px] text-gray-400 italic">None added yet</span>}
+        {values.length === 0 && <span className="text-[10px] text-slate-400 italic">None added yet</span>}
       </div>
     </div>
   );
@@ -49,10 +49,10 @@ const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
 
 /* ─── Section card ─────────────────────── */
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
+  <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-blue-600" />
+      <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-[#003399]" />
       </div>
       <h3 className="text-[15px] md:text-[16px] font-bold text-gray-900">{title}</h3>
     </div>
@@ -62,7 +62,7 @@ const Section = ({ icon: Icon, title, children }) => (
 
 /* ─── Shared form atoms ─────────────────── */
 const FieldLabel = ({ children, required }) => (
-  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">
     {children}{required && <span className="text-red-400 ml-0.5">*</span>}
   </label>
 );
@@ -71,7 +71,7 @@ const TextInput = ({ label, required, ...props }) => (
   <div>
     {label && <FieldLabel required={required}>{label}</FieldLabel>}
     <input {...props}
-      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
+      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 hover:border-gray-300 transition-colors bg-white" />
   </div>
 );
 
@@ -79,7 +79,7 @@ const SelectInput = ({ label, required, options, ...props }) => (
   <div>
     {label && <FieldLabel required={required}>{label}</FieldLabel>}
     <select {...props}
-      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white hover:border-gray-300 transition-colors appearance-none">
+      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 bg-white hover:border-gray-300 transition-colors appearance-none">
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   </div>
@@ -89,7 +89,7 @@ const TextArea = ({ label, required, ...props }) => (
   <div>
     {label && <FieldLabel required={required}>{label}</FieldLabel>}
     <textarea {...props}
-      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors resize-none bg-white" />
+      className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 hover:border-gray-300 transition-colors resize-none bg-white" />
   </div>
 );
 
@@ -682,23 +682,24 @@ const JobForm = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
         <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
 
       {/* Back button */}
       <button onClick={() => navigate('/dashboard/college-admin/jobs')}
-        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors group text-[14px] font-bold">
+        className="flex items-center gap-2 text-gray-500 hover:text-[#003399] transition-colors group text-[14px] font-bold">
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         Back to Job Management
       </button>
 
       {/* ══ HERO BANNER ══ */}
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Briefcase className="w-6 h-6 text-blue-600" />
+        <div className="w-12 h-12 bg-[#003399]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Briefcase className="w-6 h-6 text-[#003399]" />
         </div>
         <div>
-          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
             {isEditMode ? 'Edit Job Description' : 'Create New Job'}
           </h1>
           <p className="text-[12px] md:text-[14px] text-gray-500 mt-0.5">
@@ -734,7 +735,7 @@ const JobForm = () => {
             <div>
               <FieldLabel required>Company</FieldLabel>
               <select value={formData.companyId} onChange={e => updateField('companyId', e.target.value)} required
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003399]/30 focus:border-transparent bg-white">
                 <option value="">Select Company</option>
                 {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
@@ -766,7 +767,7 @@ const JobForm = () => {
                 <input type="text" value={resp}
                   onChange={e => updateArrayItem('responsibilities', idx, e.target.value)}
                   placeholder="Enter responsibility"
-                  className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
+                  className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 hover:border-gray-300 transition-colors bg-white" />
                 {formData.responsibilities.length > 1 && (
                   <button type="button" onClick={() => removeArrayItem('responsibilities', idx)}
                     className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -774,7 +775,7 @@ const JobForm = () => {
               </div>
             ))}
             <button type="button" onClick={() => addArrayItem('responsibilities', '')}
-              className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 mt-1">
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#003399] hover:text-[#003399] mt-1">
               <Plus className="w-3.5 h-3.5" /> Add Responsibility
             </button>
           </div>
@@ -787,7 +788,7 @@ const JobForm = () => {
                 <input type="text" value={req}
                   onChange={e => updateArrayItem('requirements', idx, e.target.value)}
                   placeholder="Enter requirement"
-                  className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 hover:border-gray-300 transition-colors bg-white" />
+                  className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 hover:border-gray-300 transition-colors bg-white" />
                 {formData.requirements.length > 1 && (
                   <button type="button" onClick={() => removeArrayItem('requirements', idx)}
                     className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -795,7 +796,7 @@ const JobForm = () => {
               </div>
             ))}
             <button type="button" onClick={() => addArrayItem('requirements', '')}
-              className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 mt-1">
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#003399] hover:text-[#003399] mt-1">
               <Plus className="w-3.5 h-3.5" /> Add Requirement
             </button>
           </div>
@@ -826,7 +827,7 @@ const JobForm = () => {
               className="text-sm"
             />
 
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Search and select multiple skills
             </p>
           </div>
@@ -922,7 +923,7 @@ const JobForm = () => {
             </div>
           ))}
           <button type="button" onClick={addLocationRow}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#003399] hover:text-[#003399]">
             <Plus className="w-3.5 h-3.5" /> Add Location
           </button>
         </Section>
@@ -944,7 +945,7 @@ const JobForm = () => {
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={formData.eligibility.activeBacklogsAllowed}
               onChange={e => updateNested('eligibility', 'activeBacklogsAllowed', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+              className="w-4 h-4 text-[#003399] rounded border-gray-300" />
             <span className="text-sm font-medium text-gray-700">Allow Active Backlogs</span>
           </label>
 
@@ -973,7 +974,7 @@ const JobForm = () => {
               }
               className="text-sm"
             />
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Select one or more departments from the active branch list
             </p>
           </div>
@@ -984,8 +985,8 @@ const JobForm = () => {
               {batches.map(batch => (
                 <button key={batch} type="button" onClick={() => toggleBatch(batch)}
                   className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border-2 transition-all ${formData.eligibility.batches.includes(batch)
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                    : 'border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600'
+                    ? 'bg-[#003399] border-[#003399] text-white shadow-sm'
+                    : 'border-gray-200 text-gray-600 hover:border-[#003399]/30 hover:text-[#003399]'
                     }`}>
                   {batch}
                 </button>
@@ -1030,7 +1031,7 @@ const JobForm = () => {
             </div>
           ))}
           <button type="button" onClick={addSelectionRound}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#003399] hover:text-[#003399]">
             <Plus className="w-3.5 h-3.5" /> Add Selection Round
           </button>
         </Section>
@@ -1047,7 +1048,7 @@ const JobForm = () => {
               <label key={key} className="flex items-center gap-2.5 cursor-pointer">
                 <input type="checkbox" checked={formData.documentsRequired[key]}
                   onChange={e => updateNested('documentsRequired', key, e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300" />
+                  className="w-4 h-4 text-[#003399] rounded border-gray-300" />
                 <span className="text-sm font-medium text-gray-700">{label}</span>
               </label>
             ))}
@@ -1068,10 +1069,10 @@ const JobForm = () => {
         </Section>
 
         {/* ══ ACTION BUTTONS ══ */}
-        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5 md:p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
           <div className="flex flex-col sm:flex-row justify-end gap-3">
             <button type="button" onClick={() => navigate('/dashboard/college-admin/jobs')}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-[13px] font-bold transition-all shadow-sm w-full sm:w-auto">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-slate-50 text-[13px] font-bold transition-all shadow-sm w-full sm:w-auto">
               <X className="w-4 h-4" /> Cancel
             </button>
             <button type="button" onClick={(e) => handleSubmit(e, 'Draft')} disabled={saving}
@@ -1079,7 +1080,7 @@ const JobForm = () => {
               <FileText className="w-4 h-4" /> Save as Draft
             </button>
             <button type="submit" disabled={saving}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 text-[13px] font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003399] text-white rounded-lg shadow-sm hover:bg-[#003399] text-[13px] font-bold disabled:opacity-50 transition-colors w-full sm:w-auto">
               <Save className="w-4 h-4" />
               {saving ? 'Saving...' : isEditMode ? 'Update Job' : 'Publish Job'}
             </button>

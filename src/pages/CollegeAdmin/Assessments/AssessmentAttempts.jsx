@@ -57,8 +57,8 @@ const fetchViolations = (submissionId) =>
   apiCall(`/proctoring/violations/${submissionId}`);
 
 const ScoreBar = ({ pct }) => {
-  const color = pct >= 50 ? 'from-green-500 to-emerald-400' : pct >= 35 ? 'from-blue-400 to-blue-500' : 'from-red-400 to-red-500';
-  const textColor = pct >= 50 ? 'text-green-700' : pct >= 35 ? 'text-blue-600' : 'text-red-600';
+  const color = pct >= 50 ? 'from-green-500 to-emerald-400' : pct >= 35 ? 'from-[#003399] to-[#003399]/80' : 'from-red-400 to-red-500';
+  const textColor = pct >= 50 ? 'text-green-700' : pct >= 35 ? 'text-[#003399]' : 'text-red-600';
   return (
     <div className="flex items-center gap-2 w-36">
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -106,29 +106,29 @@ const ProctoringModal = ({ attempt, onClose }) => {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${flagged ? 'bg-red-100' : count > 0 ? 'bg-amber-100' : 'bg-green-100'}`}>
               {flagged ? <ShieldAlert className="w-5 h-5 text-red-600" /> : count > 0 ? <AlertTriangle className="w-5 h-5 text-amber-600" /> : <ShieldCheck className="w-5 h-5 text-green-600" />}
             </div>
             <div>
               <h2 className="font-black text-gray-900 text-sm">Proctoring Report</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{attempt.student_id?.fullName || '—'}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{attempt.student_id?.fullName || '—'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-all">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-slate-400 transition-all">
             <X className="w-5 h-5" />
           </button>
         </div>
 
 
         {/* Summary stats */}
-        <div className="px-5 py-4 grid grid-cols-4 gap-3 border-b border-gray-100 shrink-0">
+        <div className="px-5 py-4 grid grid-cols-4 gap-3 border-b border-slate-100 shrink-0">
           {[
             { label: 'Total Events', value: violations?.length ?? '—', color: 'bg-gray-50 border-gray-200 text-gray-700' },
-            { label: 'Critical',     value: loading ? '—' : critical, color: critical > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-200 text-gray-400' },
-            { label: 'Camera',       value: loading ? '—' : camera,   color: camera > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-200 text-gray-400' },
-            { label: 'Browser',      value: loading ? '—' : browser,  color: browser > 0 ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-400' },
+            { label: 'Critical',     value: loading ? '—' : critical, color: critical > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-200 text-slate-400' },
+            { label: 'Camera',       value: loading ? '—' : camera,   color: camera > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-200 text-slate-400' },
+            { label: 'Browser',      value: loading ? '—' : browser,  color: browser > 0 ? 'bg-[#003399]/5 border-[#003399]/20 text-[#003399]' : 'bg-gray-50 border-gray-200 text-slate-400' },
           ].map(s => (
             <div key={s.label} className={`rounded-xl border px-3 py-2.5 text-center ${s.color}`}>
               <p className="text-lg font-black tabular-nums">{s.value}</p>
@@ -138,19 +138,19 @@ const ProctoringModal = ({ attempt, onClose }) => {
         </div>
 
         {/* Status badge */}
-        <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-100 shrink-0">
+        <div className="px-5 py-3 flex items-center gap-2 border-b border-slate-100 shrink-0">
           <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border
             ${flagged ? 'bg-red-50 border-red-200 text-red-700' : count > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
             {flagged ? <><ShieldAlert className="w-3 h-3" /> Flagged</> : count > 0 ? <><AlertTriangle className="w-3 h-3" /> {count} violation{count !== 1 ? 's' : ''}</> : <><ShieldCheck className="w-3 h-3" /> Clean</>}
           </span>
-          <span className="text-xs text-gray-400 ml-1">Risk Score: <strong className="text-gray-700">{attempt.proctoring_risk_score ?? 0}/100</strong></span>
+          <span className="text-xs text-slate-400 ml-1">Risk Score: <strong className="text-gray-700">{attempt.proctoring_risk_score ?? 0}/100</strong></span>
         </div>
 
         {/* Violation list */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
+              <RefreshCw className="w-5 h-5 animate-spin text-slate-400" />
             </div>
           ) : violations?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-green-600 gap-2">
@@ -158,21 +158,21 @@ const ProctoringModal = ({ attempt, onClose }) => {
               <p className="text-sm font-semibold">No violations recorded</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-slate-50">
               <div className="px-5 py-2">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Event Log</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Event Log</p>
               </div>
               {violations.map((v, i) => (
-                <div key={i} className="px-5 py-3 hover:bg-gray-50/60 transition-colors">
+                <div key={i} className="px-5 py-3 hover:bg-slate-50/60 transition-colors">
                   <div className="flex items-center gap-3">
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${CRITICAL_TYPES.has(v.event_type) ? 'bg-red-500' : 'bg-amber-400'}`} />
                     <div className="flex-1 min-w-0">
                       <p className={`text-xs font-bold truncate ${CRITICAL_TYPES.has(v.event_type) ? 'text-red-700' : 'text-amber-700'}`}>
                         {VIOLATION_LABELS[v.event_type] || v.event_type}
                       </p>
-                      <p className="text-[10px] text-gray-400 mt-0.5 capitalize">{v.source || 'system'} · {v.severity}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 capitalize">{v.source || 'system'} · {v.severity}</p>
                     </div>
-                    <span className="text-[10px] text-gray-400 shrink-0 font-mono">
+                    <span className="text-[10px] text-slate-400 shrink-0 font-mono">
                       {v.client_timestamp
                         ? new Date(v.client_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
                         : new Date(v.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -181,7 +181,7 @@ const ProctoringModal = ({ attempt, onClose }) => {
                   {/* ── Evidence snapshot (camera violations only) ── */}
                   {v.evidence_snapshot && (
                     <div className="mt-2 ml-5">
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">📷 Evidence Photo</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1">📷 Evidence Photo</p>
                       <img
                         src={v.evidence_snapshot}
                         alt="violation evidence"
@@ -197,9 +197,9 @@ const ProctoringModal = ({ attempt, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 shrink-0">
+        <div className="px-5 py-4 border-t border-slate-100 shrink-0">
           <button onClick={onClose}
-            className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm transition-colors">
+            className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm transition-colors">
             Close
           </button>
         </div>
@@ -284,7 +284,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
   };
 
   const formatAnswer = (ans) => {
-    if (!ans && ans !== 0) return <span className="text-gray-400 italic">Not answered</span>;
+    if (!ans && ans !== 0) return <span className="text-slate-400 italic">Not answered</span>;
     if (Array.isArray(ans)) return ans.join(', ');
     return String(ans);
   };
@@ -292,7 +292,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
           <div>
             <h2 className="font-black text-gray-900">Answer Sheet</h2>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -304,13 +304,13 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
               onClick={handleRecalculate}
               disabled={recalculating || loading}
               title="Recalculate marks from submitted code results"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#003399]/5 hover:bg-slate-100 border border-[#003399]/20 text-[#003399] rounded-lg text-xs font-bold transition-all disabled:opacity-50"
             >
               {recalculating
                 ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Recalculating…</>
                 : <><RefreshCw className="w-3.5 h-3.5" /> Recalculate Marks</>}
             </button>
-            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition-all">
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-slate-400 transition-all">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -332,7 +332,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: 'Total Qs', value: detail.summary.total_questions, color: 'bg-blue-50 text-blue-700 border-blue-100' },
+                  { label: 'Total Qs', value: detail.summary.total_questions, color: 'bg-[#003399]/5 text-[#003399] border-[#003399]/10' },
                   { label: 'Correct', value: detail.summary.correct_answers, color: 'bg-green-50 text-green-700 border-green-100' },
                   { label: 'Marks', value: `${detail.summary.earned_marks}/${detail.summary.total_marks}`, color: 'bg-amber-50 text-amber-700 border-amber-100' },
                   { label: 'Score', value: `${detail.summary.score_percentage}%`, color: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
@@ -364,19 +364,19 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                               {['coding','sql'].includes(ans.question_type) && ` (${ans.passed_count ?? 0}/${ans.total_count ?? 0} tests)`}
                             </span>
                             {!['coding','sql'].includes(ans.question_type) && (
-                              <span className="text-[10px] text-gray-400">Student: <strong className="text-gray-700">{formatAnswer(ans.student_answer)}</strong></span>
+                              <span className="text-[10px] text-slate-300 italic">Student: <strong className="text-gray-700">{formatAnswer(ans.student_answer)}</strong></span>
                             )}
                             {['coding','sql'].includes(ans.question_type) && (
-                              <span className="text-[10px] text-gray-400">
+                              <span className="text-[10px] text-slate-300 italic">
                                 Code: <strong className="text-gray-700">{ans.student_code ? `${ans.code_language || 'submitted'}` : 'not submitted'}</strong>
                               </span>
                             )}
                             {!['coding','sql'].includes(ans.question_type) && !ans.is_correct && (
-                              <span className="text-[10px] text-gray-400">Correct: <strong className="text-green-700">{formatAnswer(ans.correct_answer)}</strong></span>
+                              <span className="text-[10px] text-slate-300 italic">Correct: <strong className="text-green-700">{formatAnswer(ans.correct_answer)}</strong></span>
                             )}
                           </div>
                         </div>
-                        <div className="shrink-0 text-gray-400 mt-1">{isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</div>
+                        <div className="shrink-0 text-slate-400 mt-1">{isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</div>
                       </button>
                       {isOpen && (
                         <div className="px-4 pb-4 space-y-3">
@@ -418,13 +418,13 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                               {/* Submitted code */}
                               {ans.student_code ? (
                                 <div>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Submitted Code</p>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1">Submitted Code</p>
                                   <pre className="text-xs bg-gray-900 text-green-300 font-mono rounded-xl px-4 py-3 overflow-x-auto whitespace-pre-wrap max-h-64 border border-gray-700 leading-relaxed">
                                     {ans.student_code}
                                   </pre>
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-400 italic bg-gray-50 px-3 py-2 rounded-xl border border-gray-100">
+                                <p className="text-xs text-slate-400 italic bg-gray-50 px-3 py-2 rounded-xl border border-slate-100">
                                   No code submitted for this question
                                 </p>
                               )}
@@ -432,7 +432,7 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                               {/* Test case breakdown */}
                               {ans.test_results?.length > 0 && (
                                 <div>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Test Case Results</p>
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest tracking-wider mb-1.5">Test Case Results</p>
                                   <div className="space-y-1.5">
                                     {ans.test_results.map((tc, ti) => {
                                       const hasError = tc.stderr && tc.stderr.trim();
@@ -457,33 +457,33 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                                                 : isTLE        ? '✗ Time Limit Exceeded'
                                                 : '✗ Wrong Answer'}
                                             </span>
-                                            <span className="text-[9px] text-gray-400 px-1.5 py-0.5 bg-white/70 rounded-full border border-gray-200">
+                                            <span className="text-[9px] text-slate-400 px-1.5 py-0.5 bg-white/70 rounded-full border border-gray-200">
                                               {tc.is_hidden ? '🔒 Hidden' : '👁 Visible'}
                                             </span>
                                             {tc.execution_time && (
-                                              <span className="text-[9px] text-gray-400">⏱ {tc.execution_time}s</span>
+                                              <span className="text-[9px] text-slate-400">⏱ {tc.execution_time}s</span>
                                             )}
                                           </div>
                                           {/* Test body */}
                                           <div className="px-3 py-2 space-y-1.5 bg-white">
                                             {!tc.is_hidden && tc.input != null && (
                                               <div className="flex gap-2 items-start">
-                                                <span className="text-[10px] text-gray-400 w-16 shrink-0 pt-0.5">Input</span>
-                                                <code className="text-gray-800 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded font-mono text-[11px] whitespace-pre-wrap">{tc.input || '(empty)'}</code>
+                                                <span className="text-[10px] text-slate-400 w-16 shrink-0 pt-0.5">Input</span>
+                                                <code className="text-gray-800 bg-gray-50 border border-slate-100 px-2 py-0.5 rounded font-mono text-[11px] whitespace-pre-wrap">{tc.input || '(empty)'}</code>
                                               </div>
                                             )}
                                             <div className="flex gap-2 items-start">
-                                              <span className="text-[10px] text-gray-400 w-16 shrink-0 pt-0.5">Expected</span>
-                                              <code className="text-gray-700 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded font-mono text-[11px]">{tc.expected_output}</code>
+                                              <span className="text-[10px] text-slate-400 w-16 shrink-0 pt-0.5">Expected</span>
+                                              <code className="text-gray-700 bg-gray-50 border border-slate-100 px-2 py-0.5 rounded font-mono text-[11px]">{tc.expected_output}</code>
                                             </div>
                                             <div className="flex gap-2 items-start">
-                                              <span className="text-[10px] text-gray-400 w-16 shrink-0 pt-0.5">Got</span>
+                                              <span className="text-[10px] text-slate-400 w-16 shrink-0 pt-0.5">Got</span>
                                               <code className={`px-2 py-0.5 rounded font-mono text-[11px] border ${
                                                 tc.passed
                                                   ? 'text-green-800 bg-green-50 border-green-200'
                                                   : tc.actual_output
                                                   ? 'text-red-800 bg-red-50 border-red-200'
-                                                  : 'text-gray-400 bg-gray-50 border-gray-200 italic'
+                                                  : 'text-slate-400 bg-gray-50 border-gray-200 italic'
                                               }`}>
                                                 {tc.actual_output ?? '(no output)'}
                                               </code>
@@ -523,9 +523,9 @@ const AttemptDetailModal = ({ attempt, assessmentId, onClose }) => {
                             </div>
                           )}
                           {ans.explanation && (
-                            <div className="flex items-start gap-2 bg-blue-50/80 border border-blue-100 rounded-xl p-3">
+                            <div className="flex items-start gap-2 bg-[#003399]/5/80 border border-[#003399]/10 rounded-xl p-3">
                               <span className="text-base shrink-0">💡</span>
-                              <p className="text-xs text-blue-800 leading-relaxed">{ans.explanation}</p>
+                              <p className="text-xs text-[#003399] leading-relaxed">{ans.explanation}</p>
                             </div>
                           )}
                         </div>
@@ -571,19 +571,19 @@ const PublishModal = ({ assessment, onClose, onPublished }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#003399] rounded-xl flex items-center justify-center">
               <Trophy className="w-4 h-4 text-white" />
             </div>
             <h2 className="font-black text-gray-900">Publish Leaderboard</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-slate-400"><X className="w-5 h-5" /></button>
         </div>
         <div className="p-5 space-y-4">
           {isJD ? (
             <>
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+              <div className="bg-[#003399]/5 border border-[#003399]/20 rounded-xl p-4 text-sm text-[#003399]">
                 <p className="font-bold mb-1">JD-Based Assessment</p>
                 <p>Select how many top students to shortlist. All students who attempted will see the ranked list (names only, no marks). Students outside the top selection will see they are not shortlisted.</p>
               </div>
@@ -593,9 +593,9 @@ const PublishModal = ({ assessment, onClose, onPublished }) => {
                   type="number" min="1" max={totalAttempts || 9999} value={topN}
                   onChange={e => setTopN(e.target.value)}
                   placeholder={`e.g. 20 (out of ${totalAttempts} attempts)`}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#003399]/30 focus:border-[#003399] outline-none"
                 />
-                <p className="text-xs text-gray-400 mt-1">Students will see: "Top {topN || '?'} students are only eligible"</p>
+                <p className="text-xs text-slate-400 mt-1">Students will see: "Top {topN || '?'} students are only eligible"</p>
               </div>
             </>
           ) : (
@@ -611,9 +611,9 @@ const PublishModal = ({ assessment, onClose, onPublished }) => {
           )}
         </div>
         <div className="flex gap-3 px-5 pb-5">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 font-semibold text-sm">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-slate-50 font-semibold text-sm">Cancel</button>
           <button onClick={handlePublish} disabled={publishing}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-60 shadow-md shadow-blue-500/20">
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white rounded-xl font-bold text-sm hover:opacity-90 disabled:opacity-60 shadow-md shadow-[#003399]/15">
             {publishing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             {publishing ? 'Publishing…' : 'Publish Now'}
           </button>
@@ -642,7 +642,7 @@ const ElapsedTimer = ({ startedAt }) => {
 const InProgressSection = ({ students, onViewDetails }) => {
   if (!students || students.length === 0) return null;
   return (
-    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-amber-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-amber-200 overflow-hidden">
       {/* Header */}
       <div className="px-5 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center gap-2">
         <div className="w-6 h-6 bg-amber-400 rounded-lg flex items-center justify-center">
@@ -679,7 +679,7 @@ const InProgressSection = ({ students, onViewDetails }) => {
                   <p className="text-[14px] font-bold text-gray-900">{a.student_id?.fullName || '—'}</p>
                   <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">In Progress</span>
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-400">{a.student_id?.email || '—'}</td>
+                <td className="px-4 py-3 text-xs text-slate-400">{a.student_id?.email || '—'}</td>
                 <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
                   {a.started_at
                     ? new Date(a.started_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })
@@ -846,7 +846,7 @@ const AssessmentAttempts = () => {
   // inside CollegeAdminLayout during initial page load
   if (loading) return (
     <CollegeAdminLayout>
-      <div className="flex items-center justify-center py-24 min-h-screen bg-[#f0f4f8]">
+      <div className="flex items-center justify-center py-24">
         <InlineSkeleton rows={5} />
       </div>
     </CollegeAdminLayout>
@@ -856,19 +856,19 @@ const AssessmentAttempts = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
 
         {/* Back */}
         <button onClick={() => navigate('/dashboard/college-admin/assessments')}
-          className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-2 transition-colors group text-[13px] font-bold">
+          className="flex items-center gap-2 text-gray-500 hover:text-[#003399] mb-2 transition-colors group text-[13px] font-bold">
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
         </button>
 
         {/* ── HEADER ── */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
           <div>
-            <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
               Leaderboard
             </h1>
             <p className="text-[12px] md:text-[14px] text-gray-500 mt-1 max-w-xs md:max-w-md truncate">
@@ -890,11 +890,11 @@ const AssessmentAttempts = () => {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={handleExportCSV} disabled={attempts.length === 0}
-              className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2 rounded-lg hover:bg-slate-50/30 transition-colors shadow-sm disabled:opacity-40">
               <Download className="w-4 h-4" /> CSV
             </button>
             <button onClick={handleDownloadReport} disabled={attempts.length === 0 || generatingReport}
-              className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+              className="inline-flex items-center gap-1.5 bg-[#003399] hover:bg-[#002d8b] text-white text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-[#003399]/30 focus:ring-offset-1">
               {generatingReport ? <><RefreshCw className="w-4 h-4 animate-spin" /> Generating…</> : <><FileText className="w-4 h-4" /> Full Report</>}
             </button>
           </div>
@@ -903,12 +903,12 @@ const AssessmentAttempts = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
           {[
-            { label: 'In Progress',    value: stats.inProgressCount, color: stats.inProgressCount > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-100 text-gray-400', live: stats.inProgressCount > 0 },
-            { label: 'Submitted',      value: stats.total,           color: 'bg-blue-50 border-blue-100 text-blue-700' },
+            { label: 'In Progress',    value: stats.inProgressCount, color: stats.inProgressCount > 0 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gray-50 border-gray-100 text-slate-400', live: stats.inProgressCount > 0 },
+            { label: 'Submitted',      value: stats.total,           color: 'bg-[#003399]/5 border-[#003399]/10 text-[#003399]' },
             { label: 'Avg Score',      value: `${stats.avg}%`,       color: 'bg-cyan-50 border-cyan-100 text-cyan-700' },
             { label: 'Passed (≥50%)',  value: stats.passed,          color: 'bg-green-50 border-green-100 text-green-700' },
             { label: 'Top Score',      value: `${stats.topScore}%`,  color: 'bg-indigo-50 border-indigo-100 text-indigo-700' },
-            { label: 'Flagged', value: stats.flagged, icon: true, color: stats.flagged > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-100 text-gray-400' },
+            { label: 'Flagged', value: stats.flagged, icon: true, color: stats.flagged > 0 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-gray-50 border-gray-100 text-slate-400' },
           ].map(s => (
             <div key={s.label} className={`px-4 py-3 rounded-xl border ${s.color} text-center relative overflow-hidden`}>
               {s.live && (
@@ -934,22 +934,22 @@ const AssessmentAttempts = () => {
         {/* Table */}
         {attempts.length === 0 ? (
           <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-16 text-center">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Users className="w-7 h-7 text-blue-400" />
+            <div className="w-14 h-14 bg-[#003399]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Users className="w-7 h-7 text-[#003399]/40" />
             </div>
             <h3 className="text-lg font-bold text-gray-700 mb-1">No Submitted Attempts Yet</h3>
-            <p className="text-gray-400 text-sm">
+            <p className="text-slate-400 text-sm">
               {inProgress.length > 0
                 ? `${inProgress.length} student${inProgress.length !== 1 ? 's are' : ' is'} currently taking the assessment.`
                 : "Students haven't taken this assessment yet."}
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden min-h-[400px] flex flex-col">
-            <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between shrink-0">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden min-h-[400px] flex flex-col">
+            <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-blue-50 rounded-md flex items-center justify-center">
-                  <Trophy className="w-3 h-3 text-blue-600" />
+                <div className="w-6 h-6 bg-[#003399]/5 rounded-md flex items-center justify-center">
+                  <Trophy className="w-3 h-3 text-[#003399]" />
                 </div>
                 <p className="font-bold text-gray-800 text-sm">{total} Attempt{total !== 1 ? 's' : ''}</p>
               </div>
@@ -964,41 +964,41 @@ const AssessmentAttempts = () => {
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/40">
                     {['Rank', 'Student', 'Score %', 'Marks', 'Correct', 'Time', 'Submitted', 'Proctoring', 'Actions'].map(h => (
-                      <th key={h} className="text-left text-[10px] font-black text-gray-400 uppercase tracking-wider bg-gray-50/40 px-4 py-3 last:text-right last:pr-5 first:pl-5">{h}</th>
+                      <th key={h} className="text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-gray-50/40 px-4 py-3 last:text-right last:pr-5 first:pl-5">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-slate-50">
                   {sortedAttempts.map((a, idx) => {
                     const isTopN = isJD && assessment?.leaderboard_top_n && idx < assessment.leaderboard_top_n;
                     return (
-                      <tr key={a._id} className={`hover:bg-blue-50/20 transition-colors group ${isTopN ? 'bg-amber-50/30' : ''}`}>
+                      <tr key={a._id} className={`hover:bg-slate-50/20 transition-colors group ${isTopN ? 'bg-amber-50/30' : ''}`}>
                         <td className="px-4 py-3 first:pl-5 last:pr-5">
                           <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black
-                            ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-100 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'}`}>
+                            ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-100 text-gray-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-slate-400'}`}>
                             {idx + 1}
                           </span>
                         </td>
                         <td className="px-4 py-3 first:pl-5 last:pr-5">
                           <p className="text-[14px] font-bold text-gray-900">{a.student_id?.fullName || '—'}</p>
-                          <p className="text-[10px] text-gray-400">{a.student_id?.email || '—'}</p>
+                          <p className="text-[10px] text-slate-300 italic">{a.student_id?.email || '—'}</p>
                         </td>
                         <td className="px-4 py-3"><ScoreBar pct={a.score_percentage || 0} /></td>
                         <td className="px-4 py-3">
-                          <div className="text-sm font-bold text-gray-900">{a.earned_marks ?? 0}<span className="text-gray-400 font-normal">/{a.total_marks ?? 0}</span></div>
-                          <div className="text-[10px] text-gray-400">marks</div>
+                          <div className="text-sm font-bold text-gray-900">{a.earned_marks ?? 0}<span className="text-slate-400 font-normal">/{a.total_marks ?? 0}</span></div>
+                          <div className="text-[10px] text-slate-300 italic">marks</div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-sm font-bold text-gray-900">{a.correct_answers ?? 0}<span className="text-gray-400 font-normal">/{a.total_questions ?? 0}</span></div>
-                          <div className="text-[10px] text-gray-400">questions</div>
+                          <div className="text-sm font-bold text-gray-900">{a.correct_answers ?? 0}<span className="text-slate-400 font-normal">/{a.total_questions ?? 0}</span></div>
+                          <div className="text-[10px] text-slate-300 italic">questions</div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1 text-sm font-semibold text-gray-700">
-                            <Clock className="w-3.5 h-3.5 text-gray-400" />
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
                             {fmtTime(a.time_taken_seconds)}
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        <td className="px-3 py-3 text-xs text-slate-400 whitespace-nowrap">
                           {a.submitted_at ? new Date(a.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
                         </td>
                         <td className="px-4 py-3 first:pl-5 last:pr-5">
@@ -1006,7 +1006,7 @@ const AssessmentAttempts = () => {
                         </td>
                         <td className="px-4 py-3 text-right last:pr-5">
                           <ActionMenu actions={[
-                            { label: 'View Answers', icon: Eye, onClick: () => setSelectedAttempt(a), color: 'text-blue-600 hover:bg-blue-50' },
+                            { label: 'View Answers', icon: Eye, onClick: () => setSelectedAttempt(a), color: 'text-[#003399] hover:bg-slate-50' },
                           ]} />
                         </td>
                       </tr>
@@ -1016,15 +1016,15 @@ const AssessmentAttempts = () => {
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50/40">
-                <span className="text-xs text-gray-400">Page {page} of {totalPages}</span>
+              <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-gray-50/40">
+                <span className="text-xs text-slate-400">Page {page} of {totalPages}</span>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-blue-300 disabled:opacity-40 transition-colors">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-[#003399]/30 disabled:opacity-40 transition-colors">
                     <ChevronLeft className="w-3.5 h-3.5" /> Prev
                   </button>
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-blue-300 disabled:opacity-40 transition-colors">
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:border-[#003399]/30 disabled:opacity-40 transition-colors">
                     Next <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -1034,11 +1034,11 @@ const AssessmentAttempts = () => {
         )}
 
         {/* Publish Leaderboard Footer Section */}
-        <div className={`rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border p-5 mt-4 ${isPublished ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
+        <div className={`rounded-xl shadow-sm border p-5 mt-4 ${isPublished ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100'}`}>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isPublished ? 'bg-green-100' : 'bg-blue-50'}`}>
-                {isPublished ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Send className="w-5 h-5 text-blue-500" />}
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isPublished ? 'bg-green-100' : 'bg-[#003399]/5'}`}>
+                {isPublished ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Send className="w-5 h-5 text-[#00A9CE]" />}
               </div>
               <div>
                 <p className={`font-bold text-sm ${isPublished ? 'text-green-800' : 'text-gray-800'}`}>
@@ -1066,7 +1066,7 @@ const AssessmentAttempts = () => {
                 onClick={() => setShowPublishModal(true)}
                 disabled={!isCompleted || attempts.length === 0}
                 title={!isCompleted ? 'Assessment must be completed first' : ''}
-                className="flex items-center flex-shrink-0 gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-[13px] font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors">
+                className="flex items-center flex-shrink-0 gap-2 px-5 py-2.5 bg-[#003399] text-white rounded-lg text-[13px] font-bold hover:bg-[#003399] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm transition-colors">
                 <Trophy className="w-4 h-4" />
                 Publish Leaderboard
               </button>
@@ -1089,7 +1089,7 @@ const AssessmentAttempts = () => {
           onPublished={fetchData}
         />
       )}
-    </div>
+
     </CollegeAdminLayout>
   );
 };

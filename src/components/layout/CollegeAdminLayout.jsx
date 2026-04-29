@@ -1,4 +1,5 @@
 // src/components/layout/CollegeAdminLayout.jsx
+// Refactored to match SuperAdminDashboardLayout exactly — same tokens, same component patterns
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -8,7 +9,7 @@ import {
   LayoutDashboard, Bell, Settings, LogOut, Menu, X,
   Building2, Users, Briefcase, BookOpen, Activity,
   ChevronLeft, ChevronRight, GraduationCap, Search,
-  ChevronDown, FileText, UsersRound, ClipboardList,
+  ChevronDown, ClipboardList,
   ALargeSmall, Layers,
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -24,19 +25,19 @@ const MENU_GROUPS = [
   {
     label: 'Management',
     items: [
-      { icon: Building2,      label: 'Companies',    path: '/dashboard/college-admin/companies' },
-      { icon: Briefcase,      label: 'Jobs',         path: '/dashboard/college-admin/jobs' },
-      { icon: Users,          label: 'Students',     path: '/dashboard/college-admin/students' },
-      { icon: Layers,         label: 'Groups',       path: '/dashboard/college-admin/groups' },
+      { icon: Building2,     label: 'Companies',  path: '/dashboard/college-admin/companies' },
+      { icon: Briefcase,     label: 'Jobs',        path: '/dashboard/college-admin/jobs' },
+      { icon: Users,         label: 'Students',    path: '/dashboard/college-admin/students' },
+      { icon: Layers,        label: 'Groups',      path: '/dashboard/college-admin/groups' },
     ],
   },
   {
     label: 'Platform',
     items: [
-      { icon: BookOpen,       label: 'Courses',       path: '/dashboard/college-admin/courses' },
-      { icon: ClipboardList,  label: 'Assessments',   path: '/dashboard/college-admin/assessments' },
-      { icon: Bell,           label: 'Notifications', path: '/dashboard/college-admin/notifications' },
-      { icon: Settings,       label: 'Settings',      path: '/dashboard/college-admin/settings' },
+      { icon: BookOpen,      label: 'Courses',       path: '/dashboard/college-admin/courses' },
+      { icon: ClipboardList, label: 'Assessments',   path: '/dashboard/college-admin/assessments' },
+      { icon: Bell,          label: 'Notifications', path: '/dashboard/college-admin/notifications' },
+      { icon: Settings,      label: 'Settings',      path: '/dashboard/college-admin/settings' },
     ],
   },
 ];
@@ -62,21 +63,16 @@ const CollegeAdminLayout = ({ children }) => {
   const userMenuRef = useRef(null);
   const fontMenuRef = useRef(null);
 
-  /* Track viewport width reactively */
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
-      if (!mobile) {
-        setShowMobile(false);
-        document.body.style.overflow = '';
-      }
+      if (!mobile) { setShowMobile(false); document.body.style.overflow = ''; }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  /* Prevent body scroll when mobile drawer is open */
   useEffect(() => {
     document.body.style.overflow = (showMobile && isMobile) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -88,10 +84,8 @@ const CollegeAdminLayout = ({ children }) => {
 
   useEffect(() => {
     const h = (e) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target))
-        setShowUserMenu(false);
-      if (fontMenuRef.current && !fontMenuRef.current.contains(e.target))
-        setShowFontMenu(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
+      if (fontMenuRef.current && !fontMenuRef.current.contains(e.target)) setShowFontMenu(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -125,7 +119,7 @@ const CollegeAdminLayout = ({ children }) => {
       students: 'Students', groups: 'Groups', applications: 'Applications',
       analytics: 'Analytics', courses: 'Courses', assessments: 'Assessments',
       notifications: 'Notifications', settings: 'Settings',
-      create: 'Create', edit: 'Edit',
+      create: 'Create', edit: 'Edit', wizard: 'New Assessment',
     };
     return map[last] || 'Dashboard';
   };
@@ -138,28 +132,19 @@ const CollegeAdminLayout = ({ children }) => {
   const SW = isMobile ? 220 : (sidebarOpen ? 220 : 60);
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 overflow-x-hidden"
-      style={{ zoom }}
-    >
-
-      {/* Background blobs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 -left-20 w-80 h-80 bg-gradient-to-br from-cyan-200 to-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-40 -right-20 w-80 h-80 bg-gradient-to-br from-blue-300 to-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-20 left-1/2 w-80 h-80 bg-gradient-to-br from-cyan-300 to-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
-      </div>
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden" style={{ zoom }}>
 
       {/* Mobile overlay */}
       {showMobile && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden" onClick={() => setShowMobile(false)} />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={() => setShowMobile(false)} />
       )}
 
       {/* ════════ SIDEBAR ════════ */}
       <aside
-        className="fixed top-0 left-0 h-full z-50 flex flex-col bg-white/90 backdrop-blur-xl border-r border-white/60 shadow-lg transition-all duration-300"
+        className="fixed top-0 left-0 h-full z-50 flex flex-col transition-all duration-300 border-r border-slate-100"
         style={{
           width: `${SW}px`,
+          background: 'white',
           transform: isMobile
             ? showMobile ? 'translateX(0)' : `translateX(-${SW}px)`
             : 'translateX(0)',
@@ -168,7 +153,7 @@ const CollegeAdminLayout = ({ children }) => {
         <div className="flex flex-col h-full">
 
           {/* Logo */}
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between">
             <button
               onClick={() => navigate('/dashboard/college-admin')}
               className="flex-1 flex items-center justify-center hover:opacity-90 transition-opacity"
@@ -178,7 +163,7 @@ const CollegeAdminLayout = ({ children }) => {
             {sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all ml-auto flex-shrink-0"
+                className="hidden lg:flex p-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-900 hover:bg-slate-50"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -186,7 +171,7 @@ const CollegeAdminLayout = ({ children }) => {
             {!sidebarOpen && (
                <button
                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                 className="hidden lg:flex p-1 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all mx-auto mt-2"
+                 className="hidden lg:flex p-1 rounded-lg transition-all text-slate-400 hover:text-slate-900 hover:bg-slate-50 mx-auto mt-2"
                >
                  <ChevronRight className="w-3.5 h-3.5" />
                </button>
@@ -195,26 +180,26 @@ const CollegeAdminLayout = ({ children }) => {
 
           {/* Search */}
           {sidebarOpen && (
-            <div className="px-2.5 py-2 border-b border-gray-100 flex-shrink-0 relative">
-              <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50/80 rounded-lg border border-gray-200/80">
-                <Search className="w-3 h-3 text-gray-400 flex-shrink-0" />
+            <div className="px-2.5 py-2.5 flex-shrink-0 relative border-b border-slate-50">
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50">
+                <Search className="w-3 h-3 flex-shrink-0 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search…"
                   value={searchVal}
                   onChange={e => setSearchVal(e.target.value)}
-                  className="bg-transparent text-xs outline-none w-full text-gray-700 placeholder-gray-400"
+                  className="bg-transparent text-xs outline-none w-full text-slate-700"
                 />
               </div>
               {filtered.length > 0 && (
-                <div className="absolute left-2.5 right-2.5 top-full mt-1 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                <div className="absolute left-2.5 right-2.5 top-full mt-1 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50">
                   {filtered.map(item => (
                     <button
                       key={item.path}
                       onClick={() => { navigate(item.path); setSearchVal(''); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      <item.icon className="w-3 h-3" />
+                      <item.icon className="w-3 h-3 text-[#003399]" />
                       {item.label}
                     </button>
                   ))}
@@ -228,7 +213,7 @@ const CollegeAdminLayout = ({ children }) => {
             {MENU_GROUPS.map(group => (
               <div key={group.label} className="mb-1">
                 {sidebarOpen && (
-                  <p className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-gray-400">
+                  <p className="px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">
                     {group.label}
                   </p>
                 )}
@@ -239,19 +224,23 @@ const CollegeAdminLayout = ({ children }) => {
                       key={item.path}
                       onClick={() => { navigate(item.path); setShowMobile(false); }}
                       title={!sidebarOpen ? item.label : undefined}
-                      className={`w-full flex items-center rounded-xl transition-all duration-150 group relative mb-0.5
-                        ${sidebarOpen ? 'gap-2.5 px-2.5 py-2' : 'justify-center p-2.5'}
-                        ${active
-                          ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white shadow-md shadow-blue-500/20'
-                          : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
-                        }`}
+                      className={`w-full flex items-center rounded-xl transition-all duration-150 group relative mb-0.5 ${
+                        sidebarOpen ? 'gap-2.5 px-2.5 py-2.5' : 'justify-center p-2.5'
+                      }`}
+                      style={{
+                        background: active ? '#f1f5f9' : 'transparent',
+                        borderLeft: active ? '3px solid #003399' : '3px solid transparent',
+                        color: active ? '#003399' : '#64748b',
+                      }}
+                      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#003399'; }}}
+                      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748b'; }}}
                     >
                       <item.icon className="w-4 h-4 flex-shrink-0" />
                       {sidebarOpen && (
-                        <span className="text-sm font-medium truncate">{item.label}</span>
+                        <span className="text-[13px] font-semibold truncate">{item.label}</span>
                       )}
                       {!sidebarOpen && (
-                        <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
+                        <span className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
                           {item.label}
                         </span>
                       )}
@@ -263,20 +252,21 @@ const CollegeAdminLayout = ({ children }) => {
           </nav>
 
           {/* User footer */}
-          <div className="p-2.5 border-t border-gray-100 flex-shrink-0">
+          <div className="p-2.5 flex-shrink-0 border-t border-slate-50">
             {sidebarOpen ? (
-              <div className="flex items-center gap-2 p-2 rounded-xl bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100/70">
-                <div className="w-7 h-7 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm">
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white flex-shrink-0 shadow-sm"
+                     style={{ background: 'linear-gradient(135deg, #00A9CE, #003399)' }}>
                   {getInitials()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-800 truncate">{getName()}</p>
-                  <p className="text-[10px] text-blue-500 font-medium">College Admin</p>
+                  <p className="text-xs font-bold text-slate-900 truncate leading-tight">{getName()}</p>
+                  <p className="text-[9px] font-bold mt-0.5 text-slate-400">College Admin</p>
                 </div>
                 <button
                   onClick={handleLogout}
                   title="Logout"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0"
+                  className="p-1.5 rounded-lg transition-all flex-shrink-0 text-slate-400 hover:text-rose-500 hover:bg-rose-50"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -285,7 +275,7 @@ const CollegeAdminLayout = ({ children }) => {
               <button
                 onClick={handleLogout}
                 title="Logout"
-                className="w-full flex items-center justify-center p-2.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                className="w-full flex items-center justify-center p-2.5 rounded-xl transition-all text-slate-400 hover:text-rose-500 hover:bg-rose-50"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -300,13 +290,13 @@ const CollegeAdminLayout = ({ children }) => {
         style={{ paddingLeft: isMobile ? 0 : `${SW}px` }}
       >
         {/* Topbar */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/60 shadow-sm">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-100 shadow-sm">
           <div className="flex items-center gap-3 px-4 sm:px-5 h-[60px]">
 
             {/* Mobile hamburger */}
             <button
               onClick={() => setShowMobile(!showMobile)}
-              className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
+              className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-50 transition-all"
             >
               {showMobile ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -317,10 +307,10 @@ const CollegeAdminLayout = ({ children }) => {
 
             {/* Breadcrumb */}
             <div className="hidden lg:flex items-center gap-1.5 text-xs">
-              <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-gray-400">College Admin</span>
-              <ChevronRight className="w-3 h-3 text-gray-300" />
-              <span className="font-semibold text-gray-700">{getBreadcrumb()}</span>
+              <GraduationCap className="w-3.5 h-3.5 text-[#003399]" />
+              <span className="text-slate-400 font-medium">College Admin</span>
+              <ChevronRight className="w-3 h-3 text-slate-300" />
+              <span className="font-black text-slate-800 uppercase tracking-tight">{getBreadcrumb()}</span>
             </div>
 
             <div className="flex-1" />
@@ -330,33 +320,31 @@ const CollegeAdminLayout = ({ children }) => {
               <button
                 onClick={() => setShowFontMenu(!showFontMenu)}
                 title="Adjust font size"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all border border-gray-200/70"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-[#003399] hover:bg-slate-50 transition-all border border-slate-100"
               >
                 <ALargeSmall className="w-4 h-4" />
-                <span className="hidden sm:block text-xs font-medium">{fontLabel}</span>
+                <span className="hidden sm:block text-xs font-black uppercase tracking-widest">{fontLabel}</span>
               </button>
 
               {showFontMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/10 border border-white/60 overflow-hidden z-50 animate-fadeIn">
-                  <div className="px-3 py-2 border-b border-gray-100">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Font Size</p>
+                <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 animate-fadeIn">
+                  <div className="px-3 py-2 border-b border-slate-100">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Font Size</p>
                   </div>
                   {SIZE_STEPS.map((size) => (
                     <button
                       key={size}
                       onClick={() => { setSize(size); setShowFontMenu(false); }}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors ${
+                      className={`w-full flex items-center justify-between px-4 py-2.5 transition-colors text-left ${
                         fontSize === size
-                          ? 'bg-blue-50 text-blue-700 font-semibold'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? 'bg-[#003399]/5 text-[#003399] font-black'
+                          : 'text-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      <span className={`font-medium ${size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : 'text-base'}`}>
+                      <span className={`font-bold ${size === 'small' ? 'text-xs' : size === 'medium' ? 'text-sm' : 'text-base'}`}>
                         {size.charAt(0).toUpperCase() + size.slice(1)}
                       </span>
-                      {fontSize === size && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                      )}
+                      {fontSize === size && <span className="w-1.5 h-1.5 rounded-full bg-[#003399]" />}
                     </button>
                   ))}
                 </div>
@@ -366,39 +354,38 @@ const CollegeAdminLayout = ({ children }) => {
             {/* Notifications */}
             <button
               onClick={() => navigate('/dashboard/college-admin/notifications')}
-              className="relative p-2 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
+              className="relative p-2 rounded-xl text-slate-500 hover:text-[#003399] hover:bg-slate-50 transition-all"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
             </button>
 
             {/* User menu */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl hover:bg-blue-50 transition-all"
+                className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl hover:bg-slate-50 transition-all"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-md shadow-blue-500/25">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-md"
+                     style={{ background: 'linear-gradient(135deg, #003399, #00A9CE)' }}>
                   {getInitials()}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-xs font-bold text-gray-800 leading-none">{getName().split(' ')[0]}</p>
-                  <p className="text-[10px] text-blue-500 font-medium leading-none mt-0.5">College Admin</p>
+                  <p className="text-xs font-black text-slate-800 leading-none">{getName().split(' ')[0]}</p>
+                  <p className="text-[10px] font-bold leading-none mt-0.5" style={{ color: '#00A9CE' }}>College Admin</p>
                 </div>
-                <ChevronDown
-                  className={`hidden sm:block w-3 h-3 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}
-                />
+                <ChevronDown className={`hidden sm:block w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/10 border border-white/60 overflow-hidden z-50 animate-fadeIn">
-                  <div className="p-3 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 animate-fadeIn">
+                  <div className="p-3" style={{ background: 'linear-gradient(135deg, #003399, #00A9CE)' }}>
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white text-sm font-bold">
+                      <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-white text-sm font-black">
                         {getInitials()}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{getName()}</p>
+                        <p className="text-sm font-bold text-white truncate">{getName()}</p>
                         <p className="text-[10px] text-blue-100 truncate">{user?.email}</p>
                       </div>
                     </div>
@@ -412,16 +399,16 @@ const CollegeAdminLayout = ({ children }) => {
                       <button
                         key={m.path}
                         onClick={() => { navigate(m.path); setShowUserMenu(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                       >
-                        <m.icon className="w-3.5 h-3.5 text-gray-400" />
+                        <m.icon className="w-3.5 h-3.5 text-slate-400" />
                         {m.label}
                       </button>
                     ))}
-                    <div className="mx-3 my-1 border-t border-gray-100" />
+                    <div className="mx-3 my-1 border-t border-slate-100" />
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       Sign Out
@@ -433,12 +420,12 @@ const CollegeAdminLayout = ({ children }) => {
           </div>
         </header>
 
-        {/* Page content — extra bottom padding on mobile so content isn't hidden behind bottom nav */}
-        <main className="flex-1 p-4 sm:p-5 pb-24 lg:pb-5">{children}</main>
+        {/* Page content */}
+        <main className="flex-1 px-4 sm:px-5 pt-1 sm:pt-2 pb-24 lg:pb-5">{children}</main>
       </div>
 
       {/* ════════ MOBILE BOTTOM NAV ════════ */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-gray-200/80 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
         <div className="flex items-center justify-around px-2 py-1.5">
           {[
             { icon: LayoutDashboard, label: 'Dashboard',   path: '/dashboard/college-admin' },
@@ -453,16 +440,12 @@ const CollegeAdminLayout = ({ children }) => {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all min-w-[52px] ${
-                  active
-                    ? 'text-blue-600'
-                    : 'text-gray-400 hover:text-blue-500'
+                  active ? 'text-[#003399]' : 'text-slate-400 hover:text-[#003399]'
                 }`}
               >
                 <item.icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : ''}`} />
-                <span className={`text-[9px] font-semibold leading-none ${active ? 'text-blue-600' : ''}`}>
-                  {item.label}
-                </span>
-                {active && <span className="w-1 h-1 rounded-full bg-blue-600 mt-0.5" />}
+                <span className={`text-[9px] font-bold leading-none ${active ? 'text-[#003399]' : ''}`}>{item.label}</span>
+                {active && <span className="w-1 h-1 rounded-full bg-[#003399] mt-0.5" />}
               </button>
             );
           })}
@@ -472,20 +455,26 @@ const CollegeAdminLayout = ({ children }) => {
       <style>{`
         .sidebar-scroll::-webkit-scrollbar { width: 3px; }
         .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.2); border-radius: 4px; }
-        @keyframes blob {
-          0%,100% { transform:translate(0,0) scale(1); }
-          33% { transform:translate(30px,-50px) scale(1.1); }
-          66% { transform:translate(-20px,20px) scale(0.9); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 4px; }
         @keyframes fadeIn {
           from { opacity:0; transform:translateY(-6px); }
           to   { opacity:1; transform:translateY(0); }
         }
         .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
+        input::placeholder { color: #94a3b8; }
+
+        label,
+        button,
+        a,
+        select,
+        [role="button"],
+        input[type="button"],
+        input[type="submit"],
+        input[type="checkbox"],
+        input[type="radio"],
+        .cursor-pointer {
+          cursor: pointer !important;
+        }
       `}</style>
     </div>
   );

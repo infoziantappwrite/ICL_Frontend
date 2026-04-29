@@ -136,36 +136,31 @@ const AssignCourseBatch = () => {
         </div>
       )}
 
-      {/* Hero */}
-      <div className="relative bg-gradient-to-r from-[#003399] via-[#003399]/80 to-[#00A9CE] rounded-2xl px-5 py-4 mb-4 shadow-xl shadow-[#003399]/15 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full" />
-          <div className="absolute -bottom-8 left-1/3 w-28 h-28 bg-white/10 rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle,white 1px,transparent 1px)', backgroundSize: '18px 18px' }} />
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            Assign Course <span className="text-blue-600">to Students</span>
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+            Only college-specific courses can be assigned to students
+          </p>
         </div>
-        <div className="relative flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-sm bg-[#003399]/10 border-[#003399]/20 flex-shrink-0">
-              <Send className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-white font-black text-lg leading-tight">Assign Course to Students</h1>
-              <p className="text-white/60 text-[11px] mt-0.5">Only college-specific courses can be assigned to students</p>
-            </div>
-          </div>
-          <button
-            onClick={() => navigate('/dashboard/college-admin/courses')}
-            className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all flex-shrink-0"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back to Courses
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/dashboard/college-admin/courses')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex-shrink-0"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back to Courses
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* ── Course Selection ── */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5">
           <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-50">
             <div className="w-7 h-7 bg-[#003399] rounded-lg flex items-center justify-center">
               <BookOpen className="w-3.5 h-3.5 text-white" />
@@ -215,7 +210,7 @@ const AssignCourseBatch = () => {
         </div>
 
         {/* ── Student Selection ── */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-5">
+        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-50">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg flex items-center justify-center">
@@ -320,7 +315,7 @@ const AssignCourseBatch = () => {
       </div>
 
       {/* ── Assign Action Bar ── */}
-      <div className="mt-4 bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-sm p-4 flex items-center justify-between gap-4">
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-4 flex items-center justify-between gap-4">
         <div className="text-sm text-gray-600">
           {selectedCourse && courseIsPlatformWide ? (
             <span className="flex items-center gap-2 text-slate-400">
@@ -343,6 +338,8 @@ const AssignCourseBatch = () => {
           {assigning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           {assigning ? 'Assigning...' : `Assign to ${selectedStudents.length || 0} Students`}
         </button>
+      </div>
+        </div>
       </div>
     </CollegeAdminLayout>
   );

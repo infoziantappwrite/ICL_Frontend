@@ -198,51 +198,74 @@ const AdminCourseManagement = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
-              Course <span className="text-[#003399]">Management</span>
-            </h1>
-            <p className="text-sm text-slate-400 mt-1 font-medium">
-              View and assign available courses — {stats.total} total
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={fetchCourses} title="Refresh"
-              className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-100 text-slate-500 text-xs font-bold px-4 py-2 rounded-xl hover:border-[#003399]/30 hover:text-[#003399] transition-all">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
-            </button>
-            <button
-              onClick={() => navigate('/dashboard/college-admin/courses/assign-batch')}
-              className="inline-flex items-center gap-1.5 bg-[#003399] hover:bg-[#002d8b] text-white text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95"
-            >
-              <Send className="w-4 h-4" /> Assign to Batch
-            </button>
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            Course <span className="text-blue-600">Management</span>
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+            {stats.total} total · {stats.active} active · {stats.totalEnrollments} enrollments · {stats.withCerts} with certificates
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <span className="inline-flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1 text-[11px] font-bold text-gray-600 border border-gray-200">
+            <BookOpen className="w-3 h-3" /> {stats.total} Total
+          </span>
+          <span className="inline-flex items-center gap-1 bg-green-50 rounded-lg px-2 py-1 text-[11px] font-bold text-emerald-600 border border-green-200">
+            {stats.active} Active
+          </span>
+          <button
+            onClick={() => navigate('/dashboard/college-admin/courses/assign-batch')}
+            className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[11px] font-bold px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Send className="w-3 h-3" /> Assign to Batch
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-3">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by title, category, instructor, tags..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
-          {[
-            { label: 'Total Courses', value: stats.total,    bg: 'bg-[#003399]/5',    tc: 'text-[#003399]',   Icon: BookOpen },
-            { label: 'Active',        value: stats.active,   bg: 'bg-emerald-50',     tc: 'text-emerald-700', Icon: CheckCircle2 },
-            { label: 'Enrollments',   value: stats.totalEnrollments, bg: 'bg-indigo-50', tc: 'text-indigo-700', Icon: Users },
-            { label: 'Certified',     value: stats.withCerts, bg: 'bg-amber-50',      tc: 'text-amber-700',   Icon: Award },
-          ].map(({ label, value, bg, tc, Icon }) => (
-            <div key={label} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
-                <p className={`text-[24px] font-black ${tc} leading-none`}>{value}</p>
-              </div>
-              <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 ${tc}`} />
-              </div>
-            </div>
-          ))}
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+          <p className="font-semibold text-gray-800">{filtered.length} Courses</p>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> {stats.active} Active
+            </span>
+            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 text-amber-500" /> {stats.withCerts} Certified
+            </span>
+          </div>
         </div>
 
         {/* Toolbar */}
@@ -325,6 +348,8 @@ const AdminCourseManagement = () => {
             perPage={PER_PAGE}
             onPageChange={setPage}
           />
+        </div>
+      </div>
         </div>
       </div>
     </CollegeAdminLayout>

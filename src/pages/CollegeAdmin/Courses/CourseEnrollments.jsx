@@ -90,54 +90,76 @@ const CourseEnrollments = () => {
 
   return (
     <CollegeAdminLayout>
-      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <button onClick={() => navigate('/dashboard/college-admin/courses')} className="text-slate-400 hover:text-[#003399] transition-colors">
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
-                Course <span className="text-[#003399]">Enrollments</span>
-              </h1>
+      <div className="min-h-screen bg-[#f0f4f8] px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-[1400px] mx-auto space-y-3 sm:space-y-4">
+
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+        <div>
+          <h1 className="text-[20px] md:text-[26px] font-bold text-gray-900 tracking-tight">
+            Enrolled <span className="text-blue-600">Students</span>
+          </h1>
+          <p className="text-[12px] md:text-[14px] text-gray-500 mt-1">
+            {courseTitle || 'Course'} · {stats.total} total · {stats.active} active · {stats.completed} completed · {stats.certs} certified
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/dashboard/college-admin/courses')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-[13px] font-bold px-4 py-2.5 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex-shrink-0"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        {[
+          { label: 'Total Enrolled', value: stats.total,             gradient: 'from-blue-500 to-blue-600',     icon: Users        },
+          { label: 'Completed',      value: stats.completed,         gradient: 'from-green-500 to-emerald-500', icon: CheckCircle2 },
+          { label: 'Avg Progress',   value: `${stats.avgProgress}%`, gradient: 'from-purple-500 to-purple-600', icon: BarChart3    },
+          { label: 'Certificates',   value: stats.certs,             gradient: 'from-amber-400 to-orange-500',  icon: Award        },
+        ].map(s => (
+          <div key={s.label} className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-4">
+            <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center mb-3`}>
+              <s.icon className="w-4 h-4 text-white" />
             </div>
             <p className="text-sm text-slate-400 font-medium ml-7">
               {courseTitle || 'Loading course...'} — {stats.total} students enrolled
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={fetchData} title="Refresh"
-              className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-100 text-slate-500 text-xs font-bold px-4 py-2 rounded-xl hover:border-[#003399]/30 hover:text-[#003399] transition-all">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
-            </button>
-            <button onClick={() => navigate(`/dashboard/college-admin/courses/${courseId}/analytics`)}
-              className="inline-flex items-center gap-1.5 bg-white border border-[#003399]/20 text-[#003399] hover:bg-slate-50 text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-sm">
-              <BarChart3 className="w-4 h-4" /> View Analytics
-            </button>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 p-3">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email, roll number..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 text-sm"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 lg:gap-4">
-          {[
-            { label: 'Total Enrolled', value: stats.total,             bg: 'bg-[#003399]/5',    tc: 'text-[#003399]',   Icon: Users        },
-            { label: 'Completed',      value: stats.completed,         bg: 'bg-emerald-50',     tc: 'text-emerald-700', Icon: CheckCircle2 },
-            { label: 'Avg Progress',   value: `${stats.avgProgress}%`, bg: 'bg-purple-50',      tc: 'text-purple-700',  Icon: BarChart3    },
-            { label: 'Certificates',   value: stats.certs,             bg: 'bg-amber-50',       tc: 'text-amber-700',   Icon: Award        },
-          ].map(({ label, value, bg, tc, Icon }) => (
-            <div key={label} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
-                <p className={`text-[24px] font-black ${tc} leading-none`}>{value}</p>
-              </div>
-              <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 ${tc}`} />
-              </div>
-            </div>
-          ))}
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+          <p className="font-semibold text-gray-800">{filtered.length} Students</p>
+          <button
+            onClick={() => navigate(`/dashboard/college-admin/courses/${courseId}/analytics`)}
+            className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors"
+          >
+            <BarChart3 className="w-4 h-4" /> View Analytics
+          </button>
         </div>
 
         {/* Table Panel */}
@@ -245,6 +267,8 @@ const CourseEnrollments = () => {
               </table>
             )}
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </CollegeAdminLayout>

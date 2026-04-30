@@ -37,9 +37,9 @@ const FieldError = ({ msg }) => msg ? <p className="text-red-500 text-[10px] mt-
 
 /* ─── Section card ─────────────────────────── */
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#003399]/20 bg-[#003399]/5">
         <Icon className="w-4 h-4 text-[#003399]" />
       </div>
       <h3 className="text-[15px] font-bold text-gray-900">{title}</h3>
@@ -268,9 +268,9 @@ const CompanyForm = () => {
           <div className="flex flex-col gap-4">
 
             {/* Status */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#003399]/20 bg-[#003399]/5">
                   <Building2 className="w-4 h-4 text-[#003399]" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Status</h3>
@@ -294,9 +294,9 @@ const CompanyForm = () => {
             </div>
 
             {/* Actions */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#003399]/20 bg-[#003399]/5">
                   <Save className="w-4 h-4 text-[#003399]" />
                 </div>
                 <h3 className="text-[15px] font-bold text-gray-900">Actions</h3>

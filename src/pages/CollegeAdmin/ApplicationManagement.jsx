@@ -15,7 +15,7 @@ import { collegeAdminAPI } from '../../api/Api';
 const PER_PAGE = 10;
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
@@ -26,7 +26,7 @@ const Pagination = ({ page, totalPages, total, perPage, onPrev, onNext }) => {
   const to = Math.min(page * perPage, total);
   return (
     <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-white rounded-b-xl">
-      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
+      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
       <div className="flex items-center gap-1">
         <button onClick={onPrev} disabled={page === 1}
           className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
@@ -139,23 +139,32 @@ const ApplicationManagement = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Total Applications', value: stats.total,    bg: 'bg-[#003399]/5',     tc: 'text-[#003399]',   Icon: FileText },
-              { label: 'In Progress',        value: stats.pending,  bg: 'bg-amber-50',    tc: 'text-amber-700',  Icon: Clock },
-              { label: 'Selected',           value: stats.selected, bg: 'bg-emerald-50',  tc: 'text-emerald-700',Icon: CircleCheck },
-              { label: 'Rejected',           value: stats.rejected, bg: 'bg-red-50',      tc: 'text-red-700',    Icon: CircleX },
-            ].map(({ label, value, bg, tc, Icon }) => (
-              <Card key={label} className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
-                  <p className={`text-[24px] font-black ${tc} leading-none`}>{value}</p>
+              { label: 'Total Applications', value: stats.total,    color: 'navy',  Icon: FileText },
+              { label: 'In Progress',        value: stats.pending,  color: 'amber', Icon: Clock },
+              { label: 'Selected',           value: stats.selected, color: 'green', Icon: CircleCheck },
+              { label: 'Rejected',           value: stats.rejected, color: 'red',   Icon: CircleX },
+            ].map(({ label, value, color, Icon }) => {
+              const themes = {
+                navy:  { wrap: 'bg-[#003399]/5 text-[#003399] border-[#003399]/10', val: '#003399' },
+                amber: { wrap: 'bg-amber-50 text-amber-600 border-amber-100', val: '#d97706' },
+                green: { wrap: 'bg-emerald-50 text-emerald-600 border-emerald-100', val: '#059669' },
+                red:   { wrap: 'bg-rose-50 text-rose-600 border-rose-100', val: '#e11d48' },
+              };
+              const t = themes[color];
+              return (
+                <div key={label} className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[28px] font-black leading-none mb-1" style={{ color: t.val }}>{value}</p>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
+                  </div>
                 </div>
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${tc}`} />
-                </div>
-              </Card>
-            ))}
+              );
+            })}
           </div>
 
           {/* Filters & Table */}

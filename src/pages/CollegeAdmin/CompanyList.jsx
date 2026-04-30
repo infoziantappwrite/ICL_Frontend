@@ -26,7 +26,7 @@ const Pagination = ({ page, total, totalPages, pageSize, onPageChange }) => {
     }, []);
   return (
     <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between">
-      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
+      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
       <div className="flex items-center gap-1">
         <button onClick={() => onPageChange(page - 1)} disabled={page === 1}
           className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
@@ -181,7 +181,7 @@ const CompanyList = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {paginated.map((company) => (
               <div key={company._id}
-                className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group flex flex-col">
+                className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group flex flex-col">
                 {/* Card header */}
                 <div className="bg-gray-50/50 border-b border-slate-100 p-4">
                   <div className="flex items-start gap-3">

@@ -8,6 +8,7 @@ import {
   ChevronLeft, ChevronRight, Sparkles, ClipboardList,
   CheckCircle2, FileText, Calendar, Ban, Play,
   CalendarCheck, Eye, Hash, Award, X,
+  Layers, Send,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
@@ -233,7 +234,7 @@ const AssessmentManagement = () => {
               className="inline-flex items-center gap-1.5 bg-white border border-[#003399]/20 text-[#003399] hover:bg-slate-50 text-[13px] font-bold px-4 py-2 rounded-xl transition-colors shadow-sm">
               <Sparkles className="w-4 h-4" /> Generate with AI
             </button>
-            <button onClick={() => navigate('/dashboard/college-admin/assessments/wizard')}
+            <button onClick={() => navigate('/dashboard/college-admin/assessments/create')}
               className="inline-flex items-center gap-1.5 bg-[#003399] hover:bg-[#002d8b] text-white text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95">
               <Plus className="w-4 h-4" /> New Assessment
             </button>
@@ -392,10 +393,12 @@ const AssessmentManagement = () => {
                           <td className="px-5 py-4 text-center">
                             <div className="flex items-center justify-center">
                               <ActionMenu actions={[
-                                { label: 'Manage Questions', icon: ListChecks, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/questions`), color: 'text-[#003399] hover:bg-slate-50' },
-                                { label: 'View Attempts', icon: ChartBar, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`), color: 'text-indigo-600 hover:bg-indigo-50' },
+                                { label: 'Edit Details',      icon: SquarePen,  onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/edit`),      color: 'text-amber-600 hover:bg-amber-50' },
+                                { label: 'Manage Sections',   icon: Layers,     onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/sections`),   color: 'text-violet-600 hover:bg-violet-50' },
+                                { label: 'Manage Questions',  icon: ListChecks, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/questions`),  color: 'text-[#003399] hover:bg-slate-50' },
+                                { label: 'Review & Publish',  icon: Send,       onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/review`),     color: 'text-sky-600 hover:bg-sky-50' },
+                                { label: 'View Attempts',     icon: ChartBar,   onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`),   color: 'text-indigo-600 hover:bg-indigo-50' },
                                 isCompleted && { label: 'Download Report', icon: FileText, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/attempts`), color: 'text-green-600 hover:bg-green-50' },
-                                canEdit && { label: 'Edit', icon: SquarePen, onClick: () => navigate(`/dashboard/college-admin/assessments/${a._id}/edit`), color: 'text-amber-600 hover:bg-amber-50' },
                                 canCancel && { label: 'Cancel Assessment', icon: Ban, onClick: () => setCancelConfirm(a._id), color: 'text-orange-600 hover:bg-orange-50' },
                                 canDelete && { label: 'Delete', icon: Trash2, onClick: () => setDeleteConfirm(a._id), danger: true },
                               ].filter(Boolean)} />

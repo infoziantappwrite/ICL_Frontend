@@ -945,7 +945,7 @@ const AssessmentAttempts = () => {
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden min-h-[400px] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[400px] flex flex-col">
             <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 bg-[#003399]/5 rounded-md flex items-center justify-center">

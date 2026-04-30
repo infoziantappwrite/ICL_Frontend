@@ -2,13 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  TrendingUp, Users, Briefcase, FileText, Building2, Award,
+  TrendingUp, Users, Briefcase, Building2, Award,
   BarChart3, Target, GraduationCap, DollarSign, RefreshCw,
   ChevronRight, Star,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { AnalyticsSkeleton } from '../../components/common/SkeletonLoader';
-import { collegeAdminAPI, jobAPI, applicationAPI } from '../../api/Api';
+import { collegeAdminAPI, jobAPI } from '../../api/Api';
 
 const fmt = (n) => {
   if (n === undefined || n === null) return '0';
@@ -18,14 +18,14 @@ const fmt = (n) => {
 const pct = (a, b) => (b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0);
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
 
 const SectionHeader = ({ title, action, onAction }) => (
   <div className="flex items-center justify-between mb-3 border-b border-gray-50 pb-2">
-    <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-bold text-gray-900">{title}</h2>
+    <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-black text-gray-900 tracking-tight">{title}</h2>
     {action && (
       <button onClick={onAction} className="text-[12px] font-semibold text-[#003399] hover:text-[#003399] flex items-center gap-1">
         {action} <ChevronRight className="w-3 h-3" />
@@ -50,20 +50,23 @@ const MiniBar = ({ label, value, max, sub, color }) => {
 };
 
 const Pill = ({ icon: Icon, label, value, color }) => {
-  const c = {
-    blue:   'bg-[#003399]/5 text-[#003399] border-transparent',
-    cyan:   'bg-cyan-50 text-cyan-700 border-transparent',
-    indigo: 'bg-indigo-50 text-indigo-700 border-transparent',
-    violet: 'bg-violet-50 text-violet-700 border-transparent',
-    green:  'bg-emerald-50 text-emerald-700 border-transparent',
-    amber:  'bg-amber-50 text-amber-700 border-transparent',
-  }[color] || 'bg-gray-50 text-gray-700 border-transparent';
+  const themes = {
+    blue:   { wrap: 'bg-[#003399]/8 border-[#003399]/15', val: '#003399' },
+    cyan:   { wrap: 'bg-[#00A9CE]/8 border-[#00A9CE]/15', val: '#00A9CE' },
+    indigo: { wrap: 'bg-indigo-50 border-indigo-100', val: '#4338ca' },
+    violet: { wrap: 'bg-violet-50 border-violet-100', val: '#7c3aed' },
+    green:  { wrap: 'bg-emerald-50 border-emerald-100', val: '#059669' },
+    amber:  { wrap: 'bg-amber-50 border-amber-100', val: '#d97706' },
+  };
+  const t = themes[color] || themes.blue;
   return (
-    <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${c} w-full`}>
-      <Icon className="w-5 h-5 flex-shrink-0 opacity-80" />
-      <div className="min-w-0 flex-1">
-        <p className="text-[16px] font-black leading-none">{typeof value === 'string' ? value : fmt(value)}</p>
-        <p className="text-[11px] font-medium opacity-70 mt-1 leading-none truncate">{label}</p>
+    <div className="group bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center text-center gap-2">
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
+        <Icon className="w-4 h-4" style={{ color: t.val }} />
+      </div>
+      <div>
+        <p className="text-[18px] font-black leading-none mb-0.5" style={{ color: t.val }}>{typeof value === 'string' ? value : fmt(value)}</p>
+        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
       </div>
     </div>
   );
@@ -87,10 +90,9 @@ const Analytics = () => {
 
   const [overviewStats, setOverviewStats] = useState({
     totalStudents: 0, totalCompanies: 0, totalJDs: 0, activeJDs: 0,
-    totalApplications: 0, selectedStudents: 0, placedStudents: 0, placementPercentage: 0,
+    selectedStudents: 0, placedStudents: 0, placementPercentage: 0,
   });
   const [jobStats, setJobStats] = useState({ active: 0, closed: 0, draft: 0, cancelled: 0 });
-  const [applicationStats, setApplicationStats] = useState({ pending: 0, shortlisted: 0, selected: 0, rejected: 0 });
   const [branchStats, setBranchStats] = useState([]);
   const [companyStats, setCompanyStats] = useState([]);
   const [packageStats, setPackageStats] = useState({ avgPackage: 0, maxPackage: 0, minPackage: 0 });
@@ -98,11 +100,10 @@ const Analytics = () => {
   const fetchAllData = async () => {
     try {
       setRefreshing(true);
-      const [dashboardData, analyticsData, jobsData, applicationsData] = await Promise.all([
+      const [dashboardData, analyticsData, jobsData] = await Promise.all([
         collegeAdminAPI.getDashboard().catch(() => ({ success: false })),
         collegeAdminAPI.getAnalytics().catch(() => ({ success: false })),
         jobAPI.getAllJobs().catch(() => ({ success: false, jobs: [] })),
-        applicationAPI.getAllApplications().catch(() => ({ success: false, applications: [] })),
       ]);
 
       if (dashboardData.success && dashboardData.stats) setOverviewStats(dashboardData.stats);
@@ -114,16 +115,6 @@ const Analytics = () => {
           closed:    jobs.filter(j => j.status === 'Closed').length,
           draft:     jobs.filter(j => j.status === 'Draft').length,
           cancelled: jobs.filter(j => j.status === 'Cancelled').length,
-        });
-      }
-
-      if (applicationsData.success && applicationsData.applications) {
-        const apps = applicationsData.applications;
-        setApplicationStats({
-          pending:     apps.filter(a => a.status === 'Pending' || a.status === 'Applied').length,
-          shortlisted: apps.filter(a => a.status === 'Shortlisted').length,
-          selected:    apps.filter(a => a.status === 'Selected').length,
-          rejected:    apps.filter(a => a.status === 'Rejected').length,
         });
       }
 
@@ -146,7 +137,6 @@ const Analytics = () => {
 
   const placementRate = overviewStats.placementPercentage ?? pct(overviewStats.placedStudents ?? 0, overviewStats.totalStudents ?? 0);
   const maxCompany = Math.max(...companyStats.map(c => c.studentsHired || 0), 1);
-  const totalApps = applicationStats.pending + applicationStats.shortlisted + applicationStats.selected + applicationStats.rejected;
 
   return (
     <CollegeAdminLayout>
@@ -183,15 +173,13 @@ const Analytics = () => {
 
           {/* ═════════ STATS PILLS ═════════ */}
           <Card className="p-3 sm:p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <Pill icon={Users} label="Students" value={overviewStats.totalStudents} color="blue" />
               <Pill icon={Award} label="Placed" value={overviewStats.placedStudents} color="green" />
               <Pill icon={Building2} label="Companies" value={overviewStats.totalCompanies} color="cyan" />
               <Pill icon={Briefcase} label="Total JDs" value={overviewStats.totalJDs} color="indigo" />
               <Pill icon={TrendingUp} label="Active JDs" value={overviewStats.activeJDs} color="violet" />
-              <Pill icon={FileText} label="Applications" value={overviewStats.totalApplications} color="blue" />
-              <Pill icon={Target} label="Placed %" value={`${placementRate}%`} color="amber" />
-              <Pill icon={DollarSign} label="Avg Package" value={packageStats.avgPackage > 0 ? `₹${packageStats.avgPackage.toFixed(1)}L` : '—'} color="cyan" />
+
             </div>
           </Card>
 
@@ -228,8 +216,8 @@ const Analytics = () => {
                 </div>
               </Card>
 
-              {/* Status Breakdown Grid (Jobs & Apps) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Status Breakdown Grid (Jobs) */}
+              <div className="grid grid-cols-1 gap-4">
                 
                 {/* Job Statistics */}
                 <Card className="p-4 md:p-5">
@@ -248,27 +236,6 @@ const Analytics = () => {
                       <MiniBar key={item.label} label={item.label} value={item.value} max={Math.max(jobStats.active + jobStats.draft + jobStats.closed + jobStats.cancelled, 1)} color={item.color} />
                     ))}
                   </div>
-                </Card>
-
-                {/* Application Status */}
-                <Card className="p-4 md:p-5">
-                  <SectionHeader title="Application Status" action="View All" onAction={() => navigate('/dashboard/college-admin/applications')} />
-                  <div className="grid grid-cols-2 gap-3 mb-4 mt-2">
-                    <StatusBadge count={applicationStats.pending} label="Pending" dotColor="bg-amber-400" bg="bg-white" textColor="text-gray-900" borderColor="border-gray-100 shadow-sm" />
-                    <StatusBadge count={applicationStats.selected} label="Selected" dotColor="bg-green-500" bg="bg-white" textColor="text-gray-900" borderColor="border-gray-100 shadow-sm" />
-                  </div>
-                  {totalApps > 0 && (
-                    <div className="space-y-1">
-                      {[
-                        { label: 'Pending', value: applicationStats.pending, color: '#f59e0b' },
-                        { label: 'Shortlisted', value: applicationStats.shortlisted, color: '#3b82f6' },
-                        { label: 'Selected', value: applicationStats.selected, color: '#10b981' },
-                        { label: 'Rejected', value: applicationStats.rejected, color: '#ef4444' },
-                      ].map(item => (
-                        <MiniBar key={item.label} label={item.label} value={item.value} max={totalApps} color={item.color} sub={`${item.value} (${pct(item.value, totalApps)}%)`} />
-                      ))}
-                    </div>
-                  )}
                 </Card>
               </div>
 
@@ -355,7 +322,6 @@ const Analytics = () => {
                     { label: 'Selected Students', value: overviewStats.selectedStudents ?? 0, col: 'text-cyan-600' },
                     { label: 'Total Companies', value: overviewStats.totalCompanies, col: 'text-indigo-600' },
                     { label: 'Total JDs', value: overviewStats.totalJDs, col: 'text-violet-600' },
-                    { label: 'Total Applications', value: overviewStats.totalApplications, col: 'text-gray-900' },
                   ].map(({ label, value, col }) => (
                     <div key={label} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
                       <span className="text-gray-600">{label}</span>
@@ -403,9 +369,6 @@ const Analytics = () => {
                 <div className="grid grid-cols-1 gap-2 mt-2">
                   <button onClick={() => navigate('/dashboard/college-admin/jobs')} className="w-full px-4 py-3 bg-[#003399]/5 hover:bg-slate-100 text-[#003399] text-[13px] font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
                     <Briefcase className="w-4 h-4" /> Manage Job Drives
-                  </button>
-                  <button onClick={() => navigate('/dashboard/college-admin/applications')} className="w-full px-4 py-3 bg-white hover:bg-slate-50 border border-gray-200 text-gray-700 text-[13px] font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-                    <FileText className="w-4 h-4" /> Review Applications
                   </button>
                 </div>
               </Card>

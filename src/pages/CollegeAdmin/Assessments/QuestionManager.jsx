@@ -1,6 +1,6 @@
 ﻿// pages/CollegeAdmin/Assessments/QuestionManager.jsx
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Plus, Trash2, Edit, Save, X, ChevronLeft,
   AlertCircle, CheckCircle2, BookOpen, Users, UserPlus,
@@ -13,6 +13,7 @@ import {
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI, collegeAdminAPI, sectionAPI } from '../../../api/Api';
+import WizardProgress from '../../../components/assessment/WizardProgress';
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
 const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#003399]/30 focus:border-[#003399] bg-white transition-colors placeholder:text-slate-400";
@@ -863,15 +864,15 @@ const QuestionModal = ({ question, onSave, onClose, defaultMarks = 1, forcedType
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 max-w-2xl w-full my-8">
-        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-[#003399]/15 border border-slate-200 max-w-2xl w-full my-8">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#003399,#00A9CE)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-white/20 border border-white/30 rounded-xl flex items-center justify-center">
               {question ? <Edit className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-white" />}
             </div>
-            <h3 className="font-bold text-white">{question ? 'Edit Question' : 'Add Question'}</h3>
+            <h3 className="font-bold text-white text-sm">{question ? 'Edit Question' : 'Add Question'}</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="p-5 space-y-4 max-h-[78vh] overflow-y-auto">
@@ -1282,16 +1283,16 @@ const BulkPasteModal = ({ onAdd, onClose, remaining }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 max-w-2xl w-full my-8">
-        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-[#003399]/15 border border-slate-200 max-w-2xl w-full my-8">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#003399,#00A9CE)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center"><ClipboardPaste className="w-4 h-4 text-[#003399]" /></div>
+            <div className="w-8 h-8 bg-white/20 border border-white/30 rounded-xl flex items-center justify-center"><ClipboardPaste className="w-4 h-4 text-white" /></div>
             <div>
-              <h3 className="font-bold text-white">Bulk Paste MCQ Questions</h3>
-              <p className="text-white/60 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
+              <h3 className="font-bold text-white text-sm">Bulk Paste MCQ Questions</h3>
+              <p className="text-white/70 text-[11px]">{remaining} slot{remaining !== 1 ? 's' : ''} remaining</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 space-y-4">
           <button onClick={() => setShowFormat(v => !v)} className="w-full flex items-center justify-between px-4 py-3 bg-[#003399]/5 border border-[#003399]/20 rounded-xl text-sm font-semibold text-[#003399] hover:bg-slate-100 transition-all">
@@ -1432,7 +1433,7 @@ const BulkPasteCodingModal = ({ onAdd, onClose, remaining, defaultTab = 'coding'
             ? 'bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-500'
             : 'bg-gradient-to-r from-amber-600 via-orange-500 to-yellow-500'}`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center">
+            <div className="w-8 h-8 bg-white/20 border border-white/30 rounded-xl flex items-center justify-center">
               {isCoding ? <Code2 className="w-4 h-4 text-white" /> : <span className="text-white text-base leading-none">🗄️</span>}
             </div>
             <div>
@@ -1820,18 +1821,18 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 max-w-lg w-full my-8">
-        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-[#003399]/15 border border-slate-200 max-w-lg w-full my-8">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#003399,#00A9CE)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center"><UserPlus className="w-4 h-4 text-[#003399]" /></div>
+            <div className="w-8 h-8 bg-white/20 border border-white/30 rounded-xl flex items-center justify-center"><UserPlus className="w-4 h-4 text-white" /></div>
             <div>
-              <h3 className="font-bold text-white">Assign Students</h3>
+              <h3 className="font-bold text-white text-sm">Assign Students</h3>
               {alreadyAssignedCount > 0 && (
-                <p className="text-white/60 text-[11px] mt-0.5">{alreadyAssignedCount} already assigned</p>
+                <p className="text-white/70 text-[11px] mt-0.5">{alreadyAssignedCount} already assigned</p>
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="flex border-b border-slate-100 overflow-x-auto">
@@ -2017,16 +2018,16 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl shadow-[#003399]/15 border border-white/60 w-full max-w-lg flex flex-col max-h-[85vh]">
-        <div className="px-5 py-4 border-b border-slate-100 bg-white rounded-t-2xl flex items-center justify-between shrink-0">
+      <div className="bg-white rounded-2xl shadow-2xl shadow-[#003399]/15 border border-slate-200 w-full max-w-lg flex flex-col max-h-[85vh]">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0" style={{ background: 'linear-gradient(135deg,#003399,#00A9CE)' }}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#003399]/10 border border-[#003399]/20 rounded-xl flex items-center justify-center"><Users className="w-4 h-4 text-[#003399]" /></div>
+            <div className="w-8 h-8 bg-white/20 border border-white/30 rounded-xl flex items-center justify-center"><Users className="w-4 h-4 text-white" /></div>
             <div>
-              <h3 className="font-bold text-white">Assigned Students</h3>
-              <p className="text-white/60 text-[11px] mt-0.5">{assessmentName} · {level} · {total} student{total !== 1 ? 's' : ''}</p>
+              <h3 className="font-bold text-white text-sm">Assigned Students</h3>
+              <p className="text-white/70 text-[11px] mt-0.5">{assessmentName} · {level} · {total} student{total !== 1 ? 's' : ''}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"><X className="w-4 h-4" /></button>
         </div>
         <div className="px-5 py-3 border-b border-slate-100 shrink-0">
           <div className="relative">
@@ -2088,6 +2089,7 @@ const QuestionManager = () => {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const isNewAssessment = searchParams.get('new') === '1';
 
   const [assessment,      setAssessment]      = useState(null);
@@ -2106,6 +2108,15 @@ const QuestionManager = () => {
   const [linkedQIds,      setLinkedQIds]      = useState(new Set()); // questions locked to an assessment
 
   useEffect(() => { fetchData(); }, [assessmentId]);
+
+  // Auto-open Assign Students modal when navigated from ReviewPublish
+  useEffect(() => {
+    if (location.state?.openAssignStudents) {
+      setModal('assign');
+      // Clear the state so a refresh doesn't re-open it
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const fetchData = async () => {
     setLoading(true); setError('');
@@ -2307,10 +2318,13 @@ const QuestionManager = () => {
             </div>
           )}
 
+          {/* ── 4-Step Wizard Progress ── */}
+          <WizardProgress currentStep={3} assessmentId={assessmentId} />
+
           {/* Back */}
-          <button onClick={handleTryLeave}
+          <button onClick={() => navigate(`/dashboard/college-admin/assessments/${assessmentId}/sections`)}
             className="flex items-center gap-2 text-gray-500 hover:text-[#003399] mb-2 transition-colors group text-[13px] font-bold">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Assessments
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Sections
           </button>
 
           {/* No-students warning banner */}
@@ -2551,7 +2565,7 @@ const QuestionManager = () => {
 
               {/* Saved questions */}
               {sectionSavedQs.length > 0 ? (
-                <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                   <div className="px-5 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center gap-2">
                     <ListChecks className="w-4 h-4 text-[#003399]" />
                     <p className="font-bold text-gray-800 text-sm">{sectionSavedQs.length} Saved Questions</p>
@@ -2602,25 +2616,25 @@ const QuestionManager = () => {
                 </div>
               )}
 
-              {/* Finalize banner */}
-              {isNewAssessment && savedQs.length > 0 && stagedQs.length === 0 && hasStudents && (
+              {/* Finalize banner — shown when questions are saved */}
+              {savedQs.length > 0 && stagedQs.length === 0 && (
                 <div className="bg-slate-50 border border-[#003399]/20 rounded-2xl p-5 flex items-center justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#003399]/10 rounded-xl flex items-center justify-center">
                       <CheckCircle2 className="w-5 h-5 text-[#003399]" />
                     </div>
                     <div>
-                      <p className="font-bold text-[#003399] text-sm">Assessment is ready!</p>
-                      <p className="text-xs text-[#003399] mt-0.5">
-                        {savedQs.length} question{savedQs.length !== 1 ? 's' : ''} · {totalMarks} marks · {assessment?.eligible_students?.length} students assigned
+                      <p className="font-bold text-[#003399] text-sm">Questions saved!</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {savedQs.length} question{savedQs.length !== 1 ? 's' : ''} · {totalMarks} marks · Next: Review &amp; Publish
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => { showToast('Assessment created successfully!'); setTimeout(() => navigate('/dashboard/college-admin/assessments'), 1200); }}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md shadow-[#003399]/15 hover:opacity-90 transition-opacity whitespace-nowrap"
-                    style={{ background: 'linear-gradient(135deg,#1d4ed8,#0284c7,#0891b2)' }}>
-                    <CheckCircle2 className="w-4 h-4" /> Create Assessment
+                    onClick={() => navigate(`/dashboard/college-admin/assessments/${assessmentId}/review`)}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md hover:opacity-90 transition-opacity whitespace-nowrap"
+                    style={{ background: 'linear-gradient(135deg,#003399,#00A9CE)' }}>
+                    <ArrowRight className="w-4 h-4" /> Go to Review
                   </button>
                 </div>
               )}

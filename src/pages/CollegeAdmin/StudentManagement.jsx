@@ -181,8 +181,8 @@ const Modal = ({ children, onClose, size = 'lg' }) => {
   }, [onClose]);
   return ReactDOM.createPortal(
     <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 9999 }} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm"/>
-      <div className={`relative w-full ${w} max-h-[92vh] flex flex-col`} onClick={e => e.stopPropagation()}>
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"/>
+      <div className={`relative w-full ${w} max-h-[92vh] flex flex-col bg-white rounded-[32px] shadow-2xl border border-white/20`} onClick={e => e.stopPropagation()}>
         {children}
       </div>
     </div>,
@@ -191,12 +191,15 @@ const Modal = ({ children, onClose, size = 'lg' }) => {
 };
 
 /* ── Gradient modal header ── */
-const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-[#003399] via-[#003399]/80 to-[#00A9CE]' }) => (
-  <div className={"px-6 py-5 border-b border-slate-100 flex-shrink-0 bg-white rounded-t-2xl"}>
+const MHead = ({ icon: Icon, title, sub, onClose, color = '#003399' }) => (
+  <div className={"px-6 py-6 border-b border-slate-50 flex-shrink-0 bg-white/50 backdrop-blur-sm rounded-t-[32px]"}>
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 shadow-sm bg-[#003399]/10 border-[#003399]/20 flex-shrink-0">
-          <Icon className="w-5 h-5 text-white"/>
+      <div className="flex items-center gap-4">
+        <div
+          className="w-11 h-11 rounded-2xl flex items-center justify-center border flex-shrink-0 shadow-sm"
+          style={{ backgroundColor: `${color}15`, borderColor: `${color}30` }}
+        >
+          <Icon className="w-5 h-5" style={{ color }}/>
         </div>
         <div>
           <h2 className="text-slate-900 font-black text-lg tracking-tight leading-tight">{title}</h2>
@@ -204,7 +207,7 @@ const MHead = ({ icon: Icon, title, sub, onClose, gradient = 'from-[#003399] via
         </div>
       </div>
       {onClose && (
-        <button onClick={onClose} className="w-8 h-8 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border border-slate-200/50">
+        <button onClick={onClose} className="w-9 h-9 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all border border-slate-200/50">
           <X className="w-4 h-4"/>
         </button>
       )}
@@ -378,8 +381,8 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   if (step === 'success' && successData) {
     return (
       <Modal onClose={onClose} size="md">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-          <MHead icon={CheckCircle} title="Student Created!" sub="Temporary password sent to student's email" onClose={onClose}/>
+        <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl">
+          <MHead icon={CheckCircle} title="Student Created!" sub="Temporary password sent to student's email" onClose={onClose} color="#10b981"/>
           <div className="p-6 space-y-4">
             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-[#003399]/10">
               <div className="w-12 h-12 bg-[#003399] rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
@@ -415,7 +418,7 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
             </div>
             <button
               onClick={() => downloadResultsAsExcel([successData], `student_${successData.rollNumber || Date.now()}.xlsx`)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#003399] text-white text-sm font-bold rounded-xl transition-colors">
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#002d8b] text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95">
               <Download size={14}/> Download Student Details (Excel)
             </button>
             <div className="flex gap-3">
@@ -438,7 +441,7 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   if (step === 'preview') {
     return (
       <Modal onClose={onClose} size="md">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+        <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
           <MHead icon={Eye} title="Preview — Confirm Details" sub="Review before saving to database" onClose={onClose}/>
           <div className="overflow-y-auto flex-1 p-6 space-y-5">
             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-[#003399]/10">
@@ -484,7 +487,7 @@ function AddSingleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   /* ── Form ── */
   return (
     <Modal onClose={onClose} size="md">
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
+      <div className="bg-white rounded-[32px] overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
         <MHead icon={UserPlus} title="Add Single Student" sub="Fill details, preview, then confirm" onClose={onClose}/>
         <div className="mx-5 mt-4 flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl flex-shrink-0">
           <KeyRound size={13} className="text-amber-600 flex-shrink-0"/>
@@ -681,8 +684,8 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   if (step === 'success' && result) {
     return (
       <Modal onClose={onClose} size="lg">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-          <MHead icon={CheckCircle} title={`${result.count} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose}/>
+        <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl">
+          <MHead icon={CheckCircle} title={`${result.count} Students Created!`} sub="Temporary passwords emailed to each student" onClose={onClose} color="#10b981"/>
           <div className="overflow-y-auto max-h-[55vh] p-5 space-y-2">
             {result.students.length > 0 ? result.students.map((s, i) => (
               <div key={s.id || i} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -716,7 +719,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
             {result.students.length > 0 && (
               <button
                 onClick={() => downloadResultsAsExcel(result.students, `students_${Date.now()}.xlsx`)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#003399] text-white text-sm font-bold rounded-xl transition-colors">
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#002d8b] text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95">
                 <Download size={14}/> Download All Students + Passwords (Excel)
               </button>
             )}
@@ -734,7 +737,7 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
   if (step === 'preview') {
     return (
       <Modal onClose={onClose} size="xl">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+        <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
           <MHead icon={Eye} title={`Preview — ${filledRows.length} Students`} sub="Passwords auto-generated on confirm" onClose={onClose}/>
           <div className="overflow-auto flex-1">
             <table className="w-full text-xs border-collapse">
@@ -790,8 +793,8 @@ function AddMultipleModal({ onClose, onDone, branchCodes = BRANCHES }) {
 
   return (
     <Modal onClose={onClose} size="full">
-      <div className="bg-white rounded-2xl overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
-        <MHead icon={UsersRound} title="Add Multiple Students" gradient="from-[#003399] via-[#003399]/80 to-[#00A9CE]"
+      <div className="bg-white rounded-[32px] overflow-hidden flex flex-col max-h-[92vh] shadow-2xl">
+        <MHead icon={UsersRound} title="Add Multiple Students" 
           sub="Fill the table, preview, then confirm — passwords auto-generated" onClose={onClose}/>
         <div className="mx-5 mt-4 flex items-center gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl flex-shrink-0">
           <KeyRound size={13} className="text-amber-600 flex-shrink-0"/>
@@ -1117,7 +1120,7 @@ function BulkUploadModal({ onClose, onDone }) {
   if (step === 'done') return (
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose}/>
+        <MHead icon={CheckCircle} title="Bulk Upload Complete!" sub="Students created and welcome emails sent" onClose={onClose} color="#10b981"/>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
@@ -1151,7 +1154,7 @@ function BulkUploadModal({ onClose, onDone }) {
                   }));
               downloadResultsAsExcel(rows, `bulk_upload_${Date.now()}.xlsx`);
             }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#003399] text-white text-sm font-bold rounded-xl transition-colors">
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#003399] hover:bg-[#002d8b] text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95">
             <Download size={14}/> Download Uploaded Students + Passwords (Excel)
           </button>
           <button onClick={onClose} className="w-full py-2.5 bg-gradient-to-r from-[#003399] to-[#00A9CE] text-white text-sm font-bold rounded-xl hover:opacity-90">Done</button>
@@ -1363,7 +1366,7 @@ function BulkUploadModal({ onClose, onDone }) {
               <p className="text-xs text-slate-400 mt-0.5">Excel with correct columns and sample rows</p>
             </div>
             <button onClick={() => collegeAdminStudentAPI.downloadTemplate()}
-              className="flex items-center gap-2 px-4 py-2 bg-[#003399] hover:bg-[#003399] text-white text-xs font-bold rounded-xl transition-colors">
+              className="flex items-center gap-2 px-4 py-2 bg-[#003399] hover:bg-[#002d8b] text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-blue-500/10 active:scale-95">
               <Download size={13}/> Template
             </button>
           </div>
@@ -1436,7 +1439,7 @@ function ExportModal({ onClose }) {
   return (
     <Modal onClose={onClose} size="md">
       <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV" gradient="from-[#003399] via-[#003399]/80 to-[#00A9CE]" onClose={onClose}/>
+        <MHead icon={FileDown} title="Export Students" sub="Filter and download as Excel or CSV"  onClose={onClose}/>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1660,25 +1663,32 @@ export default function StudentManagement() {
 
         {/* ══ STAT PILLS ══ */}
         <div className="">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon:Users,      label:'Total Students', value:pagination.total,  color:'text-[#003399]'    },
-              { icon:UserCheck,  label:'Placed',         value:placed,            color:'text-emerald-600'  },
-              { icon:Layers,     label:'This Page',      value:students.length,   color:'text-cyan-600'     },
-              { icon:TrendingUp, label:'Total Pages',    value:pagination.pages,  color:'text-indigo-600'},
-            ].map(({ icon:Icon, label, value, color }) => (
-              <div key={label} className={`flex items-center gap-3 p-4 rounded-xl shadow-sm bg-white border border-slate-100`}>
-                
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color.replace('text-', 'bg-').replace('600', '50')}`}>
-        <Icon className={`w-5 h-5 ${color}`}/>
-    </div>
-    
-                <div className="flex-1">
-                  <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
-                  <p className={`text-[24px] font-black leading-none ${color}`}>{value ?? '—'}</p>
+              { icon:Users,      label:'Total Students', value:pagination.total,  color:'navy'   },
+              { icon:UserCheck,  label:'Placed',         value:placed,            color:'green'  },
+              { icon:Layers,     label:'This Page',      value:students.length,   color:'teal'   },
+              { icon:TrendingUp, label:'Total Pages',    value:pagination.pages,  color:'indigo' },
+            ].map(({ icon:Icon, label, value, color }) => {
+              const themes = {
+                navy:   { wrap: 'bg-[#003399]/5 text-[#003399] border-[#003399]/10', val: '#003399' },
+                green:  { wrap: 'bg-emerald-50 text-emerald-600 border-emerald-100', val: '#059669' },
+                teal:   { wrap: 'bg-[#00A9CE]/5 text-[#00A9CE] border-[#00A9CE]/10', val: '#00A9CE' },
+                indigo: { wrap: 'bg-indigo-50 text-indigo-600 border-indigo-100', val: '#4338ca' },
+              };
+              const t = themes[color] || themes.navy;
+              return (
+                <div key={label} className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[28px] font-black leading-none mb-1" style={{ color: t.val }}>{value ?? '—'}</p>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1739,7 +1749,7 @@ export default function StudentManagement() {
 
         </div>
 {/* ══ MAIN PANEL ══ */}
-<div className="bg-white rounded-lg shadow-sm border border-slate-100 flex flex-col">
+<div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
 <div className="p-4 border-b border-slate-100">
         <div className="">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1871,7 +1881,7 @@ export default function StudentManagement() {
               </div>
               {/* Pagination */}
               <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between flex-shrink-0">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                   Showing <b className="text-gray-700">{(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, pagination.total)}</b> of <b className="text-gray-700">{pagination.total}</b>
                 </span>
                 <div className="flex items-center gap-1">

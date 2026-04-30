@@ -32,7 +32,7 @@ const countEligibleStudents = (job, students) => {
 /* ─── Section heading ─────────────────────── */
 const SHead = ({ icon: Icon, title, count }) => (
   <div className="flex items-center gap-3 mb-4">
-    <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#003399]/20 bg-[#003399]/5">
       <Icon className="w-4 h-4 text-[#003399]" />
     </div>
     <h3 className="text-[15px] font-bold text-gray-900 leading-none">{title}</h3>
@@ -215,7 +215,7 @@ const CompanyDetail = () => {
         <div className="lg:col-span-2 flex flex-col gap-4">
 
           {/* Contact & Details */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
             <SHead icon={Mail} title="Contact Information" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
               <InfoRow icon={Mail} label="Email">
@@ -236,7 +236,7 @@ const CompanyDetail = () => {
           </div>
 
           {/* Company Details */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
             <SHead icon={FileText} title="Company Details" />
             <p className="text-[13px] text-gray-600 leading-relaxed mb-3">{company.description || 'No description provided'}</p>
             {company.specialization?.length > 0 && (
@@ -252,7 +252,7 @@ const CompanyDetail = () => {
           </div>
 
           {/* Job Descriptions */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="px-5 py-4 bg-gray-50 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center">
@@ -364,7 +364,7 @@ const CompanyDetail = () => {
         <div className="flex flex-col gap-4">
 
           {/* Quick Stats */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
             <SHead icon={Briefcase} title="Quick Stats" />
             <div className="space-y-2">
               <StatTile icon={Briefcase}    label="Active JDs"      value={activeJDs}               color="text-[#003399]"   bg="bg-[#003399]/5 border-[#003399]/10"    />
@@ -375,7 +375,7 @@ const CompanyDetail = () => {
           </div>
 
           {/* Additional Info */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
             <SHead icon={Calendar} title="Additional Information" />
             <InfoRow icon={Calendar} label="Added On">
               {company.createdAt ? new Date(company.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}

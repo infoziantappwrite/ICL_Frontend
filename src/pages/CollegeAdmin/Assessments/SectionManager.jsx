@@ -1,15 +1,16 @@
 ﻿// pages/CollegeAdmin/Assessments/SectionManager.jsx
-// Step 2 of 3: divide assessment marks into sections (Coding / Quiz)
+// Step 2 of 5: divide assessment marks into sections (Coding / Quiz)
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Save, X,
+  ChevronLeft, Plus, Trash2, Edit2, Save, X,
   Code2, BookOpen, AlertCircle, CheckCircle2,
   Clock, Hash, Award, Info, Layers, ArrowRight, BarChart2, Database,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, sectionAPI } from '../../../api/Api';
+import WizardProgress from '../../../components/assessment/WizardProgress';
 
 // ─── Section type metadata ────────────────────────────────────────────────────
 const SECTION_TYPES = [
@@ -89,33 +90,7 @@ const Toggle = ({ checked, onChange, label, desc }) => (
 );
 
 // ─── Steps ────────────────────────────────────────────────────────────────────
-const Steps = ({ active }) => (
-  <div className="flex items-center bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
-    {[
-      { n: 1, label: 'Assessment Details' },
-      { n: 2, label: 'Sections' },
-      { n: 3, label: 'Questions' },
-    ].map((step, i) => (
-      <div key={step.n} className="flex items-center flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0
-            ${step.n < active
-              ? 'bg-green-500 text-white'
-              : step.n === active
-                ? 'bg-[#003399] text-white shadow-lg shadow-blue-200'
-                : 'bg-gray-100 text-slate-400'}`}>
-            {step.n < active ? <CheckCircle2 className="w-4 h-4" /> : step.n}
-          </div>
-          <span className={`text-xs font-bold truncate
-            ${step.n === active ? 'text-[#003399]' : step.n < active ? 'text-green-600' : 'text-slate-400'}`}>
-            {step.label}
-          </span>
-        </div>
-        {i < 2 && <ChevronRight className="w-4 h-4 text-gray-200 flex-shrink-0 mx-1" />}
-      </div>
-    ))}
-  </div>
-);
+// WizardProgress imported above replaces the old 3-step Steps
 
 // ─── SectionForm (inline) ─────────────────────────────────────────────────────
 const SectionForm = ({ initial, onSave, onCancel, totalAssessmentMarks, usedMarks, totalAssessmentDuration = 0, usedTime = 0 }) => {
@@ -540,8 +515,8 @@ const SectionManager = () => {
             </div>
           </div>
 
-          {/* ── Steps ── */}
-          <Steps active={2} />
+          {/* ── 5-Step Wizard Progress ── */}
+          <WizardProgress currentStep={2} assessmentId={assessmentId} />
 
           {/* ── Alerts ── */}
           {error && (

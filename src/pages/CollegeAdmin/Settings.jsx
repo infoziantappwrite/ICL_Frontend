@@ -20,19 +20,20 @@ const Toggle = ({ checked, onChange }) => (
 );
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
 
 const SHead = ({ icon: Icon, title, sub }) => (
-  <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
-    <div className="w-8 h-8 rounded-lg bg-[#003399]/5 flex items-center justify-center flex-shrink-0">
-      <Icon className="w-4 h-4 text-[#003399]" />
+  <div className="flex items-center gap-2 mb-5 border-b border-slate-100 pb-3">
+    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 border"
+      style={{ backgroundColor: '#003399' + '15', borderColor: '#003399' + '30', color: '#003399' }}>
+      <Icon className="w-3.5 h-3.5" />
     </div>
     <div>
-      <h3 className="text-[16px] font-bold text-gray-900 leading-none">{title}</h3>
-      {sub && <p className="text-[12px] text-gray-500 mt-1">{sub}</p>}
+      <h3 className="text-sm font-bold text-gray-800 leading-none">{title}</h3>
+      {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
     </div>
   </div>
 );
@@ -222,7 +223,7 @@ const Settings = () => {
                       </Field>
                       <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button type="submit" disabled={loading}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-black rounded-xl hover:bg-[#002d8b] disabled:opacity-50 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
                           <Save className="w-4 h-4" /> {loading ? 'Saving…' : 'Save Changes'}
                         </button>
                       </div>
@@ -257,7 +258,7 @@ const Settings = () => {
                       ))}
                       <div className="pt-4 border-t border-slate-100">
                         <button type="submit" disabled={loading}
-                          className="flex items-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm w-full justify-center">
+                          className="flex items-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-black rounded-xl hover:bg-[#002d8b] disabled:opacity-50 transition-all shadow-lg shadow-blue-500/10 active:scale-95 w-full justify-center">
                           <Lock className="w-4 h-4" /> {loading ? 'Changing…' : 'Change Password'}
                         </button>
                       </div>
@@ -311,7 +312,7 @@ const Settings = () => {
 
                       <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button onClick={() => handleSavePrefs('Notification preferences updated!')} disabled={loading}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-black rounded-xl hover:bg-[#002d8b] disabled:opacity-50 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
                           <Save className="w-4 h-4" /> {loading ? 'Saving…' : 'Save Preferences'}
                         </button>
                       </div>
@@ -352,7 +353,7 @@ const Settings = () => {
 
                       <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button onClick={() => handleSavePrefs('Privacy settings updated!')} disabled={loading}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] disabled:opacity-50 transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-black rounded-xl hover:bg-[#002d8b] disabled:opacity-50 transition-all shadow-lg shadow-blue-500/10 active:scale-95">
                           <Save className="w-4 h-4" /> {loading ? 'Saving…' : 'Save Privacy Options'}
                         </button>
                       </div>
@@ -397,14 +398,14 @@ const Settings = () => {
                       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                         <div>
                           <span className="text-[13px] font-bold text-gray-900 block">Compact Mode</span>
-                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Reduce spacing and margins</span>
+                          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Reduce spacing and margins</span>
                         </div>
                         <Toggle checked={themeSettings.compactMode} onChange={v => setThemeSettings(p => ({ ...p, compactMode:v }))} />
                       </div>
 
                       <div className="pt-4 border-t border-slate-100 flex justify-end">
                         <button onClick={() => handleSavePrefs('Appearance settings saved!')}
-                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-bold rounded-lg hover:bg-[#003399] transition-colors shadow-sm">
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#003399] text-white text-[13px] font-black rounded-xl hover:bg-[#002d8b] transition-all shadow-lg shadow-blue-500/10 active:scale-95">
                           <Save className="w-4 h-4" /> Save Appearance
                         </button>
                       </div>

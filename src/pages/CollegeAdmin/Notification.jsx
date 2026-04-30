@@ -10,28 +10,29 @@ import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { useAuth } from '../../context/AuthContext';
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
 
 const StatPill = ({ icon: Icon, label, value, color }) => {
-  const c = {
-    blue:   'bg-[#003399]/5 text-[#003399] border-transparent',
-    cyan:   'bg-cyan-50 text-cyan-700 border-transparent',
-    amber:  'bg-amber-50 text-amber-700 border-transparent',
-    indigo: 'bg-indigo-50 text-indigo-700 border-transparent',
-  }[color] || 'bg-gray-50 text-gray-700 border-transparent';
+  const themes = {
+    blue:   { wrap: 'bg-[#003399]/5 text-[#003399] border-[#003399]/10', val: '#003399' },
+    cyan:   { wrap: 'bg-[#00A9CE]/5 text-[#00A9CE] border-[#00A9CE]/10', val: '#00A9CE' },
+    amber:  { wrap: 'bg-amber-50 text-amber-600 border-amber-100', val: '#d97706' },
+    indigo: { wrap: 'bg-indigo-50 text-indigo-600 border-indigo-100', val: '#4338ca' },
+  };
+  const t = themes[color] || themes.blue;
   return (
-    <Card className="p-4 flex items-center justify-between">
+    <div className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
+        <Icon className="w-6 h-6" />
+      </div>
       <div>
-        <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
-        <p className={`text-[24px] font-black leading-none ${c.split(' ')[1]}`}>{value}</p>
+        <p className="text-[28px] font-black leading-none mb-1" style={{ color: t.val }}>{value}</p>
+        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
       </div>
-      <div className={`w-10 h-10 ${c.split(' ')[0]} rounded-xl flex items-center justify-center`}>
-        <Icon className={`w-5 h-5 ${c.split(' ')[1]}`} />
-      </div>
-    </Card>
+    </div>
   );
 };
 

@@ -30,7 +30,7 @@ const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
           placeholder={placeholder || 'Type and press Enter or click Add'}
           className="flex-1 px-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003399]/30 hover:border-gray-300 transition-colors bg-white" />
         <button type="button" onClick={add}
-          className="px-3 py-2 bg-[#003399] text-white text-[13px] font-bold rounded-lg flex items-center gap-1 hover:bg-[#003399] transition-colors shadow-sm">
+          className="px-3 py-2 bg-[#003399] text-white text-[13px] font-black rounded-xl flex items-center gap-1 hover:bg-[#002d8b] transition-all shadow-lg shadow-blue-500/10 active:scale-95">
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
       </div>
@@ -49,9 +49,9 @@ const ChipInput = ({ label, hint, values, onChange, placeholder }) => {
 
 /* ─── Section card ─────────────────────── */
 const Section = ({ icon: Icon, title, children }) => (
-  <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
     <div className="flex items-center gap-2 mb-4">
-      <div className="w-8 h-8 bg-[#003399]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#003399]/20 bg-[#003399]/5">
         <Icon className="w-4 h-4 text-[#003399]" />
       </div>
       <h3 className="text-[15px] md:text-[16px] font-bold text-gray-900">{title}</h3>
@@ -1069,7 +1069,7 @@ const JobForm = () => {
         </Section>
 
         {/* ══ ACTION BUTTONS ══ */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-5 md:p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
           <div className="flex flex-col sm:flex-row justify-end gap-3">
             <button type="button" onClick={() => navigate('/dashboard/college-admin/jobs')}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-slate-50 text-[13px] font-bold transition-all shadow-sm w-full sm:w-auto">

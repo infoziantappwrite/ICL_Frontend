@@ -16,22 +16,23 @@ const PAGE_SIZE = 10;
 
 /* ── Stat pill ── */
 const StatPill = ({ icon: Icon, label, value, color }) => {
-  const c = {
-    blue:   'text-[#003399]',
-    cyan:   'text-cyan-600',
-    green:  'text-emerald-600',
-    amber:  'text-amber-600',
-    red:    'text-red-500',
-    gray:   'text-gray-500',
-  }[color] || 'text-[#003399]';
+  const themes = {
+    blue:   { wrap: 'bg-[#003399]/5 text-[#003399] border-[#003399]/10', val: '#003399' },
+    cyan:   { wrap: 'bg-[#00A9CE]/5 text-[#00A9CE] border-[#00A9CE]/10', val: '#00A9CE' },
+    green:  { wrap: 'bg-emerald-50 text-emerald-600 border-emerald-100', val: '#059669' },
+    amber:  { wrap: 'bg-amber-50 text-amber-600 border-amber-100', val: '#d97706' },
+    red:    { wrap: 'bg-rose-50 text-rose-600 border-rose-100', val: '#e11d48' },
+    gray:   { wrap: 'bg-gray-50 text-gray-500 border-gray-100', val: '#6b7280' },
+  };
+  const t = themes[color] || themes.blue;
   return (
-    <div className={`flex items-center gap-3 p-4 rounded-xl shadow-sm bg-white border border-slate-100`}>
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${c.replace('text-', 'bg-').replace('600', '50').replace('500', '50')}`}>
-        <Icon className={`w-5 h-5 ${c}`} />
+    <div className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
+        <Icon className="w-6 h-6" />
       </div>
-      <div className="flex-1">
-        <p className="text-[12px] font-bold text-gray-500 mb-0.5">{label}</p>
-        <p className={`text-[24px] font-black leading-none ${c}`}>{value}</p>
+      <div>
+        <p className="text-[28px] font-black leading-none mb-1" style={{ color: t.val }}>{value}</p>
+        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
       </div>
     </div>
   );
@@ -47,7 +48,7 @@ const Pagination = ({ page, total, totalPages, pageSize, onPageChange }) => {
     .reduce((acc, p, i, arr) => { if (i > 0 && p - arr[i-1] > 1) acc.push('…'); acc.push(p); return acc; }, []);
   return (
     <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-between">
-      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
+      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Showing {from}–{to} of {total}</span>
       <div className="flex items-center gap-1">
         <button onClick={() => onPageChange(page - 1)} disabled={page === 1}
           className="p-1.5 rounded-lg border border-slate-100 text-slate-400 hover:border-[#003399]/30 hover:text-[#003399] disabled:opacity-40 transition-colors">
@@ -250,7 +251,7 @@ const JobManagement = () => {
       </div>
 
       {/* ══ MAIN PANEL ══ */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-100 flex flex-col">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col">
           <div className="p-4 border-b border-slate-100">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
@@ -361,7 +362,7 @@ const JobManagement = () => {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                           {job.dates?.applicationDeadline
                             ? new Date(job.dates.applicationDeadline).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
                             : '—'}

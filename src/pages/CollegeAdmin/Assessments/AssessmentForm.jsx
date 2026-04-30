@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Save, BookOpen, AlertCircle, CheckCircle2,
+  ChevronLeft, Save, BookOpen, AlertCircle, CheckCircle2,
   Clock, Calendar, Tag, Info, Link2, ClipboardList,
   Sparkles, SquarePen, Type, Eye, Award, Layers,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { InlineSkeleton } from '../../../components/common/SkeletonLoader';
 import { assessmentAPI, jobAPI } from '../../../api/Api';
+import WizardProgress from '../../../components/assessment/WizardProgress';
 
 // ── Initial state ─────────────────────────────────────────────────────────────
 // NOTE: num_questions & marks_per_question are intentionally NOT here.
@@ -87,34 +88,7 @@ const Toggle = ({ checked, onChange, label, desc }) => (
 );
 
 // ── Step indicator (shared between Form and SectionManager) ───────────────────
-const Steps = ({ active }) => (
-  <div className="flex items-center bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
-    {[
-      { n: 1, label: 'Assessment Details' },
-      { n: 2, label: 'Sections' },
-      { n: 3, label: 'Questions' },
-    ].map((step, i) => (
-      <div key={step.n} className="flex items-center flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0
-            ${step.n < active
-              ? 'bg-green-500 text-white'
-              : step.n === active
-                ? 'bg-[#003399] text-white shadow-lg shadow-blue-200'
-                : 'bg-gray-100 text-slate-400'
-            }`}>
-            {step.n < active ? <CheckCircle2 className="w-4 h-4" /> : step.n}
-          </div>
-          <span className={`text-xs font-bold truncate
-            ${step.n === active ? 'text-[#003399]' : step.n < active ? 'text-green-600' : 'text-slate-400'}`}>
-            {step.label}
-          </span>
-        </div>
-        {i < 2 && <ChevronRight className="w-4 h-4 text-gray-200 flex-shrink-0 mx-1" />}
-      </div>
-    ))}
-  </div>
-);
+// WizardProgress imported above replaces the old 3-step Steps component
 
 // ── Main component ────────────────────────────────────────────────────────────
 const AssessmentForm = () => {
@@ -279,8 +253,8 @@ const AssessmentForm = () => {
             </div>
           </div>
 
-          {/* ── Step progress ── */}
-          <Steps active={1} />
+          {/* ── 5-Step Wizard Progress ── */}
+          <WizardProgress currentStep={1} assessmentId={assessmentId} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
 

@@ -41,7 +41,7 @@ const inp = "w-full border border-gray-200 rounded-lg px-4 py-2 text-[13px] focu
 
 /* ─── Shared UI atoms ─────────────────────────────────────────────────── */
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>{children}</div>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>{children}</div>
 );
 
 const SectionHeader = ({ icon: Icon, iconBg, iconColor, title, subtitle }) => (
@@ -173,7 +173,7 @@ const QuestionCard = ({ question, index, onEdit, onRemove }) => {
   const isCorrect = (label) => Array.isArray(question.correct_answer) ? question.correct_answer.includes(label) : question.correct_answer === label;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold text-white shrink-0"
@@ -234,7 +234,7 @@ const CodingQuestionCard = ({ question, index, onEdit, onRemove }) => {
   const langLabel = CODING_LANGUAGES.find(l => l.id === question.language)?.label || question.language || 'Code';
 
   return (
-    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-all">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Index badge */}
@@ -931,7 +931,7 @@ const AIAssessmentGenerator = () => {
             </h1>
             <p className="text-[13px] text-gray-500 mt-1">Generate MCQ or Coding questions using AI — from a JD or a custom topic</p>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-2">
              <StepBar stage={stage} />
           </div>
         </div>

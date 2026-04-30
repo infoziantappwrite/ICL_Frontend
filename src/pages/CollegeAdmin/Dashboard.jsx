@@ -26,16 +26,16 @@ const formatDate = (date) => {
 };
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
 
 const SectionHeader = ({ title, action, onAction }) => (
   <div className="flex items-center justify-between mb-3">
-    <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-bold text-gray-900">{title}</h2>
+    <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-black text-gray-900 tracking-tight">{title}</h2>
     {action && (
-      <button onClick={onAction} className="text-[12px] font-semibold text-[#003399] hover:text-[#003399] flex items-center gap-1">
+      <button onClick={onAction} className="text-[11px] font-black text-[#003399] flex items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors uppercase tracking-tight">
         {action} <ChevronRight className="w-3 h-3" />
       </button>
     )}
@@ -45,28 +45,28 @@ const SectionHeader = ({ title, action, onAction }) => (
 const MiniBar = ({ label, value, max, color, onClick }) => {
   const w = pct(value, max);
   return (
-    <button onClick={onClick} className="group w-full text-left hover:bg-slate-50 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+    <button onClick={onClick} className="group w-full text-left hover:bg-gray-50 px-2 py-1.5 rounded-xl transition-colors">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[12px] text-gray-600 font-medium truncate max-w-[160px]">{label}</span>
-        <span className="text-[12px] font-bold text-gray-900 ml-2">{fmt(value)}</span>
+        <span className="text-xs text-gray-600 font-medium truncate max-w-[130px] group-hover:text-[#003399]">{label}</span>
+        <span className="text-xs font-black text-gray-800 ml-2">{fmt(value)}</span>
       </div>
       <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(w, value > 0 ? 4 : 0)}%`, background: color }} />
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(w, value > 0 ? 4 : 0)}%`, backgroundColor: color }} />
       </div>
     </button>
   );
 };
 
 const ActivityItem = ({ icon: Icon, color, title, sub, time }) => (
-  <div className="flex items-start gap-2.5 py-2.5 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 px-2 rounded-lg transition-colors">
-    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
-      <Icon className="w-4 h-4" />
+  <div className="flex items-start gap-2.5 py-2 border-b border-gray-50 last:border-0">
+    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 bg-gray-50 border border-gray-200">
+      <Icon className="w-3 h-3" style={{ color: color?.includes('#') ? color : undefined }} />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-[13px] font-bold text-gray-900 leading-snug">{title}</p>
-      <p className="text-[11px] text-gray-500 mt-0.5 truncate">{sub}</p>
+      <p className="text-xs font-semibold text-gray-800 leading-none">{title}</p>
+      <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
     </div>
-    <span className="text-[10px] text-slate-400 flex-shrink-0 mt-0.5 whitespace-nowrap">{time}</span>
+    <span className="text-[9px] text-gray-300 flex-shrink-0 mt-0.5 font-mono">{time}</span>
   </div>
 );
 
@@ -220,45 +220,82 @@ const CollegeAdminDashboard = () => {
               <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
                 Hi, <span className="text-[#003399]">Welcome {firstName}!</span>
               </h1>
-              <p className="text-sm text-slate-400 mt-1 font-medium">
+              <p className="text-sm text-slate-400 mt-1 font-medium flex items-center gap-2">
                 Here's what's happening on your campus recruitment portal today.
+                <span className="text-[#00A9CE] font-mono text-[10px] hidden sm:inline-flex items-center font-bold">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
               </p>
             </div>
 
             {/* ═════════ STATS ROW ═════════ */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {[
-                { icon: Users, label: 'Students', value: fmt(stats.totalStudents), color: 'text-[#003399]', bg: 'bg-[#003399]/5' },
-                { icon: UserCheck, label: 'Placed', value: fmt(stats.placedStudents), color: 'text-green-600', bg: 'bg-green-50' },
-                { icon: Briefcase, label: 'Live JDs', value: fmt(stats.activeJDs), color: 'text-cyan-600', bg: 'bg-cyan-50' },
-                { icon: Building2, label: 'Companies', value: fmt(stats.totalCompanies), color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                { icon: BookOpen, label: 'Courses', value: fmt(courseCount), color: 'text-amber-600', bg: 'bg-amber-50', onClick: () => navigate('/dashboard/college-admin/courses') },
-                { icon: ClipboardList, label: 'Assessments', value: fmt(assessmentCount), color: 'text-purple-600', bg: 'bg-purple-50', onClick: () => navigate('/dashboard/college-admin/assessments') },
-              ].map(({ icon: Icon, label, value, color, bg, onClick }) => (
-                <Card key={label} className={`p-4 ${onClick ? 'cursor-pointer hover:shadow-md' : ''} transition-shadow`} onClick={onClick}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${bg}`}>
-                      <Icon className={`w-5 h-5 ${color}`} />
+                { icon: Users, label: 'Students', value: fmt(stats.totalStudents), color: 'navy' },
+                { icon: UserCheck, label: 'Placed', value: fmt(stats.placedStudents), color: 'green' },
+                { icon: Briefcase, label: 'Live JDs', value: fmt(stats.activeJDs), color: 'teal' },
+                { icon: Building2, label: 'Companies', value: fmt(stats.totalCompanies), color: 'indigo' },
+                { icon: BookOpen, label: 'Courses', value: fmt(courseCount), color: 'yellow', onClick: () => navigate('/dashboard/college-admin/courses') },
+                { icon: ClipboardList, label: 'Assessments', value: fmt(assessmentCount), color: 'purple', onClick: () => navigate('/dashboard/college-admin/assessments') },
+              ].map(({ icon: Icon, label, value, color, onClick }) => {
+                const themes = {
+                  navy:   { wrap: 'bg-[#003399]/5 text-[#003399] border-[#003399]/10', val: '#003399' },
+                  teal:   { wrap: 'bg-[#00A9CE]/5 text-[#00A9CE] border-[#00A9CE]/10', val: '#00A9CE' },
+                  green:  { wrap: 'bg-emerald-50 text-emerald-600 border-emerald-100', val: '#059669' },
+                  yellow: { wrap: 'bg-amber-50 text-amber-600 border-amber-100', val: '#d97706' },
+                  indigo: { wrap: 'bg-indigo-50 text-indigo-600 border-indigo-100', val: '#4338ca' },
+                  purple: { wrap: 'bg-purple-50 text-purple-600 border-purple-100', val: '#7c3aed' },
+                };
+                const t = themes[color] || themes.navy;
+                return (
+                  <button key={label} onClick={onClick}
+                    className={`group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 text-left w-full flex items-center gap-4 ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
+                      <Icon className="w-6 h-6" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold text-gray-500">{label}</p>
-                      <p className={`text-[22px] font-black leading-none mt-0.5 ${color}`}>{value}</p>
+                    <div>
+                      <p className="text-[28px] font-black leading-none mb-1" style={{ color: t.val }}>{value}</p>
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </button>
+                );
+              })}
+            </div>
+
+
+
+            {/* Fast Action Banner */}
+            <div className="rounded-xl bg-gradient-to-r from-[#003399] to-[#00A9CE] p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-[15px] md:text-[17px] font-bold text-white">Placement Drive Goals</h3>
+                  <p className="text-[11px] md:text-[12px] text-white/70 mt-1 leading-relaxed max-w-md">
+                    Current drive targets to place all eligible students. You have {fmt(stats.activeJDs)} active jobs driving engagement.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <button onClick={() => navigate('/dashboard/college-admin/jobs/create')} className="inline-flex items-center gap-2 bg-white text-[#003399] font-black text-[12px] uppercase tracking-wider px-5 py-2.5 rounded-xl hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                  Post New Job
+                </button>
+              </div>
             </div>
 
             {/* Placement Progress Bar */}
             <Card className="p-4 md:p-5">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#003399]/5 flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-[#003399]" />
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center border" style={{ backgroundColor: '#003399' + '15', borderColor: '#003399' + '30', color: '#003399' }}>
+                    <TrendingUp className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <h3 className="text-[14px] font-bold text-gray-900">Placement Rate</h3>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                    <h3 className="text-sm font-bold text-gray-800 leading-none">Placement Rate</h3>
+                    <p className="text-[10px] text-gray-400 mt-0.5 font-bold uppercase tracking-tight">
                       {fmt(stats.placedStudents)} of {fmt(stats.totalStudents)} students placed
                     </p>
                   </div>
@@ -277,26 +314,6 @@ const CollegeAdminDashboard = () => {
                 <Clock className="w-3 h-3" /> Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </Card>
-
-            {/* Fast Action Banner */}
-            <div className="rounded-xl bg-gradient-to-r from-[#003399] to-[#00A9CE] p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
-                  <Target className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-[15px] md:text-[17px] font-bold text-white">Placement Drive Goals</h3>
-                  <p className="text-[11px] md:text-[12px] text-white/70 mt-1 leading-relaxed max-w-md">
-                    Current drive targets to place all eligible students. You have {fmt(stats.activeJDs)} active jobs driving engagement.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button onClick={() => navigate('/dashboard/college-admin/jobs/create')} className="bg-white text-[#003399] font-bold text-[12px] md:text-[13px] px-4 py-2 rounded-full hover:bg-slate-50/30 transition-colors shadow-sm">
-                  Post New Job
-                </button>
-              </div>
-            </div>
 
             {/* ═════════ LIST SECTIONS ═════════ */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

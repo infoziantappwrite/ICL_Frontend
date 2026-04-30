@@ -17,7 +17,7 @@ const fmt = (n) => {
 const pct = (a, b) => (b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0);
 
 const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-lg shadow-sm border border-slate-100 ${className}`}>
+  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
     {children}
   </div>
 );
@@ -356,7 +356,7 @@ const MatchedStudents = () => {
             </div>
             
             <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 rounded-b-xl flex flex-col sm:flex-row justify-between items-center gap-3">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Showing <b className="text-slate-700">{filtered.length}</b> of <b className="text-slate-700">{allStudents.length}</b></p>
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Showing <b className="text-slate-700">{filtered.length}</b> of <b className="text-slate-700">{allStudents.length}</b></p>
               <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-widest">
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#003399]" /> Skills 30%</span>
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-cyan-500" /> Branch 25%</span>

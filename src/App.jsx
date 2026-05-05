@@ -8,6 +8,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useEffect } from 'react';
 
+// ==================== LANDING ====================
+import LandingPage from './pages/Landing/LandingPage';
+
+// ==================== CANDIDATE PAGES ====================
+import CandidateDashboard from './pages/Candidate/Dashboard';
+import CandidateCourses from './pages/Candidate/CandidateCourses';
+import CandidateMyCourses from './pages/Candidate/CandidateMyCourses';
+import CandidateAssessments from './pages/Candidate/CandidateAssessments';
+
 // ==================== AUTH PAGES ====================
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -99,6 +108,12 @@ import SuperAdminSettings from './pages/SuperAdmin/Settings';
 import SubscriptionManagement from './pages/SuperAdmin/SubscriptionManagement';
 import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 
+// ==================== Trainer PAGES ====================
+
+import TrainerManagement from './pages/SuperAdmin/TrainerManagement';
+import TrainerForm from './pages/SuperAdmin/TrainerForm';
+import TrainerDashboard from './pages/Trainer/pages/Trainerdashboard';
+
 // ==================== ROLE-BASED REDIRECTS ====================
 const RoleBasedNotifications = () => {
   const navigate = useNavigate();
@@ -149,7 +164,7 @@ function App() {
           <Routes>
 
             {/* ===== PUBLIC ===== */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
@@ -162,6 +177,20 @@ function App() {
 
             {/* ===== ROLE-BASED REDIRECT ===== */}
             <Route path="/dashboard" element={<ProtectedRoute><RoleBasedRedirect /></ProtectedRoute>} />
+
+            {/* ===== CANDIDATE ===== */}
+            <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/courses" element={<ProtectedRoute><CandidateCourses /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/courses/:courseId/learn" element={<ProtectedRoute><CourseLearn /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/my-courses" element={<ProtectedRoute><CandidateMyCourses /></ProtectedRoute>} />
+            
+            
+            <Route path="/dashboard/candidate/assessments" element={<ProtectedRoute><CandidateAssessments /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments/:assessmentId/take" element={<ProtectedRoute><StudentTakeAssessment /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments/history" element={<ProtectedRoute><StudentAssessmentHistory /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments/attempts/:attemptId" element={<ProtectedRoute><StudentAttemptResult /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/settings" element={<ProtectedRoute><StudentSettings /></ProtectedRoute>} />
 
             {/* ===== STUDENT ===== */}
             <Route path="/profile" element={<ProtectedRoute><ProfileDashboard /></ProtectedRoute>} />
@@ -242,6 +271,12 @@ function App() {
             {/* ===== SUPER ADMIN ===== */}
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/students" element={<ProtectedRoute><SuperAdminStudentManagement /></ProtectedRoute>} />
+
+            {/* ===== Trainer ===== */}
+            <Route path="/dashboard/super-admin/trainers" element={<TrainerManagement />} />
+            <Route path="/dashboard/super-admin/trainers/create" element={<TrainerForm />} />
+            <Route path="/dashboard/super-admin/trainers/edit/:trainerId" element={<TrainerForm />} />
+            <Route path="/dashboard/trainer" element={<ProtectedRoute><TrainerDashboard /></ProtectedRoute>}/>
 
             {/* Colleges */}
             <Route path="/dashboard/super-admin/colleges" element={<ProtectedRoute><SuperAdminCollegeManagement /></ProtectedRoute>} />

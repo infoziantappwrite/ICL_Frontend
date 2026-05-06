@@ -33,13 +33,13 @@ const ProtectedRoute = ({ children }) => {
   }
 
   // ── First Login Flow enforcement ──────────────────────────────────────────
-  // If this student has isFirstLogin = true and is NOT on an exempt page,
-  // force them to the change-password screen.
-  const isStudent = user?.role === 'student' || user?.role === 'candidate';
+  // Students and Trainers are assigned auto-generated passwords and must
+  // change them before accessing the platform.
+  const isFirstLoginRole = user?.role === 'student' || user?.role === 'candidate' || user?.role === 'trainer';
   const isFirstLogin = user?.isFirstLogin === true;
   const onExemptPath = FIRST_LOGIN_EXEMPT_PATHS.includes(location.pathname);
 
-  if (isStudent && isFirstLogin && !onExemptPath) {
+  if (isFirstLoginRole && isFirstLogin && !onExemptPath) {
     return <Navigate to="/change-password" replace />;
   }
 

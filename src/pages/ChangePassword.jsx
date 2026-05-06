@@ -107,7 +107,7 @@ const ChangePassword = () => {
         // Clear isFirstLogin flag from local user context
         if (user) updateUser({ ...user, isFirstLogin: false });
  
-        toast.success('Password updated!', 'Please complete your profile to get started.');
+        toast.success('Password updated!', user?.role === 'trainer' ? 'Redirecting to your dashboard.' : 'Please complete your profile to get started.');
  
         // Backend returns nextStep: 'COMPLETE_PROFILE'
         if (res.nextStep === 'COMPLETE_PROFILE') {
@@ -233,9 +233,9 @@ const ChangePassword = () => {
           </form>
         </div>
  
-        {/* Step indicator */}
+        {/* Step indicator — trainers skip 'Complete Profile' */}
         <div className="flex items-center justify-center gap-2 mt-6">
-          {['Set Password', 'Complete Profile', 'Dashboard'].map((step, i) => (
+          {(user?.role === 'trainer' ? ['Set Password', 'Dashboard'] : ['Set Password', 'Complete Profile', 'Dashboard']).map((step, i, arr) => (
             <div key={step} className="flex items-center gap-2">
               <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                 i === 0
@@ -247,7 +247,7 @@ const ChangePassword = () => {
                 }`}>{i + 1}</span>
                 {step}
               </div>
-              {i < 2 && <div className="w-4 h-px bg-gray-300" />}
+              {i < arr.length - 1 && <div className="w-4 h-px bg-gray-300" />}
             </div>
           ))}
         </div>

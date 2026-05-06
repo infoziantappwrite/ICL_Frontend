@@ -205,19 +205,28 @@ const TrainerDashboard = () => {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    // Simulate API fetch — replace with real apiCall() when backend is ready
-    const timer = setTimeout(() => {
-      setStats({
-        totalCourses: 8,
-        activeStudents: 124,
-        pendingAssessments: 5,
-        avgCompletion: 72,
-        totalAssignments: 18,
-        submittedThisWeek: 43,
-      });
-      setLoading(false);
-    }, 900);
-    return () => clearTimeout(timer);
+    (async () => {
+      try {
+        const { trainerAPI } = await import('../../../api/Api');
+        // Only GET /trainer/courses exists — derive totalCourses from it
+        const res = await trainerAPI.getCourses();
+        const courses = res.data?.assigned_courses || [];
+        setStats({
+          totalCourses: courses.length,
+          activeStudents: 0,
+          pendingAssessments: 0,
+          avgCompletion: 0,
+          submittedThisWeek: 0,
+        });
+      } catch {
+        setStats({
+          totalCourses: 0, activeStudents: 0, pendingAssessments: 0,
+          avgCompletion: 0, submittedThisWeek: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const getName = () => user?.fullName || user?.name || 'Trainer';
@@ -331,11 +340,7 @@ const TrainerDashboard = () => {
             sub="Awaiting grading" color="rose"
             onClick={() => navigate('/dashboard/trainer/assessments')}
           />
-          <StatCard
-            icon={FileText} label="Assignments" value={stats.totalAssignments}
-            sub="Total created" color="indigo"
-            onClick={() => navigate('/dashboard/trainer/assignments')}
-          />
+
           <StatCard
             icon={TrendingUp} label="Completion" value={`${stats.avgCompletion}%`}
             sub="Avg across courses" color="green"
@@ -357,11 +362,7 @@ const TrainerDashboard = () => {
               onClick={() => navigate('/dashboard/trainer/assessments')}
               color="#003399"
             />
-            <QuickAction
-              icon={FileText} label="New Assignment" desc="Upload or write task"
-              onClick={() => navigate('/dashboard/trainer/assignments')}
-              color="#00A9CE"
-            />
+
             <QuickAction
               icon={Eye} label="View Analytics" desc="Track student progress"
               onClick={() => navigate('/dashboard/trainer/analytics')}

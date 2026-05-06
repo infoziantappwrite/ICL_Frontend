@@ -29,7 +29,6 @@ const MENU_GROUPS = [
       { icon: BookOpen,      label: 'My Courses',    path: '/dashboard/trainer/courses' },
       { icon: Users,         label: 'My Students',   path: '/dashboard/trainer/students' },
       { icon: ClipboardList, label: 'Assessments',   path: '/dashboard/trainer/assessments' },
-      { icon: FileText,      label: 'Assignments',   path: '/dashboard/trainer/assignments' },
     ],
   },
   {
@@ -64,7 +63,6 @@ const BREADCRUMB_MAP = {
   courses:      'My Courses',
   students:     'My Students',
   assessments:  'Assessments',
-  assignments:  'Assignments',
   messages:     'Messages',
   notifications:'Notifications',
   profile:      'My Profile',

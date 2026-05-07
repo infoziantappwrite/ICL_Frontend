@@ -13,11 +13,10 @@ const RoleBasedRedirect = () => {
   }
 
   // First-login flow:
-  // - Students are added by college admins and given a temporary password,
-  //   so they MUST change it on first login.
-  // - Candidates self-register and create their own password during signup,
-  //   so they skip the change-password step entirely and go straight to their dashboard.
-  if (user.isFirstLogin && user.role === 'student') {
+  // - Students are added by college admins with a temporary password → must change it.
+  // - Trainers are added by super admins with an auto-generated password → must change it.
+  // - Candidates self-register and create their own password → skip change-password.
+  if (user.isFirstLogin && (user.role === 'student' || user.role === 'trainer')) {
     return <Navigate to="/change-password" replace />;
   }
 
@@ -26,6 +25,7 @@ const RoleBasedRedirect = () => {
     candidate:     '/dashboard/candidate',
     college_admin: '/dashboard/college-admin',
     super_admin:   '/dashboard/super-admin',
+    trainer:       '/dashboard/trainer',
   };
 
   const destination = roleRoutes[user.role];

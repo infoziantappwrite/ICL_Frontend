@@ -113,6 +113,15 @@ import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 import TrainerManagement from './pages/SuperAdmin/TrainerManagement';
 import TrainerForm from './pages/SuperAdmin/TrainerForm';
 import TrainerDashboard from './pages/Trainer/pages/Trainerdashboard';
+import TrainerCourses from './pages/Trainer/pages/TrainerCourses';
+import TrainerCourseDetail from './pages/Trainer/pages/TrainerCourseDetail';
+import TrainerStudents from './pages/Trainer/pages/TrainerStudents';
+import TrainerAssessments from './pages/Trainer/pages/TrainerAssessments';
+import TrainerProfile from './pages/Trainer/pages/TrainerProfile';
+import TrainerAnalytics from './pages/Trainer/pages/TrainerAnalytics';
+import TrainerSettings from './pages/Trainer/pages/TrainerSettings';
+import TrainerNotifications from './pages/Trainer/pages/TrainerNotifications';
+import TrainerMessages from './pages/Trainer/pages/TrainerMessages';
 
 // ==================== ROLE-BASED REDIRECTS ====================
 const RoleBasedNotifications = () => {
@@ -272,11 +281,22 @@ function App() {
             <Route path="/dashboard/super-admin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/super-admin/students" element={<ProtectedRoute><SuperAdminStudentManagement /></ProtectedRoute>} />
 
-            {/* ===== Trainer ===== */}
+            {/* ===== Trainer asuper admin manages ===== */}
             <Route path="/dashboard/super-admin/trainers" element={<TrainerManagement />} />
             <Route path="/dashboard/super-admin/trainers/create" element={<TrainerForm />} />
             <Route path="/dashboard/super-admin/trainers/edit/:trainerId" element={<TrainerForm />} />
+            
+            {/*===== Trainer pages =====*/}            
             <Route path="/dashboard/trainer" element={<ProtectedRoute><TrainerDashboard /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/courses"           element={<ProtectedRoute><TrainerCourses /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/courses/:courseId"   element={<ProtectedRoute><TrainerCourseDetail /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/students"      element={<ProtectedRoute><TrainerStudents /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments"   element={<ProtectedRoute><TrainerAssessments /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/analytics"     element={<ProtectedRoute><TrainerAnalytics /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/messages"      element={<ProtectedRoute><TrainerMessages /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/notifications" element={<ProtectedRoute><TrainerNotifications /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/profile"       element={<ProtectedRoute><TrainerProfile /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/settings"      element={<ProtectedRoute><TrainerSettings /></ProtectedRoute>}/>
 
             {/* Colleges */}
             <Route path="/dashboard/super-admin/colleges" element={<ProtectedRoute><SuperAdminCollegeManagement /></ProtectedRoute>} />

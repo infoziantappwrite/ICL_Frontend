@@ -1510,3 +1510,29 @@ export const sectionAPI = {
 };
 
 window.sectionAPI = sectionAPI;
+// ==========================================
+// TRAINER API — /api/trainer/*
+// Only endpoints that exist in current backend:
+//   GET  /trainer/profile
+//   PATCH /trainer/profile
+//   GET  /trainer/courses
+//   GET  /trainer/courses/:courseId  (NEW)
+// ==========================================
+export const trainerAPI = {
+  // GET /api/trainer/profile
+  getProfile: () => apiCall('/trainer/profile'),
+
+  // PATCH /api/trainer/profile
+  updateProfile: (data) =>
+    apiCall('/trainer/profile', { method: 'PATCH', body: JSON.stringify(data) }),
+
+  // GET /api/trainer/courses
+  // Returns: { trainer_profile_id, trainer_user_id, assigned_courses: [{_id, title, description, category}] }
+  getCourses: () => apiCall('/trainer/courses'),
+
+  // GET /api/trainer/courses/:courseId
+  // Returns: full course object
+  getCourseById: (courseId) => apiCall(`/trainer/courses/${courseId}`),
+};
+
+window.trainerAPI = trainerAPI;

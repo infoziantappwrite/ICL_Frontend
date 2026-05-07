@@ -13,12 +13,14 @@ const ActionMenu = ({ actions = [] }) => {
   const btnRef = useRef(null);
   const menuRef = useRef(null);
 
+  const visibleActions = actions.filter(Boolean);
+
   // Calculate position from the trigger button
   const updatePosition = useCallback(() => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const menuW = 170;
-    const menuH = (visibleActions.length * 36) + 12; // rough estimate
+    const menuH = (actions.filter(Boolean).length * 36) + 12; // rough estimate
 
     let top = rect.bottom + 4;
     let left = rect.right - menuW;
@@ -31,9 +33,7 @@ const ActionMenu = ({ actions = [] }) => {
     if (left < 8) left = 8;
 
     setPos({ top, left });
-  }, []);
-
-  const visibleActions = actions.filter(Boolean);
+  }, [actions]);
 
   // Close on outside click
   useEffect(() => {

@@ -1533,6 +1533,14 @@ export const trainerAPI = {
   // GET /api/trainer/courses/:courseId
   // Returns: full course object
   getCourseById: (courseId) => apiCall(`/trainer/courses/${courseId}`),
+
+  // GET /api/assessment  (trainer sees only their own assessments)
+  // Returns: { success, count, assessments }
+  getAssessments: () => apiCall('/assessment'),
+
+  // GET /api/assessment/trainer/available-groups
+  // Returns: { success, count, groups } — groups linked to trainer's courses with closed registration
+  getAvailableGroups: () => apiCall('/assessment/trainer/available-groups'),
 };
 
 window.trainerAPI = trainerAPI;

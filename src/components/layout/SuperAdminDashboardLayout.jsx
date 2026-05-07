@@ -7,7 +7,7 @@ import { useFontSize } from '../../context/FontSizeContext';
 import {
   LayoutDashboard, Bell, Settings, LogOut, Menu, X,
   Building2, Users, GraduationCap, BookOpen, CreditCard,
-  ChevronLeft, ChevronRight, Crown, Search, Activity, ChevronDown, Landmark,UserCheck,
+  ChevronLeft, ChevronRight, Crown, Search, Activity, ChevronDown, Landmark, UserCheck, Layers,
   ALargeSmall,
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
@@ -29,6 +29,7 @@ const MENU_GROUPS = [
       // In super_admin menu items array, after Students:
       { icon: UserCheck, label: 'Trainers', path: '/dashboard/super-admin/trainers' },
       { icon: GraduationCap, label: 'Students', path: '/dashboard/super-admin/students' },
+      { icon: Layers, label: 'Groups', path: '/dashboard/super-admin/groups' },
     ],
   },
   {

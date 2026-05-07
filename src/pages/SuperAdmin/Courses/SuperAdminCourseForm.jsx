@@ -5,10 +5,12 @@ import {
   BookOpen, ArrowLeft, Plus, Trash2, Save, AlertCircle,
   CheckCircle2, Layers, Target, Award, Clock, RefreshCw, X,
   Globe, Video, Link, Building2, CheckSquare, Square, Info,
+  UserCheck, ChevronDown,
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
 import { DetailSkeleton } from '../../../components/common/SkeletonLoader';
 import { superAdminCourseAPI } from '../../../api/Api';
+import apiCall from '../../../api/Api';
 import { superAdminStudentAPI } from '../../../api/studentAPI';
 
 const INITIAL_FORM = {
@@ -24,6 +26,7 @@ const INITIAL_FORM = {
   tags: [], certificateProvided: true, maxEnrollments: '',
   startDate: '', endDate: '', registrationDeadline: '',
   collegeIds: [], // empty = platform-wide
+  trainerId: '',  // optional trainer assignment (platform-wide courses only)
 };
 
 const inputClass = 'w-full px-3 py-2.5 border border-gray-200 hover:border-gray-300 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-xs text-gray-800 placeholder-gray-400 bg-white transition-all';
@@ -336,6 +339,65 @@ const CollegePicker = ({ selectedIds, onChange, colleges, loading }) => {
   );
 };
 
+// ── Trainer Picker ───────────────────────────────────────────────────────────
+const TrainerPicker = ({ selectedId, onChange, trainers, loading }) => {
+  const selected = trainers.find(t => t._id === selectedId);
+
+  return (
+    <div className="space-y-3">
+      {/* Info banner */}
+      <div className="flex items-start gap-2.5 p-3 rounded-xl border bg-purple-50 border-purple-200">
+        <UserCheck className="w-4 h-4 flex-shrink-0 mt-0.5 text-purple-600" />
+        <div>
+          <p className="text-xs font-bold text-purple-700">
+            {selectedId ? `Assigned: ${selected?.fullName || 'Unknown Trainer'}` : 'No Trainer Assigned'}
+          </p>
+          <p className="text-[10px] mt-0.5 text-purple-600">
+            Trainer assignment is only available for platform-wide courses (no college restrictions).
+          </p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 py-3 text-xs text-gray-400">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading trainers...
+        </div>
+      ) : (
+        <div className="relative">
+          <select
+            value={selectedId}
+            onChange={e => onChange(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-200 hover:border-gray-300 rounded-xl focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 text-xs text-gray-800 bg-white transition-all appearance-none pr-8"
+          >
+            <option value="">— No trainer (assign later) —</option>
+            {trainers.map(t => (
+              <option key={t._id} value={t._id}>
+                {t.fullName} {t.email ? `(${t.email})` : ''}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        </div>
+      )}
+
+      {selectedId && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="flex items-center gap-1.5 text-[11px] text-red-500 hover:text-red-700 font-medium transition-colors"
+        >
+          <X className="w-3 h-3" /> Remove trainer assignment
+        </button>
+      )}
+
+      <p className="text-[10px] text-gray-400 flex items-center gap-1">
+        <Info className="w-3 h-3" />
+        You can assign or change the trainer after course creation too.
+      </p>
+    </div>
+  );
+};
+
 // ══════════════════════════════════════════
 const SuperAdminCourseForm = () => {
   const { courseId } = useParams();
@@ -348,6 +410,8 @@ const SuperAdminCourseForm = () => {
   const [toast, setToast] = useState(null);
   const [colleges, setColleges] = useState([]);
   const [collegesLoading, setCollegesLoading] = useState(true);
+  const [trainers, setTrainers] = useState([]);
+  const [trainersLoading, setTrainersLoading] = useState(true);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -356,6 +420,7 @@ const SuperAdminCourseForm = () => {
 
   useEffect(() => {
     fetchColleges();
+    fetchTrainers();
     if (isEdit) fetchCourse();
   }, [courseId]);
 
@@ -366,6 +431,17 @@ const SuperAdminCourseForm = () => {
       if (res?.success) setColleges(res.data || res.colleges || []);
     } catch { }
     finally { setCollegesLoading(false); }
+  };
+
+  const fetchTrainers = async () => {
+    setTrainersLoading(true);
+    try {
+      // GET /api/super-admin/trainers — returns active trainers only
+      const res = await apiCall('/super-admin/trainers');
+      const list = Array.isArray(res?.data) ? res.data : [];
+      setTrainers(list.filter(t => t.isActive)); // active trainers only for assignment
+    } catch { }
+    finally { setTrainersLoading(false); }
   };
 
   const fetchCourse = async () => {
@@ -390,6 +466,8 @@ const SuperAdminCourseForm = () => {
           registrationDeadline: c.registrationDeadline ? c.registrationDeadline.split('T')[0] : '',
           // Support both new collegeIds array and legacy collegeId
           collegeIds: c.collegeIds?.map(col => col._id || col) || (c.collegeId ? [c.collegeId._id || c.collegeId] : []),
+          // trainerId: normalize to string ID
+          trainerId: c.trainerId?._id || c.trainerId || '',
         });
       }
     } catch { showToast('Failed to load course data', 'error'); }
@@ -416,19 +494,64 @@ const SuperAdminCourseForm = () => {
     try {
       const payload = {
         ...form,
+        trainerId: undefined, // trainer is assigned separately via /assign-trainer endpoint
         collegeIds: form.collegeIds,
         maxEnrollments: form.maxEnrollments ? +form.maxEnrollments : undefined,
         startDate: form.startDate || undefined,
         endDate: form.endDate || undefined,
         registrationDeadline: form.registrationDeadline || undefined,
       };
+
       const res = isEdit
         ? await superAdminCourseAPI.updateCourse(courseId, payload)
         : await superAdminCourseAPI.createCourse(payload);
-      if (res.success) {
-        showToast(isEdit ? 'Course updated!' : 'Course created!');
-        setTimeout(() => navigate('/dashboard/super-admin/courses'), 1200);
-      } else { showToast(res.message || 'Operation failed', 'error'); }
+
+      if (!res.success) { showToast(res.message || 'Operation failed', 'error'); return; }
+
+      const savedCourseId = isEdit ? courseId : (res.data?._id || res.course?._id);
+
+      // Assign trainer if selected and course is platform-wide (no colleges)
+      if (savedCourseId && form.trainerId && form.collegeIds.length === 0) {
+        const existingTrainerId = isEdit
+          ? (res.data?.trainerId?._id || res.data?.trainerId || '')
+          : '';
+
+        // Only call assign if the trainer changed or if creating new
+        if (!isEdit || existingTrainerId.toString() !== form.trainerId.toString()) {
+          try {
+            // Unassign existing trainer first (edit mode)
+            if (isEdit && existingTrainerId) {
+              await apiCall('/courses/unassign-trainer', {
+                method: 'POST',
+                body: JSON.stringify({ course_id: savedCourseId, trainer_id: existingTrainerId }),
+              });
+            }
+            await apiCall('/courses/assign-trainer', {
+              method: 'POST',
+              body: JSON.stringify({ course_id: savedCourseId, trainer_id: form.trainerId }),
+            });
+          } catch (assignErr) {
+            // Course was saved — warn but don't block navigation
+            showToast(`Course saved but trainer assignment failed: ${assignErr.message}`, 'error');
+            setTimeout(() => navigate('/dashboard/super-admin/courses'), 2500);
+            return;
+          }
+        }
+      } else if (isEdit && !form.trainerId && form.collegeIds.length === 0) {
+        // Trainer was removed in edit mode
+        const existingTrainerId = res.data?.trainerId?._id || res.data?.trainerId || '';
+        if (existingTrainerId) {
+          try {
+            await apiCall('/courses/unassign-trainer', {
+              method: 'POST',
+              body: JSON.stringify({ course_id: savedCourseId, trainer_id: existingTrainerId }),
+            });
+          } catch { /* best effort */ }
+        }
+      }
+
+      showToast(isEdit ? 'Course updated!' : 'Course created!');
+      setTimeout(() => navigate('/dashboard/super-admin/courses'), 1200);
     } catch (err) { showToast(err.message || 'Operation failed', 'error'); }
     finally { setSaving(false); }
   };
@@ -469,6 +592,25 @@ const SuperAdminCourseForm = () => {
             colleges={colleges}
             loading={collegesLoading}
           />
+        </Section>
+
+        {/* Trainer Assignment — only for platform-wide courses */}
+        <Section title="Assign Trainer" icon={UserCheck} sub="Assign a trainer to deliver this course (platform-wide only)">
+          {form.collegeIds.length > 0 ? (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl border bg-amber-50 border-amber-200">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
+              <p className="text-xs text-amber-700 font-medium">
+                Trainer assignment is only available for platform-wide courses. Remove the college restriction above to assign a trainer.
+              </p>
+            </div>
+          ) : (
+            <TrainerPicker
+              selectedId={form.trainerId}
+              onChange={v => set('trainerId', v)}
+              trainers={trainers}
+              loading={trainersLoading}
+            />
+          )}
         </Section>
 
         {/* Basic Info */}

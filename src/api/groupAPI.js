@@ -1,6 +1,6 @@
 // src/api/groupAPI.js
 // ─────────────────────────────────────────────────────────────────────────────
-// Real API calls to /api/groups endpoints (college_admin + super_admin access)
+// Real API calls to /api/group endpoints (college_admin + super_admin access)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -51,42 +51,42 @@ const call = async (endpoint, options = {}) => {
 
 // ── Group API ─────────────────────────────────────────────────────────────────
 export const groupAPI = {
-  /** GET /api/groups — all active groups for the signed-in admin's college */
-  getGroups: () => call('/groups'),
+  /** GET /api/group — all active groups for the signed-in admin's college */
+  getGroups: () => call('/group'),
 
-  /** GET /api/groups/dropdown — lightweight { _id, name, student_count } list */
-  getGroupsDropdown: () => call('/groups/dropdown'),
+  /** GET /api/group/dropdown — lightweight { _id, name, student_count } list */
+  getGroupsDropdown: () => call('/group/dropdown'),
 
-  /** GET /api/groups/:id */
-  getGroupById: (id) => call(`/groups/${id}`),
+  /** GET /api/group/:id */
+  getGroupById: (id) => call(`/group/${id}`),
 
-  /** GET /api/groups/:id/students */
-  getGroupStudents: (id) => call(`/groups/${id}/students`),
+  /** GET /api/group/:id/students */
+  getGroupStudents: (id) => call(`/group/${id}/students`),
 
-  /** POST /api/groups — { name, description?, students?: [{ userId }] } */
+  /** POST /api/group — { name, description?, students?: [{ userId }] } */
   createGroup: (data) =>
-    call('/groups', { method: 'POST', body: JSON.stringify(data) }),
+    call('/group', { method: 'POST', body: JSON.stringify(data) }),
 
-  /** PUT /api/groups/:id — full update (name, description, students, status) */
+  /** PUT /api/group/:id — full update (name, description, students, status) */
   updateGroup: (id, data) =>
-    call(`/groups/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    call(`/group/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
-  /** PATCH /api/groups/:id/add-students — { students: [{ userId }] } */
+  /** PATCH /api/group/:id/add-students — { students: [{ userId }] } */
   addStudents: (id, students) =>
-    call(`/groups/${id}/add-students`, {
+    call(`/group/${id}/add-students`, {
       method: 'PATCH',
       body: JSON.stringify({ students }),
     }),
 
-  /** PATCH /api/groups/:id/remove-students — { userIds: [string] } */
+  /** PATCH /api/group/:id/remove-students — { userIds: [string] } */
   removeStudents: (id, userIds) =>
-    call(`/groups/${id}/remove-students`, {
+    call(`/group/${id}/remove-students`, {
       method: 'PATCH',
       body: JSON.stringify({ userIds }),
     }),
 
-  /** DELETE /api/groups/:id — soft delete (status → inactive) */
-  deleteGroup: (id) => call(`/groups/${id}`, { method: 'DELETE' }),
+  /** DELETE /api/group/:id — soft delete (status → inactive) */
+  deleteGroup: (id) => call(`/group/${id}`, { method: 'DELETE' }),
 };
 
 // Alias for super admin (same endpoints, role-checked server-side)

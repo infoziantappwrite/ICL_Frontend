@@ -6,7 +6,7 @@ import {
   BookOpen, Plus, Search, SquarePen, Trash2, BarChart3, Users,
   RefreshCw, AlertCircle, CircleCheck, X, Send,
   Globe, Building2, ChevronLeft, ChevronRight, ChevronDown,
-  FileEdit, Hourglass, CheckCircle2, XCircle, Eye
+  FileEdit, Hourglass, CheckCircle2, XCircle, Eye, Lock
 } from 'lucide-react';
 import SuperAdminDashboardLayout from '../../../components/layout/SuperAdminDashboardLayout';
 import { TableSkeleton } from '../../../components/common/SkeletonLoader';
@@ -237,7 +237,7 @@ const Pagination = ({ page, totalPages, total, pageSize, onPageChange }) => {
 };
 
 // ── Course Row ─────────────────────────────────────────────────────────────────
-const CourseRow = ({ course, index, page, onEdit, onDelete, onAnalytics, onViewEnrollments, onStatusChange, changingStatus }) => {
+const CourseRow = ({ course, index, page, onEdit, onDelete, onAnalytics, onViewEnrollments, onStatusChange, changingStatus, onCloseRegistration }) => {
   const sNo = (page - 1) * PAGE_SIZE + index + 1;
 
   const levelColor = {
@@ -251,10 +251,14 @@ const CourseRow = ({ course, index, page, onEdit, onDelete, onAnalytics, onViewE
     : course.collegeId ? [course.collegeId] : [];
   const platWide = colleges.length === 0;
 
+  const regClosed = course.isRegistrationClosed ||
+    (course.registrationDeadline && new Date() > new Date(course.registrationDeadline));
+
   const actions = [
     { label: 'View Enrollments', icon: Users, onClick: () => onViewEnrollments(course._id) },
     { label: 'Analytics', icon: BarChart3, onClick: () => onAnalytics(course._id) },
     { label: 'Edit', icon: SquarePen, onClick: () => onEdit(course._id) },
+    ...(!regClosed ? [{ label: 'Close Registration', icon: Lock, onClick: () => onCloseRegistration(course) }] : []),
     { label: 'Delete', icon: Trash2, onClick: () => onDelete(course), variant: 'danger' },
   ];
 
@@ -270,7 +274,14 @@ const CourseRow = ({ course, index, page, onEdit, onDelete, onAnalytics, onViewE
         <div className="flex items-center gap-3">
           <div className="min-w-0">
             <p className="text-sm font-bold text-slate-800 truncate max-w-[180px]">{course.title}</p>
-            <p className="text-[11px] text-slate-400">{course.category}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[11px] text-slate-400">{course.category}</p>
+              {regClosed && (
+                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full">
+                  <Lock className="w-2 h-2" /> Reg. Closed
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </td>
@@ -346,6 +357,8 @@ const SuperAdminCourseManagement = () => {
   const [deleting, setDeleting] = useState(false);
   const [changingStatus, setChangingStatus] = useState(null);
   const [toast, setToast] = useState(null);
+  const [closeRegConfirm, setCloseRegConfirm] = useState(null);
+  const [closingReg, setClosingReg] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -413,6 +426,28 @@ const SuperAdminCourseManagement = () => {
 
   const ALL_STATUSES = ['Draft', 'Coming Soon', 'Active', 'Inactive'];
 
+  const handleCloseRegistration = async () => {
+    if (!closeRegConfirm) return;
+    setClosingReg(true);
+    try {
+      const res = await apiCall(`/super-admin/courses/${closeRegConfirm._id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isRegistrationClosed: true }),
+      });
+      if (res.success) {
+        showToast(`Registration closed for "${closeRegConfirm.title}"`);
+        setCourses(p => p.map(c =>
+          c._id === closeRegConfirm._id ? { ...c, isRegistrationClosed: true } : c
+        ));
+        setCloseRegConfirm(null);
+      } else showToast(res.message || 'Failed to close registration', 'error');
+    } catch (err) {
+      showToast(err.message || 'Failed to close registration', 'error');
+    } finally {
+      setClosingReg(false);
+    }
+  };
+
   const stats = {
     total: courses.length,
     active: courses.filter(c => c.status === 'Active').length,
@@ -445,6 +480,30 @@ const SuperAdminCourseManagement = () => {
             onCancel={() => setDeleteConfirm(null)}
             loading={deleting}
           />
+        )}
+
+        {/* Close Registration Modal */}
+        {closeRegConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+              <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-4">
+                <Lock className="w-6 h-6 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Close Registration?</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                Close registration for <strong>{closeRegConfirm.title}</strong>?
+              </p>
+              <p className="text-xs text-gray-400 mb-6">
+                No new students can enroll after this. Once closed, you can create a Course Group from the <strong>Groups</strong> page.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setCloseRegConfirm(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-700 text-sm font-medium hover:bg-gray-50 transition-all">Cancel</button>
+                <button onClick={handleCloseRegistration} disabled={closingReg} className="flex-1 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 disabled:opacity-60 transition-all">
+                  {closingReg ? 'Closing...' : 'Close Registration'}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Header */}
@@ -580,6 +639,7 @@ const SuperAdminCourseManagement = () => {
                       onViewEnrollments={id => navigate(`/dashboard/super-admin/courses/${id}/enrollments`)}
                       onStatusChange={handleStatusChange}
                       changingStatus={changingStatus}
+                      onCloseRegistration={setCloseRegConfirm}
                     />
                   ))}
                 </tbody>

@@ -41,7 +41,7 @@ const LevelBadge = ({ level }) => {
 };
 
 /* ─── Assessment Card ─── */
-const AssessmentCard = ({ assessment, onToggle }) => {
+const AssessmentCard = ({ assessment, onToggle, onManage }) => {
   const totalAttempts   = assessment.totalAttempts   || 0;
   const completedAttempts = assessment.completedAttempts || 0;
   const pct = totalAttempts > 0 ? Math.round((completedAttempts / totalAttempts) * 100) : 0;
@@ -94,18 +94,27 @@ const AssessmentCard = ({ assessment, onToggle }) => {
         Created {new Date(assessment.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
       </p>
 
-      {/* Toggle status button */}
-      <button
-        onClick={() => onToggle(assessment._id)}
-        className="w-full py-2 rounded-xl text-xs font-black transition-all border"
-        style={
-          assessment.status === 'published'
-            ? { background: '#FFF7ED', color: '#D97706', borderColor: '#FDE68A' }
-            : { background: 'linear-gradient(135deg, #003399, #00A9CE)', color: '#fff', borderColor: 'transparent' }
-        }
-      >
-        {assessment.status === 'published' ? 'Unpublish' : 'Publish'}
-      </button>
+      {/* Manage + Toggle buttons */}
+      <div className="flex gap-2">
+        <button
+          onClick={onManage}
+          className="flex-1 py-2 rounded-xl text-xs font-black transition-all border"
+          style={{ background: '#F8FAFC', color: '#003399', borderColor: '#E2E8F0' }}
+        >
+          Manage →
+        </button>
+        <button
+          onClick={() => onToggle(assessment._id)}
+          className="flex-1 py-2 rounded-xl text-xs font-black transition-all border"
+          style={
+            assessment.status === 'published'
+              ? { background: '#FFF7ED', color: '#D97706', borderColor: '#FDE68A' }
+              : { background: 'linear-gradient(135deg, #003399, #00A9CE)', color: '#fff', borderColor: 'transparent' }
+          }
+        >
+          {assessment.status === 'published' ? 'Unpublish' : 'Publish'}
+        </button>
+      </div>
     </div>
   );
 };
@@ -124,7 +133,7 @@ const TrainerAssessments = () => {
     setLoading(true);
     try {
       const res = await trainerAPI.getAssessments();
-      setAssessments(res.data || []);
+      setAssessments(res.assessments || []);
     } catch (e) {
       setError('Failed to load assessments.');
     } finally {
@@ -152,7 +161,7 @@ const TrainerAssessments = () => {
 
   return (
     <TrainerDashboardLayout>
-      <div className="max-w-screen-xl mx-auto space-y-5 py-2">
+      <div className="w-full space-y-5 py-2">
 
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -161,7 +170,7 @@ const TrainerAssessments = () => {
             <p className="text-xs text-slate-400 mt-0.5">{assessments.length} assessments created by you</p>
           </div>
           <button
-            onClick={() => navigate('/dashboard/college-admin/assessments/create')}
+            onClick={() => navigate('/dashboard/trainer/assessments/create')}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black text-white transition-all hover:opacity-90"
             style={{ background: 'linear-gradient(135deg, #003399, #00A9CE)' }}
           >
@@ -225,7 +234,7 @@ const TrainerAssessments = () => {
               {assessments.length === 0 ? 'No assessments created yet.' : 'No assessments match your search.'}
             </p>
             <button
-              onClick={() => navigate('/dashboard/college-admin/assessments/create')}
+              onClick={() => navigate('/dashboard/trainer/assessments/create')}
               className="mt-4 px-4 py-2 rounded-xl text-xs font-black text-white"
               style={{ background: 'linear-gradient(135deg, #003399, #00A9CE)' }}
             >
@@ -235,7 +244,8 @@ const TrainerAssessments = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((a, i) => (
-              <AssessmentCard key={a._id || i} assessment={a} onToggle={handleToggle} />
+              <AssessmentCard key={a._id || i} assessment={a} onToggle={handleToggle}
+                onManage={() => navigate(`/dashboard/trainer/assessments/${a._id}/manage`)} />
             ))}
           </div>
         )}

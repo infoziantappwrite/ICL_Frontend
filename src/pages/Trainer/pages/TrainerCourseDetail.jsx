@@ -54,7 +54,7 @@ const TrainerCourseDetail = () => {
 
   return (
     <TrainerDashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-5 py-2">
+      <div className="w-full space-y-5 py-2">
 
         {/* Back */}
         <button
@@ -159,7 +159,7 @@ const TrainerCourseDetail = () => {
                       <div className="w-6 h-6 rounded-lg bg-[#003399]/10 flex items-center justify-center text-[10px] font-black text-[#003399] flex-shrink-0">
                         {i + 1}
                       </div>
-                      <span className="text-xs font-semibold text-slate-700">{mod.title || mod.moduleName || mod}</span>
+                      <span className="text-xs font-semibold text-slate-700">{mod.module || mod.title || mod.moduleName || `Module ${i + 1}`}</span>
                     </div>
                   ))}
                 </div>

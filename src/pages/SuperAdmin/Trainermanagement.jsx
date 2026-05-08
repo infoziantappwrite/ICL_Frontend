@@ -185,15 +185,22 @@ const TrainerManagement = () => {
   };
 
   const handleToggleStatus = async (id, currentStatus, name) => {
+    // Optimistic update first for snappy UI
+    setTrainers(prev => prev.map(t => t._id === id ? { ...t, isActive: !t.isActive } : t));
     try {
-      await apiCall(`/super-admin/trainer/${id}/toggle-status`, { method: 'PATCH' });
-      setTrainers(prev => prev.map(t => t._id === id ? { ...t, isActive: !t.isActive } : t));
+      const res = await apiCall(`/super-admin/trainer/${id}/toggle-status`, { method: 'PATCH' });
+      // Sync with actual server value in case it differed
+      if (res?.trainer) {
+        setTrainers(prev => prev.map(t => t._id === id ? { ...t, isActive: res.trainer.isActive } : t));
+      }
       success(
         currentStatus ? 'Deactivated' : 'Activated',
         `${name} has been ${currentStatus ? 'deactivated' : 'activated'}.`
       );
     } catch (err) {
-      toastError('Toggle Failed', err.message);
+      // Roll back the optimistic update on failure
+      setTrainers(prev => prev.map(t => t._id === id ? { ...t, isActive: currentStatus } : t));
+      toastError('Toggle Failed', err.message || 'Could not update trainer status');
     }
   };
 
@@ -411,15 +418,18 @@ const TrainerManagement = () => {
                               : <span className="text-[10px] text-slate-300 italic">N/A</span>}
                           </td>
                           <td className="px-4 py-4">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border ${
-                              trainer.isActive
-                                ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20'
-                                : 'bg-rose-50 text-rose-500 border-rose-100'
-                            }`}>
+                            <button
+                              onClick={() => handleToggleStatus(trainer._id, trainer.isActive, trainer.fullName)}
+                              title={trainer.isActive ? 'Click to Deactivate' : 'Click to Activate'}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                                trainer.isActive
+                                  ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20 hover:bg-[#10b981]/20'
+                                  : 'bg-rose-50 text-rose-500 border-rose-100 hover:bg-rose-100'
+                              }`}>
                               {trainer.isActive
                                 ? <><UserCheck className="w-2.5 h-2.5" />Active</>
                                 : <><UserX className="w-2.5 h-2.5" />Inactive</>}
-                            </span>
+                            </button>
                           </td>
                           <td className="px-4 py-4">
                             <span className="text-[11px] text-slate-400">

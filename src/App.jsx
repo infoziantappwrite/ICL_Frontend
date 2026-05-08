@@ -112,11 +112,17 @@ import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 
 import TrainerManagement from './pages/SuperAdmin/TrainerManagement';
 import TrainerForm from './pages/SuperAdmin/TrainerForm';
+import SuperAdminGroupManagement from './pages/SuperAdmin/GroupManagement';
 import TrainerDashboard from './pages/Trainer/pages/Trainerdashboard';
 import TrainerCourses from './pages/Trainer/pages/TrainerCourses';
 import TrainerCourseDetail from './pages/Trainer/pages/TrainerCourseDetail';
 import TrainerStudents from './pages/Trainer/pages/TrainerStudents';
 import TrainerAssessments from './pages/Trainer/pages/TrainerAssessments';
+import TrainerAssessmentCreate from './pages/Trainer/pages/TrainerAssessmentCreate';
+import TrainerAssessmentDetail from './pages/Trainer/pages/TrainerAssessmentDetail';
+import TrainerSectionManager from './pages/Trainer/pages/TrainerSectionManager';
+import TrainerQuestionManager from './pages/Trainer/pages/TrainerQuestionManager';
+import TrainerReviewPublish from './pages/Trainer/pages/TrainerReviewPublish';
 import TrainerProfile from './pages/Trainer/pages/TrainerProfile';
 import TrainerAnalytics from './pages/Trainer/pages/TrainerAnalytics';
 import TrainerSettings from './pages/Trainer/pages/TrainerSettings';
@@ -285,6 +291,7 @@ function App() {
             <Route path="/dashboard/super-admin/trainers" element={<TrainerManagement />} />
             <Route path="/dashboard/super-admin/trainers/create" element={<TrainerForm />} />
             <Route path="/dashboard/super-admin/trainers/edit/:trainerId" element={<TrainerForm />} />
+            <Route path="/dashboard/super-admin/groups" element={<ProtectedRoute><SuperAdminGroupManagement /></ProtectedRoute>} />
             
             {/*===== Trainer pages =====*/}            
             <Route path="/dashboard/trainer" element={<ProtectedRoute><TrainerDashboard /></ProtectedRoute>}/>
@@ -292,6 +299,11 @@ function App() {
             <Route path="/dashboard/trainer/courses/:courseId"   element={<ProtectedRoute><TrainerCourseDetail /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/students"      element={<ProtectedRoute><TrainerStudents /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/assessments"   element={<ProtectedRoute><TrainerAssessments /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments/create" element={<ProtectedRoute><TrainerAssessmentCreate /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments/:assessmentId/manage"    element={<ProtectedRoute><TrainerAssessmentDetail /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments/:assessmentId/sections"  element={<ProtectedRoute><TrainerSectionManager /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments/:assessmentId/questions" element={<ProtectedRoute><TrainerQuestionManager /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments/:assessmentId/review"    element={<ProtectedRoute><TrainerReviewPublish /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/analytics"     element={<ProtectedRoute><TrainerAnalytics /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/messages"      element={<ProtectedRoute><TrainerMessages /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/notifications" element={<ProtectedRoute><TrainerNotifications /></ProtectedRoute>}/>

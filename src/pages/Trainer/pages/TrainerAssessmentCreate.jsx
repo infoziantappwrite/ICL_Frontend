@@ -227,6 +227,14 @@ const TrainerAssessmentCreate = () => {
       const id = res.assessment?._id;
       if (!id) throw new Error('Assessment created but ID not returned.');
 
+      // Auto-assign all students from the selected group immediately.
+      // Selecting a group at Step 1 means those students should be enrolled.
+      try {
+        await assessmentAPI.assignStudentsFromGroup(id, selectedGroup);
+      } catch {
+        // Non-fatal: assessment is created, group assignment can be retried from QM
+      }
+
       toast.success('Assessment Created!', `"${form.title}" saved as draft — now set up sections.`);
       navigate(`/dashboard/trainer/assessments/${id}/sections`);
     } catch (e) {

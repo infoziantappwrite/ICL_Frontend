@@ -1120,6 +1120,11 @@ export const assessmentAPI = {
     return apiCall(`/assessment/${assessmentId}/eligible-students${qs ? `?${qs}` : ''}`);
   },
 
+  // GET /api/assessment/:id/group-students  (trainer only — reads students from linked group)
+  getGroupStudents: async (assessmentId) => {
+    return apiCall(`/assessment/${assessmentId}/group-students`);
+  },
+
   // POST /api/assessment/:id/assign-from-jd
   assignStudentsFromJD: async (assessmentId) => {
     return apiCall(`/assessment/${assessmentId}/assign-from-jd`, { method: 'POST' });
@@ -1276,6 +1281,33 @@ export const assessmentAttemptAPI = {
   // GET /api/assessment-attempt/leaderboard/:assessmentId  (student)
   getLeaderboard: async (assessmentId) => {
     return apiCall(`/assessment-attempt/leaderboard/${assessmentId}`);
+  },
+
+  // ── Trainer Results ──────────────────────────────────────────────────────
+  // GET /api/assessment-attempt/trainer/results?assessment_id=&course_id=&group_id=&page=&limit=
+  getTrainerResults: async (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/assessment-attempt/trainer/results${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET /api/assessment-attempt/trainer/results/:attemptId?assessment_id=&course_id=&group_id=
+  getTrainerAttemptDetail: async (attemptId, params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/assessment-attempt/trainer/results/${attemptId}${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET /api/assessment-attempt/trainer/publish-candidates?assessment_id=&course_id=&group_id=
+  getPublishCandidates: async (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiCall(`/assessment-attempt/trainer/publish-candidates${qs ? `?${qs}` : ''}`);
+  },
+
+  // POST /api/assessment-attempt/trainer/publish-results
+  publishResults: async (data) => {
+    return apiCall('/assessment-attempt/trainer/publish-results', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };
 

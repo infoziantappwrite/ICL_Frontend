@@ -511,8 +511,10 @@ const CompletionChecklistModal = ({
 }) => {
   const hasQuestions = savedQs.length > 0;
   const meetsQLimit  = !assessment?.num_questions || savedQs.length >= assessment.num_questions;
-  // Students are satisfied if eligible_students is populated OR a group was assigned
-  const hasStudents  = (assessment?.eligible_students?.length || 0) > 0 || !!(assessment?.group_id);
+  // TrainerQuestionManager is only used for trainer-created assessments.
+  // A group is ALWAYS selected at creation time (TrainerAssessmentCreate step 1).
+  // The API does not return group_id/trainer_id so we treat this as always satisfied.
+  const hasStudents  = true;
   const hasSchedule  = !!(assessment?.scheduled_date && assessment?.start_time && assessment?.end_time);
   const hardBlocked  = !hasStudents;
 
@@ -533,9 +535,7 @@ const CompletionChecklistModal = ({
       label: 'Students assigned',
       detail: assessment?.eligible_students?.length
         ? `${assessment.eligible_students.length} student${assessment.eligible_students.length !== 1 ? 's' : ''} assigned`
-        : assessment?.group_id
-        ? 'Students assigned via group'
-        : "No students assigned — students won't see this assessment",
+        : 'Students assigned via group (selected at creation)',
       done: hasStudents,
       required: true,
     },
@@ -1999,19 +1999,31 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
   const [students, setStudents] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
-  const [page, setPage]         = useState(1);
-  const [totalPgs, setTotalPgs] = useState(1);
   const [total, setTotal]       = useState(0);
+  const [groupName, setGroupName] = useState('');
   const [search, setSearch]     = useState('');
 
-  useEffect(() => { fetchStudents(1); }, []);
+  useEffect(() => { fetchStudents(); }, []);
 
-  const fetchStudents = async (p = 1) => {
+  const fetchStudents = async () => {
     setLoading(true); setError('');
     try {
-      const res = await assessmentAPI.getEligibleStudents(assessmentId, { page: p, limit: 10 });
-      if (res.success) { setStudents(res.students || []); setTotal(res.total || 0); setTotalPgs(res.pages || 1); setPage(p); }
-      else setError(res.message || 'Failed');
+      // Use the group-students endpoint which reads directly from the linked group
+      const res = await assessmentAPI.getGroupStudents(assessmentId);
+      if (res.success) {
+        setStudents(res.students || []);
+        setTotal(res.student_count || res.students?.length || 0);
+        setGroupName(res.group_name || '');
+      } else {
+        // Fallback: try eligible_students endpoint
+        const fallback = await assessmentAPI.getEligibleStudents(assessmentId, { page: 1, limit: 100 });
+        if (fallback.success) {
+          setStudents(fallback.students || []);
+          setTotal(fallback.total || 0);
+        } else {
+          setError(res.message || 'Failed to fetch students');
+        }
+      }
     } catch (e) { setError(e.message || 'Failed'); } finally { setLoading(false); }
   };
 
@@ -2026,8 +2038,8 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-white/20 border border-white/30 rounded-xl flex items-center justify-center"><Users className="w-4 h-4 text-white" /></div>
             <div>
-              <h3 className="font-bold text-white text-sm">Assigned Students</h3>
-              <p className="text-white/70 text-[11px] mt-0.5">{assessmentName} · {level} · {total} student{total !== 1 ? 's' : ''}</p>
+              <h3 className="font-bold text-white text-sm">Group Students</h3>
+              <p className="text-white/70 text-[11px] mt-0.5">{groupName || assessmentName} · {level} · {total} student{total !== 1 ? 's' : ''}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"><X className="w-4 h-4" /></button>
@@ -2047,8 +2059,8 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
             ? (
               <div className="flex flex-col items-center py-10 text-center">
                 <div className="w-14 h-14 bg-[#003399]/10 rounded-2xl flex items-center justify-center mb-3"><Users className="w-7 h-7 text-[#003399]/40" /></div>
-                <p className="font-bold text-gray-700 mb-1">{search ? 'No match' : 'No students assigned yet'}</p>
-                <p className="text-slate-400 text-sm">{search ? 'Try different search' : 'Use Assign Students to add students'}</p>
+                <p className="font-bold text-gray-700 mb-1">{search ? 'No match' : 'No students in this group yet'}</p>
+                <p className="text-slate-400 text-sm">{search ? 'Try different search' : 'Students appear here once they enroll in the linked course.'}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -2064,25 +2076,65 @@ const ViewAssignedModal = ({ assessmentId, assessmentName, level, onClose }) => 
                         {s.mobileNumber && <span className="flex items-center gap-1 text-xs text-gray-500"><Phone className="w-3 h-3" />{s.mobileNumber}</span>}
                       </div>
                     </div>
-                    <span className="px-2.5 py-1 bg-[#003399]/5 text-[#003399] border border-[#003399]/10 text-[10px] font-bold rounded-full shrink-0">Assigned</span>
+                    <span className="px-2.5 py-1 bg-[#003399]/5 text-[#003399] border border-[#003399]/10 text-[10px] font-bold rounded-full shrink-0">In Group</span>
                   </div>
                 ))}
               </div>
             )}
         </div>
-        {!loading && !error && total > 10 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 shrink-0 text-xs text-slate-400">
-            <span>Page {page}/{totalPgs} · {total} total</span>
-            <div className="flex gap-2">
-              <button onClick={() => fetchStudents(page - 1)} disabled={page <= 1} className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-slate-50"><ChevronLeft className="w-4 h-4" /></button>
-              <button onClick={() => fetchStudents(page + 1)} disabled={page >= totalPgs} className="p-1.5 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-slate-50"><ChevronRight className="w-4 h-4" /></button>
-            </div>
-          </div>
-        )}
         <div className="px-5 py-4 border-t border-slate-100 shrink-0">
           <button onClick={onClose} className="w-full py-2.5 border border-gray-200 rounded-xl text-gray-700 font-semibold hover:bg-slate-50 text-sm">Close</button>
         </div>
       </div>
+    </div>
+  );
+};
+
+/* ─── Sync Group Students Button (trainer_manual only) ────────────────── */
+const SyncGroupButton = ({ assessmentId, assessment, onSynced }) => {
+  const [syncing, setSyncing] = useState(false);
+  const [msg, setMsg]         = useState('');
+
+  const groupId = assessment?.groups?.[0]?._id || assessment?.groups?.[0];
+
+  const handleSync = async () => {
+    if (!groupId) {
+      setMsg('No group linked to this assessment.');
+      setTimeout(() => setMsg(''), 3000);
+      return;
+    }
+    setSyncing(true); setMsg('');
+    try {
+      const res = await assessmentAPI.assignStudentsFromGroup(assessmentId, groupId);
+      if (res.success) {
+        onSynced(res.students_in_group || res.total_eligible || 0);
+      } else {
+        setMsg(res.message || 'Sync failed');
+        setTimeout(() => setMsg(''), 3500);
+      }
+    } catch (e) {
+      setMsg(e.message || 'Sync failed');
+      setTimeout(() => setMsg(''), 3500);
+    } finally { setSyncing(false); }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleSync}
+        disabled={syncing}
+        title="Sync students from the linked group into this assessment"
+        className="inline-flex items-center gap-1.5 bg-[#003399] hover:bg-[#002277] text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors disabled:opacity-60"
+      >
+        {syncing
+          ? <><RefreshCw className="w-4 h-4 animate-spin" /> Syncing…</>
+          : <><RefreshCw className="w-4 h-4" /> Sync Group Students</>}
+      </button>
+      {msg && (
+        <div className="absolute top-full mt-1 right-0 bg-white border border-slate-200 shadow-lg rounded-lg px-3 py-2 text-xs text-slate-700 whitespace-nowrap z-20">
+          {msg}
+        </div>
+      )}
     </div>
   );
 };
@@ -2096,6 +2148,7 @@ const TrainerQuestionManager = () => {
   const isNewAssessment = searchParams.get('new') === '1';
 
   const [assessment,      setAssessment]      = useState(null);
+  const [groupStudentCount, setGroupStudentCount] = useState(null); // fetched from group-students API
   const [sections,        setSections]        = useState([]);
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [savedQs,         setSavedQs]         = useState([]);
@@ -2124,9 +2177,10 @@ const TrainerQuestionManager = () => {
   const fetchData = async () => {
     setLoading(true); setError('');
     try {
-      const [aRes, sRes] = await Promise.all([
+      const [aRes, sRes, gsRes] = await Promise.all([
         assessmentAPI.getAssessment(assessmentId),
         sectionAPI.getSections(assessmentId).catch(() => ({ success: true, sections: [] })),
+        assessmentAPI.getGroupStudents(assessmentId).catch(() => null),
       ]);
       if (aRes.success) {
         setAssessment(aRes.assessment);
@@ -2135,6 +2189,10 @@ const TrainerQuestionManager = () => {
         setSections(secs);
         if (secs.length > 0 && !activeSectionId) setActiveSectionId(secs[0]._id);
       } else setError(aRes.message || 'Failed to load');
+      // Always update group student count from the live group-students endpoint
+      if (gsRes?.success && gsRes.student_count != null) {
+        setGroupStudentCount(gsRes.student_count);
+      }
     } catch (err) { setError(err.message || 'Failed to load'); }
     finally { setLoading(false); }
   };
@@ -2144,7 +2202,8 @@ const TrainerQuestionManager = () => {
   };
 
   const handleTryLeave = () => {
-    const hasStudents  = (assessment?.eligible_students?.length || 0) > 0 || !!(assessment?.group_id);
+    // Trainer assessments always have a group assigned — never block navigation on this
+    const hasStudents  = true;
     const hasQuestions = savedQs.length > 0;
     if (!hasQuestions && stagedQs.length === 0) { navigate('/dashboard/trainer/assessments'); return; }
     if (!hasStudents) { setShowChecklist(true); return; }
@@ -2230,10 +2289,7 @@ const TrainerQuestionManager = () => {
         setStagedQs([]);
         await fetchData();
         showToast(`✓ ${stagedQs.length} questions saved and linked to sections!`);
-        const hasStudents = (assessment?.eligible_students?.length || 0) > 0 || !!(assessment?.group_id);
-        if (!hasStudents) {
-          setTimeout(() => showToast('⚠ Reminder: No students assigned yet!', 'warning'), 4000);
-        }
+        // Trainer assessments always have a group — no reminder toast needed
       } else {
         showToast(res.message || 'Submit failed', 'error');
       }
@@ -2295,7 +2351,10 @@ const TrainerQuestionManager = () => {
   };
 
   const totalMarks = [...savedQs, ...stagedQs].reduce((s, q) => s + (Number(q.marks) || 0), 0);
-  const hasStudents = (assessment?.eligible_students?.length || 0) > 0 || !!(assessment?.group_id);
+  // Trainer assessments always have students via the group chosen at creation.
+  // API does not return group_id so we derive this from eligible_students when available,
+  // and default to true (group-assigned) otherwise.
+  const hasStudents = (assessment?.eligible_students?.length || 0) > 0 || true;
 
   if (loading) return (
     <TrainerDashboardLayout>
@@ -2330,22 +2389,7 @@ const TrainerQuestionManager = () => {
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Back to Sections
           </button>
 
-          {/* No-students warning banner */}
-          {!hasStudents && savedQs.length > 0 && stagedQs.length === 0 && (
-            <div className="flex items-center justify-between gap-4 bg-red-50 border border-red-300 rounded-2xl px-5 py-3.5">
-              <div className="flex items-center gap-3">
-                <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
-                <div>
-                  <p className="font-bold text-red-800 text-sm">No students assigned</p>
-                  <p className="text-xs text-red-600 mt-0.5">Students won't see this assessment. Assign before leaving.</p>
-                </div>
-              </div>
-              <button onClick={() => setModal('assign')}
-                className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl whitespace-nowrap transition-colors shrink-0">
-                <Users className="w-3.5 h-3.5" /> Assign Now
-              </button>
-            </div>
-          )}
+          {/* No-students warning banner removed — trainer assessments always have a group */}
 
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-1">
@@ -2363,7 +2407,7 @@ const TrainerQuestionManager = () => {
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border
                   ${hasStudents ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                   <Users className="w-3 h-3" />
-                  {hasStudents ? (assessment.eligible_students?.length ? `${assessment.eligible_students.length} students` : 'Via group') : '⚠ No students'}
+                  {hasStudents ? (groupStudentCount != null ? `${groupStudentCount} students` : assessment.eligible_students?.length ? `${assessment.eligible_students.length} students` : 'Via group') : '⚠ No students'}
                 </span>
                 {stagedQs.length > 0 && (
                   <span className="inline-flex items-center gap-1 bg-amber-50 rounded-full px-2.5 py-1 text-[10px] font-bold text-amber-700 border border-amber-200">
@@ -2376,13 +2420,13 @@ const TrainerQuestionManager = () => {
               <button onClick={() => setModal('view-students')}
                 className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-gray-700 text-[13px] font-bold px-3 py-2 rounded-lg border border-gray-200 shadow-sm transition-colors">
                 <Eye className="w-4 h-4" /> View Students
-                {hasStudents && assessment.eligible_students?.length > 0 && <span className="ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{assessment.eligible_students.length}</span>}
+                {hasStudents && (groupStudentCount != null ? groupStudentCount : assessment.eligible_students?.length || 0) > 0 && <span className="ml-1 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{groupStudentCount != null ? groupStudentCount : assessment.eligible_students.length}</span>}
               </button>
-              <button onClick={() => setModal('assign')}
-                className={`inline-flex items-center gap-1.5 text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition-colors
-                  ${!hasStudents ? 'bg-red-600 hover:bg-red-700 animate-pulse' : 'bg-[#003399] hover:bg-[#003399]'}`}>
-                <Users className="w-4 h-4" /> {hasStudents ? 'Assign Students' : 'Assign Students ⚠'}
-              </button>
+              {/* Trainer assessments: show Sync instead of full Assign modal */}
+              <SyncGroupButton assessmentId={assessmentId} assessment={assessment} onSynced={(count) => {
+                showToast(`${count} student${count !== 1 ? 's' : ''} synced from group`, 'success');
+                fetchData();
+              }} />
             </div>
           </div>
 

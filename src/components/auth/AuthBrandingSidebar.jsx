@@ -9,125 +9,90 @@ import {
   Target
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import infoziantLogo from '../../assets/logo.png';
 
 const AuthBrandingSidebar = () => {
   const location = useLocation();
   const isSignupPage = location.pathname === '/signup';
 
-  // Features for Login page
   const loginFeatures = [
-    {
-      icon: BookOpen,
-      title: 'Expert-Led Courses',
-      desc: 'Learn from industry professionals'
-    },
-    {
-      icon: Briefcase,
-      title: 'Job Opportunities',
-      desc: 'Connect with top employers'
-    },
-    {
-      icon: FileText,
-      title: 'Resume Builder',
-      desc: 'Create stunning resumes in minutes'
-    },
-    {
-      icon: GraduationCap,
-      title: 'Career Growth',
-      desc: 'Track and accelerate your progress'
-    }
+    { icon: BookOpen,      title: 'Expert-Led Courses',  desc: 'Learn from industry professionals' },
+    { icon: Briefcase,     title: 'Job Opportunities',   desc: 'Connect with top employers' },
+    { icon: FileText,      title: 'Resume Builder',      desc: 'Create stunning resumes in minutes' },
+    { icon: GraduationCap, title: 'Career Growth',       desc: 'Track and accelerate your progress' },
   ];
 
-  // Features for Signup page
   const signupFeatures = [
-    {
-      icon: User,
-      title: 'Free Account',
-      desc: 'Get started with no credit card required'
-    },
-    {
-      icon: Shield,
-      title: 'Secure Platform',
-      desc: 'Your data is protected with encryption'
-    },
-    {
-      icon: Zap,
-      title: 'Instant Access',
-      desc: 'Start learning immediately after signup'
-    },
-    {
-      icon: Target,
-      title: 'Personalized Path',
-      desc: 'Custom learning journey based on your goals'
-    }
+    { icon: User,   title: 'Free Account',      desc: 'Get started with no credit card required' },
+    { icon: Shield, title: 'Secure Platform',   desc: 'Your data is protected with encryption' },
+    { icon: Zap,    title: 'Instant Access',    desc: 'Start learning immediately after signup' },
+    { icon: Target, title: 'Personalized Path', desc: 'Custom learning journey based on your goals' },
   ];
 
-  // Stats for Login page
-  const loginStats = [
-    { value: '10K+', label: 'Students' },
-    { value: '500+', label: 'Courses' },
-    { value: '2K+', label: 'Jobs' }
-  ];
-
-  // Stats for Signup page
-  const signupStats = [
-    { value: '5K+', label: 'New Users' },
-    { value: '100+', label: 'Free Courses' },
-    { value: '24/7', label: 'Support' }
-  ];
+  const loginStats  = [{ value: '10K+', label: 'Students' }, { value: '500+', label: 'Courses' }, { value: '2K+', label: 'Jobs' }];
+  const signupStats = [{ value: '5K+',  label: 'New Users' }, { value: '100+', label: 'Free Courses' }, { value: '24/7', label: 'Support' }];
 
   const features = isSignupPage ? signupFeatures : loginFeatures;
-  const stats = isSignupPage ? signupStats : loginStats;
+  const stats    = isSignupPage ? signupStats    : loginStats;
 
   return (
-    <div className="hidden lg:flex lg:w-1/2 flex-col justify-center p-12 xl:p-20">
-      <div className="space-y-8">
-        {/* Logo */}
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/40">
-            <span className="text-white font-bold text-2xl">I</span>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-cyan-600 bg-clip-text text-transparent">
-              ICL
-            </h1>
-            <p className="text-sm text-blue-600 font-medium">
-              Innovation & Career Launch
-            </p>
-          </div>
+    <div
+      className="hidden lg:flex lg:w-1/2 self-stretch flex-col justify-center p-10 xl:p-14 relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(145deg, #ffffff 0%, #f0f7ff 60%, #e6f3fb 100%)',
+        borderRight: '1px solid #dbeafe',
+      }}
+    >
+      {/* Subtle decorative orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-40"
+          style={{ background: 'radial-gradient(circle, #bfdbfe 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #bae6fd 0%, transparent 70%)' }} />
+        {/* Hex grid - subtle */}
+        <div className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32z' fill='none' stroke='%230d2b8c' stroke-width='1'/%3E%3C/svg%3E")`,
+            backgroundSize: '56px 100px',
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 space-y-7">
+        {/* Logo — natural colors on light background */}
+        <div>
+          <img src={infoziantLogo} alt="Infoziant" className="h-10" />
         </div>
 
-        {/* Main Heading */}
-        <div className="space-y-4">
-          <h2 className="text-5xl font-bold text-gray-900 leading-tight">
+        {/* Heading */}
+        <div className="space-y-2">
+          <h2 className="text-4xl xl:text-5xl font-bold leading-tight" style={{ color: '#0d2b8c' }}>
             Shape Your
-            <span className="block bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
-              Future Career
-            </span>
+            <span className="block" style={{ color: '#17a8c8' }}>Future Career</span>
           </h2>
-          <p className="text-lg text-gray-700 leading-relaxed">
+          <p className="text-sm text-gray-500 leading-relaxed max-w-sm">
             Unlock endless opportunities with our comprehensive learning platform,
             job portal, and professional tools.
           </p>
         </div>
 
-        {/* Features List */}
-        <div className="space-y-4 pt-4">
+        {/* Feature list */}
+        <div className="space-y-3">
           {features.map((feature, idx) => {
-            const IconComponent = feature.icon;
+            const Icon = feature.icon;
             return (
-              <div
-                key={idx}
-                className="flex items-start space-x-4 group hover:translate-x-2 transition-transform duration-300"
-              >
-                <div className="text-blue-600 mt-1 bg-white p-2 rounded-lg shadow-sm">
-                  <IconComponent size={24} strokeWidth={1.5} />
+              <div key={idx} className="flex items-center gap-3 group hover:translate-x-1 transition-transform duration-200">
+                <div
+                  className="flex-shrink-0 p-2 rounded-lg"
+                  style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}
+                >
+                  <Icon size={18} strokeWidth={1.5} style={{ color: '#0d2b8c' }} />
                 </div>
                 <div>
-                  <h3 className="text-gray-900 font-semibold group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-sm font-semibold text-gray-800 group-hover:text-[#0d2b8c] transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-gray-600">{feature.desc}</p>
+                  <p className="text-xs text-gray-400">{feature.desc}</p>
                 </div>
               </div>
             );
@@ -135,18 +100,15 @@ const AuthBrandingSidebar = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-6 pt-8">
+        <div className="grid grid-cols-3 gap-3">
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-sm"
+              className="text-center rounded-xl py-3 px-2"
+              style={{ background: '#f0f7ff', border: '1px solid #bfdbfe' }}
             >
-              <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-                {stat.value}
-              </div>
-              <div className="text-sm text-gray-600 font-medium">
-                {stat.label}
-              </div>
+              <div className="text-xl font-bold" style={{ color: '#0d2b8c' }}>{stat.value}</div>
+              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
             </div>
           ))}
         </div>

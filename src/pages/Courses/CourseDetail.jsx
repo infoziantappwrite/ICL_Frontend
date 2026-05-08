@@ -10,6 +10,8 @@ import {
 import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { courseAPI } from '../../api/Api';
 import StudentLayout from '../../components/layout/StudentLayout';
+import CandidateLayout from '../../components/layout/CandidateLayout';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABEL = {
   pending: 'Enrolled',
@@ -21,12 +23,12 @@ const STATUS_LABEL = {
 const TABS = ['About', 'Outcomes', 'Modules', 'Reviews'];
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
-const CourseDetailSkeleton = () => (
-  <StudentLayout title="Loading...">
+const CourseDetailSkeleton = ({ Layout }) => (
+  <Layout title="Loading...">
     <div className="animate-pulse">
       <div className="bg-white border-b border-gray-100 h-10" />
       <div className="bg-[#f8fafc] h-48 md:h-64" />
-      <div className="max-w-[1240px] mx-auto px-3 md:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-310 mx-auto px-3 md:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <div className="h-6 bg-gray-200 rounded w-2/3" />
           <div className="h-4 bg-gray-100 rounded w-full" />
@@ -35,13 +37,15 @@ const CourseDetailSkeleton = () => (
         <div className="h-48 bg-gray-100 rounded-2xl" />
       </div>
     </div>
-  </StudentLayout>
+  </Layout>
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CourseDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const Layout = user?.role === 'candidate' ? CandidateLayout : StudentLayout;
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -89,19 +93,19 @@ const CourseDetail = () => {
     }
   };
 
-  if (loading) return <CourseDetailSkeleton />;
+  if (loading) return <CourseDetailSkeleton Layout={Layout} />;
 
   if (error || !course) {
     return (
-      <StudentLayout title="Course Detail">
+      <Layout title="Course Detail">
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 p-6">
           <AlertCircle className="w-10 h-10 text-red-400" />
           <p className="text-gray-600 text-sm">{error || 'Course not found'}</p>
-          <button onClick={() => navigate('/dashboard/student/courses')} className="text-blue-600 text-sm hover:underline">
+          <button onClick={() => navigate(user?.role === 'candidate' ? '/dashboard/candidate/courses' : '/dashboard/student/courses')} className="text-blue-600 text-sm hover:underline">
             ← Back to courses
           </button>
         </div>
-      </StudentLayout>
+      </Layout>
     );
   }
 
@@ -117,13 +121,13 @@ const CourseDetail = () => {
     <button
       onClick={handleEnroll}
       disabled={enrolling || course.status !== 'Active'}
-      className={`w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md ${compact ? 'py-2.5 text-[13px]' : 'py-3.5 text-[15px]'}`}
+      className={`w-full bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md ${compact ? 'py-2.5 text-[13px]' : 'py-3.5 text-[15px]'}`}
     >
       {enrolling ? <><RefreshCw className="w-4 h-4 animate-spin" /> Enrolling...</> : course.status !== 'Active' ? 'Enrollment Closed' : 'Enroll for Free'}
     </button>
   ) : (
     <button
-      onClick={() => navigate(`/dashboard/student/courses/${courseId}/learn`)}
+      onClick={() => navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}/courses/${courseId}/learn`)}
       className={`w-full bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md ${compact ? 'py-2.5 text-[13px]' : 'py-3.5 text-[15px]'}`}
     >
       <PlayCircle className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
@@ -132,7 +136,7 @@ const CourseDetail = () => {
   );
 
   return (
-    <StudentLayout title={course.title}>
+    <Layout title={course.title}>
 
       {/* Toast */}
       {toast && (
@@ -144,14 +148,14 @@ const CourseDetail = () => {
 
       {/* ── Breadcrumb ── */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-2">
+        <div className="max-w-310 mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-2">
           <nav className="flex items-center gap-1.5 text-sm text-gray-500 font-medium overflow-x-auto hide-scrollbar">
-            <button onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 flex-shrink-0">
-              <Home className="w-[18px] h-[18px]" />
+            <button onClick={() => navigate(user?.role === 'candidate' ? '/dashboard/candidate' : '/dashboard/student')} className="hover:text-blue-600 shrink-0">
+              <Home className="w-4.5 h-4.5" />
             </button>
-            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 flex-shrink-0">Courses</button>
-            <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+            <button onClick={() => navigate(user?.role === 'candidate' ? '/dashboard/candidate/courses' : '/dashboard/student/courses')} className="hover:text-blue-600 shrink-0">Courses</button>
+            <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
             <span className="text-gray-900 font-bold truncate">{course.title}</span>
           </nav>
         </div>
@@ -166,59 +170,59 @@ const CourseDetail = () => {
             className="w-full h-full object-cover"
           />
           {/* subtle bottom fade */}
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-white to-transparent pointer-events-none" />
         </div>
       )}
 
       {/* ── Hero ── */}
-      <div className="relative bg-gradient-to-br from-[#f0f4ff] via-white to-[#f5f0ff] border-b border-gray-200">
-        <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-5 md:py-12 flex flex-col lg:flex-row items-start gap-6 lg:gap-12">
+      <div className="relative bg-linear-to-br from-[#f0f4ff] via-white to-[#f5f0ff] border-b border-gray-200">
+        <div className="max-w-310 mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-5 md:py-12 flex flex-col lg:flex-row items-start gap-6 lg:gap-12">
 
           {/* Left: Info */}
           <div className="flex-1 min-w-0">
             {/* Badges */}
             <div className="flex flex-wrap gap-1.5 mb-3">
-              <span className="bg-white border border-blue-200 text-blue-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+              <span className="bg-white border border-blue-200 text-blue-700 text-2.5 md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
                 {course.category || 'Course'}
               </span>
-              <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+              <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-2.5 md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                 {course.level || 'All Levels'}
               </span>
               {price === 0 && (
-                <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-2.5 md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                   Free
                 </span>
               )}
               {isEnrolled && (
-                <span className="bg-gray-900 text-white text-[10px] md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
+                <span className="bg-gray-900 text-white text-2.5 md:text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                   {STATUS_LABEL[enrollment.status] || enrollment.status}
                 </span>
               )}
             </div>
 
             {/* Title */}
-            <h1 className="text-[18px] sm:text-[22px] md:text-[30px] font-bold text-gray-900 leading-tight mb-2">
+            <h1 className="text-4.5 sm:text-[22px] md:text-[30px] font-bold text-gray-900 leading-tight mb-2">
               {course.title}
             </h1>
 
-            <p className="text-[12px] md:text-[14px] text-gray-500 leading-relaxed mb-4">
+            <p className="text-3 md:text-3.5 text-gray-500 leading-relaxed mb-4">
               {course.shortDescription || course.description?.substring(0, 250) + '...' || 'Master this topic with hands-on practice and expert guidance.'}
             </p>
 
             {/* Stats row */}
             <div className="flex items-center gap-3 flex-wrap mt-1">
-              <div className="flex items-center gap-1 text-[11px] md:text-[12px] text-gray-600">
+              <div className="flex items-center gap-1 text-[11px] md:text-3 text-gray-600">
                 <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 <span className="font-bold text-gray-900">{course.rating?.average?.toFixed(1) || '4.7'}</span>
                 <span className="text-gray-400">({course.rating?.count || 108})</span>
               </div>
               <span className="text-gray-300">•</span>
-              <div className="flex items-center gap-1 text-[11px] md:text-[12px] text-gray-600">
+              <div className="flex items-center gap-1 text-[11px] md:text-3 text-gray-600">
                 <BookOpen className="w-3.5 h-3.5 text-gray-400" />
                 {course.curriculum?.length || 5} modules
               </div>
               <span className="text-gray-300">•</span>
-              <div className="flex items-center gap-1 text-[11px] md:text-[12px] text-gray-600">
+              <div className="flex items-center gap-1 text-[11px] md:text-3 text-gray-600">
                 <Users className="w-3.5 h-3.5 text-gray-400" />
                 {parseInt(course.enrollmentCount || 0).toLocaleString()} learners
               </div>
@@ -226,7 +230,7 @@ const CourseDetail = () => {
 
             {/* What you'll learn — always visible */}
             <div className="mt-5 pt-5 border-t border-gray-200/70">
-              <p className="text-[11px] md:text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">What you'll learn</p>
+              <p className="text-[11px] md:text-3 font-bold text-gray-500 uppercase tracking-wider mb-2.5">What you'll learn</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
                 {(course.learningOutcomes?.length > 0
                   ? course.learningOutcomes.slice(0, 4)
@@ -235,8 +239,8 @@ const CourseDetail = () => {
                     : ['Core concepts and fundamentals', 'Hands-on practical projects', 'Industry best practices', 'Career-ready skills']
                 ).map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-[12px] md:text-[13px] text-gray-700 leading-snug">{item}</span>
+                    <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                    <span className="text-3 md:text-[13px] text-gray-700 leading-snug">{item}</span>
                   </div>
                 ))}
               </div>
@@ -252,7 +256,7 @@ const CourseDetail = () => {
               ].map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm">
                   <Icon className="w-3.5 h-3.5 text-blue-500" />
-                  <span className="text-[11px] md:text-[12px] font-semibold text-gray-700">{label}</span>
+                  <span className="text-[11px] md:text-3 font-semibold text-gray-700">{label}</span>
                 </div>
               ))}
             </div>
@@ -260,9 +264,9 @@ const CourseDetail = () => {
             {/* Instructor row */}
             <div className="flex items-center gap-2 mt-4">
               {partnerLogo ? (
-                <img src={partnerLogo} alt={partnerName} className="w-7 h-7 rounded-lg object-contain border border-gray-200 flex-shrink-0" />
+                <img src={partnerLogo} alt={partnerName} className="w-7 h-7 rounded-lg object-contain border border-gray-200 shrink-0" />
               ) : (
-                <div className="w-7 h-7 rounded-lg bg-blue-100 border border-blue-200 text-blue-700 font-bold text-[12px] flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 border border-blue-200 text-blue-700 font-bold text-3 flex items-center justify-center shrink-0">
                   {partnerName.charAt(0)}
                 </div>
               )}
@@ -273,7 +277,7 @@ const CourseDetail = () => {
 
 
           {/* Right: CTA Card — desktop only, image at top */}
-          <div className="hidden lg:block w-full lg:w-[360px] flex-shrink-0">
+          <div className="hidden lg:block w-full lg:w-90 shrink-0">
             <div className="bg-white border border-gray-200 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden">
               {/* Course image thumbnail */}
               {hasImage ? (
@@ -283,22 +287,22 @@ const CourseDetail = () => {
                   className="w-full h-48 object-cover"
                 />
               ) : (
-                <div className="w-full h-36 bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 flex items-center justify-center">
+                <div className="w-full h-36 bg-linear-to-br from-blue-100 via-indigo-50 to-purple-100 flex items-center justify-center">
                   <BookOpen className="w-12 h-12 text-blue-300" />
                 </div>
               )}
 
               {/* Card body */}
               <div className="p-5">
-                <h3 className="text-[18px] font-bold text-gray-900 mb-1">Start Learning</h3>
+                <h3 className="text-4.5 font-bold text-gray-900 mb-1">Start Learning</h3>
                 <p className="text-[13px] text-gray-500 mb-4">
                   Join <strong className="text-blue-700">{parseInt(course.enrollmentCount || 0).toLocaleString()}</strong> learners already enrolled.
                 </p>
                 {isEnrolled && (
                   <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex items-center gap-3 mb-4">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <div>
-                      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Status</p>
+                      <p className="text-2.5 text-emerald-600 font-bold uppercase tracking-wider">Status</p>
                       <p className="text-[13px] font-bold text-emerald-900">{STATUS_LABEL[enrollment.status] || enrollment.status}</p>
                     </div>
                   </div>
@@ -310,8 +314,8 @@ const CourseDetail = () => {
                     { icon: Clock, label: 'Flexible schedule' },
                     ...(course.certificateProvided ? [{ icon: Award, label: 'Certificate on completion' }] : []),
                   ].map(({ icon: Icon, label }) => (
-                    <div key={label} className="flex items-center gap-2.5 text-[12px] text-gray-600">
-                      <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                    <div key={label} className="flex items-center gap-2.5 text-3 text-gray-600">
+                      <Icon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       {label}
                     </div>
                   ))}
@@ -325,7 +329,7 @@ const CourseDetail = () => {
 
       {/* ── Stats ribbon (mobile: horizontal scroll pills, desktop: grid) ── */}
       <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-20">
-        <div className="max-w-[1240px] mx-auto px-3 md:px-6 lg:px-8">
+        <div className="max-w-310 mx-auto px-3 md:px-6 lg:px-8">
           {/* Mobile: scrollable pill row */}
           <div className="flex gap-3 overflow-x-auto hide-scrollbar py-2.5 lg:hidden">
             {[
@@ -334,7 +338,7 @@ const CourseDetail = () => {
               { icon: BarChart3, value: `${course.level || 'All'} level` },
               { icon: ThumbsUp, value: '96% liked' },
             ].map(({ icon: Icon, value }) => (
-              <div key={value} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 flex-shrink-0">
+              <div key={value} className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 shrink-0">
                 <Icon className="w-3.5 h-3.5 text-blue-600" />
                 <span className="text-[11px] font-bold text-gray-700 whitespace-nowrap">{value}</span>
               </div>
@@ -349,8 +353,8 @@ const CourseDetail = () => {
               { label: '96%', sub: 'Learners liked this' },
             ].map(({ label, sub }) => (
               <div key={label} className="px-5">
-                <p className="text-[16px] font-bold text-gray-900">{label}</p>
-                <p className="text-[12px] text-gray-500 mt-0.5">{sub}</p>
+                <p className="text-4 font-bold text-gray-900">{label}</p>
+                <p className="text-3 text-gray-500 mt-0.5">{sub}</p>
               </div>
             ))}
           </div>
@@ -359,13 +363,13 @@ const CourseDetail = () => {
 
       {/* ── Tab bar ── */}
       <div className="bg-white border-b border-gray-200 sticky top-[50px] z-10">
-        <div className="max-w-[1240px] mx-auto px-3 md:px-6 lg:px-8">
+        <div className="max-w-310 mx-auto px-3 md:px-6 lg:px-8">
           <nav className="flex gap-1 overflow-x-auto hide-scrollbar">
             {TABS.map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`whitespace-nowrap py-3 px-2 md:px-4 border-b-2 text-[12px] md:text-[14px] font-bold flex-shrink-0 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                className={`whitespace-nowrap py-3 px-2 md:px-4 border-b-2 text-3 md:text-3.5 font-bold shrink-0 transition-colors ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
               >
                 {tab}
               </button>
@@ -375,7 +379,7 @@ const CourseDetail = () => {
       </div>
 
       {/* ── Body ── */}
-      <div className="max-w-[1240px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8 pb-24 lg:pb-12">
+      <div className="max-w-310 mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8 pb-24 lg:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 md:gap-10">
 
           {/* LEFT CONTENT */}
@@ -385,17 +389,17 @@ const CourseDetail = () => {
             {(activeTab === 'About' || activeTab === 'Outcomes') && (
               <div className="space-y-6 md:space-y-10">
                 <section>
-                  <h2 className="text-[16px] md:text-[22px] font-bold text-gray-900 mb-3">About this course</h2>
+                  <h2 className="text-4 md:text-[22px] font-bold text-gray-900 mb-3">About this course</h2>
                   <p className="text-[13px] md:text-[15px] leading-relaxed text-gray-700 whitespace-pre-line">
                     {course.description || course.shortDescription || 'No description available.'}
                   </p>
                 </section>
 
                 <section>
-                  <h2 className="text-[15px] md:text-[18px] font-bold text-gray-900 mb-3">Skills you'll gain</h2>
+                  <h2 className="text-[15px] md:text-4.5 font-bold text-gray-900 mb-3">Skills you'll gain</h2>
                   <div className="flex flex-wrap gap-2">
                     {(course.learningOutcomes?.length > 0 ? course.learningOutcomes : ['Android Development', 'React.js', 'Cross Platform', 'UI Design']).map((skill, i) => (
-                      <span key={i} className="bg-gray-100 text-gray-800 text-[12px] md:text-[13px] font-medium px-3 py-1.5 rounded-full border border-gray-200">
+                      <span key={i} className="bg-gray-100 text-gray-800 text-3 md:text-[13px] font-medium px-3 py-1.5 rounded-full border border-gray-200">
                         {skill}
                       </span>
                     ))}
@@ -404,10 +408,10 @@ const CourseDetail = () => {
 
                 {course.tags?.length > 0 && (
                   <section>
-                    <h2 className="text-[15px] md:text-[18px] font-bold text-gray-900 mb-3">Tools you'll use</h2>
+                    <h2 className="text-[15px] md:text-4.5 font-bold text-gray-900 mb-3">Tools you'll use</h2>
                     <div className="flex flex-wrap gap-2">
                       {course.tags.map(tag => (
-                        <span key={tag} className="bg-blue-50 text-blue-700 text-[12px] md:text-[13px] font-medium px-3 py-1.5 rounded-full border border-blue-100">
+                        <span key={tag} className="bg-blue-50 text-blue-700 text-3 md:text-[13px] font-medium px-3 py-1.5 rounded-full border border-blue-100">
                           {tag}
                         </span>
                       ))}
@@ -420,7 +424,7 @@ const CourseDetail = () => {
             {/* Modules */}
             {activeTab === 'Modules' && (
               <section>
-                <h2 className="text-[16px] md:text-[22px] font-bold text-gray-900 mb-4">Course Modules</h2>
+                <h2 className="text-4 md:text-[22px] font-bold text-gray-900 mb-4">Course Modules</h2>
                 {course.curriculum?.length > 0 ? (
                   <div className="space-y-2">
                     {course.curriculum.map((mod, i) => (
@@ -430,7 +434,7 @@ const CourseDetail = () => {
                           className="w-full flex items-center justify-between p-3 md:p-4 text-left"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[11px] md:text-[12px] font-bold flex-shrink-0 ${expandedModule === i ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                            <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center text-[11px] md:text-3 font-bold shrink-0 ${expandedModule === i ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                               {i + 1}
                             </div>
                             <div className="min-w-0">
@@ -438,7 +442,7 @@ const CourseDetail = () => {
                               <p className="text-[11px] text-gray-500">{mod.duration ? `${mod.duration}h` : 'Self-paced'} • {mod.topics?.length || 0} topics</p>
                             </div>
                           </div>
-                          <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${expandedModule === i ? 'rotate-90 text-blue-600' : ''}`} />
+                          <ChevronRight className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expandedModule === i ? 'rotate-90 text-blue-600' : ''}`} />
                         </button>
 
                         {expandedModule === i && (
@@ -446,14 +450,14 @@ const CourseDetail = () => {
                             {mod.topics?.length > 0 ? (
                               <ul className="mt-2 space-y-1.5">
                                 {mod.topics.map((topic, j) => (
-                                  <li key={j} className="flex items-start gap-2 text-[12px] md:text-[13px] text-gray-700 py-1.5 border-b border-gray-100 last:border-0">
-                                    <PlayCircle className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                  <li key={j} className="flex items-start gap-2 text-3 md:text-[13px] text-gray-700 py-1.5 border-b border-gray-100 last:border-0">
+                                    <PlayCircle className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
                                     {topic}
                                   </li>
                                 ))}
                               </ul>
                             ) : (
-                              <p className="text-[12px] text-gray-400 italic mt-2">Topic details not available.</p>
+                              <p className="text-3 text-gray-400 italic mt-2">Topic details not available.</p>
                             )}
                           </div>
                         )}
@@ -490,19 +494,19 @@ const CourseDetail = () => {
                 {partnerLogo ? (
                   <img src={partnerLogo} alt="Logo" className="w-10 h-10 rounded-lg object-contain border border-gray-100" />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-[16px] flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-4 shrink-0">
                     {partnerName.charAt(0)}
                   </div>
                 )}
                 <div>
-                  <p className="text-[14px] font-bold text-blue-700">{course.instructor?.name ? `${course.instructor.name}` : partnerName}</p>
-                  <p className="text-[12px] text-gray-500">132 Courses • 1.2M learners</p>
+                  <p className="text-3.5 font-bold text-blue-700">{course.instructor?.name ? `${course.instructor.name}` : partnerName}</p>
+                  <p className="text-3 text-gray-500">132 Courses • 1.2M learners</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100">
                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                 <span className="text-[13px] font-bold text-gray-900">4.8</span>
-                <span className="text-[12px] text-gray-500">instructor rating</span>
+                <span className="text-3 text-gray-500">instructor rating</span>
               </div>
             </div>
 
@@ -517,7 +521,7 @@ const CourseDetail = () => {
                   ...(course.language ? [{ icon: FileText, title: course.language, sub: 'Course language' }] : []),
                 ].map(({ icon: Icon, title, sub }) => (
                   <div key={title} className="flex gap-3 items-start">
-                    <Icon className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <Icon className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-[13px] font-bold text-gray-900 leading-tight">{title}</p>
                       <p className="text-[11px] text-gray-500">{sub}</p>
@@ -540,7 +544,7 @@ const CourseDetail = () => {
                 )}
                 <div>
                   <p className="text-[13px] font-bold text-gray-900">{partnerName}</p>
-                  <a href="#" className="text-[12px] text-blue-600 hover:underline">Learn more</a>
+                  <a href="#" className="text-3 text-blue-600 hover:underline">Learn more</a>
                 </div>
               </div>
             </div>
@@ -552,7 +556,7 @@ const CourseDetail = () => {
                   <Zap className="w-4 h-4 text-blue-700" />
                   <h3 className="text-[13px] font-bold text-blue-900">Assessment Included</h3>
                 </div>
-                <p className="text-[12px] text-blue-700 leading-relaxed">Validates your skills on completion!</p>
+                <p className="text-3 text-blue-700 leading-relaxed">Validates your skills on completion!</p>
               </div>
             )}
 
@@ -562,9 +566,9 @@ const CourseDetail = () => {
 
       {/* ══ Mobile: Fixed bottom CTA bar ══ */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex-shrink-0 min-w-0">
+        <div className="shrink-0 min-w-0">
           <p className="text-[11px] text-gray-500 leading-none">Course</p>
-          <p className="text-[13px] font-bold text-gray-900 truncate max-w-[120px]">{course.title}</p>
+          <p className="text-[13px] font-bold text-gray-900 truncate max-w-30">{course.title}</p>
         </div>
         <div className="flex-1">
           <CTAButton compact={true} />
@@ -575,7 +579,7 @@ const CourseDetail = () => {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
-    </StudentLayout>
+    </Layout>
   );
 };
 

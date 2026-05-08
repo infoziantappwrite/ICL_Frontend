@@ -1,4 +1,4 @@
-// pages/Student/Assessments/AssessmentHistory.jsx
+// pages/Candidate/Assessments/AssessmentHistory.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -6,9 +6,7 @@ import {
   BookOpen, RefreshCw, AlertCircle, Calendar, Lock,
   CheckCircle2, XCircle
 } from 'lucide-react';
-import StudentLayout from '../../../components/layout/StudentLayout';
 import CandidateLayout from '../../../components/layout/CandidateLayout';
-import { useAuth } from '../../../context/AuthContext';
 import { assessmentAttemptAPI } from '../../../api/Api';
 
 // ── Skeleton: mimics a single AttemptRow card ─────────────────────────────────
@@ -58,10 +56,9 @@ const SkeletonScoreGrid = () => (
 );
 
 // ── Skeleton: full page loading state ─────────────────────────────────────────
-const AssessmentHistorySkeleton = ({ Layout }) => (
-  <Layout title="Assessment History">
-    <div className="min-h-[calc(100vh-64px)] flex flex-col">
-    <div className="max-w-4xl mx-auto w-full space-y-6 px-4 md:px-0 py-6 flex-1">
+const AssessmentHistorySkeleton = () => (
+  <CandidateLayout title="Assessment History">
+    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0 py-6">
       {/* header row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="animate-pulse">
@@ -83,8 +80,7 @@ const AssessmentHistorySkeleton = ({ Layout }) => (
       {/* attempt cards */}
       {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
     </div>
-    </div>
-  </Layout>
+  </CandidateLayout>
 );
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -239,16 +235,6 @@ const AttemptRow = ({ attempt, onViewResult, jdLeaderboard }) => {
 // ── AssessmentHistory ─────────────────────────────────────────────────────────
 const AssessmentHistory = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  // ✅ Dynamically pick layout based on role — same pattern as CourseDetail.jsx
-  const Layout = user?.role === 'candidate' ? CandidateLayout : StudentLayout;
-
-  // ✅ Dynamically pick base route based on role
-  const basePath = user?.role === 'candidate'
-    ? '/dashboard/candidate'
-    : '/dashboard/student';
-
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -308,8 +294,7 @@ const AssessmentHistory = () => {
   };
 
   // ── Full-page skeleton while loading ─────────────────────────────────────
-  // ✅ Pass Layout as prop — same pattern as CourseDetail.jsx
-  if (loading) return <AssessmentHistorySkeleton Layout={Layout} />;
+  if (loading) return <AssessmentHistorySkeleton />;
 
   // Best score summary — strictly only non-JD published attempts
   const skillSummary = {};
@@ -328,15 +313,12 @@ const AssessmentHistory = () => {
   });
 
   const handleViewResult = (attemptId) => {
-    // ✅ Uses dynamic basePath — /dashboard/candidate or /dashboard/student
-    navigate(`${basePath}/assessments/attempts/${attemptId}`);
+    navigate(`/dashboard/candidate/assessments/attempts/${attemptId}`);
   };
 
   return (
-    // ✅ Uses dynamic Layout — CandidateLayout or StudentLayout based on role
-    <Layout title="Assessment History">
-      <div className="min-h-[calc(100vh-64px)] flex flex-col">
-      <div className="max-w-4xl mx-auto w-full space-y-6 px-4 md:px-0 py-6 flex-1">
+    <CandidateLayout title="Assessment History">
+      <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0 py-6">
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -352,9 +334,8 @@ const AssessmentHistory = () => {
               Refresh
             </button>
             <button
-              onClick={() => navigate(`${basePath}/assessments`)}
-              // ✅ Uses dynamic basePath for navigation
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity"
+              onClick={() => navigate('/dashboard/candidate/assessments')}
+              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-600 to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity"
             >
               <BookOpen className="w-4 h-4" />
               Take Assessment
@@ -375,7 +356,7 @@ const AssessmentHistory = () => {
                     <p className="text-xs font-bold text-gray-500 mb-1 truncate">{key}</p>
                     <p className={`text-3xl font-black ${scoreColor} mb-1`}>{pct}%</p>
                     {a.assessment_id?.level && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${(LEVEL_CONFIG[a.assessment_id.level] || LEVEL_CONFIG.Beginner).color}`}>
+                      <span className={`text-2.5 px-2 py-0.5 rounded-full font-bold ${(LEVEL_CONFIG[a.assessment_id.level] || LEVEL_CONFIG.Beginner).color}`}>
                         {a.assessment_id.level}
                       </span>
                     )}
@@ -403,8 +384,7 @@ const AssessmentHistory = () => {
               You haven't taken any assessments yet, or your past assessments are currently unavailable.
             </p>
             <button
-              onClick={() => navigate(`${basePath}/assessments`)}
-              // ✅ Uses dynamic basePath
+              onClick={() => navigate('/dashboard/candidate/assessments')}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-sm transition-colors"
             >
               Take Your First Assessment
@@ -431,8 +411,7 @@ const AssessmentHistory = () => {
           </div>
         )}
       </div>
-      </div>
-    </Layout>
+    </CandidateLayout>
   );
 };
 

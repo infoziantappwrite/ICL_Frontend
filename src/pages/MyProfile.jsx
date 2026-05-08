@@ -5,6 +5,7 @@ import { useProfile } from '../context/Profilecontext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import StudentLayout from '../components/layout/StudentLayout';
+import CandidateLayout from '../components/layout/CandidateLayout';
 import { skillAPI, tokenStore } from '../api/Api';
 import {
   Pencil, X, Check, MapPin, Phone, Mail,
@@ -71,13 +72,13 @@ const ConfirmDeleteModal = ({ open, documentLabel, onCancel, onConfirm, loading 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/50 px-4 backdrop-blur-sm">
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)]">
-        <div className="border-b border-gray-100 bg-gradient-to-r from-red-50 via-white to-white px-6 py-5">
+        <div className="border-b border-gray-100 bg-linear-to-r from-red-50 via-white to-white px-6 py-5">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-600">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-[18px] font-bold text-gray-900">Delete document?</h3>
+              <h3 className="text-4.5 font-bold text-gray-900">Delete document?</h3>
               <p className="mt-1 text-[13px] leading-relaxed text-gray-500">
                 This will permanently remove your {documentLabel}. You can upload it again later if needed.
               </p>
@@ -111,7 +112,7 @@ const ConfirmDeleteModal = ({ open, documentLabel, onCancel, onConfirm, loading 
 
 // ─── Shared styles ─────────────────────────────────────────────────────────
 const iCls = 'w-full px-3 py-2 border border-gray-200 rounded-xl text-[13px] focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition bg-white';
-const lCls = 'block text-[12px] font-bold text-gray-500 mb-1 uppercase tracking-wide';
+const lCls = 'block text-3 font-bold text-gray-500 mb-1 uppercase tracking-wide';
 const gridTwo = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
 const spanTwo = 'sm:col-span-2';
 
@@ -120,7 +121,7 @@ const AvatarProgress = ({ initials, percent }) => {
   const r = 54, circ = 2 * Math.PI * r;
   const offset = circ - (percent / 100) * circ;
   return (
-    <div className="relative w-32 h-32 flex-shrink-0">
+    <div className="relative w-32 h-32 shrink-0">
       <svg className="w-32 h-32 -rotate-90" viewBox="0 0 128 128">
         <circle cx="64" cy="64" r={r} stroke="#e5e7eb" strokeWidth="6" fill="none" />
         <circle cx="64" cy="64" r={r} stroke="#2563eb" strokeWidth="6" fill="none"
@@ -139,7 +140,7 @@ const AvatarProgress = ({ initials, percent }) => {
 const InfoPair = ({ label, value }) => (
   <div>
     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{label}</p>
-    <p className="text-[14px] text-gray-800 font-medium mt-0.5">{value || <span className="text-gray-400">—</span>}</p>
+    <p className="text-3.5 text-gray-800 font-medium mt-0.5">{value || <span className="text-gray-400">—</span>}</p>
   </div>
 );
 
@@ -244,11 +245,11 @@ const Sk = ({ className = '' }) => (
 // ─── Full-page skeleton mirroring the profile layout ─────────────────────────
 const ProfileSkeleton = () => (
   <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
-    <div className="max-w-[1240px] mx-auto space-y-5">
+    <div className="max-w-310 mx-auto space-y-5">
       {/* Hero card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.06)] p-6">
         <div className="flex flex-col sm:flex-row gap-5">
-          <Sk className="w-32 h-32 rounded-full flex-shrink-0" />
+          <Sk className="w-32 h-32 rounded-full shrink-0" />
           <div className="flex-1 space-y-3 pt-1">
             <Sk className="h-6 w-40" />
             <Sk className="h-4 w-56" />
@@ -394,6 +395,7 @@ const viewPdf = (url) => {
 // ─── Main Component ────────────────────────────────────────────────────────
 const MyProfile = () => {
   const { user } = useAuth();
+  const Layout = user?.role === 'candidate' ? CandidateLayout : StudentLayout;
   const { profile, updateProfile, fetchProfile, isLoading } = useProfile();
   const toast = useToast();
   const [editing, setEditing] = useState(null);
@@ -686,24 +688,24 @@ const MyProfile = () => {
 
   if (isLoading && !profile) {
     return (
-      <StudentLayout title="My Profile">
+      <Layout title="My Profile">
         <ProfileSkeleton />
-      </StudentLayout>
+      </Layout>
     );
   }
 
   return (
-    <StudentLayout title="My Profile">
+    <Layout title="My Profile">
       <div className="min-h-screen bg-[#f8f9fa] px-4 md:px-6 lg:px-8 py-6">
-        <div className="max-w-[1240px] mx-auto space-y-5">
+        <div className="max-w-310 mx-auto space-y-5">
 
           {/* ══ HERO CARD — full width ══ */}
           <Card className="p-3 md:p-6 overflow-hidden">
             {/* 📱 MOBILE HERO LAYOUT (Screenshot Style) */}
             <div className="block sm:hidden">
               <div className="flex items-start gap-4">
-                <div className="relative flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-2 border-white shadow-md flex items-center justify-center">
+                <div className="relative shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-100 to-indigo-100 border-2 border-white shadow-md flex items-center justify-center">
                     {profile?.avatarUrl ? (
                       <img src={profile.avatarUrl} alt={getName()} className="w-full h-full rounded-full object-cover" />
                     ) : (
@@ -716,9 +718,9 @@ const MyProfile = () => {
                   </button>
                 </div>
                 <div className="flex-1 min-w-0 pt-0.5">
-                  <h1 className="text-[16px] md:text-[20px] font-bold text-gray-900 leading-tight">{getName()}</h1>
+                  <h1 className="text-4 md:text-5 font-bold text-gray-900 leading-tight">{getName()}</h1>
                   {(profile?.highestQualification || profile?.specialization) && (
-                    <p className="text-[12px] md:text-[14px] text-gray-600 mt-0.5">
+                    <p className="text-3 md:text-3.5 text-gray-600 mt-0.5">
                       {[profile.highestQualification, profile.specialization].filter(Boolean).join(' — ')}
                     </p>
                   )}
@@ -737,7 +739,7 @@ const MyProfile = () => {
                       style={{ width: `${percent}%`, background: percent === 100 ? '#16a34a' : '#3b82f6' }}
                     />
                   </div>
-                  <span className={`text-[13px] font-bold flex-shrink-0 ${percent === 100 ? 'text-green-600' : 'text-blue-600'}`}>{percent}%</span>
+                  <span className={`text-[13px] font-bold shrink-0 ${percent === 100 ? 'text-green-600' : 'text-blue-600'}`}>{percent}%</span>
                 </div>
                 {profile?.updatedAt && (
                   <p className="text-[11px] text-gray-400 mt-1">Last updated {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
@@ -756,11 +758,11 @@ const MyProfile = () => {
                         <h1 className="text-[22px] font-bold text-gray-900 leading-tight">{getName()}</h1>
                         <EditBtn onClick={() => openEdit('header')} />
                       </div>
-                      {profile?.currentRole && <p className="text-[14px] font-semibold text-gray-700 mt-0.5">{profile.currentRole}</p>}
+                      {profile?.currentRole && <p className="text-3.5 font-semibold text-gray-700 mt-0.5">{profile.currentRole}</p>}
                     </div>
                     {profile?.updatedAt && (
                       <div className="text-right shrink-0">
-                        <p className="text-[12px] text-gray-400">Profile last updated · {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        <p className="text-3 text-gray-400">Profile last updated · {new Date(profile.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                       </div>
                     )}
                   </div>
@@ -805,19 +807,19 @@ const MyProfile = () => {
             {/* Common Info Row for Mobile (below the progress bar) */}
             <div className="sm:hidden mt-4 flex flex-wrap gap-x-5 gap-y-1.5 pt-3 border-t border-gray-50">
               {profile?.address?.city && (
-                <div className="flex items-center gap-1.5 text-[12px] text-gray-600">
+                <div className="flex items-center gap-1.5 text-3 text-gray-600">
                   <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span>{profile.address.city}</span>
                 </div>
               )}
               {profile?.currentStatus && (
-                <div className="flex items-center gap-1.5 text-[12px] text-gray-600">
+                <div className="flex items-center gap-1.5 text-3 text-gray-600">
                   <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span>{profile.currentStatus}</span>
                 </div>
               )}
               {profile?.mobileNumber && (
-                <div className="flex items-center gap-1.5 text-[12px] text-gray-600">
+                <div className="flex items-center gap-1.5 text-3 text-gray-600">
                   <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span>{profile.mobileNumber}</span>
                   <CheckCircle className="w-3 h-3 text-green-500" />
@@ -862,7 +864,7 @@ const MyProfile = () => {
                   onClick={() => setSidebarExpanded(!sidebarExpanded)}
                   className="w-full flex items-center justify-between p-3 md:p-0 text-left md:pointer-events-none md:mb-4"
                 >
-                  <h3 className="font-bold text-gray-900 text-[14px] md:text-[16px]">Quick links</h3>
+                  <h3 className="font-bold text-gray-900 text-3.5 md:text-4">Quick links</h3>
                   <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform md:hidden ${sidebarExpanded ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -873,7 +875,7 @@ const MyProfile = () => {
                         scrollTo(link.id);
                         if (window.innerWidth < 768) setSidebarExpanded(false);
                       }}
-                      className="w-full flex items-center justify-between py-2.5 px-2 text-[14px] text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-left font-medium">
+                      className="w-full flex items-center justify-between py-2.5 px-2 text-3.5 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-left font-medium">
                       <span>{link.label}</span>
                       {link.badge && <span className={`text-[11px] font-bold ${link.bc}`}>{link.badge}</span>}
                     </button>
@@ -887,12 +889,12 @@ const MyProfile = () => {
 
               {/* ── RESUME ── */}
               <Card id="sec-resume">
-                <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900 mb-3">Resume</h2>
+                <h2 className="font-bold text-3.5 md:text-4.5 text-gray-900 mb-3">Resume</h2>
                 {resumeUrl ? (
                   <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl mb-4">
                     <div>
-                      <button type="button" onClick={() => viewPdf(resumeUrl)} className="text-[14px] font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors text-left">{resumeFilename}</button>
-                      {resumeUploadedAt && <p className="text-[12px] text-gray-400 mt-0.5">Uploaded on {new Date(resumeUploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
+                      <button type="button" onClick={() => viewPdf(resumeUrl)} className="text-3.5 font-bold text-gray-800 hover:text-blue-600 hover:underline transition-colors text-left">{resumeFilename}</button>
+                      {resumeUploadedAt && <p className="text-3 text-gray-400 mt-0.5">Uploaded on {new Date(resumeUploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
                     </div>
                     <div className="flex items-center">
                       <a href={getDownloadUrl(resumeUrl, resumeFilename)} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" download title="Download">
@@ -907,7 +909,7 @@ const MyProfile = () => {
 
                 {editing === 'resume' ? (
                   <div>
-                    <label className="block mb-1 text-[12px] font-bold text-gray-500 uppercase">Resume file</label>
+                    <label className="block mb-1 text-3 font-bold text-gray-500 uppercase">Resume file</label>
                     <div className={`border-2 border-dashed rounded-xl p-6 text-center transition mb-1 ${resumeFile ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
                       <Upload className="w-6 h-6 text-gray-400 mx-auto mb-2" />
                       <label className="cursor-pointer">
@@ -941,7 +943,7 @@ const MyProfile = () => {
               {/* ── KEY SKILLS (primary + secondary + langs + tools merged) ── */}
               <Card id="sec-skills">
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Key skills</h2>
+                  <h2 className="font-bold text-3.5 md:text-4.5 text-gray-900">Key skills</h2>
                   <EditBtn onClick={() => openEdit('skills')} />
                 </div>
                 {editing === 'skills' ? (
@@ -1002,7 +1004,7 @@ const MyProfile = () => {
               {/* ── EDUCATION ── */}
               <Card id="sec-education">
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Education</h2>
+                  <h2 className="font-bold text-3.5 md:text-4.5 text-gray-900">Education</h2>
                   <EditBtn onClick={() => openEdit('education')} />
                 </div>
                 {editing === 'education' ? (
@@ -1053,12 +1055,12 @@ const MyProfile = () => {
                       <div>
                         <p className="text-[15px] font-bold text-gray-900">{profile.highestQualification || 'Degree'}{profile.specialization ? ` — ${profile.specialization}` : ''}</p>
                         <p className="text-[13px] text-gray-600 mt-0.5">{profile.collegeName}</p>
-                        {profile.university && <p className="text-[12px] text-gray-400">{profile.university}</p>}
+                        {profile.university && <p className="text-3 text-gray-400">{profile.university}</p>}
                         <div className="flex flex-wrap items-center gap-3 mt-1">
-                          {profile.graduationYear && <span className="text-[12px] text-gray-500">{profile.graduationYear}</span>}
-                          {profile.cgpaOrPercentage && <span className="text-[12px] text-gray-500">CGPA: {profile.cgpaOrPercentage}</span>}
-                          {profile.tenthPercentage && <span className="text-[12px] text-gray-500">10th: {profile.tenthPercentage}%</span>}
-                          {profile.twelfthOrDiplomaPercentage && <span className="text-[12px] text-gray-500">12th: {profile.twelfthOrDiplomaPercentage}%</span>}
+                          {profile.graduationYear && <span className="text-3 text-gray-500">{profile.graduationYear}</span>}
+                          {profile.cgpaOrPercentage && <span className="text-3 text-gray-500">CGPA: {profile.cgpaOrPercentage}</span>}
+                          {profile.tenthPercentage && <span className="text-3 text-gray-500">10th: {profile.tenthPercentage}%</span>}
+                          {profile.twelfthOrDiplomaPercentage && <span className="text-3 text-gray-500">12th: {profile.twelfthOrDiplomaPercentage}%</span>}
                         </div>
                       </div>
                     </div>
@@ -1069,7 +1071,7 @@ const MyProfile = () => {
               {/* ── PROFESSIONAL DETAILS ── */}
               <Card id="sec-professional">
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Professional details</h2>
+                  <h2 className="font-bold text-3.5 md:text-4.5 text-gray-900">Professional details</h2>
                   <EditBtn onClick={() => openEdit('professional')} />
                 </div>
                 {editing === 'professional' ? (
@@ -1126,7 +1128,7 @@ const MyProfile = () => {
               {/* ── COURSE PREFERENCES ── */}
               <Card id="sec-courses">
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Course preferences</h2>
+                  <h2 className="font-bold text-3.5 md:text-4.5 text-gray-900">Course preferences</h2>
                   <EditBtn onClick={() => openEdit('courses')} />
                 </div>
                 {editing === 'courses' ? (
@@ -1175,7 +1177,7 @@ const MyProfile = () => {
               {/* ── CAREER GOALS ── */}
               <Card id="sec-career">
                 <div className="flex items-center gap-2 mb-3">
-                  <h2 className="font-bold text-[14px] md:text-[18px] text-gray-900">Career goals</h2>
+                  <h2 className="font-bold text-3.5 md:text-4.5 text-gray-900">Career goals</h2>
                   <EditBtn onClick={() => openEdit('career')} />
                 </div>
                 {editing === 'career' ? (
@@ -1205,7 +1207,7 @@ const MyProfile = () => {
                 ) : (
                   <div className="space-y-3">
                     {profile?.careerObjective
-                      ? <p className="text-[14px] text-gray-700 leading-relaxed">{profile.careerObjective}</p>
+                      ? <p className="text-3.5 text-gray-700 leading-relaxed">{profile.careerObjective}</p>
                       : <p className="text-[13px] text-gray-400">No career objective added. Click ✏️ to add.</p>}
                     {profile?.preferredJobRole && (
                       <div className="flex items-center gap-2">
@@ -1225,7 +1227,7 @@ const MyProfile = () => {
               {/* ── PERSONAL DETAILS ── */}
               <Card id="sec-personal" className="p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Personal details</h2>
+                  <h2 className="font-bold text-4.5 text-gray-900">Personal details</h2>
                   <EditBtn onClick={() => openEdit('personal')} />
                 </div>
                 {editing === 'personal' ? (
@@ -1300,7 +1302,7 @@ const MyProfile = () => {
               {/* ── DOCUMENTS ── */}
               <Card id="sec-documents" className="p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <h2 className="font-bold text-[18px] text-gray-900">Documents</h2>
+                  <h2 className="font-bold text-4.5 text-gray-900">Documents</h2>
                   <EditBtn onClick={() => openEdit('documents')} />
                 </div>
                 {editing === 'documents' ? (
@@ -1388,7 +1390,7 @@ const MyProfile = () => {
           </div>{/* end two-col grid */}
         </div>{/* end max-w */}
       </div>
-    </StudentLayout>
+    </Layout>
   );
 };
 

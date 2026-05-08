@@ -1,0 +1,508 @@
+// pages/Candidate/Assessments/AssessmentList.jsx
+ 
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  BookOpen, Clock, Star, Target, TrendingUp,
+  PlayCircle, RefreshCw, AlertCircle, Calendar, Tag,
+  Search, Filter, X, ChevronRight, Award, Zap,
+  SlidersHorizontal, Briefcase
+} from 'lucide-react';
+import CandidateLayout from '../../../components/layout/CandidateLayout';
+import { AssessmentListSkeleton } from '../../../components/common/SkeletonLoader';
+import { assessmentAttemptAPI } from '../../../api/Api';
+ 
+// ─── Constants ────────────────────────────────────────────────────────────────
+ 
+const LEVEL_CONFIG = {
+  Beginner:     { label: 'Beginner',     color: 'bg-green-50 text-green-700 border-green-200',    dot: 'bg-green-500'  },
+  Intermediate: { label: 'Intermediate', color: 'bg-blue-50 text-blue-700 border-blue-200',       dot: 'bg-blue-500'   },
+  Advanced:     { label: 'Advanced',     color: 'bg-purple-50 text-purple-700 border-purple-200', dot: 'bg-purple-500' },
+};
+ 
+const SOURCE_LABEL = {
+  college_admin_manual: 'Admin',
+  college_admin_ai:     'AI',
+  student_skill_based:  'Skill-Based',
+};
+ 
+// ─── Utility ──────────────────────────────────────────────────────────────────
+ 
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return '--:--';
+  try {
+    const [hours, minutes] = timeStr.split(':');
+    let h = parseInt(hours, 10);
+    const m = minutes.padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
+  } catch (e) {
+    return timeStr;
+  }
+};
+ 
+// ─── Shared Card Wrapper ──────────────────────────────────────────────────────
+ 
+const Card = ({ children, className = '' }) => (
+<div className={`bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 ${className}`}>
+    {children}
+</div>
+);
+ 
+// ─── Filter Panel Content (shared by sidebar + mobile drawer) ─────────────────
+ 
+const FilterContent = ({
+  searchTerm, setSearchTerm,
+  levelFilter, setLevelFilter,
+  sourceFilter, setSourceFilter,
+  clearFilters,
+}) => {
+  const hasFilters = searchTerm || levelFilter || sourceFilter;
+ 
+  return (
+<>
+      {/* Search */}
+<div className="mb-5">
+<label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Search</label>
+<div className="relative">
+<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+<input
+            type="text"
+            placeholder="Skill name..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
+          />
+</div>
+</div>
+ 
+      <div className="space-y-4">
+        {/* Level */}
+<div>
+<label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Level</label>
+<select
+            value={levelFilter}
+            onChange={e => setLevelFilter(e.target.value)}
+            className="w-full px-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+>
+<option value="">All Levels</option>
+<option value="Beginner">Beginner</option>
+<option value="Intermediate">Intermediate</option>
+<option value="Advanced">Advanced</option>
+</select>
+</div>
+ 
+        {/* Source */}
+<div>
+<label className="block text-[11px] font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Source</label>
+<select
+            value={sourceFilter}
+            onChange={e => setSourceFilter(e.target.value)}
+            className="w-full px-3 py-2 text-[13px] font-medium border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+>
+<option value="">All Sources</option>
+<option value="college_admin_manual">Admin Assigned</option>
+<option value="college_admin_ai">AI Generated</option>
+<option value="student_skill_based">Skill-Based</option>
+</select>
+</div>
+</div>
+ 
+      {hasFilters && (
+<button
+          onClick={clearFilters}
+          className="w-full mt-5 py-2 border border-gray-200 text-gray-600 text-[13px] font-bold rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+>
+<X className="w-4 h-4" /> Clear filters
+</button>
+      )}
+</>
+  );
+};
+ 
+// ─── Assessment Card ──────────────────────────────────────────────────────────
+ 
+const AssessmentCard = ({ assessment, onStart }) => {
+  const levelCfg = LEVEL_CONFIG[assessment.level] || LEVEL_CONFIG.Beginner;
+  const sourceLabel = SOURCE_LABEL[assessment.source_type] || assessment.source_type;
+ 
+  // Merge both title strategies: jd_id.jobTitle → title → skill_id.name → fallback
+  const title =
+    assessment?.jd_id?.jobTitle ||
+    assessment?.title ||
+    assessment?.skill_id?.name ||
+    'Skill Assessment';
+ 
+  return (
+<div
+      onClick={() => onStart(assessment)}
+      className="bg-white rounded-2xl p-3 md:p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full"
+>
+      {/* Header */}
+<div className="flex items-start gap-2 md:gap-4 mb-3 md:mb-4">
+<div className="w-9 h-9 md:w-12 md:h-12 border border-gray-100 rounded-xl flex items-center justify-center bg-blue-50 shrink-0">
+<Target className="w-4 h-4 md:w-6 md:h-6 text-blue-500" />
+</div>
+<div className="min-w-0">
+<h3 className="font-bold text-[13px] md:text-4 text-gray-900 leading-tight hover:text-blue-600 transition-colors line-clamp-2">
+            {title}
+</h3>
+<p className="text-[11px] md:text-[13px] text-gray-600 mt-0.5 flex items-center gap-1.5 line-clamp-1">
+            {sourceLabel} Assessment
+<Award className="w-3 h-3 md:w-3.5 md:h-3.5 text-amber-500 shrink-0" />
+</p>
+</div>
+</div>
+ 
+      {/* Badges row: company name + level badge + tags */}
+<div className="flex flex-wrap items-center gap-1.5 mb-3 md:mb-4">
+        {/* Company badge (from friend's code) */}
+        {assessment?.jd_id?.companyId?.name && (
+<span className="px-2 py-0.5 rounded text-2.5 md:text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-100 flex items-center gap-1">
+<Briefcase className="w-3 h-3" />
+            {assessment.jd_id.companyId.name}
+</span>
+        )}
+ 
+        {/* Level badge (from your code) */}
+<span className={`px-2 py-0.5 rounded text-2.5 md:text-[11px] font-bold border ${levelCfg.color} flex items-center gap-1`}>
+<span className={`w-1.5 h-1.5 rounded-full ${levelCfg.dot}`}></span>
+          {levelCfg.label}
+</span>
+ 
+        {/* Tags (from your code) */}
+        {assessment.tags?.slice(0, 2).map((t, idx) => (
+<span key={idx} className="px-2 py-0.5 rounded text-2.5 md:text-[11px] font-bold bg-gray-50 text-gray-600 border border-gray-200">
+            {t}
+</span>
+        ))}
+</div>
+ 
+      {/* Meta info */}
+<div className="space-y-1.5 mb-3 md:mb-5 mt-auto">
+        {/* Duration */}
+<div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-gray-500 font-medium">
+<Clock className="w-3.5 h-3.5 text-gray-400" />
+<span>
+            {assessment.duration_minutes ? `${assessment.duration_minutes} min` : 'Flexible'}
+</span>
+</div>
+ 
+        {/* Scheduled date/time OR on-demand */}
+        {assessment.scheduled_date ? (
+<div className="space-y-1.5">
+<div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-gray-500 font-medium">
+<Calendar className="w-3.5 h-3.5 text-gray-400" />
+<span>Scheduled: {new Date(assessment.scheduled_date).toLocaleDateString()}</span>
+</div>
+            {(assessment.start_time || assessment.end_time) && (
+<div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-gray-500 font-medium">
+<Clock className="w-3.5 h-3.5 text-gray-400" />
+<span>{formatTime12h(assessment.start_time)} to {formatTime12h(assessment.end_time)}</span>
+</div>
+            )}
+</div>
+        ) : (
+<div className="flex items-center gap-1.5 text-[11px] md:text-[13px] text-green-600 font-medium">
+<Zap className="w-3.5 h-3.5 text-green-500" />
+<span>On-demand Access</span>
+</div>
+        )}
+</div>
+ 
+      {/* Footer */}
+<div className="pt-2.5 md:pt-4 border-t border-gray-100 flex items-center justify-between">
+<button className="text-3 md:text-[13px] font-bold text-blue-600 flex items-center gap-1 hover:text-blue-700 transition-colors">
+          Start Assessment <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+</button>
+</div>
+</div>
+  );
+};
+ 
+// ─── Main Component ───────────────────────────────────────────────────────────
+ 
+const AssessmentList = () => {
+  const navigate = useNavigate();
+  const [allAssessments, setAllAssessments] = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [error, setError]                   = useState('');
+ 
+  const [searchTerm,   setSearchTerm]   = useState('');
+  const [levelFilter,  setLevelFilter]  = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+ 
+  // Mobile filter drawer state (from friend's code — better UX than simple toggle)
+  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+ 
+  const activeFilterCount = [searchTerm, levelFilter, sourceFilter].filter(Boolean).length;
+ 
+  useEffect(() => { fetchAssessments(); }, []);
+ 
+  const fetchAssessments = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await assessmentAttemptAPI.getMyAssignedAssessments();
+      if (res.success) setAllAssessments(res.assessments || []);
+      else setError(res.message || 'Failed to load assessments');
+    } catch (err) {
+      setError(err.message || 'Failed to load assessments');
+    } finally {
+      setLoading(false);
+    }
+  };
+ 
+  // Desktop-only guard (from friend's code)
+  const handleStart = (assessment) => {
+    if (window.innerWidth < 1024) {
+      alert('Assessments can only be taken on a desktop screen for a strictly controlled environment. Please switch to a laptop or desktop.');
+      return;
+    }
+    navigate(`/dashboard/candidate/assessments/${assessment._id}/take`);
+  };
+ 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setLevelFilter('');
+    setSourceFilter('');
+  };
+ 
+  // Hide attempted assessments (backend already filters, this is a safety net)
+  const filteredAssessments = useMemo(() => {
+    return allAssessments.filter(a => {
+      // Double-guard: hide if already attempted or not active
+      if (a.has_attempted) return false;
+      if (a.status !== 'active') return false;
+
+      const title = a.jd_id?.jobTitle || a.title || a.skill_id?.name || '';
+      const matchSearch = searchTerm === '' || title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchLevel  = levelFilter  === '' || a.level       === levelFilter;
+      const matchSource = sourceFilter === '' || a.source_type === sourceFilter;
+      return matchSearch && matchLevel && matchSource;
+    });
+  }, [allAssessments, searchTerm, levelFilter, sourceFilter]);
+ 
+  return (
+<CandidateLayout title="Skill Assessments">
+<div className="min-h-screen bg-[#f8f9fa] px-3 sm:px-4 md:px-6 lg:px-8 py-3 md:py-6">
+<div className="max-w-310 mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+ 
+          {/* ─── LEFT SIDEBAR: FILTERS (desktop only) ─── */}
+<div className="hidden md:block md:col-span-3 md:sticky md:top-25 self-start space-y-5">
+            {/* Filter card */}
+<Card className="p-4 md:p-5">
+<h3 className="font-bold text-gray-900 text-[15px] mb-4 flex items-center gap-2">
+<Filter className="w-4 h-4 text-blue-600" /> All Filters
+</h3>
+<FilterContent
+                searchTerm={searchTerm}   setSearchTerm={setSearchTerm}
+                levelFilter={levelFilter} setLevelFilter={setLevelFilter}
+                sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+                clearFilters={clearFilters}
+              />
+</Card>
+ 
+            {/* Track Your Progress card (from your code) */}
+<Card className="p-5 bg-linear-to-br from-blue-600 to-cyan-600 border-none text-white">
+<Target className="w-8 h-8 mb-3 text-blue-100" />
+<h3 className="font-bold text-4 mb-2">Track Your Progress</h3>
+<p className="text-[13px] text-blue-100 mb-4">
+                View your past assessment scores and analytics to improve.
+</p>
+<button
+                onClick={() => navigate('/dashboard/candidate/assessments/history')}
+                className="w-full py-2 bg-white text-blue-600 text-[13px] font-bold rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+>
+<TrendingUp className="w-4 h-4" /> My History
+</button>
+</Card>
+</div>
+ 
+          {/* ─── MAIN FEED (col-span-9) ─── */}
+<div className="col-span-1 md:col-span-9 space-y-3 md:space-y-5">
+ 
+            {/* Header */}
+<div className="flex items-center justify-between gap-3">
+<div className="min-w-0">
+<h1 className="text-4.5 sm:text-[22px] md:text-7 font-bold text-gray-900 leading-tight">
+                  Assessments
+</h1>
+<p className="text-3 md:text-3.5 text-gray-600 mt-0.5">
+                  Take assessments to verify your skills and improve your placement profile
+</p>
+</div>
+ 
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Count pill */}
+<div className="hidden sm:inline-flex text-[13px] font-medium text-gray-500 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+                  {filteredAssessments.length} {filteredAssessments.length === 1 ? 'assessment' : 'assessments'} available
+</div>
+ 
+                {/* Mobile filter button with badge (from friend's code) */}
+<button
+                  onClick={() => setShowFilterDrawer(true)}
+                  className="md:hidden relative flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-700 text-[13px] font-semibold shadow-sm hover:border-blue-300 transition-colors"
+>
+<SlidersHorizontal className="w-4 h-4" />
+<span>Filter</span>
+                  {activeFilterCount > 0 && (
+<span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-600 text-white text-2.5 font-bold rounded-full flex items-center justify-center">
+                      {activeFilterCount}
+</span>
+                  )}
+</button>
+ 
+                {/* Refresh */}
+<button
+                  onClick={fetchAssessments}
+                  className="bg-white border border-gray-200 text-gray-600 p-1.5 md:p-2 rounded-full hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm"
+                  title="Refresh"
+>
+<RefreshCw className="w-4 h-4" />
+</button>
+</div>
+</div>
+ 
+            {/* Count (mobile only, below header) */}
+<p className="sm:hidden text-3 text-gray-500">
+              {filteredAssessments.length} {filteredAssessments.length === 1 ? 'assessment' : 'assessments'} available
+</p>
+ 
+            {/* Error */}
+            {error && (
+<div className="bg-red-50 border border-red-200 rounded-xl p-3 md:p-4 flex items-center justify-between gap-3">
+<div className="flex items-center gap-2">
+<AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+<p className="text-red-800 text-[13px] md:text-3.5">{error}</p>
+</div>
+<button onClick={fetchAssessments} className="text-3 text-red-700 underline font-medium shrink-0">
+                  Retry
+</button>
+</div>
+            )}
+ 
+            {/* Grid / Loading / Empty */}
+            {loading ? (
+<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+<div key={i} className="h-45 md:h-55 bg-white rounded-2xl border border-gray-100 p-3 md:p-5 animate-pulse">
+<div className="flex items-start gap-3 mb-3">
+<div className="w-9 h-9 md:w-12 md:h-12 bg-gray-200 rounded-xl shrink-0" />
+<div className="flex-1">
+<div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+<div className="h-3 bg-gray-100 rounded w-1/2" />
+</div>
+</div>
+<div className="flex gap-2 mb-3">
+<div className="h-5 w-16 bg-gray-100 rounded" />
+<div className="h-5 w-20 bg-gray-100 rounded" />
+</div>
+<div className="space-y-2">
+<div className="h-3 bg-gray-50 rounded w-full" />
+<div className="h-3 bg-gray-50 rounded w-5/6" />
+</div>
+</div>
+                ))}
+</div>
+            ) : filteredAssessments.length === 0 && !error ? (
+<Card className="text-center py-10 md:py-16 p-4">
+<Target className="w-10 h-10 md:w-12 md:h-12 text-gray-300 mx-auto mb-3 md:mb-4" />
+<h3 className="text-4 md:text-4.5 font-bold text-gray-900 mb-2">
+                  {allAssessments.length === 0
+                    ? 'No matching assessments found'
+                    : 'No pending assessments right now!'}
+</h3>
+<p className="text-[13px] md:text-3.5 text-gray-500">
+                  {allAssessments.length === 0
+                    ? "Check back later — your college admin will publish assessments soon."
+                    : 'You have completed all your active assessments. Check the "My History" tab to view your past results.'}
+</p>
+                {allAssessments.length > 0 && activeFilterCount > 0 && (
+<button
+                    onClick={clearFilters}
+                    className="mt-4 md:mt-6 px-5 py-2 bg-blue-50 text-blue-600 text-[13px] font-bold rounded-full hover:bg-blue-100 transition-colors"
+>
+                    Reset parameters
+</button>
+                )}
+</Card>
+            ) : (
+<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5">
+                {filteredAssessments.map(a => (
+<AssessmentCard key={a._id} assessment={a} onStart={handleStart} />
+                ))}
+</div>
+            )}
+</div>
+</div>
+</div>
+ 
+      {/* ════ MOBILE FILTER DRAWER (from friend's code) ════ */}
+      {showFilterDrawer && (
+<div className="fixed inset-0 z-[100] flex md:hidden">
+          {/* Backdrop */}
+<div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowFilterDrawer(false)}
+          />
+ 
+          {/* Slide-in panel */}
+<div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-85 bg-white flex flex-col shadow-2xl filter-drawer-enter">
+            {/* Drawer header */}
+<div className="flex items-center justify-between p-4 border-b border-gray-100">
+<div className="flex items-center gap-2">
+<Filter className="w-4 h-4 text-blue-600" />
+<h2 className="text-4 font-bold text-gray-900">Filters</h2>
+                {activeFilterCount > 0 && (
+<span className="bg-blue-600 text-white text-2.5 font-bold px-1.5 py-0.5 rounded-full">
+                    {activeFilterCount}
+</span>
+                )}
+</div>
+<button
+                onClick={() => setShowFilterDrawer(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"
+>
+<X className="w-5 h-5" />
+</button>
+</div>
+ 
+            {/* Drawer body */}
+<div className="flex-1 overflow-y-auto p-4">
+<FilterContent
+                searchTerm={searchTerm}   setSearchTerm={setSearchTerm}
+                levelFilter={levelFilter} setLevelFilter={setLevelFilter}
+                sourceFilter={sourceFilter} setSourceFilter={setSourceFilter}
+                clearFilters={clearFilters}
+              />
+</div>
+ 
+            {/* Drawer footer */}
+<div className="p-4 border-t border-gray-100">
+<button
+                onClick={() => setShowFilterDrawer(false)}
+                className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl text-3.5 hover:bg-blue-700 transition-colors"
+>
+                Show Results
+</button>
+</div>
+</div>
+</div>
+      )}
+ 
+      <style>{`
+        .filter-drawer-enter {
+          animation: slideInRight 0.28s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
+      `}</style>
+</CandidateLayout>
+  );
+};
+ 
+export default AssessmentList;

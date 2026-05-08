@@ -128,6 +128,7 @@ import TrainerAnalytics from './pages/Trainer/pages/TrainerAnalytics';
 import TrainerSettings from './pages/Trainer/pages/TrainerSettings';
 import TrainerNotifications from './pages/Trainer/pages/TrainerNotifications';
 import TrainerMessages from './pages/Trainer/pages/TrainerMessages';
+import TrainerResultsPage from './pages/Trainer/pages/TrainerResultsPage';
 
 // ==================== ROLE-BASED REDIRECTS ====================
 const RoleBasedNotifications = () => {
@@ -304,6 +305,7 @@ function App() {
             <Route path="/dashboard/trainer/assessments/:assessmentId/sections"  element={<ProtectedRoute><TrainerSectionManager /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/assessments/:assessmentId/questions" element={<ProtectedRoute><TrainerQuestionManager /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/assessments/:assessmentId/review"    element={<ProtectedRoute><TrainerReviewPublish /></ProtectedRoute>}/>
+            <Route path="/dashboard/trainer/assessments/:assessmentId/results"   element={<ProtectedRoute><TrainerResultsPage /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/analytics"     element={<ProtectedRoute><TrainerAnalytics /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/messages"      element={<ProtectedRoute><TrainerMessages /></ProtectedRoute>}/>
             <Route path="/dashboard/trainer/notifications" element={<ProtectedRoute><TrainerNotifications /></ProtectedRoute>}/>

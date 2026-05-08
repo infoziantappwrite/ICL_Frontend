@@ -52,6 +52,8 @@ const TrainerReviewPublish = () => {
 
   const [assessment, setAssessment]   = useState(null);
   const [sections, setSections]       = useState([]);
+  const [groupStudentCount, setGroupStudentCount] = useState(null);
+  const [groupName, setGroupName]                 = useState('');
   const [loading, setLoading]         = useState(true);
   const [publishing, setPublishing]   = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -61,13 +63,18 @@ const TrainerReviewPublish = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [aRes, sRes] = await Promise.all([
+        const [aRes, sRes, gsRes] = await Promise.all([
           assessmentAPI.getAssessment(assessmentId),
           sectionAPI.getSections(assessmentId).catch(() => ({ success: true, sections: [] })),
+          assessmentAPI.getGroupStudents(assessmentId).catch(() => null),
         ]);
         if (aRes.success) setAssessment(aRes.assessment);
         else setError(aRes.message || 'Failed to load assessment');
         setSections(sRes.sections || []);
+        if (gsRes?.success) {
+          if (gsRes.student_count != null) setGroupStudentCount(gsRes.student_count);
+          if (gsRes.group_name)            setGroupName(gsRes.group_name);
+        }
       } catch {
         setError('Failed to load assessment data');
       } finally {
@@ -122,7 +129,7 @@ const TrainerReviewPublish = () => {
   const a = assessment || {};
   const totalQuestions  = sections.reduce((s, sec) => s + (sec.configuration?.question_count || 0), 0);
   const totalSectionMks = sections.reduce((s, sec) => s + (sec.scoring?.total_marks || 0), 0);
-  const eligibleCount   = a.eligible_students?.length || 0;
+  const eligibleCount   = groupStudentCount != null ? groupStudentCount : (a.eligible_students?.length || 0);
   const sectionTypes    = sections.map(s => s.type).join(', ') || '—';
   const formatDate      = (d) => d ? new Date(d).toDateString() : null;
   const marksBalanced   = a.total_marks > 0 && totalSectionMks === a.total_marks;
@@ -185,7 +192,7 @@ const TrainerReviewPublish = () => {
               <Row label="Course" value={a.course_id?.title || a.course_id} />
             )}
             {a.group_id && (
-              <Row label="Group" value={a.group_id?.name || a.group_id} />
+              <Row label="Group" value={groupName || a.group_id?.name || '—'} />
             )}
             <div className="flex gap-2 mt-3 flex-wrap">
               {a.shuffle_questions && (
@@ -254,7 +261,7 @@ const TrainerReviewPublish = () => {
             gradientFrom="#059669"
             gradientTo="#10b981"
           >
-            <Row label="Group"             value={a.group_id?.name || a.group_id || '—'} />
+            <Row label="Group"             value={groupName || a.group_id?.name || '—'} />
             <Row label="Students Assigned" value={eligibleCount > 0 ? String(eligibleCount) : 'Auto on publish'} />
             {eligibleCount === 0 && (
               <div className="mt-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">

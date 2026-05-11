@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import studentLayout from '../components/layout/StudentLayout';
+import StudentLayout from '../components/layout/StudentLayout';
 import {
   Settings, Bell, Shield, Eye, Palette, Globe,
   Mail, MessageSquare, Briefcase, BookOpen,

@@ -19,8 +19,6 @@ import CandidateAssessmentList from './pages/Candidate/Assessments/AssessmentLis
 import CandidateTakeAssessment from './pages/Candidate/Assessments/Takeassessment';
 import CandidateAssessmentHistory from './pages/Candidate/Assessments/Assessmenthistory';
 import CandidateAttemptResult from './pages/Candidate/Assessments/Attemptresult';
-
-import CandidateAssessments from './pages/Candidate/CandidateAssessments';
 import CandidateSettings from './pages/Candidate/Candidatesettings';
 import CandidateNotifications from './pages/Candidate/Candidatenotifications';
 import CandidateProfile from './pages/Candidate/Candidateprofile';
@@ -216,11 +214,6 @@ function App() {
             <Route path="/dashboard/candidate/assessments/:assessmentId/take" element={<ProtectedRoute><CandidateTakeAssessment /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/assessments/history" element={<ProtectedRoute><CandidateAssessmentHistory /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/assessments/attempts/:attemptId" element={<ProtectedRoute><CandidateAttemptResult /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/settings" element={<ProtectedRoute><StudentSettings /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments" element={<ProtectedRoute><CandidateAssessments /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments/:assessmentId/take" element={<ProtectedRoute><StudentTakeAssessment /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments/history" element={<ProtectedRoute><StudentAssessmentHistory /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments/attempts/:attemptId" element={<ProtectedRoute><StudentAttemptResult /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/settings" element={<ProtectedRoute><CandidateSettings /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/notifications" element={<ProtectedRoute><CandidateNotifications /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/profile" element={<ProtectedRoute><CandidateProfile /></ProtectedRoute>} />

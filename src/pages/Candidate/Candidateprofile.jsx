@@ -1,11 +1,11 @@
-// src/pages/MyProfile.jsx — Full Naukri-style profile with all fields + inline editing
+// src/pages/Candidate/CandidateProfile.jsx — Candidate profile page
 import { useState, useEffect, useRef } from 'react';
 import Select from 'react-select';
-import { useProfile } from '../context/Profilecontext';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import StudentLayout from '../components/layout/StudentLayout';
-import { skillAPI, tokenStore } from '../api/Api';
+import { useProfile } from '../../context/Profilecontext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import CandidateLayout from '../../components/layout/CandidateLayout';
+import { skillAPI, tokenStore } from '../../api/Api';
 import {
   Pencil, X, Check, MapPin, Phone, Mail,
   Briefcase, GraduationCap, Target,
@@ -392,9 +392,9 @@ const viewPdf = (url) => {
 };
 
 // ─── Main Component ────────────────────────────────────────────────────────
-const MyProfile = () => {
+const CandidateProfile = () => {
   const { user } = useAuth();
-  const Layout = StudentLayout;
+  const Layout = CandidateLayout;
   const { profile, updateProfile, fetchProfile, isLoading } = useProfile();
   const toast = useToast();
   const [editing, setEditing] = useState(null);
@@ -781,7 +781,7 @@ const MyProfile = () => {
                     {profile?.availability && (
                       <div className="flex items-center gap-2 text-[13px] text-gray-600">
                         <Clock className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span>{profile.availability.replace(/_/g, ' ')}</span>
+                        <span>{profile.availability}</span>
                       </div>
                     )}
                     {profile?.mobileNumber && (
@@ -1140,19 +1140,22 @@ const MyProfile = () => {
                       <label className={lCls}>Preferred Learning Mode</label>
                       <select className={iCls} value={draftCourses.preferredLearningMode} onChange={e => setDraftCourses(p => ({ ...p, preferredLearningMode: e.target.value }))}>
                         <option value="">Select…</option>
-                        {['online', 'offline', 'hybrid', 'self_paced'].map(o => <option key={o} value={o}>{o.replace('_', ' ')}</option>)}
+                        {['Online', 'Offline', 'Hybrid'].map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={lCls}>Availability</label>
                       <select className={iCls} value={draftCourses.availability} onChange={e => setDraftCourses(p => ({ ...p, availability: e.target.value }))}>
                         <option value="">Select…</option>
-                        {['immediate', 'within_1_month', 'within_3_months', 'within_6_months', 'not_available'].map(o => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
+                        {['Full-time', 'Part-time', 'Weekends Only', 'Flexible'].map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className={lCls}>Daily Study Hours</label>
-                      <input type="number" min="1" max="24" className={iCls} value={draftCourses.dailyStudyHours} onChange={e => setDraftCourses(p => ({ ...p, dailyStudyHours: e.target.value }))} placeholder="e.g. 4" />
+                      <select className={iCls} value={draftCourses.dailyStudyHours} onChange={e => setDraftCourses(p => ({ ...p, dailyStudyHours: e.target.value }))}>
+                        <option value="">Select…</option>
+                        {['1-2 hours', '2-4 hours', '4-6 hours', '6+ hours'].map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
                     </div>
                     <div>
                       <label className={lCls}>Expected Start Date</label>
@@ -1163,9 +1166,9 @@ const MyProfile = () => {
                 ) : (
                   <div className={gridTwo}>
                     <InfoPair label="Course Interest" value={profile?.courseInterestedIn} />
-                    <InfoPair label="Learning Mode" value={profile?.preferredLearningMode?.replace('_', ' ')} />
-                    <InfoPair label="Availability" value={profile?.availability?.replace(/_/g, ' ')} />
-                    <InfoPair label="Daily Study Hours" value={profile?.dailyStudyHours ? `${profile.dailyStudyHours} hrs/day` : undefined} />
+                    <InfoPair label="Learning Mode" value={profile?.preferredLearningMode} />
+                    <InfoPair label="Availability" value={profile?.availability} />
+                    <InfoPair label="Daily Study Hours" value={profile?.dailyStudyHours} />
                     {!profile?.preferredLearningMode && !profile?.courseInterestedIn && (
                       <p className="text-[13px] text-gray-400 col-span-2">No preferences added. Click ✏️ to add.</p>
                     )}
@@ -1393,4 +1396,4 @@ const MyProfile = () => {
   );
 };
 
-export default MyProfile;
+export default CandidateProfile;

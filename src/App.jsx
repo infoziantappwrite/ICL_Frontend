@@ -16,7 +16,11 @@ import CandidateDashboard from './pages/Candidate/Dashboard';
 import CandidateCourses from './pages/Candidate/CandidateCourses';
 import CandidateMyCourses from './pages/Candidate/CandidateMyCourses';
 import CandidateAssessments from './pages/Candidate/CandidateAssessments';
-
+import CandidateSettings from './pages/Candidate/Candidatesettings';
+import CandidateNotifications from './pages/Candidate/Candidatenotifications';
+import CandidateProfile from './pages/Candidate/Candidateprofile';
+import CandidateEditProfile from './pages/Candidate/CandidateEditProfile';
+import CandidateCourseDetail from './pages/Candidate/CandidateCourseDetail';
 // ==================== AUTH PAGES ====================
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -197,7 +201,8 @@ function App() {
             {/* ===== CANDIDATE ===== */}
             <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/courses" element={<ProtectedRoute><CandidateCourses /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/courses/:courseId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
+          <Route path="/dashboard/candidate/courses/:courseId"
+  element={<ProtectedRoute><CandidateCourseDetail /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/courses/:courseId/learn" element={<ProtectedRoute><CourseLearn /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/my-courses" element={<ProtectedRoute><CandidateMyCourses /></ProtectedRoute>} />
             
@@ -206,7 +211,10 @@ function App() {
             <Route path="/dashboard/candidate/assessments/:assessmentId/take" element={<ProtectedRoute><StudentTakeAssessment /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/assessments/history" element={<ProtectedRoute><StudentAssessmentHistory /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/assessments/attempts/:attemptId" element={<ProtectedRoute><StudentAttemptResult /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/settings" element={<ProtectedRoute><StudentSettings /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/settings" element={<ProtectedRoute><CandidateSettings /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/notifications" element={<ProtectedRoute><CandidateNotifications /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/profile" element={<ProtectedRoute><CandidateProfile /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/profile/edit" element={<ProtectedRoute><CandidateEditProfile /></ProtectedRoute>} />
 
             {/* ===== STUDENT ===== */}
             <Route path="/profile" element={<ProtectedRoute><ProfileDashboard /></ProtectedRoute>} />

@@ -97,7 +97,7 @@ const AttemptResult = () => {
       </button>
       <button
         onClick={() => navigate('/dashboard/candidate')}
-        className="flex-1 py-3 bg-linear-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700"
+        className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700"
       >
         Back to Dashboard
       </button>
@@ -136,7 +136,7 @@ const AttemptResult = () => {
           <>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               {/* Header */}
-              <div className="px-5 py-4 bg-linear-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center gap-2">
+              <div className="px-5 py-4 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100 flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-500" />
                 <div>
                   <p className="font-bold text-gray-900 text-sm">Leaderboard</p>
@@ -150,7 +150,7 @@ const AttemptResult = () => {
               <div className="px-5 pt-4 pb-2 flex items-center gap-3">
                 <p className="text-sm font-bold text-gray-700">{skillName}</p>
                 {level && (
-                  <span className={`text-2.5 px-2 py-0.5 rounded-full font-bold ${levelCfg.bg} ${levelCfg.color}`}>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${levelCfg.bg} ${levelCfg.color}`}>
                     {level}
                   </span>
                 )}
@@ -243,7 +243,7 @@ const AttemptResult = () => {
                   ].map(s => (
                     <div key={s.label} className={`px-4 py-3 rounded-xl border text-center ${s.color}`}>
                       <p className="text-lg font-black">{s.value}</p>
-                      <p className="text-2.5 font-semibold opacity-60 mt-0.5">{s.label}</p>
+                      <p className="text-[10px] font-semibold opacity-60 mt-0.5">{s.label}</p>
                     </div>
                   ))}
                 </div>

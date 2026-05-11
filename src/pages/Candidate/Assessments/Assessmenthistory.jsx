@@ -58,7 +58,8 @@ const SkeletonScoreGrid = () => (
 // ── Skeleton: full page loading state ─────────────────────────────────────────
 const AssessmentHistorySkeleton = () => (
   <CandidateLayout title="Assessment History">
-    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0 py-6">
+    <div className="min-h-[calc(100vh-65px)] flex flex-col">
+    <div className="max-w-4xl mx-auto w-full space-y-6 px-4 md:px-0 py-6 flex-1">
       {/* header row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="animate-pulse">
@@ -79,6 +80,7 @@ const AssessmentHistorySkeleton = () => (
 
       {/* attempt cards */}
       {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+    </div>
     </div>
   </CandidateLayout>
 );
@@ -317,8 +319,10 @@ const AssessmentHistory = () => {
   };
 
   return (
+    // ✅ Uses CandidateLayout — same structure as Student version
     <CandidateLayout title="Assessment History">
-      <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0 py-6">
+      <div className="min-h-[calc(100vh-65px)] flex flex-col">
+      <div className="max-w-4xl mx-auto w-full space-y-6 px-4 md:px-0 py-6 flex-1">
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -335,7 +339,7 @@ const AssessmentHistory = () => {
             </button>
             <button
               onClick={() => navigate('/dashboard/candidate/assessments')}
-              className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-blue-600 to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity"
             >
               <BookOpen className="w-4 h-4" />
               Take Assessment
@@ -356,7 +360,7 @@ const AssessmentHistory = () => {
                     <p className="text-xs font-bold text-gray-500 mb-1 truncate">{key}</p>
                     <p className={`text-3xl font-black ${scoreColor} mb-1`}>{pct}%</p>
                     {a.assessment_id?.level && (
-                      <span className={`text-2.5 px-2 py-0.5 rounded-full font-bold ${(LEVEL_CONFIG[a.assessment_id.level] || LEVEL_CONFIG.Beginner).color}`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${(LEVEL_CONFIG[a.assessment_id.level] || LEVEL_CONFIG.Beginner).color}`}>
                         {a.assessment_id.level}
                       </span>
                     )}
@@ -410,6 +414,7 @@ const AssessmentHistory = () => {
             })}
           </div>
         )}
+      </div>
       </div>
     </CandidateLayout>
   );

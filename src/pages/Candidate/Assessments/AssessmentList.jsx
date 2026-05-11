@@ -305,7 +305,7 @@ const AssessmentList = () => {
 </Card>
  
             {/* Track Your Progress card (from your code) */}
-<Card className="p-5 bg-linear-to-br from-blue-600 to-cyan-600 border-none text-white">
+<Card className="p-5 bg-gradient-to-br from-blue-600 to-cyan-600 border-none text-white">
 <Target className="w-8 h-8 mb-3 text-blue-100" />
 <h3 className="font-bold text-4 mb-2">Track Your Progress</h3>
 <p className="text-[13px] text-blue-100 mb-4">

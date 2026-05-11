@@ -1734,7 +1734,7 @@ const AssignStudentsModal = ({ assessmentId, assessment, onClose }) => {
   const fetchGroups = async () => {
     setLoadingGroups(true);
     try {
-      const res = await collegeAdminAPI.getGroups?.() || { success: false };
+      const res = await assessmentAPI.getAvailableGroupsForAssessment().catch(() => ({ success: false }));
       if (res.success) setGroups(res.groups || res.data || []);
     } catch {} finally { setLoadingGroups(false); }
   };

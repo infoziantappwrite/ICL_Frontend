@@ -15,7 +15,10 @@ import LandingPage from './pages/Landing/LandingPage';
 import CandidateDashboard from './pages/Candidate/Dashboard';
 import CandidateCourses from './pages/Candidate/CandidateCourses';
 import CandidateMyCourses from './pages/Candidate/CandidateMyCourses';
-import CandidateAssessments from './pages/Candidate/CandidateAssessments';
+import CandidateAssessmentList from './pages/Candidate/Assessments/AssessmentList';
+import CandidateTakeAssessment from './pages/Candidate/Assessments/Takeassessment';
+import CandidateAssessmentHistory from './pages/Candidate/Assessments/Assessmenthistory';
+import CandidateAttemptResult from './pages/Candidate/Assessments/Attemptresult';
 
 // ==================== AUTH PAGES ====================
 import Login from './pages/Login';
@@ -202,10 +205,10 @@ function App() {
             <Route path="/dashboard/candidate/my-courses" element={<ProtectedRoute><CandidateMyCourses /></ProtectedRoute>} />
             
             
-            <Route path="/dashboard/candidate/assessments" element={<ProtectedRoute><CandidateAssessments /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments/:assessmentId/take" element={<ProtectedRoute><StudentTakeAssessment /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments/history" element={<ProtectedRoute><StudentAssessmentHistory /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/assessments/attempts/:attemptId" element={<ProtectedRoute><StudentAttemptResult /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments" element={<ProtectedRoute><CandidateAssessmentList /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments/:assessmentId/take" element={<ProtectedRoute><CandidateTakeAssessment /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments/history" element={<ProtectedRoute><CandidateAssessmentHistory /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/assessments/attempts/:attemptId" element={<ProtectedRoute><CandidateAttemptResult /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/settings" element={<ProtectedRoute><StudentSettings /></ProtectedRoute>} />
 
             {/* ===== STUDENT ===== */}

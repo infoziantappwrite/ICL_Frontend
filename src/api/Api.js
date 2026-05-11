@@ -1212,6 +1212,10 @@ export const assessmentAPI = {
   getQuestion: async (attemptId, index) => {
     return apiCall(`/assessment/student/attempt/${attemptId}/question/${index}`);
   },
+
+  // GET /api/assessment/available-groups  (college admin only)
+  // Returns groups scoped to the admin's college — for the assign-group tab
+  getAvailableGroupsForAssessment: () => apiCall('/assessment/available-groups'),
 };
 
 // ==========================================

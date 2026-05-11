@@ -119,8 +119,10 @@ const TrainerAssessmentCreate = () => {
   /* ── Step 1 state ────────────────────────────────────────────── */
   const [courses, setCourses]           = useState([]);
   const [groups, setGroups]             = useState([]);
+  const [modules, setModules]           = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedGroup, setSelectedGroup]   = useState('');
+  const [selectedModule, setSelectedModule] = useState('');
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingGroups, setLoadingGroups]   = useState(false);
   const [step1Error, setStep1Error]     = useState('');
@@ -159,9 +161,11 @@ const TrainerAssessmentCreate = () => {
 
   /* ── Load groups when course changes ── */
   useEffect(() => {
-    if (!selectedCourse) { setGroups([]); setSelectedGroup(''); return; }
+    if (!selectedCourse) { setGroups([]); setSelectedGroup(''); setModules([]); setSelectedModule(''); return; }
     setLoadingGroups(true);
     setSelectedGroup('');
+    setSelectedModule('');
+    setModules([]);
     setStep1Error('');
     (async () => {
       try {
@@ -178,6 +182,15 @@ const TrainerAssessmentCreate = () => {
         setStep1Error(e.message || 'Failed to load groups.');
       } finally {
         setLoadingGroups(false);
+      }
+
+      // Also fetch curriculum modules for this course
+      try {
+        const courseRes = await trainerAPI.getCourseById(selectedCourse);
+        const curriculum = courseRes?.curriculum || courseRes?.data?.curriculum || [];
+        setModules(curriculum);
+      } catch {
+        // Non-fatal: module selector just won't appear
       }
     })();
   }, [selectedCourse]);
@@ -205,6 +218,7 @@ const TrainerAssessmentCreate = () => {
         source_type:               'trainer_manual',
         trainer_id:                user?.id || user?._id,
         course_id:                 selectedCourse,
+        curriculum_id:             selectedModule || null,
         group_id:                  selectedGroup,
         title:                     form.title.trim(),
         level:                     form.level,
@@ -247,6 +261,8 @@ const TrainerAssessmentCreate = () => {
   /* ── Derived UI values ── */
   const selectedCourseName = courses.find(c => c._id === selectedCourse)?.title || '';
   const selectedGroupName  = groups.find(g => g._id === selectedGroup)?.name   || '';
+  const selectedModuleName = modules.find(m => m._id === selectedModule)?.module
+    || modules.find(m => m._id === selectedModule)?.title || '';
 
   /* ══════ RENDER ══════ */
   return (
@@ -377,6 +393,29 @@ const TrainerAssessmentCreate = () => {
               </Card>
             )}
 
+            {/* Module selector (optional) */}
+            {selectedCourse && modules.length > 0 && (
+              <Card>
+                <CardHead icon={Layers} title="Link to Module (Optional)" color="from-slate-500 to-slate-700" />
+                <CardBody>
+                  <Field label="Curriculum Module" hint="Attach this assessment to a specific module so students can see it in their course view">
+                    <select
+                      value={selectedModule}
+                      onChange={e => setSelectedModule(e.target.value)}
+                      className={inp}
+                    >
+                      <option value="">— No specific module —</option>
+                      {modules.map((mod, i) => (
+                        <option key={mod._id || i} value={mod._id}>
+                          {mod.module || mod.title || `Module ${i + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                </CardBody>
+              </Card>
+            )}
+
             <button
               onClick={() => validateStep1() && setStep(2)}
               disabled={!selectedCourse || !selectedGroup}
@@ -399,6 +438,12 @@ const TrainerAssessmentCreate = () => {
                 <span className="font-black text-[#003399]">{selectedCourseName}</span>
                 <span className="text-slate-400 mx-1.5">·</span>
                 <span className="font-semibold text-slate-600">{selectedGroupName}</span>
+                {selectedModuleName && (
+                  <>
+                    <span className="text-slate-400 mx-1.5">·</span>
+                    <span className="font-semibold text-slate-500">📚 {selectedModuleName}</span>
+                  </>
+                )}
               </div>
               <button onClick={() => setStep(1)}
                 className="ml-auto text-[10px] font-bold text-[#003399] hover:underline">

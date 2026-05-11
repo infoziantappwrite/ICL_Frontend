@@ -706,6 +706,11 @@ const CourseLearn = () => {
                               {isWatched ? 'Watched' : 'Watch required'}
                             </span>
                           )}
+                          {mod.assessmentIds?.length > 0 && (
+                            <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                              📝 Assessment
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}
@@ -768,6 +773,11 @@ const CourseLearn = () => {
                           {modHasVideo && !isDone && (
                             <span className={`flex items-center gap-0.5 text-xs ${isWatched ? 'text-green-500' : 'text-amber-500'}`}>
                               <Video className="w-3 h-3" />{isWatched ? 'Watched' : 'Watch required'}
+                            </span>
+                          )}
+                          {mod.assessmentIds?.length > 0 && (
+                            <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-semibold flex-shrink-0">
+                              📝 Assessment
                             </span>
                           )}
                         </div>

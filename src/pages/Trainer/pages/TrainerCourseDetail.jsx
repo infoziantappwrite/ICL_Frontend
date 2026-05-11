@@ -160,6 +160,11 @@ const TrainerCourseDetail = () => {
                         {i + 1}
                       </div>
                       <span className="text-xs font-semibold text-slate-700">{mod.module || mod.title || mod.moduleName || `Module ${i + 1}`}</span>
+                      {mod.assessmentIds?.length > 0 && (
+                        <span className="ml-auto text-[10px] bg-[#003399]/10 text-[#003399] px-2 py-0.5 rounded-full font-bold flex-shrink-0">
+                          {mod.assessmentIds.length} assessment{mod.assessmentIds.length > 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

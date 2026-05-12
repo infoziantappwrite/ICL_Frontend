@@ -1548,11 +1548,8 @@ export const sectionAPI = {
 window.sectionAPI = sectionAPI;
 // ==========================================
 // TRAINER API — /api/trainer/*
-// Only endpoints that exist in current backend:
-//   GET  /trainer/profile
-//   PATCH /trainer/profile
-//   GET  /trainer/courses
-//   GET  /trainer/courses/:courseId  (NEW)
+// Updated to include analytics endpoints.
+// Replace the existing trainerAPI block in Api.js with this.
 // ==========================================
 export const trainerAPI = {
   // GET /api/trainer/profile
@@ -1577,6 +1574,63 @@ export const trainerAPI = {
   // GET /api/assessment/trainer/available-groups
   // Returns: { success, count, groups } — groups linked to trainer's courses with closed registration
   getAvailableGroups: () => apiCall('/assessment/trainer/available-groups'),
+
+  // ─── Analytics endpoints (NEW) ─────────────────────────────────────────────
+
+  // GET /api/trainer/analytics/students
+  // Query params: page, limit, group_id (optional), course_id (optional), search (optional)
+  // Returns: { success, total, page, limit, totalPages, data: [...students] }
+  // Student shape: { student_id, full_name, email, branch, batch, cgpa,
+  //   enrolled_courses, completed_courses, avg_progress,
+  //   total_attempts, avg_score, pass_rate, highest_score, lowest_score,
+  //   groups: [{ group_id, group_name, course_id, course_title }] }
+  getStudents: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v != null))
+    ).toString();
+    return apiCall(`/trainer/analytics/students${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET /api/trainer/analytics/groups?course_id=...
+  // Returns: { success, count, data: [...groups] }
+  // Group shape: { group_id, group_name, description, student_count, course_id, course_title,
+  //   total_assessments, total_attempts, pass_rate, avg_score, course_completion_rate }
+  getGroupAnalytics: (courseId) => {
+    const qs = courseId ? `?course_id=${courseId}` : '';
+    return apiCall(`/trainer/analytics/groups${qs}`);
+  },
+
+  // GET /api/trainer/analytics/summary
+  // Returns: { success, data: { total_students, total_courses, total_groups,
+  //   total_assessments, total_attempts, overall_pass_rate, avg_score, course_completion_rate } }
+  getAnalyticsSummary: () => apiCall('/trainer/analytics/summary'),
+
+  // GET /api/trainer/analytics/assessments?course_id=...
+  // Returns: { success, count, data: [...assessments] }
+  getAssessmentAnalytics: (courseId) => {
+    const qs = courseId ? `?course_id=${courseId}` : '';
+    return apiCall(`/trainer/analytics/assessments${qs}`);
+  },
+
+  // GET /api/trainer/analytics/students/:studentId
+  // Returns: { success, data: { student, groups, course_progress, assessment_summary, attempts, score_trend } }
+  getStudentDetail: (studentId) => apiCall(`/trainer/analytics/students/${studentId}`),
+
+  // GET /api/trainer/analytics/score-distribution?course_id=...&assessment_id=...
+  // Returns: { success, data: { buckets, pass_fail } }
+  getScoreDistribution: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))
+    ).toString();
+    return apiCall(`/trainer/analytics/score-distribution${qs ? `?${qs}` : ''}`);
+  },
+
+  // GET /api/trainer/analytics/progress-timeline?course_id=...
+  // Returns: { success, data: [...months] }
+  getProgressTimeline: (courseId) => {
+    const qs = courseId ? `?course_id=${courseId}` : '';
+    return apiCall(`/trainer/analytics/progress-timeline${qs}`);
+  },
 };
 
 window.trainerAPI = trainerAPI;

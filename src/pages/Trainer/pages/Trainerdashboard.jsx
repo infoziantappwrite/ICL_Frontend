@@ -210,7 +210,7 @@ const TrainerDashboard = () => {
         const { trainerAPI } = await import('../../../api/Api');
         // Only GET /trainer/courses exists — derive totalCourses from it
         const res = await trainerAPI.getCourses();
-        const courses = res.data?.assigned_courses || [];
+        const courses = res.data || [];
         setStats({
           totalCourses: courses.length,
           activeStudents: 0,

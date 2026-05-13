@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   BookOpen, ChevronLeft, Clock, Users, Layers,
-  Tag, BarChart2, AlertCircle,
+  Tag, BarChart2, AlertCircle, MessageSquare,
+  Trash2, User, RefreshCw,
 } from 'lucide-react';
 import TrainerDashboardLayout from '../../../components/layout/Trainerdashboardlayout';
-import { trainerAPI } from '../../../api/Api';
+import { trainerAPI, commentAPI } from '../../../api/Api';
 
 /* ── Info row ── */
 const InfoRow = ({ label, value }) => (
@@ -38,12 +39,57 @@ const TrainerCourseDetail = () => {
   const [loading,  setLoading] = useState(true);
   const [error,    setError]   = useState('');
 
+  // ─── Comments ─────────────────────────────────────────────────────────────
+  const [comments,        setComments]        = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError,   setCommentsError]   = useState('');
+  const [deletingId,      setDeletingId]      = useState(null);
+  const [toast,           setToast]           = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const fetchComments = async (cid) => {
+    setCommentsLoading(true);
+    setCommentsError('');
+    try {
+      const res = await commentAPI.getTrainerCourseComments(cid);
+      if (res.success) setComments(res.data || []);
+      else setCommentsError(res.message || 'Could not load comments');
+    } catch (e) {
+      setCommentsError(e.message || 'Could not load comments');
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    setDeletingId(commentId);
+    try {
+      const res = await commentAPI.deleteAnyComment(commentId);
+      if (res.success) {
+        setComments(prev => prev.filter(c => c._id !== commentId));
+        showToast('Comment deleted');
+      } else {
+        showToast(res.message || 'Failed to delete', 'error');
+      }
+    } catch (e) {
+      showToast(e.message || 'Failed to delete', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   useEffect(() => {
     if (!courseId) return;
     (async () => {
       try {
         const res = await trainerAPI.getCourseById(courseId);
         setCourse(res.data);
+        // Load comments after course data is confirmed
+        await fetchComments(courseId);
       } catch (e) {
         setError(e.message || 'Failed to load course details.');
       } finally {
@@ -54,6 +100,13 @@ const TrainerCourseDetail = () => {
 
   return (
     <TrainerDashboardLayout>
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-xl text-[12px] font-bold ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+          {toast.msg}
+        </div>
+      )}
+
       <div className="w-full space-y-5 py-2">
 
         {/* Back */}
@@ -170,6 +223,80 @@ const TrainerCourseDetail = () => {
                 </div>
               </div>
             )}
+
+            {/* ─── Comments ─────────────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                <div className="w-6 h-6 rounded-lg bg-[#003399]/10 flex items-center justify-center">
+                  <MessageSquare className="w-3.5 h-3.5 text-[#003399]" />
+                </div>
+                <h3 className="text-sm font-black text-slate-800">
+                  Student Comments
+                  {comments.length > 0 && (
+                    <span className="ml-1.5 text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {comments.length}
+                    </span>
+                  )}
+                </h3>
+              </div>
+
+              {commentsLoading ? (
+                <div className="flex justify-center py-6">
+                  <RefreshCw className="w-5 h-5 text-[#003399] animate-spin" />
+                </div>
+              ) : commentsError ? (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {commentsError}
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-8 text-slate-400">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-25" />
+                  <p className="text-xs">No student comments yet for this course.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {comments.map((c) => {
+                    const name  = c.student_id?.fullName || 'Student';
+                    const email = c.student_id?.email || '';
+                    const date  = c.created_at
+                      ? new Date(c.created_at).toLocaleDateString('en-IN', {
+                          day: '2-digit', month: 'short', year: 'numeric',
+                        })
+                      : '';
+                    return (
+                      <div key={c._id} className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="w-8 h-8 rounded-full bg-[#003399]/10 flex items-center justify-center flex-shrink-0 text-[12px] font-black text-[#003399] uppercase">
+                          {name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-1.5 flex-wrap mb-1">
+                            <span className="text-xs font-bold text-slate-800">{name}</span>
+                            {email && (
+                              <span className="text-[10px] text-slate-400">{email}</span>
+                            )}
+                            {date && (
+                              <span className="text-[10px] text-slate-400 ml-auto">{date}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed break-words">{c.comment}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteComment(c._id)}
+                          disabled={deletingId === c._id}
+                          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-100 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
+                          title="Delete comment"
+                        >
+                          {deletingId === c._id
+                            ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

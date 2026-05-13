@@ -198,7 +198,7 @@ const TrainerAnalytics = () => {
     (async () => {
       try {
         const res = await trainerAPI.getCourses();
-        setCourses(res.data?.assigned_courses || []);
+        setCourses(res.data || []);
       } catch {
         setError('Failed to load course data.');
       } finally {

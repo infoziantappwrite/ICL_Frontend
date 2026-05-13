@@ -5,13 +5,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, Circle, ChevronLeft, ChevronRight, Award, Zap,
   BookOpen, Clock, PlayCircle, Download, AlertCircle, RefreshCw,
-  Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare, Home, Menu, X
+  Trophy, Lock, Video, ExternalLink, Eye, Timer, CheckSquare, Home, Menu, X,
+  MessageSquare, Send, Trash2, User
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
 import CandidateLayout from '../../components/layout/CandidateLayout';
 import { useAuth } from '../../context/AuthContext';
 import { CourseLearnSkeleton } from '../../components/common/SkeletonLoader';
-import { courseAPI } from '../../api/Api';
+import { courseAPI, commentAPI } from '../../api/Api';
 
 // ─── YouTube IFrame API singleton loader ───────────────────────────────────────
 let _ytLoaded = false;
@@ -381,6 +382,68 @@ const CourseLearn = () => {
 
   // videoWatched[i] = true means the primary video of module i has been watched
   const [videoWatched, setVideoWatched] = useState({});
+
+  // ─── Comments state ──────────────────────────────────────────────────────
+  const [comments, setComments]                   = useState([]);
+  const [commentsLoading, setCommentsLoading]     = useState(false);
+  const [commentInput, setCommentInput]           = useState('');
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState(null);
+
+  // Fetch comments for the current course
+  const fetchComments = async (cid) => {
+    setCommentsLoading(true);
+    try {
+      // Students can't call the trainer endpoint; we store comments
+      // locally after post/delete and only refresh on mount.
+      // We piggyback on the course fetch — comments are loaded separately.
+    } catch (_) {}
+    setCommentsLoading(false);
+  };
+
+  const handleAddComment = async () => {
+    const text = commentInput.trim();
+    if (!text) return;
+    setCommentSubmitting(true);
+    try {
+      const res = await commentAPI.addComment(courseId, text);
+      if (res.success) {
+        // Prepend optimistically with user data from auth
+        setComments(prev => [{
+          _id: res.data._id,
+          comment: res.data.comment,
+          created_at: res.data.created_at || new Date().toISOString(),
+          student_id: { fullName: user?.fullName || 'You', email: user?.email || '' },
+          _isOwn: true,
+        }, ...prev]);
+        setCommentInput('');
+        showToast('Comment posted!', 'success');
+      } else {
+        showToast(res.message || 'Failed to post comment', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to post comment', 'error');
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  const handleDeleteOwnComment = async (commentId) => {
+    setDeletingCommentId(commentId);
+    try {
+      const res = await commentAPI.deleteOwnComment(commentId);
+      if (res.success) {
+        setComments(prev => prev.filter(c => c._id !== commentId));
+        showToast('Comment deleted', 'success');
+      } else {
+        showToast(res.message || 'Failed to delete comment', 'error');
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete comment', 'error');
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
 
   useEffect(() => { fetchData(); }, [courseId]);
 
@@ -989,6 +1052,117 @@ const CourseLearn = () => {
                   </div>
                 </div>
               )}
+
+              {/* ─── Comments Section ─────────────────────────────────── */}
+              <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm p-3 md:p-5">
+                <h3 className="font-bold text-gray-900 text-[13px] md:text-[15px] mb-4 flex items-center gap-1.5">
+                  <MessageSquare className="w-4 h-4 text-blue-500" />
+                  Course Comments
+                  {comments.length > 0 && (
+                    <span className="ml-1 text-[11px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {comments.length}
+                    </span>
+                  )}
+                </h3>
+
+                {/* Post a comment */}
+                <div className="flex gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <User className="w-3.5 h-3.5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 flex gap-2">
+                    <textarea
+                      value={commentInput}
+                      onChange={(e) => setCommentInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAddComment();
+                        }
+                      }}
+                      placeholder="Write a comment about this course…"
+                      rows={2}
+                      className="flex-1 text-[12px] md:text-[13px] border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-700 placeholder-gray-400"
+                    />
+                    <button
+                      onClick={handleAddComment}
+                      disabled={commentSubmitting || !commentInput.trim()}
+                      className="flex-shrink-0 flex items-center justify-center w-9 h-9 mt-auto bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Post comment"
+                    >
+                      {commentSubmitting
+                        ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        : <Send className="w-3.5 h-3.5" />
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                {/* Comments list */}
+                {commentsLoading ? (
+                  <div className="flex justify-center py-6">
+                    <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="text-center py-6 text-gray-400">
+                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-[12px]">No comments yet. Be the first to share your thoughts!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {comments.map((c) => {
+                      const isOwn = c._isOwn ||
+                        (user && c.student_id?._id && c.student_id._id === user._id);
+                      const name  = c.student_id?.fullName || 'Student';
+                      const date  = c.created_at
+                        ? new Date(c.created_at).toLocaleDateString('en-IN', {
+                            day: '2-digit', month: 'short', year: 'numeric',
+                          })
+                        : '';
+                      return (
+                        <div
+                          key={c._id}
+                          className={`flex gap-2.5 p-3 rounded-xl transition-colors ${
+                            isOwn ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50 border border-gray-100'
+                          }`}
+                        >
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-black uppercase ${
+                            isOwn ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                              <span className="text-[11px] font-bold text-gray-800">
+                                {isOwn ? 'You' : name}
+                              </span>
+                              {date && (
+                                <span className="text-[10px] text-gray-400">{date}</span>
+                              )}
+                            </div>
+                            <p className="text-[12px] md:text-[13px] text-gray-700 mt-0.5 break-words leading-relaxed">
+                              {c.comment}
+                            </p>
+                          </div>
+                          {isOwn && (
+                            <button
+                              onClick={() => handleDeleteOwnComment(c._id)}
+                              disabled={deletingCommentId === c._id}
+                              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-100 text-gray-300 hover:text-red-500 transition-colors disabled:opacity-50"
+                              title="Delete comment"
+                            >
+                              {deletingCommentId === c._id
+                                ? <RefreshCw className="w-3 h-3 animate-spin" />
+                                : <Trash2 className="w-3 h-3" />
+                              }
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div className="bg-white rounded-xl md:rounded-2xl border border-gray-100 shadow-sm p-6 md:p-10 text-center">

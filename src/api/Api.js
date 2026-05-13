@@ -1648,6 +1648,10 @@ export const commentAPI = {
   addComment: (course_id, comment) =>
     apiCall('/comments', { method: 'POST', body: JSON.stringify({ course_id, comment }) }),
 
+  // Student / Candidate: get all comments for a course they are enrolled in
+  getComments: (courseId) =>
+    apiCall(`/comments/my/course/${courseId}`),
+
   // Trainer: get all comments for one of their assigned courses
   getTrainerCourseComments: (courseId) =>
     apiCall(`/comments/trainer/${courseId}`),

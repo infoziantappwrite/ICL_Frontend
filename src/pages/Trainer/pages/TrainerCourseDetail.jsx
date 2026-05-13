@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   BookOpen, ChevronLeft, Clock, Users, Layers,
   Tag, BarChart2, AlertCircle, MessageSquare,
-  Trash2, User, RefreshCw,
+  User, RefreshCw,
 } from 'lucide-react';
 import TrainerDashboardLayout from '../../../components/layout/Trainerdashboardlayout';
 import { trainerAPI, commentAPI } from '../../../api/Api';
@@ -43,7 +43,6 @@ const TrainerCourseDetail = () => {
   const [comments,        setComments]        = useState([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentsError,   setCommentsError]   = useState('');
-  const [deletingId,      setDeletingId]      = useState(null);
   const [toast,           setToast]           = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -65,22 +64,7 @@ const TrainerCourseDetail = () => {
     }
   };
 
-  const handleDeleteComment = async (commentId) => {
-    setDeletingId(commentId);
-    try {
-      const res = await commentAPI.deleteAnyComment(commentId);
-      if (res.success) {
-        setComments(prev => prev.filter(c => c._id !== commentId));
-        showToast('Comment deleted');
-      } else {
-        showToast(res.message || 'Failed to delete', 'error');
-      }
-    } catch (e) {
-      showToast(e.message || 'Failed to delete', 'error');
-    } finally {
-      setDeletingId(null);
-    }
-  };
+
 
   useEffect(() => {
     if (!courseId) return;
@@ -280,17 +264,7 @@ const TrainerCourseDetail = () => {
                           </div>
                           <p className="text-xs text-slate-600 leading-relaxed break-words">{c.comment}</p>
                         </div>
-                        <button
-                          onClick={() => handleDeleteComment(c._id)}
-                          disabled={deletingId === c._id}
-                          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-100 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50"
-                          title="Delete comment"
-                        >
-                          {deletingId === c._id
-                            ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            : <Trash2 className="w-3.5 h-3.5" />
-                          }
-                        </button>
+
                       </div>
                     );
                   })}

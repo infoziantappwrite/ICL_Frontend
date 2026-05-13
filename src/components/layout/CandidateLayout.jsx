@@ -66,7 +66,16 @@ const CandidateLayout = ({ children }) => {
             </div>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <span className="hidden sm:flex items-center gap-1 bg-blue-50 text-blue-700 text-2.5 font-bold px-2.5 py-1 rounded-full border border-blue-100"><Target className="w-3 h-3" /> Candidate</span>
+           <span
+  className="hidden sm:flex items-center gap-1 text-white text-2.5 font-bold px-2.5 py-1 rounded-full shadow-sm"
+  style={{
+    background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)',
+    border: '1px solid rgba(255,255,255,0.15)'
+  }}
+>
+  <Target className="w-3 h-3" />
+  Candidate
+</span>
             <button
               onClick={() => navigate('/dashboard/candidate/notifications')}
               className="hidden md:flex relative w-9 h-9 items-center justify-center text-gray-500 hover:bg-gray-100 rounded-full transition-all"
@@ -80,16 +89,48 @@ const CandidateLayout = ({ children }) => {
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                  <div className="p-4 bg-linear-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center"><span className="text-white font-bold text-lg">{getInitials()}</span></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{getName()}</p>
-                        <p className="text-sm text-blue-600 font-medium"> Candidate</p>
-                        <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <div
+  className="p-4 border-b border-white/10 text-white"
+  style={{
+    background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+  }}
+>
+  <div className="flex items-center gap-3">
+
+    <div
+      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md"
+      style={{
+        background: 'rgba(255,255,255,0.18)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.2)'
+      }}
+    >
+      {getInitials()}
+    </div>
+
+    <div className="flex-1 min-w-0">
+
+      <p
+        className="font-bold truncate text-[15px]"
+        style={{
+          letterSpacing: '0.2px'
+        }}
+      >
+        {getName()}
+      </p>
+
+      <p className="text-[12px] font-semibold text-white/80 tracking-wide uppercase">
+        Candidate
+      </p>
+
+      <p className="text-[11px] text-white/70 truncate">
+        {user?.email}
+      </p>
+
+    </div>
+
+  </div>
+</div>
                   <div className="py-2">
                     {[{icon:User,label:'My Profile',path:'/dashboard/candidate/profile'},{icon:Bell,label:'Notifications',path:'/dashboard/candidate/notifications'},{icon:Settings,label:'Settings',path:'/dashboard/candidate/settings'}].map(item => (
                       <button key={item.label} onClick={() => { setShowUserMenu(false); navigate(item.path); }} className="w-full px-4 py-2.5 text-left flex items-center gap-3 text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-all">

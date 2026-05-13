@@ -198,18 +198,33 @@ const CandidateCourses = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h1 className="text-[22px] md:text-[28px] font-black text-gray-900 tracking-tight">
-                Browse <span className="text-cyan-600">Courses</span>
-              </h1>
+             <h1 className="text-[22px] md:text-[28px] font-black text-gray-900 tracking-tight">
+  Browse{' '}
+  <span
+    style={{
+      background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    }}
+  >
+    Courses
+  </span>
+</h1>
               <p className="text-[13px] text-gray-500 mt-1">
                 {loading ? 'Loading...' : `${filtered.length} courses available · ${enrolledCount} enrolled`}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => navigate('/dashboard/candidate/my-courses')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 text-white rounded-xl text-[13px] font-semibold hover:bg-cyan-700 transition-all shadow-sm">
-                <BookMarked className="w-3.5 h-3.5" /> My Learning
-              </button>
+              <button
+  onClick={() => navigate('/dashboard/candidate/my-courses')}
+  className="inline-flex items-center gap-1.5 px-4 py-2 text-white rounded-xl text-[13px] font-semibold transition-all shadow-sm hover:opacity-90"
+  style={{
+    background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+  }}
+>
+  <BookMarked className="w-3.5 h-3.5" />
+  My Learning
+</button>
               <button onClick={() => setShowFilters(v => !v)}
                 className="sm:hidden inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-600 shadow-sm">
                 <SlidersHorizontal className="w-4 h-4" /> Filters {hasFilters && <span className="w-2 h-2 bg-cyan-500 rounded-full" />}
@@ -223,11 +238,34 @@ const CandidateCourses = () => {
               { key: 'all', label: 'All Courses', count: courses.length },
               { key: 'enrolled', label: 'My Courses', count: enrolledCount },
             ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all ${activeTab === tab.key ? 'bg-cyan-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:border-cyan-300 hover:text-cyan-600'}`}>
-                {tab.label}
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{tab.count}</span>
-              </button>
+             <button
+  key={tab.key}
+  onClick={() => setActiveTab(tab.key)}
+  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all ${
+    activeTab === tab.key
+      ? 'text-white shadow-sm'
+      : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300 hover:text-blue-600'
+  }`}
+  style={
+    activeTab === tab.key
+      ? {
+          background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+        }
+      : {}
+  }
+>
+  {tab.label}
+
+  <span
+    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+      activeTab === tab.key
+        ? 'bg-white/20 text-white'
+        : 'bg-gray-100 text-gray-500'
+    }`}
+  >
+    {tab.count}
+  </span>
+</button>
             ))}
           </div>
 

@@ -109,25 +109,53 @@ const CourseCard = ({ enrollment, onNavigate }) => {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-2 mt-auto">
-          <button onClick={() => onNavigate(`/dashboard/candidate/courses/${course._id}/learn`)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-bold transition-all hover:-translate-y-0.5 ${
-              isCompleted
-                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                : 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700 shadow-sm hover:shadow-md'
-            }`}>
-            {isCompleted ? (
-              <><CheckCircle2 className="w-3.5 h-3.5" /> Review</>
-            ) : (
-              <><PlayCircle className="w-3.5 h-3.5" /> Continue</>
-            )}
-          </button>
-          {isCompleted && course.certificateProvided && enrollment.certificateIssued && (
-            <button className="px-3 py-2.5 text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 transition-colors">
-              <Download className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+       {/* Action buttons */}
+<div className="flex gap-2 mt-auto">
+  <button
+    onClick={() =>
+      onNavigate(`/dashboard/candidate/courses/${course._id}/learn`)
+    }
+    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-bold transition-all hover:-translate-y-0.5 ${
+      isCompleted
+        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+        : 'text-white shadow-sm hover:shadow-md'
+    }`}
+    style={
+      !isCompleted
+        ? {
+            background:
+              'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+          }
+        : {}
+    }
+  >
+    {isCompleted ? (
+      <>
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Review
+      </>
+    ) : (
+      <>
+        <PlayCircle className="w-3.5 h-3.5" />
+        Continue
+      </>
+    )}
+  </button>
+
+  {isCompleted &&
+    course.certificateProvided &&
+    enrollment.certificateIssued && (
+      <button
+        className="px-3 py-2.5 rounded-xl transition-all hover:opacity-90 text-white shadow-sm"
+        style={{
+          background:
+            'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+        }}
+      >
+        <Download className="w-4 h-4" />
+      </button>
+    )}
+</div>
       </div>
     </div>
   );
@@ -184,9 +212,18 @@ const CandidateMyCourses = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h1 className="text-[22px] md:text-[28px] font-black text-gray-900 tracking-tight">
-                My <span className="text-cyan-600">Learning</span>
-              </h1>
+           <h1 className="text-[22px] md:text-[28px] font-black text-gray-900 tracking-tight">
+  My{' '}
+  <span
+    style={{
+      background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    }}
+  >
+    Learning
+  </span>
+</h1>
               <p className="text-[13px] text-gray-500 mt-1">
                 {loading ? 'Loading...' : `${enrollments.length} enrolled courses`}
               </p>
@@ -196,10 +233,16 @@ const CandidateMyCourses = () => {
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-xl text-[13px] font-semibold text-gray-600 hover:border-cyan-300 hover:text-cyan-600 transition-all shadow-sm">
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
               </button>
-              <button onClick={() => navigate('/dashboard/candidate/courses')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-cyan-600 text-white rounded-xl text-[13px] font-semibold hover:bg-cyan-700 transition-all shadow-sm">
-                <BookOpen className="w-3.5 h-3.5" /> Browse More
-              </button>
+              <button
+  onClick={() => navigate('/dashboard/candidate/courses')}
+  className="inline-flex items-center gap-1.5 px-4 py-2 text-white rounded-xl text-[13px] font-semibold transition-all shadow-sm hover:opacity-90"
+  style={{
+    background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+  }}
+>
+  <BookOpen className="w-3.5 h-3.5" />
+  Browse More
+</button>
             </div>
           </div>
 
@@ -226,14 +269,36 @@ const CandidateMyCourses = () => {
               {STATUS_TABS.map(tab => {
                 const Icon = tab.icon;
                 return (
-                  <button key={tab.key} onClick={() => setStatusFilter(tab.key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all ${statusFilter === tab.key ? 'bg-cyan-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'}`}>
-                    <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${statusFilter === tab.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                      {counts[tab.key]}
-                    </span>
-                  </button>
+                  <button
+  key={tab.key}
+  onClick={() => setStatusFilter(tab.key)}
+  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold whitespace-nowrap transition-all ${
+    statusFilter === tab.key
+      ? 'text-white shadow-sm'
+      : 'text-gray-500 hover:text-blue-700 hover:bg-blue-50'
+  }`}
+  style={
+    statusFilter === tab.key
+      ? {
+          background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+        }
+      : {}
+  }
+>
+  <Icon className="w-3.5 h-3.5" />
+
+  {tab.label}
+
+  <span
+    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+      statusFilter === tab.key
+        ? 'bg-white/20 text-white'
+        : 'bg-gray-100 text-gray-500'
+    }`}
+  >
+    {counts[tab.key]}
+  </span>
+</button>
                 );
               })}
             </div>

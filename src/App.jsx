@@ -24,6 +24,7 @@ import CandidateNotifications from './pages/Candidate/Candidatenotifications';
 import CandidateProfile from './pages/Candidate/Candidateprofile';
 import CandidateEditProfile from './pages/Candidate/CandidateEditProfile';
 import CandidateCourseDetail from './pages/Candidate/CandidateCourseDetail';
+import CandidateCourseLearn from './pages/Candidate/CandidateCourseLearn';
 // ==================== AUTH PAGES ====================
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -206,7 +207,7 @@ function App() {
             <Route path="/dashboard/candidate/courses" element={<ProtectedRoute><CandidateCourses /></ProtectedRoute>} />
           <Route path="/dashboard/candidate/courses/:courseId"
   element={<ProtectedRoute><CandidateCourseDetail /></ProtectedRoute>} />
-            <Route path="/dashboard/candidate/courses/:courseId/learn" element={<ProtectedRoute><CourseLearn /></ProtectedRoute>} />
+              <Route path="/dashboard/candidate/courses/:courseId/learn" element={<ProtectedRoute><CandidateCourseLearn /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/my-courses" element={<ProtectedRoute><CandidateMyCourses /></ProtectedRoute>} />
             
             

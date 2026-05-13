@@ -194,10 +194,14 @@ const CandidateDashboard = () => {
                 <p className="text-[12px] text-gray-400 mt-0.5">ICL Candidate</p>
                 {updatedAt && <p className="text-[11px] text-gray-400 mt-0.5">Updated {updatedAt}</p>}
                 <button
-                  onClick={() => navigate('/dashboard/candidate/profile')}
-                  className="mt-4 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-bold rounded-xl transition-all shadow-sm">
-                  View Profile
-                </button>
+  onClick={() => navigate('/dashboard/candidate/profile')}
+  className="mt-4 w-full py-2.5 text-white text-[13px] font-bold rounded-xl transition-all shadow-sm hover:opacity-90"
+  style={{
+    background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)'
+  }}
+>
+  View Profile
+</button>
               </div>
 
               {/* Avg score ring */}
@@ -222,8 +226,18 @@ const CandidateDashboard = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <h1 className="text-[22px] md:text-[26px] font-black text-gray-900">
-                    {getGreeting()}, <span className="text-blue-600">{firstName}</span> 👋
-                  </h1>
+  {getGreeting()},{' '}
+  <span
+    style={{
+      background: 'linear-gradient(135deg, #163c97 0%, #1fa3d8 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    }}
+  >
+    {firstName}
+  </span>{' '}
+  👋
+</h1>
                   <p className="text-[13px] text-gray-400 mt-0.5">Here's your career overview for today.</p>
                 </div>
                 <button onClick={fetchData}

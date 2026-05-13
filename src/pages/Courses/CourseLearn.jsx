@@ -394,9 +394,10 @@ const CourseLearn = () => {
   const fetchComments = async (cid) => {
     setCommentsLoading(true);
     try {
-      // Students can't call the trainer endpoint; we store comments
-      // locally after post/delete and only refresh on mount.
-      // We piggyback on the course fetch — comments are loaded separately.
+      const res = await commentAPI.getComments(cid);
+      if (res.success) {
+        setComments(res.data || []);
+      }
     } catch (_) {}
     setCommentsLoading(false);
   };
@@ -465,6 +466,8 @@ const CourseLearn = () => {
           const merged = { ...stored };
           prog.forEach(m => { if (m.completed) merged[m.moduleIndex] = true; });
           setVideoWatched(merged);
+          // Load comments for the enrolled course
+          fetchComments(courseId);
         }
       } else {
         setError(res.message || 'Course not found');

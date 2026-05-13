@@ -205,9 +205,8 @@ function App() {
             {/* ===== CANDIDATE ===== */}
             <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/courses" element={<ProtectedRoute><CandidateCourses /></ProtectedRoute>} />
-          <Route path="/dashboard/candidate/courses/:courseId"
-  element={<ProtectedRoute><CandidateCourseDetail /></ProtectedRoute>} />
-              <Route path="/dashboard/candidate/courses/:courseId/learn" element={<ProtectedRoute><CandidateCourseLearn /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/courses/:courseId" element={<ProtectedRoute><CandidateCourseDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/candidate/courses/:courseId/learn" element={<ProtectedRoute><CandidateCourseLearn /></ProtectedRoute>} />
             <Route path="/dashboard/candidate/my-courses" element={<ProtectedRoute><CandidateMyCourses /></ProtectedRoute>} />
             
             

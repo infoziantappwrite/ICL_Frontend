@@ -92,8 +92,8 @@ const TrainerCourses = () => {
     (async () => {
       try {
         const res = await trainerAPI.getCourses();
-        // backend returns: { trainer_profile_id, trainer_user_id, assigned_courses: [{title, description, category}] }
-        setCourses(res.data?.assigned_courses || []);
+        // backend returns: { success: true, data: [{title, description, category, ...}] }
+        setCourses(res.data || []);
       } catch (e) {
         setError('Failed to load your courses. Please try again.');
       } finally {

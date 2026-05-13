@@ -149,7 +149,7 @@ const TrainerAssessmentCreate = () => {
     (async () => {
       try {
         const res  = await trainerAPI.getCourses();
-        const list = res?.assigned_courses || res?.data?.assigned_courses || [];
+        const list = res?.data || [];
         setCourses(list);
       } catch {
         setStep1Error('Failed to load your courses.');

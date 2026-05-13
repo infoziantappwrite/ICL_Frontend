@@ -6,12 +6,12 @@ import {
   BookOpen, Search, BarChart3, Users, RefreshCw,
   AlertCircle, CheckCircle2, Award, X,
   Star, ChevronLeft, ChevronRight, Send, Clock,
-  FileEdit, Hourglass, XCircle,
+  FileEdit, Hourglass, XCircle, MessageSquare, Trash2,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../../components/layout/CollegeAdminLayout';
 import { TableSkeleton } from '../../../components/common/SkeletonLoader';
 import ActionMenu from '../../../components/common/ActionMenu';
-import { collegeAdminCourseAPI as courseAPI } from '../../../api/Api';
+import { collegeAdminCourseAPI as courseAPI, commentAPI } from '../../../api/Api';
 
 const CATEGORIES = [
   '', 'Full Stack Development', 'Data Science', 'AI/ML', 'DevOps',
@@ -74,7 +74,7 @@ const Pagination = ({ page, totalPages, onPageChange, total, perPage }) => {
   );
 };
 
-const CourseRow = ({ course, index, page, onAnalytics, onViewEnrollments }) => {
+const CourseRow = ({ course, index, page, onAnalytics, onViewEnrollments, onComments }) => {
   const cfg        = getStatusCfg(course.status);
   const StatusIcon = cfg.icon;
   const levelColor = LEVEL_COLOR[course.level] || 'bg-gray-50 text-gray-600';
@@ -126,8 +126,9 @@ const CourseRow = ({ course, index, page, onAnalytics, onViewEnrollments }) => {
       </td>
       <td className="px-3 py-3 text-center w-16">
         <ActionMenu actions={[
-          { label: 'Enrollments', icon: Users,    onClick: () => onViewEnrollments(course._id), color: 'text-cyan-600 hover:bg-cyan-50'    },
-          { label: 'Analytics',   icon: BarChart3, onClick: () => onAnalytics(course._id),       color: 'text-purple-600 hover:bg-purple-50' },
+          { label: 'Enrollments', icon: Users,         onClick: () => onViewEnrollments(course._id), color: 'text-cyan-600 hover:bg-cyan-50'    },
+          { label: 'Analytics',   icon: BarChart3,     onClick: () => onAnalytics(course._id),       color: 'text-purple-600 hover:bg-purple-50' },
+          { label: 'Comments',    icon: MessageSquare, onClick: () => onComments(course),            color: 'text-indigo-600 hover:bg-indigo-50' },
         ]} />
       </td>
     </tr>
@@ -143,6 +144,40 @@ const AdminCourseManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter]     = useState('');
   const [page, setPage]                     = useState(1);
+
+  // ── Comments drawer ────────────────────────────────────────────────────────
+  const [commentsCourse,   setCommentsCourse]   = useState(null); // {_id, title}
+  const [comments,         setComments]         = useState([]);
+  const [commentsLoading,  setCommentsLoading]  = useState(false);
+  const [commentsError,    setCommentsError]    = useState('');
+  const [deletingId,       setDeletingId]       = useState(null);
+
+  const openComments = async (course) => {
+    setCommentsCourse(course);
+    setComments([]);
+    setCommentsError('');
+    setCommentsLoading(true);
+    try {
+      const res = await commentAPI.getAdminCourseComments(course._id);
+      if (res.success) setComments(res.data || []);
+      else setCommentsError(res.message || 'Failed to load comments');
+    } catch (e) {
+      setCommentsError(e.message || 'Failed to load comments');
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const closeComments = () => { setCommentsCourse(null); setComments([]); };
+
+  const handleDeleteComment = async (commentId) => {
+    setDeletingId(commentId);
+    try {
+      const res = await commentAPI.deleteAnyComment(commentId);
+      if (res.success) setComments(prev => prev.filter(c => c._id !== commentId));
+    } catch (_) {}
+    setDeletingId(null);
+  };
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
@@ -321,6 +356,7 @@ const AdminCourseManagement = () => {
                       page={page}
                       onAnalytics={id => navigate(`/dashboard/college-admin/courses/${id}/analytics`)}
                       onViewEnrollments={id => navigate(`/dashboard/college-admin/courses/${id}/enrollments`)}
+                      onComments={openComments}
                     />
                   ))}
                 </tbody>
@@ -337,6 +373,96 @@ const AdminCourseManagement = () => {
         </div>
 
       </div>
+
+      {/* ── Comments Drawer ─────────────────────────────────────────────── */}
+      {commentsCourse && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={closeComments} />
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in-right">
+            {/* Header */}
+            <div className="flex items-start justify-between p-5 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <MessageSquare className="w-4 h-4 text-indigo-600" />
+                  <h2 className="text-sm font-black text-slate-800">Student Comments</h2>
+                  {comments.length > 0 && (
+                    <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {comments.length}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400 truncate max-w-[300px]">{commentsCourse.title}</p>
+              </div>
+              <button onClick={closeComments} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {commentsLoading ? (
+                <div className="flex justify-center py-10">
+                  <RefreshCw className="w-5 h-5 text-indigo-400 animate-spin" />
+                </div>
+              ) : commentsError ? (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {commentsError}
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                  <p className="text-xs font-semibold">No comments yet for this course.</p>
+                </div>
+              ) : (
+                comments.map((c) => {
+                  const name  = c.student_id?.fullName || 'Student';
+                  const email = c.student_id?.email || '';
+                  const role  = c.student_id?.role || '';
+                  const date  = c.created_at
+                    ? new Date(c.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : '';
+                  return (
+                    <div key={c._id} className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 group">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 text-[12px] font-black text-indigo-600 uppercase">
+                        {name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-1.5 flex-wrap mb-0.5">
+                          <span className="text-xs font-bold text-slate-800">{name}</span>
+                          {role && (
+                            <span className="text-[10px] text-slate-400 capitalize bg-slate-100 px-1.5 py-0.5 rounded-full">{role}</span>
+                          )}
+                          {date && <span className="text-[10px] text-slate-400 ml-auto">{date}</span>}
+                        </div>
+                        {email && <p className="text-[10px] text-slate-400 mb-1">{email}</p>}
+                        <p className="text-xs text-slate-600 leading-relaxed break-words">{c.comment}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteComment(c._id)}
+                        disabled={deletingId === c._id}
+                        className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 text-slate-300 hover:text-red-500 transition-all disabled:opacity-50"
+                        title="Delete comment"
+                      >
+                        {deletingId === c._id
+                          ? <RefreshCw className="w-3 h-3 animate-spin" />
+                          : <Trash2 className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to   { transform: translateX(0); }
+        }
+        .animate-slide-in-right { animation: slide-in-right 0.25s cubic-bezier(0.16,1,0.3,1) forwards; }
+      `}</style>
     </CollegeAdminLayout>
   );
 };

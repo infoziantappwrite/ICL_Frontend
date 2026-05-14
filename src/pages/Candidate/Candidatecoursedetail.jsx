@@ -83,12 +83,27 @@ const CandidateCourseDetail = () => {
       const res = await courseAPI.enrollInCourse(courseId);
       if (res.success) {
         setEnrollment(res.data);
-        showToast('Successfully enrolled! Start learning now.');
+        const alreadyEnrolled = res.message?.toLowerCase().includes('already enrolled');
+        showToast(
+          alreadyEnrolled ? 'You are already enrolled. Continue learning!' : 'Successfully enrolled! Start learning now.'
+        );
       } else {
         showToast(res.message || 'Enrollment failed', 'error');
       }
     } catch (err) {
-      showToast(err.message || 'Enrollment failed', 'error');
+      // Backend returns 400 with existing enrollment in responseData.data when already enrolled.
+      const isAlreadyEnrolled = err.message?.toLowerCase().includes('already enrolled');
+      if (isAlreadyEnrolled) {
+        const existingEnrollment = err.responseData?.data || null;
+        if (existingEnrollment) {
+          setEnrollment(existingEnrollment);
+        } else {
+          await fetchCourse();
+        }
+        showToast('You are already enrolled. Continue learning!');
+      } else {
+        showToast(err.message || 'Enrollment failed', 'error');
+      }
     } finally {
       setEnrolling(false);
     }

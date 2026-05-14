@@ -9,7 +9,6 @@ import {
   MessageSquare, Send, Trash2, User
 } from 'lucide-react';
 import StudentLayout from '../../components/layout/StudentLayout';
-import CandidateLayout from '../../components/layout/CandidateLayout';
 import { useAuth } from '../../context/AuthContext';
 import { CourseLearnSkeleton } from '../../components/common/SkeletonLoader';
 import { courseAPI, commentAPI } from '../../api/Api';
@@ -367,7 +366,8 @@ const CourseLearn = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const Layout = user?.role === 'candidate' ? CandidateLayout : StudentLayout;
+  // Always use StudentLayout — candidates and students share the same learning interface
+  const Layout = StudentLayout;
 
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
@@ -455,20 +455,47 @@ const CourseLearn = () => {
       const res = await courseAPI.getCourseById(courseId);
       if (res.success) {
         setCourse(res.data);
-        setEnrollment(res.data.enrollment);
-        if (!res.data.enrollment) {
-          navigate(`/dashboard/student/courses/${courseId}`);
-        } else {
-          // Restore watched state from session storage
-          const stored = loadWatched(courseId);
-          // Also pre-mark completed modules as watched (they've been watched before)
-          const prog = res.data.enrollment?.moduleProgress || [];
-          const merged = { ...stored };
-          prog.forEach(m => { if (m.completed) merged[m.moduleIndex] = true; });
-          setVideoWatched(merged);
-          // Load comments for the enrolled course
-          fetchComments(courseId);
+
+        let enrollment = res.data.enrollment;
+
+        // ── If no enrollment found, try to auto-enroll ──────────────────────
+        // This handles the case where the user just enrolled on the detail page
+        // but getCourseById didn't return the enrollment yet (race condition or
+        // role mismatch). We silently enroll and continue into the learn page.
+        if (!enrollment) {
+          try {
+            const enrollRes = await courseAPI.enrollInCourse(courseId);
+            if (enrollRes.success) {
+              enrollment = enrollRes.data;
+            } else {
+              // Already enrolled — backend returned success:false with existing data
+              enrollment = enrollRes.data || null;
+            }
+          } catch (enrollErr) {
+            // Backend returned 400 "already enrolled" — extract existing enrollment
+            if (enrollErr.message?.toLowerCase().includes('already enrolled')) {
+              enrollment = enrollErr.responseData?.data || null;
+            }
+            // If still no enrollment, redirect back to detail page
+            if (!enrollment) {
+              navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}/courses/${courseId}`);
+              return;
+            }
+          }
         }
+
+        setEnrollment(enrollment);
+
+        // Restore watched state from session storage
+        const stored = loadWatched(courseId);
+        // Pre-mark completed modules as watched
+        const prog = enrollment?.moduleProgress || [];
+        const merged = { ...stored };
+        prog.forEach(m => { if (m.completed) merged[m.moduleIndex] = true; });
+        setVideoWatched(merged);
+        // Load comments for the enrolled course
+        fetchComments(courseId);
+
       } else {
         setError(res.message || 'Course not found');
       }
@@ -577,7 +604,7 @@ const CourseLearn = () => {
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
           <AlertCircle className="w-12 h-12 text-red-400" />
           <p className="text-gray-600">{error || 'Course not found'}</p>
-          <button onClick={() => navigate('/dashboard/student/my-courses')} className="text-blue-600 underline text-sm">
+          <button onClick={() => navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}/my-courses`)} className="text-blue-600 underline text-sm">
             ← Back to My Courses
           </button>
         </div>
@@ -635,13 +662,13 @@ const CourseLearn = () => {
         <div className="max-w-[1240px] mx-auto w-full px-3 sm:px-4 md:px-6 lg:px-8 py-2">
           <div className="flex items-center justify-between gap-2">
             <nav className="flex items-center gap-1.5 text-sm text-gray-500 font-medium overflow-x-auto hide-scrollbar">
-              <button onClick={() => navigate('/dashboard/student')} className="hover:text-blue-600 flex-shrink-0">
+              <button onClick={() => navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}`)} className="hover:text-blue-600 flex-shrink-0">
                 <Home className="w-[18px] h-[18px]" />
               </button>
               <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <button onClick={() => navigate('/dashboard/student/courses')} className="hover:text-blue-600 flex-shrink-0">Courses</button>
+              <button onClick={() => navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}/courses`)} className="hover:text-blue-600 flex-shrink-0">Courses</button>
               <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <button onClick={() => navigate(`/dashboard/student/courses/${courseId}`)} className="hover:text-blue-600 truncate max-w-[80px] sm:max-w-[140px] md:max-w-[200px] flex-shrink-0">
+              <button onClick={() => navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}/courses/${courseId}`)} className="hover:text-blue-600 truncate max-w-[80px] sm:max-w-[140px] md:max-w-[200px] flex-shrink-0">
                 {course.title}
               </button>
               <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -1048,7 +1075,7 @@ const CourseLearn = () => {
                       className="flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white rounded-lg text-[11px] md:text-[12px] font-medium hover:bg-amber-600 transition-all">
                       <Zap className="w-3.5 h-3.5" /> Assessment
                     </button>
-                    <button onClick={() => navigate('/dashboard/student/courses')}
+                    <button onClick={() => navigate(`/dashboard/${user?.role === 'candidate' ? 'candidate' : 'student'}/courses`)}
                       className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-[11px] md:text-[12px] font-medium hover:border-blue-300 transition-all">
                       <BookOpen className="w-3.5 h-3.5" /> Courses
                     </button>

@@ -10,7 +10,6 @@ import {
 import { TableSkeleton } from '../../components/common/SkeletonLoader';
 import { courseAPI } from '../../api/Api';
 import StudentLayout from '../../components/layout/StudentLayout';
-import CandidateLayout from '../../components/layout/CandidateLayout';
 import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABEL = {
@@ -45,7 +44,8 @@ const CourseDetail = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const Layout = user?.role === 'candidate' ? CandidateLayout : StudentLayout;
+  // Always use StudentLayout — candidates and students share the same course experience
+  const Layout = StudentLayout;
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,10 +84,30 @@ const CourseDetail = () => {
       const res = await courseAPI.enrollInCourse(courseId);
       if (res.success) {
         setEnrollment(res.data);
-        showToast('Successfully enrolled! Start learning now.');
-      } else showToast(res.message || 'Enrollment failed', 'error');
+        // Show a different message if they were already enrolled
+        const alreadyEnrolled = res.message?.toLowerCase().includes('already enrolled');
+        showToast(
+          alreadyEnrolled ? 'You are already enrolled. Continue learning!' : 'Successfully enrolled! Start learning now.',
+          'success'
+        );
+      } else {
+        showToast(res.message || 'Enrollment failed', 'error');
+      }
     } catch (err) {
-      showToast(err.message || 'Enrollment failed', 'error');
+      // Backend returns 400 with existing enrollment in responseData.data when already enrolled.
+      // Extract it directly and sync state without re-fetching.
+      const isAlreadyEnrolled = err.message?.toLowerCase().includes('already enrolled');
+      if (isAlreadyEnrolled) {
+        const existingEnrollment = err.responseData?.data || null;
+        if (existingEnrollment) {
+          setEnrollment(existingEnrollment);
+        } else {
+          await fetchCourse();
+        }
+        showToast('You are already enrolled. Continue learning!', 'success');
+      } else {
+        showToast(err.message || 'Enrollment failed', 'error');
+      }
     } finally {
       setEnrolling(false);
     }

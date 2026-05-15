@@ -1122,43 +1122,69 @@ const CourseLearn = () => {
                             day: '2-digit', month: 'short', year: 'numeric',
                           })
                         : '';
+                      const activeReplies = (c.replies || []).filter(r => !r.is_deleted);
                       return (
                         <div
                           key={c._id}
-                          className={`flex gap-2.5 p-3 rounded-xl transition-colors ${
-                            isOwn ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50 border border-gray-100'
+                          className={`rounded-xl overflow-hidden ${
+                            isOwn ? 'border border-blue-100' : 'border border-gray-100'
                           }`}
                         >
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-black uppercase ${
-                            isOwn ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'
-                          }`}>
-                            {name.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline gap-1.5 flex-wrap">
-                              <span className="text-[11px] font-bold text-gray-800">
-                                {isOwn ? 'You' : name}
-                              </span>
-                              {date && (
-                                <span className="text-[10px] text-gray-400">{date}</span>
-                              )}
+                          {/* Comment */}
+                          <div className={`flex gap-2.5 p-3 ${isOwn ? 'bg-blue-50' : 'bg-gray-50'}`}>
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-black uppercase ${
+                              isOwn ? 'bg-blue-200 text-blue-700' : 'bg-gray-200 text-gray-600'
+                            }`}>
+                              {name.charAt(0)}
                             </div>
-                            <p className="text-[12px] md:text-[13px] text-gray-700 mt-0.5 break-words leading-relaxed">
-                              {c.comment}
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline gap-1.5 flex-wrap">
+                                <span className="text-[11px] font-bold text-gray-800">
+                                  {isOwn ? 'You' : name}
+                                </span>
+                                {date && (
+                                  <span className="text-[10px] text-gray-400">{date}</span>
+                                )}
+                              </div>
+                              <p className="text-[12px] md:text-[13px] text-gray-700 mt-0.5 break-words leading-relaxed">
+                                {c.comment}
+                              </p>
+                            </div>
+                            {isOwn && (
+                              <button
+                                onClick={() => handleDeleteOwnComment(c._id)}
+                                disabled={deletingCommentId === c._id}
+                                className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-100 text-gray-300 hover:text-red-500 transition-colors disabled:opacity-50"
+                                title="Delete comment"
+                              >
+                                {deletingCommentId === c._id
+                                  ? <RefreshCw className="w-3 h-3 animate-spin" />
+                                  : <Trash2 className="w-3 h-3" />
+                                }
+                              </button>
+                            )}
                           </div>
-                          {isOwn && (
-                            <button
-                              onClick={() => handleDeleteOwnComment(c._id)}
-                              disabled={deletingCommentId === c._id}
-                              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-100 text-gray-300 hover:text-red-500 transition-colors disabled:opacity-50"
-                              title="Delete comment"
-                            >
-                              {deletingCommentId === c._id
-                                ? <RefreshCw className="w-3 h-3 animate-spin" />
-                                : <Trash2 className="w-3 h-3" />
-                              }
-                            </button>
+                          {/* Trainer / Admin replies */}
+                          {activeReplies.length > 0 && (
+                            <div className="border-t border-gray-100 bg-white px-3 py-2 space-y-2">
+                              {activeReplies.map(r => (
+                                <div key={r._id} className="flex gap-2 p-2 rounded-lg bg-indigo-50 border border-indigo-100">
+                                  <div className="w-6 h-6 rounded-full bg-indigo-200 flex items-center justify-center flex-shrink-0 text-[10px] font-black text-indigo-700 uppercase">
+                                    {(r.replied_by?.fullName || 'T').charAt(0)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-baseline gap-1.5 flex-wrap mb-0.5">
+                                      <span className="text-[11px] font-bold text-indigo-800">{r.replied_by?.fullName || 'Trainer'}</span>
+                                      <span className="text-[9px] text-indigo-400 capitalize bg-indigo-100 px-1.5 py-0.5 rounded-full">{r.replied_by?.role || 'trainer'}</span>
+                                      <span className="text-[9px] text-gray-400 ml-auto">
+                                        {r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : ''}
+                                      </span>
+                                    </div>
+                                    <p className="text-[11px] text-indigo-700 leading-relaxed break-words">{r.reply}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
                       );

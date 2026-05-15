@@ -1224,6 +1224,7 @@ const TakeAssessment = () => {
               <div className="flex items-center gap-1.5 bg-gray-100 rounded-xl p-1 shrink-0">
                 {secs.map(({ sec, firstIdx }, i) => {
                   const isCoding = sec?.section_type === 'coding';
+                  const isSql = sec?.section_type === 'sql';
                   const isActive = sec?.section_id === activeSid;
                   return (
                     <button
@@ -1233,16 +1234,18 @@ const TakeAssessment = () => {
                         ${isActive
                           ? isCoding
                             ? 'bg-violet-600 text-white shadow-sm'
+                            : isSql
+                            ? 'bg-amber-600 text-white shadow-sm'
                             : 'bg-blue-600 text-white shadow-sm'
                           : 'text-gray-500 hover:text-gray-800 hover:bg-white'
                         }`}
                     >
                       <span className={`text-[9px] w-4 h-4 rounded flex items-center justify-center font-black
-                        ${isActive ? 'bg-white/25' : isCoding ? 'bg-violet-100 text-violet-600' : 'bg-blue-100 text-blue-600'}`}>
+                        ${isActive ? 'bg-white/25' : isCoding ? 'bg-violet-100 text-violet-600' : isSql ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
                         {i + 1}
                       </span>
                       <span>{sec?.section_title || `Section ${i + 1}`}</span>
-                      <span className="opacity-60 text-2.5">{isCoding ? '⌨' : '📝'}</span>
+                      <span className="opacity-60 text-2.5">{isCoding ? '⌨' : isSql ? '🗄️' : '📝'}</span>
                     </button>
                   );
                 })}
@@ -1309,6 +1312,8 @@ const TakeAssessment = () => {
               <div className={`mb-5 rounded-2xl overflow-hidden shadow-sm border
                 ${currentSection.section_type === 'coding'
                   ? 'border-violet-200'
+                  : currentSection.section_type === 'sql'
+                  ? 'border-amber-200'
                   : 'border-blue-200'}`}>
                 <div className={`px-5 py-3 flex items-center justify-between
                   ${currentSection.section_type === 'coding'
@@ -1323,7 +1328,7 @@ const TakeAssessment = () => {
                         Section {currentSection.section_order}: {currentSection.section_title}
                       </p>
                       <p className="text-white/70 text-[11px] font-medium">
-                        {currentSection.section_type === 'coding' ? 'Coding Challenge' : 'Multiple Choice Quiz'}
+                        {currentSection.section_type === 'coding' ? 'Coding Challenge' : currentSection.section_type === 'sql' ? 'SQL Challenge' : 'Multiple Choice Quiz'}
                       </p>
                     </div>
                   </div>
@@ -1331,7 +1336,7 @@ const TakeAssessment = () => {
                     ${currentSection.section_type === 'coding'
                       ? 'bg-white/20 text-white border border-white/30'
                       : 'bg-white/20 text-white border border-white/30'}`}>
-                    {currentSection.section_type === 'coding' ? '⌨ Code' : '📝 Quiz'}
+                    {currentSection.section_type === 'coding' ? '⌨ Code' : currentSection.section_type === 'sql' ? '🗄️ SQL' : '📝 Quiz'}
                   </span>
                 </div>
               </div>

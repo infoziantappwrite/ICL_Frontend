@@ -7,13 +7,19 @@ import {
   jobAPI, courseAPI, assessmentAttemptAPI,
 } from '../api/Api';
 import StudentLayout from '../components/layout/StudentLayout';
+import { DailyInterviewTip }            from '../components/dashboard/widgets/DailyInterviewTip';
+import { StudyStreakCalendar }           from '../components/dashboard/widgets/StudyStreakCalendar';
+import { SkillGapChecklist }            from '../components/dashboard/widgets/SkillGapChecklist';
+import { AptitudeMiniQuiz }             from '../components/dashboard/widgets/AptitudeMiniQuiz';
+import { AssessmentDeadlineCountdown }  from '../components/dashboard/widgets/AssessmentDeadlineCountdown';
 import {
   Briefcase, ChevronRight, Star, Clock, Users,
   BookOpen, ArrowRight, ClipboardList, CheckCircle2,
   PlayCircle, Building2, MapPin, ExternalLink,
   CircleDot, ChevronDown, ChevronUp, Target,
   BarChart2, GraduationCap, BookMarked, TrendingUp,
-  Trophy, Medal, Zap, User,                         // icons
+  Trophy, Medal, Zap, User,
+  CalendarDays, Brain, Lightbulb, Timer,
 } from 'lucide-react';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -254,12 +260,14 @@ const ScoreTrendChart = ({ history }) => {
   const ys = data.map(d => PAD_Y + (1 - d.score / 100) * (H - 2 * PAD_Y));
   const passY = PAD_Y + (1 - PASS / 100) * (H - 2 * PAD_Y);
 
+  // Smooth bezier path
   let path = `M ${xs[0]} ${ys[0]}`;
   for (let i = 1; i < n; i++) {
     const cpx = (xs[i - 1] + xs[i]) / 2;
     path += ` C ${cpx} ${ys[i - 1]}, ${cpx} ${ys[i]}, ${xs[i]} ${ys[i]}`;
   }
 
+  // Area fill path
   let area = path;
   area += ` L ${xs[n - 1]} ${H - PAD_Y} L ${xs[0]} ${H - PAD_Y} Z`;
 
@@ -295,6 +303,8 @@ const ScoreTrendChart = ({ history }) => {
               <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
             </linearGradient>
           </defs>
+
+          {/* Grid lines */}
           {[0, 25, 50, 75, 100].map(v => {
             const y = PAD_Y + (1 - v / 100) * (H - 2 * PAD_Y);
             return (
@@ -304,17 +314,27 @@ const ScoreTrendChart = ({ history }) => {
               </g>
             );
           })}
+
+          {/* Pass threshold line */}
           <line x1={PAD_X} y1={passY} x2={w - PAD_X} y2={passY}
             stroke="#10b981" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
           <text x={w - PAD_X + 3} y={passY + 3.5} fontSize="8" fill="#10b981" opacity="0.7">Pass</text>
+
+          {/* Area fill */}
           <path d={area} fill="url(#scoreGrad)" />
+
+          {/* Line */}
           <path d={path} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* Dots + labels */}
           {data.map((d, i) => {
             const clr = d.score >= 80 ? '#10b981' : d.score >= 70 ? '#3b82f6' : '#f59e0b';
             return (
               <g key={i}>
                 <circle cx={xs[i]} cy={ys[i]} r="4.5" fill="white" stroke={clr} strokeWidth="2" />
+                {/* Score label above dot */}
                 <text x={xs[i]} y={ys[i] - 7} textAnchor="middle" fontSize="8" fontWeight="700" fill={clr}>{d.score}</text>
+                {/* Date label below */}
                 <text x={xs[i]} y={H - 3} textAnchor="middle" fontSize="7.5" fill="#94a3b8">{d.label}</text>
               </g>
             );
@@ -383,6 +403,7 @@ const SkillDemandChart = ({ jobs, studentSkills, loading }) => {
           <span className="text-[11px] text-gray-400">/ {topSkills.length} you have</span>
         </div>
       </div>
+
       <div className="space-y-2.5">
         {topSkills.map((s, i) => (
           <div key={i} className="flex items-center gap-3">
@@ -406,6 +427,7 @@ const SkillDemandChart = ({ jobs, studentSkills, loading }) => {
           </div>
         ))}
       </div>
+
       <div className="flex items-center gap-4 mt-4 pt-3.5 border-t border-gray-50">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-1.5 rounded-full bg-blue-500" />
@@ -446,9 +468,14 @@ const LeaderboardCard = ({ data, assessmentTitle, loading, onView }) => {
           View all<ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </div>
+
       {assessmentTitle && (
-        <p className="text-[11px] text-gray-400 mb-3 leading-snug line-clamp-1">{assessmentTitle}</p>
+        <p className="text-[11px] text-gray-400 mb-3 leading-snug line-clamp-1">
+          {assessmentTitle}
+        </p>
       )}
+
+      {/* Top 3 podium-style */}
       <div className="flex gap-2 mb-3">
         {top3.map((e, i) => (
           <div key={i} className={`flex-1 flex flex-col items-center p-2.5 rounded-xl border ${medalBgs[i]} ${e.is_me ? 'ring-2 ring-blue-200' : ''}`}>
@@ -463,6 +490,8 @@ const LeaderboardCard = ({ data, assessmentTitle, loading, onView }) => {
           </div>
         ))}
       </div>
+
+      {/* My rank callout */}
       {myEntry && myEntry.rank > 3 && (
         <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3.5 py-2.5">
           <Medal className="w-4 h-4 text-blue-500 flex-shrink-0" />
@@ -523,7 +552,6 @@ const ProfileDashboard = () => {
   const [history, setHistory] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardTitle, setLeaderboardTitle] = useState('');
-
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingAssessments, setLoadingAssessments] = useState(true);
@@ -567,6 +595,7 @@ const ProfileDashboard = () => {
     } catch { } finally { setLoadingCourses(false); }
   }, []);
 
+  // ── FIX: was filtering status === 'pending', backend returns status === 'active' ──
   const loadAssessments = useCallback(async () => {
     try {
       setLoadingAssessments(true);
@@ -576,7 +605,7 @@ const ProfileDashboard = () => {
       const icons = ['💻','🧠','⚛️','📊'];
       setAssessments(
         (Array.isArray(list) ? list : [])
-          .filter(a => a.status === 'active')
+          .filter(a => a.status === 'active')   // ← FIXED: backend uses 'active', not 'pending'
           .slice(0, 4)
           .map((a, i) => ({
             id: a._id || i, _id: a._id,
@@ -623,6 +652,7 @@ const ProfileDashboard = () => {
         .filter(a => a.assessment_id?.status !== 'cancelled');
       setHistory(attempts);
 
+      // Load leaderboard for most recent published non-JD assessment
       const candidate = [...attempts]
         .sort((a, b) => new Date(b.submitted_at || b.createdAt) - new Date(a.submitted_at || a.createdAt))
         .find(a => a.assessment_id?.leaderboard_published === true);
@@ -669,6 +699,8 @@ const ProfileDashboard = () => {
     ? Math.round(history.reduce((s, h) => s + safeNum(h.score_percentage || h.percentage || h.score, 0), 0) / history.length)
     : 0;
 
+  const inProgress = enrollments.filter(e => e.progress > 0 && e.progress < 100).length;
+
   const matchedJobsCount = useMemo(() => {
     if (!studentSkills.length || !jobs.length) return 0;
     const skillNames = studentSkills.map(s =>
@@ -685,7 +717,6 @@ const ProfileDashboard = () => {
     }).length;
   }, [jobs, studentSkills]);
 
-  // ── Matched jobs list for sidebar (derived from already-fetched data) ────────
   const matchedJobsList = useMemo(() => {
     if (!studentSkills.length || !jobs.length) return [];
     const skillNames = studentSkills.map(s =>
@@ -701,7 +732,6 @@ const ProfileDashboard = () => {
     }).slice(0, 3);
   }, [jobs, studentSkills]);
 
-  const inProgress = enrollments.filter(e => e.progress > 0 && e.progress < 100).length;
   const visibleJobs = showAllJobs ? jobs : jobs.slice(0, 5);
 
   if (isLoading && !profile) {
@@ -749,7 +779,7 @@ const ProfileDashboard = () => {
 
             {/* ════ SIDEBAR ════ */}
             <aside className="hidden md:block md:col-span-3">
-              <div className="space-y-4">
+              <div className="sticky top-[80px] space-y-4">
 
                 {/* Profile */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
@@ -813,113 +843,6 @@ const ProfileDashboard = () => {
                   </div>
                 )}
 
-                {/* ── NEW: Quick Actions ─────────────────────────────────────
-                    Pure navigation shortcuts — no extra API calls needed.
-                ─────────────────────────────────────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                  <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h3>
-                  <div className="space-y-1">
-                    {[
-                      { icon: ClipboardList, label: 'Take Assessment',  path: '/dashboard/student/assessments', color: 'text-blue-600',    bg: 'bg-blue-50'    },
-                      { icon: Briefcase,     label: 'Browse Jobs',       path: '/dashboard/student/jobs',        color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                      { icon: BookOpen,      label: 'Explore Courses',   path: '/dashboard/student/courses',     color: 'text-violet-600',  bg: 'bg-violet-50'  },
-                      { icon: User,          label: 'Update Profile',    path: '/profile/my-info',               color: 'text-amber-600',   bg: 'bg-amber-50'   },
-                    ].map((item, i) => (
-                      <button key={i} onClick={() => navigate(item.path)}
-                        className="w-full flex items-center gap-3 px-2.5 py-2 rounded-xl hover:bg-gray-50 transition-colors group text-left">
-                        <div className={`w-7 h-7 rounded-lg ${item.bg} flex items-center justify-center flex-shrink-0`}>
-                          <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
-                        </div>
-                        <span className="text-[12px] font-medium text-gray-700 group-hover:text-gray-900 flex-1">{item.label}</span>
-                        <ArrowRight className="w-3 h-3 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ── NEW: Recent Tests ─────────────────────────────────────
-                    Uses live `history` state already fetched above.
-                    Shows last 3 attempts with score + date — different
-                    presentation from the trend chart in the main feed.
-                ─────────────────────────────────────────────────────────── */}
-                {!loadingHistory && history.length > 0 && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Recent Tests</h3>
-                      <button onClick={() => navigate('/dashboard/student/assessments')}
-                        className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-0.5">
-                        All <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {[...history]
-                        .sort((a, b) => new Date(b.submitted_at || b.createdAt) - new Date(a.submitted_at || a.createdAt))
-                        .slice(0, 3)
-                        .map((h, i) => {
-                          const score = safeNum(h.score_percentage || h.percentage || h.score, 0);
-                          const pass = score >= 70;
-                          return (
-                            <div key={i} className="flex items-center gap-2.5 py-1">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${pass ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-                                <span className={`text-[11px] font-extrabold ${pass ? 'text-emerald-600' : 'text-amber-600'}`}>{score}%</span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-semibold text-gray-800 truncate leading-tight">
-                                  {h.assessment_id?.title || h.title || 'Assessment'}
-                                </p>
-                                <p className="text-[10px] text-gray-400 mt-0.5">{fmtDate(h.submitted_at || h.createdAt)}</p>
-                              </div>
-                              {pass
-                                ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                                : <CircleDot className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── NEW: Matched Jobs mini-list ───────────────────────────
-                    Uses live `jobs` + `studentSkills` already in state.
-                    Shows up to 3 skill-matched jobs as a quick reference;
-                    different from the full job list in the main feed.
-                ─────────────────────────────────────────────────────────── */}
-                {!loadingJobs && matchedJobsList.length > 0 && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Matched Jobs</h3>
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                        {matchedJobsCount}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {matchedJobsList.map((job, i) => (
-                        <button key={i} onClick={() => navigate(`/dashboard/student/jobs/${job._id}`)}
-                          className="w-full flex items-center gap-2.5 py-1.5 text-left group">
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-[11px] font-bold text-blue-600">
-                              {(job.company?.name || job.companyName || 'C')[0].toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-semibold text-gray-800 truncate group-hover:text-blue-600 transition-colors leading-tight">
-                              {job.title || job.jobTitle}
-                            </p>
-                            <p className="text-[10px] text-gray-400 truncate mt-0.5">
-                              {job.company?.name || job.companyName || 'ICL Partner'}
-                            </p>
-                          </div>
-                          <ArrowRight className="w-3 h-3 text-gray-300 group-hover:text-blue-400 flex-shrink-0 transition-colors" />
-                        </button>
-                      ))}
-                    </div>
-                    <button onClick={() => navigate('/dashboard/student/jobs')}
-                      className="mt-3 w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-blue-600 hover:text-blue-700 py-1.5 rounded-xl border border-blue-100 hover:border-blue-200 bg-blue-50/50 transition-colors">
-                      View all jobs <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-
               </div>
             </aside>
 
@@ -946,11 +869,13 @@ const ProfileDashboard = () => {
                   sub={loadingEnrollments ? '' : `${inProgress} in progress`}
                   iconColor="text-violet-600" iconBg="bg-violet-50"
                   onClick={() => navigate('/dashboard/student/courses')} />
+
                 <Tile icon={Briefcase} label="Jobs Matched"
                   value={loadingJobs ? '—' : matchedJobsCount}
                   sub={loadingJobs ? '' : (matchedJobsCount > 0 ? 'Based on your skills' : 'Add skills to match')}
                   iconColor="text-emerald-600" iconBg="bg-emerald-50"
                   onClick={() => navigate('/dashboard/student/jobs')} />
+
                 <Tile icon={TrendingUp} label="Profile Score"
                   value={`${pct}%`}
                   sub={pct < 80 ? 'Needs improvement' : 'Strong profile!'}
@@ -991,7 +916,22 @@ const ProfileDashboard = () => {
                 )}
               </section>
 
-              {/* ── 2. Score Trend Chart ── */}
+              {/* ── 1b. Assessment Deadline Countdown ── */}
+              {(loadingAssessments || assessments.some(a =>
+                a.due_date || a.end_date || a.dueDate || a.deadline || a.endDate
+              )) && (
+                <section>
+                  <SH title="Upcoming Deadlines" icon={Timer}
+                    cta="View all" onCta={() => navigate('/dashboard/student/assessments')} />
+                  <AssessmentDeadlineCountdown
+                    assessments={assessments}
+                    loading={loadingAssessments}
+                    onStart={(id) => navigate(`/dashboard/student/assessments/${id}/take`)}
+                  />
+                </section>
+              )}
+
+              {/* ── 1c. Score Trend Chart ── */}
               {!loadingHistory && history.length >= 2 && (
                 <section>
                   <SH title="Your Score Trend" icon={BarChart2}
@@ -1000,7 +940,7 @@ const ProfileDashboard = () => {
                 </section>
               )}
 
-              {/* ── 3. Leaderboard Snapshot ── */}
+              {/* ── 1d. Leaderboard Snapshot ── */}
               {(loadingLeaderboard || leaderboard.length > 0) && (
                 <section>
                   <SH title="Assessment Leaderboard" icon={Trophy}
@@ -1014,7 +954,7 @@ const ProfileDashboard = () => {
                 </section>
               )}
 
-              {/* ── 4. Latest Jobs ── */}
+              {/* ── 2. Latest Job Openings ── */}
               <section>
                 <SH title="Latest Job Openings" count={jobs.length}
                   icon={Briefcase} cta="View all" onCta={() => navigate('/dashboard/student/jobs')} />
@@ -1049,7 +989,13 @@ const ProfileDashboard = () => {
                 )}
               </section>
 
-              {/* ── 5. My Learning Progress ── */}
+              {/* ── 3. Daily Interview Tip ── */}
+              <section>
+                <SH title="Interview Prep" icon={Lightbulb} />
+                <DailyInterviewTip />
+              </section>
+
+              {/* ── 4. My Learning ── */}
               {(loadingEnrollments || enrollments.length > 0) && (
                 <section>
                   <SH title="My Learning" count={enrollments.length}
@@ -1074,14 +1020,7 @@ const ProfileDashboard = () => {
                 </section>
               )}
 
-              {/* ── 6. Market Skill Demand ── */}
-              <section>
-                <SH title="Market Skill Demand" icon={Target}
-                  cta="Explore jobs" onCta={() => navigate('/dashboard/student/jobs')} />
-                <SkillDemandChart jobs={jobs} studentSkills={studentSkills} loading={loadingJobs} />
-              </section>
-
-              {/* ── 7. Recommended Courses ── */}
+              {/* ── 5. Recommended Courses ── */}
               <section>
                 <SH title="Recommended Courses" count={courses.length}
                   icon={BookOpen} cta="Browse all" onCta={() => navigate('/dashboard/student/courses')} />
@@ -1108,6 +1047,35 @@ const ProfileDashboard = () => {
                   </div>
                 )}
               </section>
+
+              {/* ── 6. Skill Gap Checklist ── */}
+              <section>
+                <SH title="Skill Gap Checklist" icon={Target}
+                  cta="Browse courses" onCta={() => navigate('/dashboard/student/courses')} />
+                <SkillGapChecklist
+                  studentSkills={studentSkills}
+                  onBrowseCourses={() => navigate('/dashboard/student/courses')}
+                />
+              </section>
+
+              {/* ── 7. Daily Aptitude Quiz ── */}
+              <section>
+                <SH title="Daily Aptitude Quiz" icon={Brain}
+                  cta="View assessments" onCta={() => navigate('/dashboard/student/assessments')} />
+                <AptitudeMiniQuiz />
+              </section>
+
+              {/* ── 8. Study Streak ── */}
+              {(!loadingHistory || !loadingEnrollments) && (history.length > 0 || enrollments.length > 0) && (
+                <section>
+                  <SH title="Study Streak" icon={CalendarDays} />
+                  <StudyStreakCalendar
+                    history={history}
+                    enrollments={enrollments}
+                    loading={loadingHistory && loadingEnrollments}
+                  />
+                </section>
+              )}
 
             </div>
           </div>

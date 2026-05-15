@@ -1,10 +1,10 @@
-﻿// src/pages/CollegeAdmin/Analytics.jsx
+﻿// src/pages/CollegeAdmin/Analytics.jsx  —  Campus Placement Intelligence
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp, Users, Briefcase, Building2, Award,
-  BarChart3, Target, GraduationCap, DollarSign, RefreshCw,
-  ChevronRight, Star,
+  BarChart3, Target, GraduationCap, RefreshCw, ChevronRight,
+  CheckCircle2, XCircle, Clock, AlertCircle,
 } from 'lucide-react';
 import CollegeAdminLayout from '../../components/layout/CollegeAdminLayout';
 import { AnalyticsSkeleton } from '../../components/common/SkeletonLoader';
@@ -17,85 +17,198 @@ const fmt = (n) => {
 };
 const pct = (a, b) => (b > 0 ? Math.min(100, Math.round((a / b) * 100)) : 0);
 
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
-    {children}
-  </div>
-);
-
-const SectionHeader = ({ title, action, onAction }) => (
-  <div className="flex items-center justify-between mb-3 border-b border-gray-50 pb-2">
-    <h2 className="text-[15px] sm:text-[17px] md:text-[20px] font-black text-gray-900 tracking-tight">{title}</h2>
-    {action && (
-      <button onClick={onAction} className="text-[12px] font-semibold text-[#003399] hover:text-[#003399] flex items-center gap-1">
-        {action} <ChevronRight className="w-3 h-3" />
-      </button>
-    )}
-  </div>
-);
-
-const MiniBar = ({ label, value, max, sub, color }) => {
-  const w = pct(value, max);
+/* ─── CHART: Funnel ──────────────────────── */
+const FunnelChart = ({ steps }) => {
+  const max = steps[0]?.value || 1;
+  const H = 56;
+  const COLORS = ['#003399', '#00A9CE', '#10B981', '#F59E0B'];
   return (
-    <div className="px-2 py-1.5 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-gray-100 mb-1">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[12px] text-gray-700 font-medium truncate max-w-[160px]">{label}</span>
-        <span className="text-[12px] font-bold text-gray-900 ml-2">{sub || fmt(value)}</span>
+    <div className="space-y-2">
+      {steps.map((s, i) => {
+        const w = Math.max(pct(s.value, max), s.value > 0 ? 8 : 0);
+        const isBest = i === steps.length - 1;
+        return (
+          <div key={i} className="flex items-center gap-3">
+            <span className="text-xs font-bold text-slate-500 w-20 flex-shrink-0 text-right">{s.label}</span>
+            <div className="flex-1 relative" style={{ height: H - 16 }}>
+              <div className="h-full rounded-lg transition-all duration-700 flex items-center px-3"
+                style={{ width: `${w}%`, backgroundColor: COLORS[i], opacity: 0.85, minWidth: s.value > 0 ? 40 : 0 }}>
+                <span className="text-white text-xs font-black whitespace-nowrap">{fmt(s.value)}</span>
+              </div>
+            </div>
+            <span className="text-[10px] font-black w-10 flex-shrink-0"
+              style={{ color: COLORS[i] }}>
+              {i === 0 ? '100%' : `${pct(s.value, max)}%`}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/* ─── CHART: Donut ───────────────────────── */
+const DonutChart = ({ segments, size = 140, thickness = 22, children }) => {
+  const r = (size - thickness) / 2;
+  const C = 2 * Math.PI * r;
+  const cx = size / 2, cy = size / 2;
+  let offset = 0;
+  const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
+  const normalized = segments.map(s => ({ ...s, pct: (s.value / total) * 100 }));
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth={thickness} />
+        {normalized.map((seg, i) => {
+          const dash = (seg.pct / 100) * C;
+          const gap = C - dash;
+          const el = (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={seg.color} strokeWidth={thickness}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeDashoffset={-offset * C / 100}
+              strokeLinecap="butt"
+              style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+            />
+          );
+          offset += seg.pct;
+          return el;
+        })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+    </div>
+  );
+};
+
+/* ─── CHART: Horizontal Bar (grouped) ───── */
+const HorizontalBar = ({ label, value, max, color, sub }) => {
+  const w = Math.max(pct(value, max), value > 0 ? 2 : 0);
+  return (
+    <div className="group hover:bg-emerald-50/40 px-2 py-2 rounded-xl transition-colors">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-semibold text-slate-700 truncate max-w-[150px] group-hover:text-emerald-700">{label}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {sub && <span className="text-[10px] text-slate-400">{sub}</span>}
+          <span className="text-sm font-black" style={{ color }}>{fmt(value)}</span>
+        </div>
       </div>
-      <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(w, value > 0 ? 4 : 0)}%`, background: color }} />
+      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${w}%`, backgroundColor: color }} />
       </div>
     </div>
   );
 };
 
-const Pill = ({ icon: Icon, label, value, color }) => {
-  const themes = {
-    blue:   { wrap: 'bg-[#003399]/8 border-[#003399]/15', val: '#003399' },
-    cyan:   { wrap: 'bg-[#00A9CE]/8 border-[#00A9CE]/15', val: '#00A9CE' },
-    indigo: { wrap: 'bg-indigo-50 border-indigo-100', val: '#4338ca' },
-    violet: { wrap: 'bg-violet-50 border-violet-100', val: '#7c3aed' },
-    green:  { wrap: 'bg-emerald-50 border-emerald-100', val: '#059669' },
-    amber:  { wrap: 'bg-amber-50 border-amber-100', val: '#d97706' },
-  };
-  const t = themes[color] || themes.blue;
+/* ─── CHART: Salary Range Bars ───────────── */
+const SalaryBar = ({ label, value, maxVal, color }) => {
+  const w = Math.max(pct(value, maxVal), value > 0 ? 3 : 0);
   return (
-    <div className="group bg-white p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col items-center text-center gap-2">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${t.wrap} transition-transform group-hover:scale-110`}>
-        <Icon className="w-4 h-4" style={{ color: t.val }} />
-      </div>
-      <div>
-        <p className="text-[18px] font-black leading-none mb-0.5" style={{ color: t.val }}>{typeof value === 'string' ? value : fmt(value)}</p>
-        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">{label}</p>
+    <div className="flex items-center gap-3">
+      <span className="text-[10px] font-bold text-slate-500 w-16 flex-shrink-0">{label}</span>
+      <div className="flex-1 h-6 bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
+        <div className="h-full rounded-lg flex items-center px-2 transition-all duration-700"
+          style={{ width: `${w}%`, backgroundColor: color, minWidth: value > 0 ? 48 : 0 }}>
+          <span className="text-white text-[10px] font-black whitespace-nowrap">₹{fmt(value)}L</span>
+        </div>
       </div>
     </div>
   );
 };
 
-const StatusBadge = ({ count, label, dotColor, bg, textColor, borderColor }) => (
-  <div className={`text-center p-3 ${bg} rounded-xl border ${borderColor}`}>
-    <p className={`text-[20px] font-black ${textColor} leading-none`}>{count}</p>
-    <div className="flex items-center justify-center gap-1 mt-1.5">
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-      <p className="text-[10px] font-bold text-gray-600">{label}</p>
+/* ─── Panel ──────────────────────────────── */
+const Panel = ({ title, icon: Icon, sub, children, color = '#003399', action, onAction, className = '' }) => (
+  <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden ${className}`}>
+    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50">
+      <div className="flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}18`, color }}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 leading-none">{title}</h3>
+          {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+        </div>
+      </div>
+      {action && (
+        <button onClick={onAction} className="text-[10px] font-black text-[#003399] flex items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors">
+          {action} <ChevronRight className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+    <div className="p-5">{children}</div>
+  </div>
+);
+
+/* ─── Stat Pill ──────────────────────────── */
+const StatPill = ({ icon: Icon, label, value, color }) => (
+  <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group text-center">
+    <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+      style={{ backgroundColor: `${color}15`, color }}>
+      <Icon className="w-5 h-5" />
+    </div>
+    <div>
+      <p className="text-2xl font-black leading-none" style={{ color }}>{value}</p>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{label}</p>
     </div>
   </div>
 );
 
+/* ─── CHART: Area Chart ──────────────────── */
+const AreaChart = ({ data, width = 600, height = 110, color = '#003399' }) => {
+  if (!data || data.length < 2) return (
+    <div className="flex items-center justify-center h-24 text-xs text-slate-400">No monthly data available yet</div>
+  );
+  const max = Math.max(...data.map(d => d.value || d.applications || 0), 1);
+  const pad = { t: 10, b: 26, l: 8, r: 8 };
+  const w = width - pad.l - pad.r;
+  const h = height - pad.t - pad.b;
+  const pts = data.map((d, i) => ({
+    x: pad.l + (i / (data.length - 1)) * w,
+    y: pad.t + h - ((d.value || d.applications || 0) / max) * h,
+    label: d.label || `M${i + 1}`,
+    value: d.value || d.applications || 0,
+  }));
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = `${linePath} L ${pts[pts.length - 1].x} ${pad.t + h} L ${pts[0].x} ${pad.t + h} Z`;
+  const id = `ca-grad-${color.replace('#', '')}`;
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${id})`} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r="3" fill={color} stroke="white" strokeWidth="1.5" />
+          <text x={p.x} y={pad.t + h + 16} textAnchor="middle" fontSize="8.5" fill="#94A3B8" fontWeight="600">{p.label}</text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+/* ══════════════════════════════════════════ */
+/*         COLLEGE ADMIN ANALYTICS            */
+/* ══════════════════════════════════════════ */
 const Analytics = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [timeRange, setTimeRange] = useState('all');
+  const [timeRange, setTimeRange]   = useState('all');
 
   const [overviewStats, setOverviewStats] = useState({
     totalStudents: 0, totalCompanies: 0, totalJDs: 0, activeJDs: 0,
     selectedStudents: 0, placedStudents: 0, placementPercentage: 0,
   });
-  const [jobStats, setJobStats] = useState({ active: 0, closed: 0, draft: 0, cancelled: 0 });
-  const [branchStats, setBranchStats] = useState([]);
-  const [companyStats, setCompanyStats] = useState([]);
-  const [packageStats, setPackageStats] = useState({ avgPackage: 0, maxPackage: 0, minPackage: 0 });
+  const [jobStats, setJobStats]           = useState({ active: 0, closed: 0, draft: 0, cancelled: 0 });
+  const [branchStats, setBranchStats]     = useState([]);
+  const [companyStats, setCompanyStats]   = useState([]);
+  const [packageStats, setPackageStats]   = useState({ avgPackage: 0, maxPackage: 0, minPackage: 0 });
+  const [monthlyTrends, setMonthlyTrends] = useState([]);
 
   const fetchAllData = async () => {
     try {
@@ -103,7 +216,7 @@ const Analytics = () => {
       const [dashboardData, analyticsData, jobsData] = await Promise.all([
         collegeAdminAPI.getDashboard().catch(() => ({ success: false })),
         collegeAdminAPI.getAnalytics().catch(() => ({ success: false })),
-        jobAPI.getAllJobs().catch(() => ({ success: false, jobs: [] })),
+        collegeAdminAPI.getJobs({ limit: 500 }).catch(() => ({ success: false })),
       ]);
 
       if (dashboardData.success && dashboardData.stats) setOverviewStats(dashboardData.stats);
@@ -119,9 +232,10 @@ const Analytics = () => {
       }
 
       if (analyticsData.success) {
-        if (analyticsData.branchStats)  setBranchStats(analyticsData.branchStats);
-        if (analyticsData.companyStats) setCompanyStats(analyticsData.companyStats);
-        if (analyticsData.packageStats) setPackageStats(analyticsData.packageStats);
+        if (analyticsData.branchStats)    setBranchStats(analyticsData.branchStats);
+        if (analyticsData.companyStats)   setCompanyStats(analyticsData.companyStats);
+        if (analyticsData.packageStats)   setPackageStats(analyticsData.packageStats);
+        if (analyticsData.monthlyTrends)  setMonthlyTrends(analyticsData.monthlyTrends);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -135,248 +249,234 @@ const Analytics = () => {
 
   if (loading) return <AnalyticsSkeleton layout={CollegeAdminLayout} />;
 
-  const placementRate = overviewStats.placementPercentage ?? pct(overviewStats.placedStudents ?? 0, overviewStats.totalStudents ?? 0);
-  const maxCompany = Math.max(...companyStats.map(c => c.studentsHired || 0), 1);
+  const placementRate = overviewStats.placementPercentage ??
+    pct(overviewStats.placedStudents ?? 0, overviewStats.totalStudents ?? 0);
+  const maxCompany    = Math.max(...companyStats.map(c => c.studentsHired || 0), 1);
+  const maxBranch     = Math.max(...branchStats.map(b => b.placed || b.total || 0), 1);
+  const totalJobs     = jobStats.active + jobStats.closed + jobStats.draft + jobStats.cancelled;
+
+  /* Funnel steps — uses real API fields; no estimated fallbacks */
+  const appliedCount = overviewStats.appliedStudents ?? overviewStats.selectedStudents ?? 0;
+  const funnelSteps = [
+    { label: 'Enrolled',  value: overviewStats.totalStudents ?? 0 },
+    { label: 'Applied',   value: appliedCount },
+    { label: 'Selected',  value: overviewStats.selectedStudents ?? 0 },
+    { label: 'Placed',    value: overviewStats.placedStudents ?? 0 },
+  ];
+
+  /* Monthly application timeline from API */
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthSpark = monthlyTrends.length >= 2
+    ? monthlyTrends.map(m => ({ label: MONTH_NAMES[(m._id?.month ?? 1) - 1], value: m.applications || 0 }))
+    : [];
+
+  /* Job status donut segments */
+  const jobDonutSegs = [
+    { value: jobStats.active,    color: '#10B981', label: 'Active' },
+    { value: jobStats.closed,    color: '#003399', label: 'Closed' },
+    { value: jobStats.draft,     color: '#F59E0B', label: 'Draft'  },
+    { value: jobStats.cancelled, color: '#EF4444', label: 'Cancelled' },
+  ].filter(s => s.value > 0);
 
   return (
     <CollegeAdminLayout>
-      <div className="px-6 py-4 md:px-8 md:py-6 space-y-5 font-sans">
-        <div className="max-w-[1240px] mx-auto space-y-3 sm:space-y-4">
+      <div className="px-6 py-4 md:px-8 md:py-6 space-y-6 font-sans">
 
-          {/* ═════════ HEADER AND FILTERS ═════════ */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#00A9CE] rounded-full inline-block flex-shrink-0" />
-                Placement <span className="text-[#003399]">Analytics</span>
-              </h1>
-              <p className="text-sm text-slate-400 mt-1 font-medium">
-                Data-driven insights into your college's recruitment performance.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-                className="px-3 py-2 bg-white text-gray-700 text-[13px] border border-gray-200 rounded-lg font-semibold focus:outline-none shadow-sm"
-              >
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-                <option value="year">Last Year</option>
-                <option value="all">All Time</option>
-              </select>
-              <button onClick={fetchAllData} disabled={refreshing} className="flex items-center gap-1.5 bg-[#003399] hover:bg-[#003399] text-white text-[13px] font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-50">
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
-              </button>
-            </div>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="w-2 h-8 bg-gradient-to-b from-[#003399] to-[#10B981] rounded-full" />
+              Placement Intelligence
+            </h1>
+            <p className="text-sm text-slate-400 mt-1 font-medium">Campus recruitment analytics & insights</p>
           </div>
-
-          {/* ═════════ STATS PILLS ═════════ */}
-          <Card className="p-3 sm:p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <Pill icon={Users} label="Students" value={overviewStats.totalStudents} color="blue" />
-              <Pill icon={Award} label="Placed" value={overviewStats.placedStudents} color="green" />
-              <Pill icon={Building2} label="Companies" value={overviewStats.totalCompanies} color="cyan" />
-              <Pill icon={Briefcase} label="Total JDs" value={overviewStats.totalJDs} color="indigo" />
-              <Pill icon={TrendingUp} label="Active JDs" value={overviewStats.activeJDs} color="violet" />
-
-            </div>
-          </Card>
-
-          {/* ═════════ MAIN GRID ═════════ */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 md:gap-5">
-
-            {/* ── LEFT (8 cols) ── */}
-            <div className="lg:col-span-8 flex flex-col gap-4">
-
-              {/* Placement Overview */}
-              <Card className="p-4 md:p-5">
-                <SectionHeader title="Placement Overview" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                  <div className="bg-gray-50 rounded-xl p-4 border border-slate-100">
-                    <p className="text-[20px] md:text-[24px] font-black text-[#003399] leading-none">{placementRate}%</p>
-                    <p className="text-[12px] font-bold text-gray-700 mt-2">Placement Rate</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Overall success</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-slate-100">
-                    <p className="text-[20px] md:text-[24px] font-black text-emerald-600 leading-none">{fmt(overviewStats.placedStudents)}</p>
-                    <p className="text-[12px] font-bold text-gray-700 mt-2">Students Placed</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">of {fmt(overviewStats.totalStudents)} total</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-slate-100">
-                    <p className="text-[20px] md:text-[24px] font-black text-cyan-600 leading-none">{packageStats.avgPackage > 0 ? `₹${packageStats.avgPackage.toFixed(1)}L` : '—'}</p>
-                    <p className="text-[12px] font-bold text-gray-700 mt-2">Avg Package</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{packageStats.maxPackage > 0 ? `Max ₹${packageStats.maxPackage.toFixed(1)}L` : 'No data'}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-slate-100">
-                    <p className="text-[20px] md:text-[24px] font-black text-indigo-600 leading-none">{fmt(overviewStats.selectedStudents ?? 0)}</p>
-                    <p className="text-[12px] font-bold text-gray-700 mt-2">Selected Students</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Offers received</p>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Status Breakdown Grid (Jobs) */}
-              <div className="grid grid-cols-1 gap-4">
-                
-                {/* Job Statistics */}
-                <Card className="p-4 md:p-5">
-                  <SectionHeader title="Job Statistics" />
-                  <div className="grid grid-cols-2 gap-3 mb-4 mt-2">
-                    <StatusBadge count={jobStats.active} label="Active" dotColor="bg-[#003399]" bg="bg-white" textColor="text-gray-900" borderColor="border-gray-100 shadow-sm" />
-                    <StatusBadge count={jobStats.closed} label="Closed" dotColor="bg-gray-400" bg="bg-white" textColor="text-gray-900" borderColor="border-gray-100 shadow-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    {[
-                      { label: 'Active', value: jobStats.active, color: '#3b82f6' },
-                      { label: 'Draft', value: jobStats.draft, color: '#f59e0b' },
-                      { label: 'Closed', value: jobStats.closed, color: '#9ca3af' },
-                      { label: 'Cancelled', value: jobStats.cancelled, color: '#ef4444' },
-                    ].map(item => (
-                      <MiniBar key={item.label} label={item.label} value={item.value} max={Math.max(jobStats.active + jobStats.draft + jobStats.closed + jobStats.cancelled, 1)} color={item.color} />
-                    ))}
-                  </div>
-                </Card>
-              </div>
-
-              {/* Branch-wise Placement & Package Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="p-4 md:p-5">
-                  <SectionHeader title="Branch-wise Placement" />
-                  {branchStats.length > 0 ? (
-                    <div className="space-y-1 mt-2">
-                      {branchStats.map((branch, index) => (
-                        <MiniBar key={index} label={branch.branch || branch._id || 'N/A'} value={branch.placed || 0} max={Math.max(branch.total || 0, 1)} color="#3b82f6" sub={`${branch.placed || 0}/${branch.total || 0} (${Math.round(branch.placementPercentage || 0)}%)`} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center text-slate-400">
-                      <GraduationCap className="w-8 h-8 mb-2 opacity-50" />
-                      <p className="text-[12px]">No branch data yet</p>
-                    </div>
-                  )}
-                </Card>
-
-                {packageStats.maxPackage > 0 ? (
-                  <Card className="p-4 md:p-5">
-                    <SectionHeader title="Package Stats (CTC)" />
-                    <div className="grid grid-cols-1 gap-3 mt-2">
-                      <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Highest</p>
-                          <p className="text-[18px] font-black text-green-600 mt-1">₹{packageStats.maxPackage.toFixed(1)}L</p>
-                        </div>
-                        <DollarSign className="w-6 h-6 text-green-200" />
-                      </div>
-                      <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Average</p>
-                          <p className="text-[18px] font-black text-[#003399] mt-1">₹{packageStats.avgPackage.toFixed(1)}L</p>
-                        </div>
-                        <TrendingUp className="w-6 h-6 text-white/60" />
-                      </div>
-                      <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Lowest</p>
-                          <p className="text-[18px] font-black text-amber-600 mt-1">₹{packageStats.minPackage.toFixed(1)}L</p>
-                        </div>
-                        <Target className="w-6 h-6 text-amber-200" />
-                      </div>
-                    </div>
-                  </Card>
-                ) : (
-                  <Card className="p-4 md:p-5 flex flex-col items-center justify-center text-slate-400">
-                    <DollarSign className="w-8 h-8 mb-2 opacity-50" />
-                    <p className="text-[12px]">No package data available</p>
-                  </Card>
-                )}
-              </div>
-
-            </div>
-
-            {/* ── RIGHT (4 cols) ── */}
-            <div className="lg:col-span-4 flex flex-col gap-4">
-
-              {/* Donut Snapshot */}
-              <Card className="p-4 md:p-5">
-                <SectionHeader title="Snapshot" />
-                <div className="flex items-center gap-4 mb-5 mt-2">
-                  <div className="relative w-20 h-20 flex-shrink-0">
-                    <svg viewBox="0 0 36 36" className="w-20 h-20 transform -rotate-90">
-                      <circle cx="18" cy="18" r="15.9" stroke="#f1f5f9" strokeWidth="3.5" fill="none" />
-                      <circle cx="18" cy="18" r="15.9" stroke="#3b82f6" strokeWidth="3.5" fill="none" strokeDasharray={`${placementRate} ${100 - placementRate}`} strokeLinecap="round" className="transition-all duration-1000" />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[16px] font-black text-gray-900">{placementRate}%</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">Placement Rate</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{fmt(overviewStats.placedStudents)} out of {fmt(overviewStats.totalStudents)} placed</p>
-                  </div>
-                </div>
-                <div className="space-y-0 text-[13px]">
-                  {[
-                    { label: 'Total Students', value: overviewStats.totalStudents, col: 'text-[#003399]' },
-                    { label: 'Placed Students', value: overviewStats.placedStudents, col: 'text-emerald-600' },
-                    { label: 'Selected Students', value: overviewStats.selectedStudents ?? 0, col: 'text-cyan-600' },
-                    { label: 'Total Companies', value: overviewStats.totalCompanies, col: 'text-indigo-600' },
-                    { label: 'Total JDs', value: overviewStats.totalJDs, col: 'text-violet-600' },
-                  ].map(({ label, value, col }) => (
-                    <div key={label} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                      <span className="text-gray-600">{label}</span>
-                      <span className={`font-bold ${col}`}>{fmt(value)}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Top Companies */}
-              <Card className="p-4 md:p-5">
-                <SectionHeader title="Top Hiring Companies" action="View All" onAction={() => navigate('/dashboard/college-admin/companies')} />
-                {companyStats.length > 0 ? (
-                  <div className="space-y-2 mt-2">
-                    {companyStats.slice(0, 6).map((comp, idx) => {
-                      const count = comp.studentsHired || 0;
-                      return (
-                        <div key={idx} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50/30 transition-colors border border-transparent hover:border-gray-100">
-                          <span className="text-[13px] font-black text-gray-300 w-4 pl-1">{idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${idx + 1}`}</span>
-                          <div className="w-8 h-8 rounded-lg bg-[#003399]/5 text-[#003399] flex items-center justify-center text-[10px] font-black flex-shrink-0">
-                            {(comp.companyName || comp._id || 'C').substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-bold text-gray-900 truncate">{comp.companyName || comp._id}</p>
-                            <div className="w-full bg-gray-100 h-1.5 rounded-full mt-1.5">
-                              <div className="h-full bg-[#003399] rounded-full" style={{ width: `${pct(count, maxCompany)}%` }} />
-                            </div>
-                          </div>
-                          <span className="text-[12px] font-bold text-gray-900">{count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-                    <Building2 className="w-8 h-8 mb-2 opacity-50" />
-                    <p className="text-[12px]">No hiring data yet</p>
-                  </div>
-                )}
-              </Card>
-
-              {/* Quick Actions (Replacing Placement Goals CTA inside right col) */}
-              <Card className="p-4 md:p-5">
-                <SectionHeader title="Quick Actions" />
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  <button onClick={() => navigate('/dashboard/college-admin/jobs')} className="w-full px-4 py-3 bg-[#003399]/5 hover:bg-slate-100 text-[#003399] text-[13px] font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-                    <Briefcase className="w-4 h-4" /> Manage Job Drives
-                  </button>
-                </div>
-              </Card>
-
-            </div>
-
+          <div className="flex items-center gap-2">
+            {['all','month','week'].map(r => (
+              <button key={r} onClick={() => setTimeRange(r)}
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-lg capitalize transition-colors ${timeRange === r ? 'bg-[#003399] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                {r}
+              </button>
+            ))}
+            <button onClick={fetchAllData} disabled={refreshing}
+              className="flex items-center gap-1.5 bg-[#003399] text-white text-[12px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 shadow-sm">
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
+
+        {/* KPI Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatPill icon={Users}       label="Students"   value={fmt(overviewStats.totalStudents)}   color="#003399" />
+          <StatPill icon={CheckCircle2} label="Placed"    value={fmt(overviewStats.placedStudents)}  color="#10B981" />
+          <StatPill icon={Target}      label="Rate"       value={`${placementRate}%`}                color="#00A9CE" />
+          <StatPill icon={Briefcase}   label="Live JDs"   value={fmt(overviewStats.activeJDs)}       color="#F59E0B" />
+          <StatPill icon={Building2}   label="Companies"  value={fmt(overviewStats.totalCompanies)}  color="#8B5CF6" />
+          <StatPill icon={Award}       label="Selected"   value={fmt(overviewStats.selectedStudents)} color="#EF4444" />
+        </div>
+
+        {/* Funnel + Job Status Donut */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Funnel Chart */}
+          <Panel title="Placement Funnel" icon={Target}
+            sub="Student journey from enrollment to placement" color="#003399" className="lg:col-span-2">
+            <FunnelChart steps={funnelSteps} />
+            <div className="mt-4 pt-3 border-t border-slate-50 grid grid-cols-4 gap-2 text-center">
+              {funnelSteps.map((s, i) => {
+                const COLORS = ['#003399','#00A9CE','#10B981','#F59E0B'];
+                return (
+                  <div key={i}>
+                    <p className="text-lg font-black" style={{ color: COLORS[i] }}>{fmt(s.value)}</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">{s.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+
+          {/* Job Status Donut */}
+          <Panel title="Job Status" icon={Briefcase}
+            sub="Distribution of all job postings" color="#F59E0B">
+            <div className="flex flex-col items-center gap-4">
+              <DonutChart segments={jobDonutSegs.length ? jobDonutSegs : [{ value: 1, color: '#E2E8F0' }]} size={148} thickness={24}>
+                <div className="text-center">
+                  <p className="text-2xl font-black text-slate-800">{totalJobs}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total JDs</p>
+                </div>
+              </DonutChart>
+              <div className="w-full space-y-2">
+                {[
+                  { label: 'Active',    val: jobStats.active,    color: '#10B981', bg: 'bg-emerald-50', icon: CheckCircle2 },
+                  { label: 'Closed',   val: jobStats.closed,    color: '#003399', bg: 'bg-blue-50',    icon: Award },
+                  { label: 'Draft',    val: jobStats.draft,     color: '#F59E0B', bg: 'bg-amber-50',   icon: Clock },
+                  { label: 'Cancelled',val: jobStats.cancelled, color: '#EF4444', bg: 'bg-rose-50',    icon: XCircle },
+                ].map(row => (
+                  <div key={row.label} className={`flex items-center justify-between px-3 py-1.5 rounded-xl ${row.bg}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: row.color }}/>
+                      <span className="text-xs font-semibold text-slate-700">{row.label}</span>
+                    </div>
+                    <span className="text-sm font-black" style={{ color: row.color }}>{row.val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Panel>
+        </div>
+
+        {/* Branch-wise + Company Hiring */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+          {/* Branch-wise Placement */}
+          <Panel title="Branch-wise Placement" icon={GraduationCap}
+            sub="Students placed per department" color="#10B981"
+            action="View Details" onAction={() => navigate('/dashboard/college-admin/students')}>
+            {branchStats.length === 0 ? (
+              <div className="py-8 text-center">
+                <BarChart3 className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-xs text-gray-400">No branch data available yet</p>
+                <p className="text-[10px] text-gray-300 mt-1">Branch analytics appear once students are placed</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {branchStats.slice(0, 8).map((b, i) => (
+                  <HorizontalBar
+                    key={i}
+                    label={b.branch || b.department || `Branch ${i+1}`}
+                    value={b.placed || 0}
+                    max={maxBranch}
+                    color={['#10B981','#00A9CE','#003399','#F59E0B','#8B5CF6','#EF4444','#EC4899','#14B8A6'][i % 8]}
+                    sub={`of ${b.total || 0}`}
+                  />
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          {/* Company Hiring Leaders */}
+          <Panel title="Company Hiring Leaders" icon={Building2}
+            sub="Top recruiters by students hired" color="#8B5CF6"
+            action="All Companies" onAction={() => navigate('/dashboard/college-admin/companies')}>
+            {companyStats.length === 0 ? (
+              <div className="py-8 text-center">
+                <BarChart3 className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                <p className="text-xs text-gray-400">No company hiring data yet</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {companyStats.slice(0, 8).map((c, i) => (
+                  <HorizontalBar
+                    key={i}
+                    label={c.company || c.name || `Company ${i+1}`}
+                    value={c.studentsHired || c.hired || 0}
+                    max={maxCompany}
+                    color={i === 0 ? '#8B5CF6' : i === 1 ? '#003399' : '#00A9CE'}
+                  />
+                ))}
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        {/* Salary Package Analysis */}
+        <Panel title="Salary Package Analysis" icon={Award}
+          sub="Package distribution — min / avg / max (in Lakhs)" color="#F59E0B">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+            <div className="space-y-3">
+              <SalaryBar label="Minimum" value={packageStats.minPackage || 0}
+                maxVal={Math.max(packageStats.maxPackage, 1)} color="#00A9CE" />
+              <SalaryBar label="Average" value={packageStats.avgPackage || 0}
+                maxVal={Math.max(packageStats.maxPackage, 1)} color="#F59E0B" />
+              <SalaryBar label="Maximum" value={packageStats.maxPackage || 0}
+                maxVal={Math.max(packageStats.maxPackage, 1)} color="#10B981" />
+            </div>
+            <div className="flex flex-col gap-3">
+              {[
+                { label: 'Min Package', value: `₹${packageStats.minPackage || 0}L`, color: '#00A9CE', bg: 'bg-cyan-50' },
+                { label: 'Avg Package', value: `₹${packageStats.avgPackage || 0}L`, color: '#F59E0B', bg: 'bg-amber-50' },
+                { label: 'Max Package', value: `₹${packageStats.maxPackage || 0}L`, color: '#10B981', bg: 'bg-emerald-50' },
+              ].map(row => (
+                <div key={row.label} className={`${row.bg} rounded-xl p-3 flex items-center justify-between`}>
+                  <span className="text-xs font-bold text-slate-600">{row.label}</span>
+                  <span className="text-lg font-black" style={{ color: row.color }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Panel>
+
+        {/* Monthly Application Trend */}
+        <Panel title="Monthly Application Trend" icon={TrendingUp}
+          sub={monthSpark.length >= 2 ? `Real data — ${monthSpark[0].label} to ${monthSpark[monthSpark.length-1].label}` : 'No monthly data yet'}
+          color="#003399">
+          <AreaChart data={monthSpark} width={640} height={110} color="#003399" />
+          <p className="text-[10px] text-slate-400 mt-2">Applications submitted per month — from your college's job drives</p>
+        </Panel>
+
+        {/* Placement Rate Visual */}
+        <div className="bg-gradient-to-r from-[#003399] to-[#00A9CE] rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="text-white">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-blue-100">Overall Placement Rate</p>
+              <p className="text-5xl font-black mt-1">{placementRate}%</p>
+              <p className="text-blue-100 text-sm mt-2">
+                {fmt(overviewStats.placedStudents)} of {fmt(overviewStats.totalStudents)} students successfully placed
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <DonutChart
+                segments={[
+                  { value: placementRate, color: 'rgba(255,255,255,0.9)' },
+                  { value: 100 - placementRate, color: 'rgba(255,255,255,0.15)' },
+                ]}
+                size={130} thickness={20}>
+                <span className="text-2xl font-black text-white">{placementRate}%</span>
+              </DonutChart>
+            </div>
+          </div>
+        </div>
+
       </div>
     </CollegeAdminLayout>
   );

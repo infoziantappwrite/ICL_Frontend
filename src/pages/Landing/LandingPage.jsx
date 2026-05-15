@@ -10,7 +10,7 @@ import {
   Cpu, Database, Layers, BarChart3, Smartphone,
   Sparkles, ChevronDown, Quote, MapPin, Mail, Phone,
   Linkedin, Twitter, Instagram, Facebook, RefreshCw,
-  AlertCircle,
+  AlertCircle, ChevronLeft, Lock,
 } from 'lucide-react';
 
 // ─── FONTS & KEYFRAMES ────────────────────────────────────────────────────────
@@ -28,6 +28,11 @@ const GLOBAL_STYLES = `
   @keyframes icl-orb2 { 0%, 100% { transform: translate(0, 0) scale(1); } 40% { transform: translate(-25px, 20px) scale(1.08); } 70% { transform: translate(20px, -10px) scale(0.96); } }
   @keyframes icl-shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
   @keyframes icl-pulse-ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.5); opacity: 0; } }
+  @keyframes icl-slide-in-right { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes icl-slide-in-left  { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes icl-card-pop { 0% { opacity:0; transform: translateY(20px) scale(0.96); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+  @keyframes icl-dot-grow { from { transform: scaleX(1); } to { transform: scaleX(2.5); } }
+  @keyframes icl-progress { from { width: 0%; } to { width: 100%; } }
 
   .icl-animate-float { animation: icl-float 6s ease-in-out infinite; }
   .icl-animate-float2 { animation: icl-float2 8s ease-in-out infinite; }
@@ -58,8 +63,9 @@ const GLOBAL_STYLES = `
   .icl-feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #0d2b8c, #17a8c8); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; border-radius: 3px 3px 0 0; }
   .icl-feature-card:hover::before { transform: scaleX(1); }
   .icl-feature-card:hover { transform: translateY(-6px); box-shadow: 0 20px 48px rgba(13,43,140,0.1); border-color: #c7d7fd; }
-  .icl-course-card { background: white; border-radius: 16px; border: 1px solid #f0f4ff; overflow: hidden; transition: all 0.35s ease; }
+  .icl-course-card { background: white; border-radius: 16px; border: 1px solid #f0f4ff; overflow: hidden; transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease; }
   .icl-course-card:hover { transform: translateY(-8px); box-shadow: 0 24px 48px rgba(0,0,0,0.12); border-color: #c7d7fd; }
+  .icl-course-card-closed { background: white; border-radius: 16px; border: 1px solid #fde8e8; overflow: hidden; transition: none; opacity: 0.72; filter: grayscale(25%); }
   .icl-testimonial-card { background: white; border: 1px solid #eef2ff; border-radius: 20px; padding: 28px; transition: all 0.3s ease; }
   .icl-testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 20px 48px rgba(59,130,246,0.08); }
   .icl-faq-item { border: 1px solid #e8edf8; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; background: white; }
@@ -70,6 +76,118 @@ const GLOBAL_STYLES = `
   .icl-dark-section-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(13,43,140,0.06); border: 1px solid rgba(13,43,140,0.1); color: #0d2b8c; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; padding: 5px 12px; border-radius: 100px; margin-bottom: 16px; text-transform: uppercase; }
   .icl-course-skeleton { background: linear-gradient(90deg, #f0f4ff 25%, #e8edf8 50%, #f0f4ff 75%); background-size: 200% 100%; animation: icl-shimmer 1.5s ease infinite; border-radius: 16px; }
   .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ── Slider styles ─────────────────────────────────────── */
+  .icl-slider-track {
+    display: flex;
+    transition: transform 0.65s cubic-bezier(0.77, 0, 0.175, 1);
+    will-change: transform;
+  }
+  .icl-slider-page {
+    min-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 4px 2px 12px;
+  }
+  @media (max-width: 1023px) {
+    .icl-slider-page { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 639px) {
+    .icl-slider-page { grid-template-columns: 1fr; }
+  }
+  .icl-card-animate {
+    animation: icl-card-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  .icl-slider-dot {
+    height: 6px;
+    border-radius: 100px;
+    background: #dbeafe;
+    cursor: pointer;
+    transition: background 0.3s ease, width 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    width: 24px;
+  }
+  .icl-slider-dot.active {
+    background: linear-gradient(90deg, #0d2b8c, #17a8c8);
+    width: 48px;
+  }
+  .icl-slider-dot:hover:not(.active) {
+    background: #93c5fd;
+  }
+  .icl-slider-progress {
+    height: 2px;
+    background: linear-gradient(90deg, #0d2b8c, #17a8c8);
+    border-radius: 2px;
+    transform-origin: left;
+  }
+  .icl-slider-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1.5px solid #dbeafe;
+    background: white;
+    display: flex; align-items: center; justify-content: center;
+    color: #0d2b8c;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 12px rgba(13,43,140,0.08);
+    flex-shrink: 0;
+  }
+  .icl-slider-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg,#0d2b8c,#17a8c8);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 8px 24px rgba(13,43,140,0.3);
+    transform: scale(1.08);
+  }
+  .icl-slider-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .icl-autoplay-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: #17a8c8;
+    animation: icl-spin 4s linear infinite;
+  }
+  @keyframes icl-spin { to { transform: rotate(360deg); } }
+
+  /* ── Course card click hint (only for open courses) ── */
+  .icl-course-card-clickable {
+    cursor: pointer;
+    position: relative;
+  }
+  .icl-course-card-clickable::after {
+    content: 'View Details →';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0d2b8c;
+    background: linear-gradient(to top, #eff6ff, transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    font-family: 'Sora', system-ui, sans-serif;
+    letter-spacing: 0.02em;
+  }
+  .icl-course-card-clickable:hover::after {
+    opacity: 1;
+  }
+
+  /* ── Registration closed badge pulse ── */
+  @keyframes icl-closed-pulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(239,68,68,0.35); }
+    50% { box-shadow: 0 2px 16px rgba(239,68,68,0.6); }
+  }
+  .icl-closed-badge {
+    animation: icl-closed-pulse 2.5s ease-in-out infinite;
+  }
 `;
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
@@ -120,7 +238,6 @@ const FAQS = [
   { q: 'Can I enroll in courses independently without a college?', a: 'Yes. Independent candidates can sign up directly and enroll in any publicly available course, build their profile, and apply to jobs independently.' },
 ];
 
-// ─── Category icon map ────────────────────────────────────────────────────────
 const CATEGORY_ICONS = {
   'Full Stack Development': Layers,
   'Data Science': BarChart3,
@@ -132,7 +249,6 @@ const CATEGORY_ICONS = {
   'Blockchain': Database,
 };
 
-// ─── Level gradient map ───────────────────────────────────────────────────────
 const LEVEL_GRADIENT = {
   Beginner:     'linear-gradient(135deg,#dbeafe,#e0f2fe)',
   Intermediate: 'linear-gradient(135deg,#dbeafe,#bfdbfe)',
@@ -173,12 +289,16 @@ const StatCard = ({ stat, shouldStart }) => {
   );
 };
 
-// ─── Course card (backend data) ───────────────────────────────────────────────
-const CourseCard = ({ course, delay, onSignup }) => {
+// ─── Course card ──────────────────────────────────────────────────────────────
+const CourseCard = ({ course, delay, onCardClick }) => {
   const CatIcon  = CATEGORY_ICONS[course.category] || BookOpen;
   const gradient = LEVEL_GRADIENT[course.level] || 'linear-gradient(135deg,#dbeafe,#e0f2fe)';
   const rating   = course.averageRating || course.rating?.average || 0;
   const enrolled = course.enrollmentCount || course.totalEnrollments || 0;
+
+  // ── Registration closed flag ──────────────────────────────────────────────
+  const isClosed = !!course.isRegistrationClosed;
+
   const duration = course.duration?.hours
     ? `${course.duration.hours}h`
     : course.duration?.weeks
@@ -187,59 +307,95 @@ const CourseCard = ({ course, delay, onSignup }) => {
         ? `${course.duration}h`
         : null;
 
-  return (
-    <div
-      className="icl-course-card cursor-pointer"
-      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
-      onClick={onSignup}
-    >
-      {/* Thumbnail or gradient placeholder */}
-      <div className="relative h-40 overflow-hidden flex items-center justify-center"
-        style={{ background: course.thumbnail ? '#f8faff' : gradient }}>
-        {course.thumbnail ? (
-          <img src={course.thumbnail} alt={course.title}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-            onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-          />
-        ) : null}
-        {/* Fallback icon (shown when no thumbnail or image error) */}
-        <div className={`absolute inset-0 flex items-center justify-center ${course.thumbnail ? 'hidden' : 'flex'}`}
-          style={{ background: gradient }}>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), transparent)' }} />
-          <CatIcon className="w-14 h-14 text-white/70 relative z-10" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }} />
-        </div>
-        {/* Level badge */}
-        <div className="absolute top-3 right-3">
-        <span className="text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm"
-  style={
+  const levelStyle =
     course.level === 'Beginner'     ? { background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0' } :
     course.level === 'Intermediate' ? { background: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' } :
     course.level === 'Advanced'     ? { background: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' } :
-                                      { background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }
-  }>
-  {course.level || 'All Levels'}
-</span>
+                                      { background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' };
+
+  // Closed courses: no hover effect, no cursor pointer, not clickable
+  const cardClass = isClosed
+    ? 'icl-course-card-closed icl-card-animate h-full'
+    : 'icl-course-card icl-card-animate icl-course-card-clickable h-full';
+
+  return (
+    <div
+      className={cardClass}
+      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+      onClick={() => { if (!isClosed) onCardClick(course); }}
+      title={isClosed ? 'Registration is currently closed for this course' : 'Click to view course details'}
+    >
+      {/* ── Thumbnail ───────────────────────────────────────────────────── */}
+      <div className="relative h-40 overflow-hidden flex items-center justify-center"
+        style={{ background: course.thumbnail ? '#f8faff' : gradient }}>
+
+        {course.thumbnail ? (
+          <img
+            src={course.thumbnail}
+            alt={course.title}
+            className="w-full h-full object-cover"
+            style={{ transition: isClosed ? 'none' : 'transform 0.5s ease' }}
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+        ) : null}
+
+        {/* Fallback icon bg */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center ${course.thumbnail ? 'hidden' : 'flex'}`}
+          style={{ background: gradient }}
+        >
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), transparent)' }} />
+          <CatIcon className="w-14 h-14 text-white/70 relative z-10" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.2))' }} />
         </div>
-        {/* Featured badge */}
-        {course.isFeatured && (
+
+        {/* Level badge — top right */}
+        <div className="absolute top-3 right-3">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm" style={levelStyle}>
+            {course.level || 'All Levels'}
+          </span>
+        </div>
+
+        {/* Featured badge — top left (only when NOT closed) */}
+        {course.isFeatured && !isClosed && (
           <div className="absolute top-3 left-3">
             <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full text-white bg-amber-500/90 backdrop-blur-sm">
               <Zap className="w-3 h-3" /> Featured
             </span>
           </div>
         )}
+
+        {/* ── Registration Closed overlay badge — bottom left ── */}
+        {isClosed && (
+          <div className="absolute inset-0 flex flex-col">
+            {/* Semi-transparent red tint on thumbnail */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to top, rgba(239,68,68,0.18) 0%, transparent 60%)' }}
+            />
+            {/* Closed badge */}
+            <div className="absolute bottom-3 left-3">
+              <span
+                className="icl-closed-badge flex items-center gap-1.5 text-[11px] font-black px-3 py-1.5 rounded-full"
+                style={{
+                  background: 'rgba(220,38,38,0.95)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  letterSpacing: '0.04em',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <Lock className="w-3 h-3" />
+                Registration Closed
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Card body */}
+      {/* ── Body ────────────────────────────────────────────────────────── */}
       <div className="p-5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full"
-            style={
-            course.level === 'Beginner' ? { background: '#dcfce7', color: '#16a34a' } :
-              course.level === 'Intermediate' ? { background: '#dbeafe', color: '#1d4ed8' } :
-              course.level === 'Advanced'     ? { background: '#ede9fe', color: '#6d28d9' } :
-                                                { background: '#f1f5f9', color: '#475569' }
-            }>
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={levelStyle}>
             {course.level || 'All Levels'}
           </span>
           {rating > 0 && (
@@ -252,7 +408,22 @@ const CourseCard = ({ course, delay, onSignup }) => {
         <h3 className="icl-display font-bold text-gray-900 text-[15px] mb-1 leading-snug line-clamp-2">
           {course.title}
         </h3>
-        <p className="text-xs text-gray-400 mb-4 font-medium">{course.category}</p>
+        <p className="text-xs text-gray-400 mb-3 font-medium">{course.category}</p>
+
+        {/* ── Registration Closed notice inside body ── */}
+        {isClosed && (
+          <div
+            className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl text-[11px] font-semibold"
+            style={{
+              background: '#fef2f2',
+              color: '#b91c1c',
+              border: '1px solid #fecaca',
+            }}
+          >
+            <Lock className="w-3 h-3 flex-shrink-0" />
+            Registrations are currently closed for this course.
+          </div>
+        )}
 
         <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-50">
           <span className="flex items-center gap-1.5 font-medium">
@@ -271,7 +442,7 @@ const CourseCard = ({ course, delay, onSignup }) => {
   );
 };
 
-// ─── Course skeleton loader ────────────────────────────────────────────────────
+// ─── Course skeleton ──────────────────────────────────────────────────────────
 const CourseSkeleton = () => (
   <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
     <div className="h-40 icl-course-skeleton" />
@@ -312,6 +483,126 @@ const FAQItem = ({ item }) => {
   );
 };
 
+// ─── Course Slider ────────────────────────────────────────────────────────────
+const COURSES_PER_PAGE = 6;
+const AUTOPLAY_MS = 4000;
+
+const CourseSlider = ({ courses, onCardClick }) => {
+  const totalPages    = Math.ceil(courses.length / COURSES_PER_PAGE);
+  const [page, setPage]       = useState(0);
+  const [paused, setPaused]   = useState(false);
+  const [animKey, setAnimKey] = useState(0);
+  const autoRef = useRef(null);
+
+  const goTo = useCallback((idx) => {
+    setPage(idx);
+    setAnimKey(k => k + 1);
+  }, []);
+
+  const goNext = useCallback(() => goTo((page + 1) % totalPages), [page, totalPages, goTo]);
+  const goPrev = useCallback(() => goTo((page - 1 + totalPages) % totalPages), [page, totalPages, goTo]);
+
+  useEffect(() => {
+    if (paused || totalPages <= 1) return;
+    autoRef.current = setInterval(goNext, AUTOPLAY_MS);
+    return () => clearInterval(autoRef.current);
+  }, [paused, goNext, totalPages]);
+
+  if (totalPages <= 1) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {courses.map((course, i) => (
+          <CourseCard
+            key={course._id || course.id || i}
+            course={course}
+            delay={i * 80}
+            onCardClick={onCardClick}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div style={{ overflow: 'hidden', borderRadius: 20, padding: '4px 2px' }}>
+        <div
+          className="icl-slider-track"
+          style={{ transform: `translateX(-${page * 100}%)` }}
+        >
+          {Array.from({ length: totalPages }, (_, pi) => {
+            const pageItems = courses.slice(pi * COURSES_PER_PAGE, pi * COURSES_PER_PAGE + COURSES_PER_PAGE);
+            return (
+              <div key={pi} className="icl-slider-page">
+                {pageItems.map((course, i) => (
+                  <CourseCard
+                    key={`${animKey}-${course._id || course.id || i}`}
+                    course={course}
+                    delay={pi === page ? i * 80 : 0}
+                    onCardClick={onCardClick}
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Controls row */}
+      <div className="flex items-center justify-between mt-8 gap-4">
+        <button
+          className="icl-slider-btn"
+          onClick={goPrev}
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <div className="flex flex-col items-center gap-3 flex-1">
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Go to page ${i + 1}`}
+                className={`icl-slider-dot${page === i ? ' active' : ''}`}
+              />
+            ))}
+          </div>
+          <div className="text-[12px] font-medium" style={{ color: '#94a3b8' }}>
+            Showing{' '}
+            <span style={{ color: '#0d2b8c', fontWeight: 700 }}>
+              {page * COURSES_PER_PAGE + 1}–{Math.min((page + 1) * COURSES_PER_PAGE, courses.length)}
+            </span>{' '}
+            of <span style={{ color: '#0d2b8c', fontWeight: 700 }}>{courses.length}</span> courses
+          </div>
+          <div style={{ width: '100%', maxWidth: 200, height: 2, background: '#e8edf8', borderRadius: 2, overflow: 'hidden' }}>
+            <div
+              key={`${page}-${paused}`}
+              className="icl-slider-progress"
+              style={{
+                animation: paused ? 'none' : `icl-progress ${AUTOPLAY_MS}ms linear forwards`,
+                width: paused ? '0%' : undefined,
+              }}
+            />
+          </div>
+        </div>
+
+        <button
+          className="icl-slider-btn"
+          onClick={goNext}
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Landing Page ────────────────────────────────────────────────────────
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -320,12 +611,10 @@ const LandingPage = () => {
   const [statsVisible,  setStatsVisible]  = useState(false);
   const statsRef = useRef(null);
 
-  // ── Course state ────────────────────────────────────────────────────────
-  const [courses,       setCourses]       = useState([]);
+  const [courses,        setCourses]        = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const [coursesError,  setCoursesError]  = useState('');
+  const [coursesError,   setCoursesError]   = useState('');
 
-  // ── Inject global styles ────────────────────────────────────────────────
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = GLOBAL_STYLES;
@@ -333,69 +622,50 @@ const LandingPage = () => {
     return () => document.head.removeChild(style);
   }, []);
 
-  // ── Scroll listener ─────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // ── Stats intersection observer ─────────────────────────────────────────
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStatsVisible(true); }, { threshold: 0.3 });
     if (statsRef.current) obs.observe(statsRef.current);
     return () => obs.disconnect();
   }, []);
 
-  // ── Fetch courses (no auth — public landing page) ───────────────────────
- useEffect(() => {
-  const fetchCourses = async () => {
-    setCoursesLoading(true);
-    setCoursesError('');
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setCoursesLoading(true);
+      setCoursesError('');
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const res  = await fetch(`${API_URL}/courses`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await res.json();
+        console.log('Courses API Response:', data);
+        if (data?.success) {
+          const list = data.data?.courses || data.data || data.courses || [];
 
-    try {
-      const API_URL =
-        import.meta.env.VITE_API_URL ||
-        'http://localhost:5000/api';
+          // ── Filter out registration-closed courses on the landing page ──
+          // Closed courses are hidden entirely so visitors only see
+          // courses they can actually enrol into.
+          const openCourses = list.filter(c => !c.isRegistrationClosed);
 
-      const res = await fetch(
-        `${API_URL}/courses?limit=6`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          setCourses(openCourses);
+        } else {
+          setCoursesError(data?.message || 'Failed to load courses');
         }
-      );
-
-      const data = await res.json();
-
-      console.log('Courses API Response:', data);
-
-      if (data?.success) {
-        const list =
-          data.data?.courses ||
-          data.data ||
-          data.courses ||
-          [];
-
-        setCourses(list.slice(0, 6));
-      } else {
-        setCoursesError(
-          data?.message || 'Failed to load courses'
-        );
+      } catch (err) {
+        console.error(err);
+        setCoursesError('Could not load courses at this time.');
+      } finally {
+        setCoursesLoading(false);
       }
-    } catch (err) {
-      console.error(err);
-      setCoursesError(
-        'Could not load courses at this time.'
-      );
-    } finally {
-      setCoursesLoading(false);
-    }
-  };
-
-  fetchCourses();
-}, []);
+    };
+    fetchCourses();
+  }, []);
 
   const scrollTo = useCallback((id) => {
     setMobileOpen(false);
@@ -403,6 +673,11 @@ const LandingPage = () => {
   }, []);
 
   const goSignup = () => navigate('/signup');
+
+  const handleCourseClick = useCallback((course) => {
+    const courseId = course._id || course.id;
+    navigate(`/courses/${courseId}`, { state: { course } });
+  }, [navigate]);
 
   return (
     <div className="icl-font min-h-screen bg-white" style={{ overflowX: 'hidden' }}>
@@ -643,22 +918,17 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ── COURSES (BACKEND INTEGRATED) ──────────────────────────────────── */}
+      {/* ── COURSES — ANIMATED SLIDER ─────────────────────────────────────── */}
       <section id="courses" className="py-24 bg-white">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
-            <div>
-              <div className="icl-section-badge"><BookOpen className="w-3 h-3" /> Popular Courses</div>
-              <h2 className="icl-display text-3xl md:text-[42px] font-black text-gray-900 leading-tight">
-                Learn the Skills<br /><span className="icl-gradient-text-warm">That Get You Hired</span>
-              </h2>
-            </div>
-            <button onClick={goSignup}
-              className="flex items-center gap-1.5 font-semibold text-[14px] transition-all flex-shrink-0 group"
-              style={{ color: '#0d2b8c' }}>
-              View All Courses
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+          <div className="text-center mb-12">
+            <div className="icl-section-badge"><BookOpen className="w-3 h-3" /> Popular Courses</div>
+            <h2 className="icl-display text-3xl md:text-[42px] font-black text-gray-900 leading-tight">
+              Learn the Skills<br /><span className="icl-gradient-text-warm">That Get You Hired</span>
+            </h2>
+            <p className="text-[15px] text-gray-500 mt-3 max-w-md mx-auto">
+              Click any course to explore it — no login needed.
+            </p>
           </div>
 
           {/* Loading skeletons */}
@@ -680,25 +950,16 @@ const LandingPage = () => {
             </div>
           )}
 
-          {/* Courses grid */}
+          {/* Course slider — only open (non-closed) courses */}
           {!coursesLoading && !coursesError && courses.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {courses.map((course, i) => (
-                <CourseCard
-                  key={course._id || course.id || i}
-                  course={course}
-                  delay={i * 80}
-                  onSignup={goSignup}
-                />
-              ))}
-            </div>
+            <CourseSlider courses={courses} onCardClick={handleCourseClick} />
           )}
 
-          {/* Empty state */}
+          {/* Empty state — all courses were closed or none returned */}
           {!coursesLoading && !coursesError && courses.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <BookOpen className="w-10 h-10 text-blue-200" />
-              <p className="text-gray-400 text-[14px]">Courses coming soon. Sign up to be notified!</p>
+              <p className="text-gray-400 text-[14px]">No open courses right now. Sign up to be notified when registrations open!</p>
               <button onClick={goSignup}
                 className="mt-2 px-5 py-2 text-[13px] font-bold text-white rounded-xl icl-hero-btn-primary">
                 Get Notified

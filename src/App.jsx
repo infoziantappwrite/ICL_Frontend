@@ -11,6 +11,8 @@ import { useEffect } from 'react';
 
 // ==================== LANDING ====================
 import LandingPage from './pages/Landing/LandingPage';
+// ==================== PUBLIC COURSE DETAIL (no auth needed) ====================
+import PublicCourseDetail from './pages/Landing/PublicCourseDetail';
 
 // ==================== CANDIDATE PAGES ====================
 import CandidateDashboard from './pages/Candidate/Dashboard';
@@ -190,6 +192,8 @@ function App() {
 
             {/* ===== PUBLIC ===== */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/courses/:courseId" element={<PublicCourseDetail />} />
+
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />

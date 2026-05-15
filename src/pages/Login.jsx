@@ -72,7 +72,7 @@ const Login = () => {
         }
         const roleRoutes = {
           student: '/dashboard/student',
-          candidate: '/dashboard/student',
+         candidate: '/dashboard/candidate',
           college_admin: '/dashboard/college-admin',
           super_admin: '/dashboard/super-admin',
         };

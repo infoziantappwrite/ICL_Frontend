@@ -306,18 +306,40 @@ const CandidateCourseLearn = () => {
       const res = await courseAPI.getCourseById(courseId);
       if (res.success) {
         setCourse(res.data);
-        setEnrollment(res.data.enrollment);
-        if (!res.data.enrollment) {
-          navigate(`/dashboard/candidate/courses/${courseId}`);
-        } else {
-          const stored = loadWatched(courseId);
-          const prog   = res.data.enrollment?.moduleProgress || [];
-          const merged = { ...stored };
-          prog.forEach(m => { if (m.completed) merged[m.moduleIndex] = true; });
-          setVideoWatched(merged);
-          // Load comments
-          fetchComments(courseId);
+
+        let enrollment = res.data.enrollment;
+
+        // ── If no enrollment found, try to auto-enroll ──────────────────────
+        // Handles race condition where enrollment was just created on the
+        // detail page but getCourseById hasn't returned it yet.
+        if (!enrollment) {
+          try {
+            const enrollRes = await courseAPI.enrollInCourse(courseId);
+            if (enrollRes.success) {
+              enrollment = enrollRes.data;
+            } else {
+              enrollment = enrollRes.data || null;
+            }
+          } catch (enrollErr) {
+            if (enrollErr.message?.toLowerCase().includes('already enrolled')) {
+              enrollment = enrollErr.responseData?.data || null;
+            }
+            if (!enrollment) {
+              navigate(`/dashboard/candidate/courses/${courseId}`);
+              return;
+            }
+          }
         }
+
+        setEnrollment(enrollment);
+
+        const stored = loadWatched(courseId);
+        const prog   = enrollment?.moduleProgress || [];
+        const merged = { ...stored };
+        prog.forEach(m => { if (m.completed) merged[m.moduleIndex] = true; });
+        setVideoWatched(merged);
+        fetchComments(courseId);
+
       } else {
         setError(res.message || 'Course not found');
       }

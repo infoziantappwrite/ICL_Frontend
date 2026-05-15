@@ -1,16 +1,12 @@
 // src/pages/Candidate/CandidateEditProfile.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-import { useProfile } from '../../context/Profilecontext';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
-import { skillAPI } from '../../api/Api';
 import CandidateLayout from '../../components/layout/CandidateLayout';
 import {
   User, Mail, Phone, MapPin, GraduationCap,
   Briefcase, Target, BookOpen, ChevronLeft,
-  Save, Loader2, Calendar, Hash, Building2,
+  Save, Calendar, Hash, Building2,
   Globe, Code, Layers, Lightbulb, Check
 } from 'lucide-react';
 
@@ -86,48 +82,49 @@ const TagInput = ({ label, tags = [], onAdd, onRemove, placeholder }) => {
   );
 };
 
-// ─── Skill multi-select (react-select) ───────────────────────────────────
-const getSkillName = s => (typeof s === 'string' ? s : s?.name || s?.label || s?.value || '');
+// ─── Skill multi-select — static options, no API ──────────────────────────
+const SKILL_OPTIONS = [
+  'JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'Express',
+  'Python', 'Django', 'Flask', 'Java', 'Spring Boot', 'C++', 'C#', '.NET',
+  'PHP', 'Laravel', 'Ruby', 'Rails', 'Go', 'Rust', 'Swift', 'Kotlin',
+  'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Firebase', 'Supabase',
+  'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Git', 'Linux',
+  'HTML', 'CSS', 'Tailwind CSS', 'Bootstrap', 'GraphQL', 'REST API',
+  'Machine Learning', 'Data Science', 'TensorFlow', 'PyTorch',
+  'Figma', 'Adobe XD', 'UI/UX Design',
+].map(s => ({ value: s, label: s }));
 
-const SkillSelect = ({ label, values = [], options = [], onChange }) => {
-  const normalized = values.map(getSkillName).filter(Boolean);
-  const opts = [...new Set([...options.map(getSkillName), ...normalized])]
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b))
-    .map(s => ({ value: s, label: s }));
+const SkillSelect = ({ label, values = [], onChange }) => (
+  <div>
+    <label className={lCls}>{label}</label>
+    <Select
+      isMulti
+      isSearchable
+      closeMenuOnSelect={false}
+      options={SKILL_OPTIONS}
+      placeholder="Search and select..."
+      value={values.map(s => ({ value: s, label: s }))}
+      menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+      menuPosition="fixed"
+      styles={{
+        menuPortal: base => ({ ...base, zIndex: 9999 }),
+        menu: base => ({ ...base, zIndex: 9999 }),
+        control: (base, state) => ({
+          ...base,
+          minHeight: 44,
+          borderRadius: 12,
+          borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
+          boxShadow: state.isFocused ? '0 0 0 2px rgba(191,219,254,1)' : 'none',
+          '&:hover': { borderColor: state.isFocused ? '#3b82f6' : '#d1d5db' },
+          fontSize: 13,
+        }),
+      }}
+      onChange={selected => onChange(selected ? selected.map(i => i.value) : [])}
+    />
+  </div>
+);
 
-  return (
-    <div>
-      <label className={lCls}>{label}</label>
-      <Select
-        isMulti
-        isSearchable
-        closeMenuOnSelect={false}
-        options={opts}
-        placeholder="Search and select..."
-        value={normalized.map(s => ({ value: s, label: s }))}
-        menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
-        menuPosition="fixed"
-        styles={{
-          menuPortal: base => ({ ...base, zIndex: 9999 }),
-          menu: base => ({ ...base, zIndex: 9999 }),
-          control: (base, state) => ({
-            ...base,
-            minHeight: 44,
-            borderRadius: 12,
-            borderColor: state.isFocused ? '#3b82f6' : '#e5e7eb',
-            boxShadow: state.isFocused ? '0 0 0 2px rgba(191,219,254,1)' : 'none',
-            '&:hover': { borderColor: state.isFocused ? '#3b82f6' : '#d1d5db' },
-            fontSize: 13,
-          }),
-        }}
-        onChange={selected => onChange(selected ? selected.map(i => i.value) : [])}
-      />
-    </div>
-  );
-};
-
-// ─── Avatar initials ───────────────────────────────────────────────────────
+// ─── Avatar initials + progress ring ──────────────────────────────────────
 const Avatar = ({ name, percent }) => {
   const initials = (() => {
     const parts = (name || 'U').split(' ');
@@ -153,20 +150,30 @@ const Avatar = ({ name, percent }) => {
   );
 };
 
+// ─── Local toast (no context needed) ──────────────────────────────────────
+const Toast = ({ onClose }) => (
+  <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-white border border-green-200 shadow-xl rounded-2xl px-5 py-3">
+    <div className="w-8 h-8 bg-green-500 rounded-xl flex items-center justify-center shrink-0">
+      <Check className="w-4 h-4 text-white" />
+    </div>
+    <div>
+      <p className="text-sm font-bold text-gray-800">Profile Saved</p>
+      <p className="text-xs text-gray-500">Your changes have been saved locally.</p>
+    </div>
+    <button onClick={onClose}
+      className="ml-2 text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+  </div>
+);
+
 // ─── Main Component ────────────────────────────────────────────────────────
 const CandidateEditProfile = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { profile, updateProfile, fetchProfile, isLoading } = useProfile();
-  const toast = useToast();
 
-  const [saving, setSaving] = useState(false);
-  const [skillsCatalog, setSkillsCatalog] = useState([]);
+  const [showToast, setShowToast] = useState(false);
   const [activeSection, setActiveSection] = useState('personal');
 
-  // ── Form state ──────────────────────────────────────────────────────────
+  // ── Pure local form state — zero API calls ──────────────────────────────
   const [form, setForm] = useState({
-    // Personal
     fullName: '',
     email: '',
     mobileNumber: '',
@@ -178,7 +185,6 @@ const CandidateEditProfile = () => {
     state: '',
     country: '',
     pincode: '',
-    // Education
     highestQualification: '',
     specialization: '',
     collegeName: '',
@@ -187,21 +193,17 @@ const CandidateEditProfile = () => {
     cgpaOrPercentage: '',
     tenthPercentage: '',
     twelfthOrDiplomaPercentage: '',
-    // Professional
     currentStatus: '',
     candidateType: '',
     yearsOfExperience: '',
     previousOrganization: '',
     currentRole: '',
-    // Skills
     primarySkills: [],
     secondarySkills: [],
     programmingLanguages: [],
-    // Career
     careerObjective: '',
     preferredJobRole: '',
     targetCompanies: [],
-    // Courses
     courseInterestedIn: '',
     preferredLearningMode: '',
     availability: '',
@@ -209,117 +211,43 @@ const CandidateEditProfile = () => {
     expectedStartDate: '',
   });
 
-  // ── Sync from profile ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!profile) return;
-    setForm({
-      fullName: profile.fullName || user?.fullName || '',
-      email: profile.email || user?.email || '',
-      mobileNumber: profile.mobileNumber || '',
-      whatsappNumber: profile.whatsappNumber || '',
-      alternateMobileNumber: profile.alternateMobileNumber || '',
-      gender: profile.gender || '',
-      dateOfBirth: profile.dateOfBirth
-        ? new Date(profile.dateOfBirth).toISOString().split('T')[0]
-        : '',
-      city: profile.address?.city || '',
-      state: profile.address?.state || '',
-      country: profile.address?.country || '',
-      pincode: profile.address?.pincode || '',
-      highestQualification: profile.highestQualification || '',
-      specialization: profile.specialization || '',
-      collegeName: profile.collegeName || '',
-      university: profile.university || '',
-      graduationYear: profile.graduationYear || '',
-      cgpaOrPercentage: profile.cgpaOrPercentage || '',
-      tenthPercentage: profile.tenthPercentage || '',
-      twelfthOrDiplomaPercentage: profile.twelfthOrDiplomaPercentage || '',
-      currentStatus: profile.currentStatus || '',
-      candidateType: profile.candidateType || '',
-      yearsOfExperience: profile.yearsOfExperience || '',
-      previousOrganization: profile.previousOrganization || '',
-      currentRole: profile.currentRole || '',
-      primarySkills: [...(profile.primarySkills || [])],
-      secondarySkills: [...(profile.secondarySkills || [])],
-      programmingLanguages: [...(profile.programmingLanguages || [])],
-      careerObjective: profile.careerObjective || '',
-      preferredJobRole: profile.preferredJobRole || '',
-      targetCompanies: [...(profile.targetCompanies || [])],
-      courseInterestedIn: profile.courseInterestedIn || '',
-      preferredLearningMode: profile.preferredLearningMode || '',
-      availability: profile.availability || '',
-      dailyStudyHours: profile.dailyStudyHours || '',
-      expectedStartDate: profile.expectedStartDate
-        ? new Date(profile.expectedStartDate).toISOString().split('T')[0]
-        : '',
-    });
-  }, [profile, user]);
-
-  useEffect(() => {
-    skillAPI.getAllSkills()
-      .then(res => { if (res?.success) setSkillsCatalog(res.skills || []); })
-      .catch(() => {});
-  }, []);
-
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-  // ── Save ────────────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const payload = {
-        ...form,
-        address: {
-          city: form.city,
-          state: form.state,
-          country: form.country,
-          pincode: form.pincode,
-        },
-      };
-      const fd = new FormData();
-      fd.append('profileData', JSON.stringify(payload));
-      const res = await updateProfile(fd);
-      if (res?.success) {
-        toast.success('Profile Updated', 'Your profile has been saved successfully.');
-        await fetchProfile();
-        navigate('/dashboard/candidate/settings');
-      } else {
-        toast.error('Save Failed', res?.message || 'Could not save profile.');
-      }
-    } catch (e) {
-      toast.error('Error', e.message || 'Something went wrong.');
-    } finally {
-      setSaving(false);
-    }
+  // ── Live profile completion % ───────────────────────────────────────────
+  const percent = (() => {
+    const tracked = [
+      form.fullName, form.email, form.mobileNumber, form.gender, form.dateOfBirth,
+      form.city, form.state, form.country,
+      form.highestQualification, form.specialization, form.collegeName,
+      form.currentStatus, form.candidateType,
+      form.primarySkills.length > 0 ? 'filled' : '',
+      form.careerObjective, form.preferredJobRole,
+      form.courseInterestedIn, form.preferredLearningMode,
+    ];
+    const filled = tracked.filter(f => f && f !== '').length;
+    return Math.round((filled / tracked.length) * 100);
+  })();
+
+  // ── Save to localStorage — no API ──────────────────────────────────────
+  const handleSave = () => {
+    localStorage.setItem('candidateProfileDraft', JSON.stringify(form));
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3500);
   };
 
-  // ── Sidebar nav sections ────────────────────────────────────────────────
   const navSections = [
-    { id: 'personal',     label: 'Personal',     icon: User         },
+    { id: 'personal',     label: 'Personal',     icon: User          },
     { id: 'education',    label: 'Education',    icon: GraduationCap },
-    { id: 'professional', label: 'Professional', icon: Briefcase     },
-    { id: 'skills',       label: 'Skills',       icon: Code          },
-    { id: 'career',       label: 'Career',       icon: Target        },
-    { id: 'courses',      label: 'Courses',      icon: BookOpen      },
+    { id: 'professional', label: 'Professional', icon: Briefcase      },
+    { id: 'skills',       label: 'Skills',       icon: Code           },
+    { id: 'career',       label: 'Career',       icon: Target         },
+    { id: 'courses',      label: 'Courses',      icon: BookOpen       },
   ];
 
   const scrollTo = id => {
     setActiveSection(id);
     document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-
-  const percent = profile?.profileCompletionPercentage || 0;
-  const name = profile?.fullName || user?.fullName || user?.name || 'Candidate';
-
-  if (isLoading && !profile) {
-    return (
-      <CandidateLayout title="Edit Profile">
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        </div>
-      </CandidateLayout>
-    );
-  }
 
   return (
     <CandidateLayout title="Edit Profile">
@@ -341,11 +269,10 @@ const CandidateEditProfile = () => {
           </div>
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition disabled:opacity-60 shadow-lg shadow-blue-500/20"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-blue-500/20"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Saving…' : 'Save Changes'}
+            <Save className="w-4 h-4" />
+            Save Changes
           </button>
         </div>
 
@@ -354,10 +281,10 @@ const CandidateEditProfile = () => {
           <div className="absolute inset-0 opacity-10"
             style={{ backgroundImage: 'linear-gradient(to right,rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '20px 20px' }} />
           <div className="relative z-10 flex items-center gap-4">
-            <Avatar name={name} percent={percent} />
+            <Avatar name={form.fullName || 'Candidate'} percent={percent} />
             <div>
-              <p className="font-bold text-lg">{name}</p>
-              <p className="text-blue-100 text-sm">{profile?.email || user?.email}</p>
+              <p className="font-bold text-lg">{form.fullName || 'Your Name'}</p>
+              <p className="text-blue-100 text-sm">{form.email || 'your@email.com'}</p>
               <div className="mt-2 flex items-center gap-2">
                 <div className="h-1.5 w-32 bg-white/20 rounded-full overflow-hidden">
                   <div className="h-full bg-white rounded-full transition-all duration-700"
@@ -393,25 +320,22 @@ const CandidateEditProfile = () => {
                   )}
                 </button>
               ))}
-
-              {/* Save in sidebar too */}
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <button
                   onClick={handleSave}
-                  disabled={saving}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition disabled:opacity-60"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition"
                 >
-                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  {saving ? 'Saving…' : 'Save'}
+                  <Check className="w-3.5 h-3.5" />
+                  Save
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Sections */}
+          {/* Form sections */}
           <div className="md:col-span-9 space-y-5">
 
-            {/* ── Personal Details ── */}
+            {/* ── Personal ── */}
             <div id="section-personal">
               <Section icon={User} title="Personal Details" color="blue">
                 <div className={gridTwo}>
@@ -424,8 +348,8 @@ const CandidateEditProfile = () => {
                     <label className={lCls}>Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input className={iCls + ' pl-9'} value={form.email} readOnly
-                        placeholder="Email address" />
+                      <input className={iCls + ' pl-9'} value={form.email}
+                        onChange={e => set('email', e.target.value)} placeholder="your@email.com" />
                     </div>
                   </div>
                   <div>
@@ -618,13 +542,11 @@ const CandidateEditProfile = () => {
                 <SkillSelect
                   label="Primary Skills"
                   values={form.primarySkills}
-                  options={skillsCatalog}
                   onChange={v => set('primarySkills', v)}
                 />
                 <SkillSelect
                   label="Secondary Skills"
                   values={form.secondarySkills}
-                  options={skillsCatalog}
                   onChange={v => set('secondarySkills', v)}
                 />
                 <TagInput
@@ -726,7 +648,7 @@ const CandidateEditProfile = () => {
               </Section>
             </div>
 
-            {/* ── Bottom save ── */}
+            {/* ── Bottom actions ── */}
             <div className="flex items-center justify-between pt-2">
               <button
                 onClick={() => navigate('/dashboard/candidate/settings')}
@@ -736,17 +658,20 @@ const CandidateEditProfile = () => {
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition disabled:opacity-60 shadow-lg shadow-blue-500/20"
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-bold rounded-xl hover:opacity-90 transition shadow-lg shadow-blue-500/20"
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? 'Saving…' : 'Save Changes'}
+                <Save className="w-4 h-4" />
+                Save Changes
               </button>
             </div>
 
           </div>
         </div>
       </div>
+
+      {/* ── Toast notification ── */}
+      {showToast && <Toast onClose={() => setShowToast(false)} />}
+
     </CandidateLayout>
   );
 };

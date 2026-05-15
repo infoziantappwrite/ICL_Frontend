@@ -22,7 +22,7 @@ import CandidateAttemptResult from './pages/Candidate/Assessments/Attemptresult'
 import CandidateSettings from './pages/Candidate/Candidatesettings';
 import CandidateNotifications from './pages/Candidate/Candidatenotifications';
 import CandidateProfile from './pages/Candidate/Candidateprofile';
-import CandidateEditProfile from './pages/Candidate/CandidateEditProfile';
+import CandidateEditProfile from './pages/Candidate/Candidateeditprofile';
 import CandidateCourseDetail from './pages/Candidate/CandidateCourseDetail';
 import CandidateCourseLearn from './pages/Candidate/CandidateCourseLearn';
 // ==================== AUTH PAGES ====================

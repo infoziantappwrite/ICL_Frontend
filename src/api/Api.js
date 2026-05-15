@@ -1637,11 +1637,17 @@ window.trainerAPI = trainerAPI;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMMENT API  (base: /api/comments)
-// POST   /api/comments                          — any auth user adds a comment
-// GET    /api/comments/trainer/:courseId        — trainer views their course comments
-// GET    /api/comments/admin/course/:courseId   — admin / college-admin views all comments for a course
-// DELETE /api/comments/my/:commentId            — user deletes their own comment
-// DELETE /api/comments/admin/:commentId         — admin / college-admin deletes any comment
+// ─────────────────────────────────────────────────────────────────────────────
+// COMMENT API  (base: /api/comments)
+// POST   /api/comments                              — any auth user adds a comment
+// GET    /api/comments/my/course/:courseId          — enrolled student views comments
+// GET    /api/comments/trainer/:courseId            — trainer views their course comments
+// GET    /api/comments/trainer/all/messages         — trainer views ALL comments across courses
+// GET    /api/comments/admin/course/:courseId       — admin / college-admin views all comments
+// DELETE /api/comments/my/:commentId                — user deletes their own comment
+// DELETE /api/comments/admin/:commentId             — admin / college-admin deletes any comment
+// POST   /api/comments/:commentId/replies           — trainer/admin adds a reply
+// DELETE /api/comments/:commentId/replies/:replyId  — delete a reply
 // ─────────────────────────────────────────────────────────────────────────────
 export const commentAPI = {
   // Add a comment to a course
@@ -1656,6 +1662,10 @@ export const commentAPI = {
   getTrainerCourseComments: (courseId) =>
     apiCall(`/comments/trainer/${courseId}`),
 
+  // Trainer: get ALL comments across ALL assigned courses (Messages inbox)
+  getAllTrainerComments: () =>
+    apiCall('/comments/trainer/all/messages'),
+
   // Admin / college-admin: get all comments for any course
   getAdminCourseComments: (courseId) =>
     apiCall(`/comments/admin/course/${courseId}`),
@@ -1667,4 +1677,12 @@ export const commentAPI = {
   // Admin / college-admin: delete any comment
   deleteAnyComment: (commentId) =>
     apiCall(`/comments/admin/${commentId}`, { method: 'DELETE' }),
+
+  // Trainer / Admin: add a reply to a comment
+  addReply: (commentId, reply) =>
+    apiCall(`/comments/${commentId}/replies`, { method: 'POST', body: JSON.stringify({ reply }) }),
+
+  // Delete a reply
+  deleteReply: (commentId, replyId) =>
+    apiCall(`/comments/${commentId}/replies/${replyId}`, { method: 'DELETE' }),
 };

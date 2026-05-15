@@ -567,6 +567,20 @@ const CodeEditor = ({
   }, [monaco]);
 
   // ── Run against test cases (can be done multiple times before submit) ──
+
+  // Classify a caught API error as a transient network/infrastructure problem.
+  // The backend already retries once internally; this is the frontend last-resort
+  // check so users see a friendly message instead of raw technical text.
+  const isTransientError = (e) => {
+    if (!e) return false;
+    const sc = e.statusCode;
+    if (sc === 503 || sc === 504) return true;
+    const msg = (e.message || '').toLowerCase();
+    return msg.includes('enotfound') || msg.includes('econnreset') ||
+           msg.includes('network') || msg.includes('could not reach') ||
+           msg.includes('interrupted') || msg.includes('timed out');
+  };
+
   const handleRun = async () => {
     if (!code.trim() || running) return;
     setRunning(true);
@@ -580,7 +594,10 @@ const CodeEditor = ({
       const firstError = res.data?.test_results?.find(tc => !tc.passed && tc.stderr);
       if (firstError?.stderr) applyErrorMarkers(firstError.stderr, language);
     } catch (e) {
-      setRunResult({ error_message: e.message || 'Run failed', test_results: [] });
+      const msg = isTransientError(e)
+        ? 'Could not reach the code execution service — network issue. Please try again.'
+        : (e.message || 'Run failed');
+      setRunResult({ error_message: msg, test_results: [] });
     } finally { setRunning(false); }
   };
 
@@ -594,7 +611,10 @@ const CodeEditor = ({
       setCustomResult(res.data);
       if (res.data?.stderr) applyErrorMarkers(res.data.stderr, language);
     } catch (e) {
-      setCustomResult({ execution_status: 'runtime_error', output: null, stderr: e.message || 'Custom run failed' });
+      const msg = isTransientError(e)
+        ? 'Could not reach the code execution service — network issue. Please try again.'
+        : (e.message || 'Custom run failed');
+      setCustomResult({ execution_status: 'runtime_error', output: null, stderr: msg });
     } finally { setRunningCustom(false); }
   };
 
@@ -613,7 +633,10 @@ const CodeEditor = ({
       const firstError = res.data?.test_results?.find(tc => !tc.passed && tc.stderr);
       if (firstError?.stderr) applyErrorMarkers(firstError.stderr, language);
     } catch (e) {
-      setSubmitResult({ error_message: e.message || 'Submit failed', test_results: [] });
+      const msg = isTransientError(e)
+        ? 'Could not reach the code execution service — network issue. Please click Submit again.'
+        : (e.message || 'Submit failed');
+      setSubmitResult({ error_message: msg, test_results: [] });
     } finally { setSubmitting(false); }
   };
 

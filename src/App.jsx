@@ -118,7 +118,7 @@ import SuperAdminStudentManagement from './pages/SuperAdmin/StudentManagement';
 
 // ==================== Trainer PAGES ====================
 
-import TrainerManagement from './pages/SuperAdmin/TrainerManagement';
+import TrainerManagement from './pages/SuperAdmin/Trainermanagement';
 import TrainerForm from './pages/SuperAdmin/TrainerForm';
 import SuperAdminGroupManagement from './pages/SuperAdmin/GroupManagement';
 import TrainerDashboard from './pages/Trainer/pages/Trainerdashboard';

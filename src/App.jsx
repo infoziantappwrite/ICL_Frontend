@@ -24,7 +24,7 @@ import CandidateSettings from './pages/Candidate/Candidatesettings';
 import CandidateNotifications from './pages/Candidate/Candidatenotifications';
 import CandidateProfile from './pages/Candidate/Candidateprofile';
 import CandidateEditProfile from './pages/Candidate/Candidateeditprofile';
-import CandidateCourseDetail from './pages/Candidate/CandidateCourseDetail';
+import CandidateCourseDetail from './pages/Candidate/Candidatecoursedetail';
 import CandidateCourseLearn from './pages/Candidate/CandidateCourseLearn';
 // ==================== AUTH PAGES ====================
 import Login from './pages/Login';

@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useEffect } from 'react';
 
-
 // ==================== LANDING ====================
 import LandingPage from './pages/Landing/LandingPage';
 
